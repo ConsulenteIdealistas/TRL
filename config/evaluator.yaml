@@ -1,0 +1,18 @@
+# AI評価の実行方式を切り替える
+# manual: 入力ファイルのみ生成（AI評価は手動で Issue 貼り付け）
+# gemini: Gemini API 無料枠で自動評価し、評価済みダイジェストまで生成
+provider: gemini
+
+gemini:
+  # 無料枠のレート制限・RPD は時期・モデルにより変動する。公式ドキュメントを確認のこと。
+  # 例: gemini-2.5-flash / gemini-2.5-flash-lite
+  model: gemini-2.5-flash
+  max_output_tokens: 8192
+  temperature: 0.3
+  timeout_seconds: 120
+
+# 自動評価が失敗した場合に manual 相当へフォールバックするか
+fallback_to_manual: true
+
+# 注意: GitHub Models は 2026-07-30 に完全廃止されたため provider に指定できない。
+# 将来 Microsoft Foundry Models を使う場合は provider: foundry を追加実装する。

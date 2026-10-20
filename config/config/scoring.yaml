@@ -1,0 +1,19 @@
+weights:
+  relevance: 0.4
+  freshness: 0.3
+  novelty: 0.2
+  diversity: 0.1
+
+freshness:
+  max_days: 7
+
+domains:
+  biotech:
+    keywords: ["CRISPR", "CAR-T", "mRNA", "antibody", "gene therapy", "biomarker", "clinical trial", "Phase I", "Phase II", "Phase III", "FDA"]
+    top_n: 3
+  space:
+    keywords: ["launch", "satellite", "propulsion", "lunar", "Mars", "reentry", "smallsat", "NASA", "in-space manufacturing"]
+    top_n: 2
+
+selection:
+  total_top_n: 5

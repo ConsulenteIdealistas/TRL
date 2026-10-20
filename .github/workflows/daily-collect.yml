@@ -1,0 +1,53 @@
+name: daily-collect
+
+on:
+  schedule:
+    - cron: "0 22 * * *"   # 22:00 UTC = 07:00 JST 翌日
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: daily-collect
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - name: Run pipeline
+        env:
+          PYTHONPATH: src
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: python -m digest.main run-daily
+      - name: Commit digests
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/digests docs/metrics.json
+          if git diff --cached --quiet; then
+            echo "No changes"
+          else
+            git commit -m "chore: daily digest $(date -u +%F)"
+            git push
+          fi
+      - name: Create alert issue on failure
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `[alert] daily-collect failed ${new Date().toISOString().slice(0,10)}`,
+              body: `Run: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+              labels: ["alert"]
+            })

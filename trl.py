@@ -945,6 +945,7 @@ def collect(store, cfg, run_id, as_of, sources, fetchers, counts, log):
             if not qs:
                 continue
             t0, fetched, new, dups, invalid, err = time.monotonic(), 0, 0, 0, 0, None
+            log(f"[collect:start] {sname}/{q['name']}")
             try:
                 raws = fetchers[sname](qs, q.get("max_results", d["max_results"]),
                                        q.get("lookback_days", d["lookback_days"]), as_of)

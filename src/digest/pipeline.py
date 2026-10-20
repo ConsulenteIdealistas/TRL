@@ -125,7 +125,7 @@ def build_input(items: list[NormalizedItem], today_iso: str) -> str:
             f"- URL: {it.url}\n"
             f"- 要旨（公開分のみ）: {(it.abstract or '')[:1500]}\n"
         )
-    body = prompt.replace("{{items}}", "\n".join(rows))
+    body = prompt.replace("ITEMS_PLACEHOLDER", "\n".join(rows))
     return f"<!-- generated_for: {today_iso} -->\n\n" + body
 
 

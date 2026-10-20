@@ -1,0 +1,19 @@
+defaults:
+  timeout_seconds: 20
+  max_retries: 3
+  retry_backoff_seconds: 2
+
+sources:
+  pubmed:
+    enabled: true
+    domain: biotech
+    params:
+      term: "(biotechnology[MeSH] OR CRISPR OR mRNA OR CAR-T OR antibody)"
+      retmax: 100
+      lookback_days: 7
+  arxiv:
+    enabled: true
+    domain: space
+    params:
+      categories: ["astro-ph", "physics.space-ph", "cs.RO"]
+      max_results: 50

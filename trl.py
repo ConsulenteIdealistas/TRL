@@ -58,6 +58,13 @@ def validate_config(cfg):
     for k in ("extract", "long", "event"):
         if not isinstance(sc.get("prompts", {}).get(k), str) or not sc["prompts"][k]:
             raise ConfigError(f"scoring.json: prompts.{k} (version string) is required")
+                mode = sc.get("screening", {}).get("require_entity", "off")
+    if mode not in ENTITY_MODES:
+        raise ConfigError("scoring.json: screening.require_entity must be off/strong/any")
+    if cfg.get("entities") is not None:
+        validate_entities(cfg["entities"])
+    elif mode != "off":
+        raise ConfigError("scoring.json: screening.require_entity needs entities.json")
     validate_sources(cfg["sources"])
 
 

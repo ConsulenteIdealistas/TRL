@@ -62,7 +62,7 @@ jobs:
             echo "::error::Could not check data branch (rc=$rc). Aborting to protect data"
             exit 1
           fi
-            - name: Run pipeline
+      - name: Run pipeline
         env:
           TRL_LLM_PROVIDER: ${{ vars.TRL_LLM_PROVIDER }}
           TRL_LLM_MODEL: ${{ vars.TRL_LLM_MODEL }}

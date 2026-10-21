@@ -1031,7 +1031,13 @@ def run_pipeline(store, cfg, llm, *, as_of, sources=("pubmed", "arxiv"), kinds=(
                 store.upsert_queue(c["id"], kind, _queue_reason(res), res["missing"] or res["errors"],
                                    res["next_sources"], res["reeval_conditions"] or ["追加情報の取得後、または再評価間隔の経過後"],
                                    datetime.now(timezone.utc).isoformat(timespec="seconds"), res["prompt_versions"])
-            log(f"[eval] {c['id']} {kind}: {res['status']} total={res['total']} errors={res['errors']}")
+            log(
+    f"[eval] {c['id']} {kind}: "
+    f"{res['status']} total={res['total']} "
+    f"errors={res['errors']} "
+    f"missing={res['missing']} "
+    f"critical_missing={res['critical_missing']}"
+)
         status = "hold" if "hold" in outcomes else ("error" if "error" in outcomes else "evaluated")
         store.set_status(c["id"], status, eval_at=datetime.now(timezone.utc).isoformat(timespec="seconds"),
                          retry_inc=(status == "error"))

@@ -1006,8 +1006,9 @@ def run_pipeline(store, cfg, llm, *, as_of, sources=("pubmed", "arxiv"), kinds=(
     today = today or datetime.now(timezone.utc).date()
     run_id = new_run_id()
     store.start_run(run_id, cfg["config_version"], cfg["config_hash"], as_of.isoformat(),
-                    {"sources": list(sources), "kinds": list(kinds), "max_eval": max_eval, "collect": do_collect,
-                     "llm": getattr(llm, "name", "none")})
+                {"sources": list(sources), "kinds": list(kinds), "max_eval": max_eval,
+                 "retry_failed": retry_failed, "collect": do_collect,
+                 "llm": getattr(llm, "name", "none")})
     counts = {k: 0 for k in ("fetched", "new", "duplicates", "invalid", "sources_ok", "sources_failed", "screened",
                              "rejected", "selected", "final", "hold", "error", "skipped_no_llm")}
     log(f"[run] {run_id} as_of={as_of} config={cfg['config_version']}/{cfg['config_hash']}")

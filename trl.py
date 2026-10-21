@@ -1158,8 +1158,17 @@ def main(argv=None):
     except LLMError as e:
         print(f"::error::{e}")
         return 2
-    res = run_pipeline(store, cfg, llm, as_of=as_of, sources=sources, kinds=kinds, max_eval=a.max_eval,
-                       do_collect=not a.skip_collect)
+    res = run_pipeline(
+    store,
+    cfg,
+    llm,
+    as_of=as_of,
+    sources=sources,
+    kinds=kinds,
+    max_eval=a.max_eval,
+    retry_failed=(a.retry_failed == "yes"),
+    do_collect=not a.skip_collect,
+)
     text = build_report(store, res["run_id"])
     rep = Path(a.data_dir) / "reports"
     rep.mkdir(parents=True, exist_ok=True)

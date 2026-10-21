@@ -1,0 +1,7 @@
+{
+  "_comment": "これはサンプルです。実在の投資対象に置き換えてください。aliasは具体的な名称にする(短い一般語は誤検出の原因)。",
+  "entities": [
+    {"id": "example_corp", "name": "Example Corp", "aliases": ["Example Corporation", "エグザンプル株式会社"], "ticker": "0000", "exchange": "TSE"},
+    {"id": "sample_inc", "name": "Sample Inc", "aliases": []}
+  ]
+}

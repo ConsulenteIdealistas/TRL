@@ -115,6 +115,7 @@ def missing_files(config_dir=None):
     return [n for n, ok in required_files(config_dir) if not ok]
 
 
+
 def load_config(config_dir=None):
     d = Path(config_dir) if config_dir else ROOT
     gone = [n for n in CONFIG_FILES if not (d / n).is_file()]
@@ -125,14 +126,24 @@ def load_config(config_dir=None):
         text = (d / f"{name}.json").read_text(encoding="utf-8-sig")
         h.update(text.encode("utf-8"))
         raw[name] = json.loads(text)
+
+    entities_path = d / "entities.json"
+    entities = None
+    if entities_path.is_file():
+        entities_text = entities_path.read_text(encoding="utf-8-sig")
+        h.update(entities_text.encode("utf-8"))
+        entities = json.loads(entities_text)
+
     cfg = {
         "scoring": raw["scoring"],
         "sources": raw["sources"],
+        "entities": entities,
         "config_version": raw["scoring"]["config_version"],
         "config_hash": h.hexdigest()[:16],
     }
     validate_config(cfg)
     return cfg
+
 
 
 # ==================== freshness ====================

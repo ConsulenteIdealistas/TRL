@@ -1144,7 +1144,7 @@ for r in q:
     L.append("  関連情報の検索:")
     L.extend(format_research_links(r["title"]))
     L += ["", "## 未実装・制約", "- 市場データ・IR・特許・臨床試験登録は未接続。イベント評価は市場予想が無い限り保留になります。"]
-    return "\n".join(L) + "\n"
+        return "\n".join(L) + "\n"
 
 
 # ==================== cli ====================

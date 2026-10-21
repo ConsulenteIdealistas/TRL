@@ -1130,13 +1130,13 @@ def build_report(store, run_id):
         L += ["", f"## {title}"]
         if not rows:
             L.append("- 該当なし")
-        for e in rows:
+for e in rows:
     L.append(f"- **{e['total']}** ({e['band']}) {e['title']}")
     L.append(f"  論文・原資料: {e['url']}")
     L.extend(format_research_links(e["title"]))
     q = store.list_queue(open_only=True)
     L += ["", f"## レビューキュー({len(q)}件)"]
-    for r in q:
+for r in q:
     L.append(f"- [{r['kind']}] {r['title']}")
     L.append(f"  理由: {r['reason']}")
     L.append(f"  確認先: {', '.join(r['next_sources'] or ['未指定'])}")

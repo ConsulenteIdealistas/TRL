@@ -1,7 +1,80 @@
+
 {
-  "_comment": "これはサンプルです。実在の投資対象に置き換えてください。aliasは具体的な名称にする(短い一般語は誤検出の原因)。",
   "entities": [
-    {"id": "example_corp", "name": "Example Corp", "aliases": ["Example Corporation", "エグザンプル株式会社"], "ticker": "0000", "exchange": "TSE"},
-    {"id": "sample_inc", "name": "Sample Inc", "aliases": []}
+    {
+      "id": "astroscale",
+      "name": "Astroscale Holdings Inc.",
+      "aliases": [
+        "Astroscale",
+        "アストロスケール",
+        "アストロスケールホールディングス"
+      ],
+      "ticker": "186A",
+      "exchange": "TSE"
+    },
+    {
+      "id": "ispace",
+      "name": "ispace, inc.",
+      "aliases": [
+        "ispace",
+        "株式会社ispace",
+        "アイスペース"
+      ],
+      "ticker": "9348",
+      "exchange": "TSE"
+    },
+    {
+      "id": "synspective",
+      "name": "Synspective Inc.",
+      "aliases": [
+        "Synspective",
+        "株式会社Synspective",
+        "シンスペクティブ"
+      ],
+      "ticker": "290A",
+      "exchange": "TSE"
+    },
+    {
+      "id": "oncolys",
+      "name": "Oncolys BioPharma Inc.",
+      "aliases": [
+        "オンコリスバイオファーマ",
+        "オンコリス",
+        "テロメライシン"
+      ],
+      "ticker": "4588",
+      "exchange": "TSE"
+    },
+    {
+      "id": "reprocell",
+      "name": "REPROCELL Inc.",
+      "aliases": [
+        "REPROCELL",
+        "リプロセル",
+        "株式会社リプロセル"
+      ],
+      "ticker": "4978",
+      "exchange": "TSE"
+    },
+    {
+      "id": "heartseed",
+      "name": "Heartseed Inc.",
+      "aliases": [
+        "Heartseed",
+        "ハートシード",
+        "ハートシード株式会社"
+      ]
+    },
+    {
+      "id": "peptidream",
+      "name": "PeptiDream Inc.",
+      "aliases": [
+        "PeptiDream",
+        "ペプチドリーム",
+        "ペプチドリーム株式会社"
+      ],
+      "ticker": "4587",
+      "exchange": "TSE"
+    }
   ]
 }

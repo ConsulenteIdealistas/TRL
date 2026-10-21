@@ -970,17 +970,25 @@ def collect(store, cfg, run_id, as_of, sources, fetchers, counts, log):
                 + (f" ERROR={err}" if err else ""))
 
 
-def select_for_eval(store, cfg, today, limit):
+def select_for_eval(store, cfg, today, limit, retry_failed=False):
     sc = cfg["scoring"]["screening"]
     rows = []
-    for c in store.list_by_status(["screened", "hold", "error"]):
+
+    statuses = ["screened", "hold", "error"]
+    for c in store.list_by_status(statuses):
+        if c["status"] == "error":
+            if not retry_failed:
+                continue
+            if c["retry_count"] >= sc["max_retries"]:
+                continue
+
         if c["status"] == "hold":
             last = parse_date((c["last_eval_at"] or "")[:10])
             if last and (today - last).days < sc["reeval_after_days"]:
                 continue
-        if c["status"] == "error" and c["retry_count"] >= sc["max_retries"]:
-            continue
+
         rows.append(c)
+
     rows.sort(key=lambda c: c["published"] or "", reverse=True)
     return rows[:limit]
 
@@ -993,7 +1001,7 @@ def _queue_reason(res):
 
 
 def run_pipeline(store, cfg, llm, *, as_of, sources=("pubmed", "arxiv"), kinds=("long",), max_eval=None,
-                 do_collect=True, fetchers=None, today=None, log=print, prompt_dir=None):
+                 retry_failed=False, do_collect=True, fetchers=None, today=None, log=print, prompt_dir=None):
     t0 = time.monotonic()
     today = today or datetime.now(timezone.utc).date()
     run_id = new_run_id()

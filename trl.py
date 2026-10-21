@@ -1055,6 +1055,52 @@ def run_pipeline(store, cfg, llm, *, as_of, sources=("pubmed", "arxiv"), kinds=(
     all_failed = do_collect and counts["sources_ok"] == 0 and counts["sources_failed"] > 0
     store.finish_run(run_id, counts, "failed" if all_failed else "ok", time.monotonic() - t0)
     return {"run_id": run_id, "counts": counts, "failed": all_failed}
+    
+
+# ==================== research links ====================
+"""追加APIを使わず、企業・論文に関する外部検索リンクを生成する。"""
+
+
+def build_research_links(title, company_name=None):
+    """検索URLのみ生成。検索結果の取得や企業との関係の断定はしない。"""
+    company = clean_text(company_name or "")
+    query = company or clean_text(title or "")
+    if not query:
+        return []
+
+    q = urllib.parse.quote_plus(query)
+    ir_q = urllib.parse.quote_plus(f'"{query}" IR')
+    patents_q = urllib.parse.quote_plus(query)
+
+    label = "企業名" if company else "論文タイトル等（企業名未特定）"
+
+    return [
+        {
+            "label": f"IR・決算資料 [{label}]",
+            "url": f"https://www.google.com/search?q={ir_q}",
+        },
+        {
+            "label": f"特許 [{label}]",
+            "url": f"https://patents.google.com/?q={patents_q}",
+        },
+        {
+            "label": f"臨床試験登録 [{label}]",
+            "url": f"https://clinicaltrials.gov/search?term={q}",
+        },
+        {
+            "label": f"企業・技術情報 [{label}]",
+            "url": f"https://www.google.com/search?q={q}",
+        },
+    ]
+
+
+def format_research_links(title, company_name=None):
+    """Markdown用の検索リンク一覧を返す。"""
+    links = build_research_links(title, company_name)
+    return [
+        f"  - [{item['label']}]({item['url']})"
+        for item in links
+    ]
 
 
 # ==================== report ====================

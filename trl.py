@@ -1131,12 +1131,18 @@ def build_report(store, run_id):
         if not rows:
             L.append("- 該当なし")
         for e in rows:
-            L.append(f"- **{e['total']}** ({e['band']}) {e['title']}\n  {e['url']}")
+    L.append(f"- **{e['total']}** ({e['band']}) {e['title']}")
+    L.append(f"  論文・原資料: {e['url']}")
+    L.extend(format_research_links(e["title"]))
     q = store.list_queue(open_only=True)
     L += ["", f"## レビューキュー({len(q)}件)"]
     for r in q:
-        L.append(f"- [{r['kind']}] {r['title']}\n  理由: {r['reason']}\n  確認先: {', '.join(r['next_sources'] or ['未指定'])}\n"
-                 f"  再評価条件: {', '.join(r['reeval_conditions'] or [])}")
+    L.append(f"- [{r['kind']}] {r['title']}")
+    L.append(f"  理由: {r['reason']}")
+    L.append(f"  確認先: {', '.join(r['next_sources'] or ['未指定'])}")
+    L.append(f"  再評価条件: {', '.join(r['reeval_conditions'] or [])}")
+    L.append("  関連情報の検索:")
+    L.extend(format_research_links(r["title"]))
     L += ["", "## 未実装・制約", "- 市場データ・IR・特許・臨床試験登録は未接続。イベント評価は市場予想が無い限り保留になります。"]
     return "\n".join(L) + "\n"
 

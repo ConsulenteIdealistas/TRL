@@ -1111,7 +1111,7 @@ def main(argv=None):
     r.add_argument("--sources", default="pubmed,arxiv")
     r.add_argument("--kinds", default="long")
     r.add_argument("--max-eval", type=int)
-r.add_argument(
+    r.add_argument(
     "--retry-failed",
     choices=["yes", "no"],
     default="no",

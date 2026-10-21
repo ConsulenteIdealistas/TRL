@@ -1110,32 +1110,52 @@ DISCLAIMER = ("※ スコアは評価尺度であり、株価上昇確率・成�
               "売買の自動判定にも使えません。")
 
 
+
 def build_report(store, run_id):
     run = store.get_run(run_id)
     counts = json.loads(run["counts_json"] or "{}")
-    L = [f"# TRL 実行レポート {run_id}", "", DISCLAIMER, "",
-         f"- 基準日: {run['as_of']} / 設定: {run['config_version']} ({run['config_hash']})",
-         f"- 状態: {run['status']} / 所要: {run['duration_sec']}秒",
-         f"- 取得 {counts.get('fetched', 0)} / 新規 {counts.get('new', 0)} / 重複 {counts.get('duplicates', 0)} / 不正 {counts.get('invalid', 0)}",
-         f"- スクリーニング通過 {counts.get('screened', 0)} / 除外 {counts.get('rejected', 0)} / 評価対象 {counts.get('selected', 0)}",
-         f"- 評価: 確定 {counts.get('final', 0)} / 保留 {counts.get('hold', 0)} / エラー {counts.get('error', 0)}"
-         f" / LLM未設定でスキップ {counts.get('skipped_no_llm', 0)}", "", "## 情報源ごとの状況"]
+    L = [
+        f"# TRL 実行レポート {run_id}", "",
+        DISCLAIMER, "",
+        f"- 基準日: {run['as_of']} / 設定: {run['config_version']} ({run['config_hash']})",
+        f"- 状態: {run['status']} / 所要: {run['duration_sec']}秒",
+        f"- 取得 {counts.get('fetched', 0)} / 新規 {counts.get('new', 0)} / 重複 {counts.get('duplicates', 0)} / 不正 {counts.get('invalid', 0)}",
+        f"- スクリーニング通過 {counts.get('screened', 0)} / 除外 {counts.get('rejected', 0)} / 評価対象 {counts.get('selected', 0)}",
+        f"- 評価: 確定 {counts.get('final', 0)} / 保留 {counts.get('hold', 0)} / エラー {counts.get('error', 0)}"
+        f" / LLM未設定でスキップ {counts.get('skipped_no_llm', 0)}",
+        "", "## 情報源ごとの状況"
+    ]
+
     for s in store.run_sources(run_id):
         mark = "OK" if s["ok"] else "失敗"
-        L.append(f"- [{mark}] {s['source']} / {s['query']}: 取得{s['fetched']} 新規{s['new']} 重複{s['duplicates']} 不正{s['invalid']}"
-                 + (f" — {s['error']}" if s["error"] else ""))
-    for kind, title in (("long", "長期成長評価(確定)"), ("event", "イベント評価(確定)")):
-        rows = [e for e in store.evaluations_for_run(run_id, kind) if e["status"] == "final"]
+        L.append(
+            f"- [{mark}] {s['source']} / {s['query']}: "
+            f"取得{s['fetched']} 新規{s['new']} 重複{s['duplicates']} 不正{s['invalid']}"
+            + (f" — {s['error']}" if s["error"] else "")
+        )
+
+    for kind, title in (
+        ("long", "長期成長評価(確定)"),
+        ("event", "イベント評価(確定)")
+    ):
+        rows = [
+            e for e in store.evaluations_for_run(run_id, kind)
+            if e["status"] == "final"
+        ]
         rows.sort(key=lambda e: e["total"], reverse=True)
         L += ["", f"## {title}"]
+
         if not rows:
             L.append("- 該当なし")
-    for e in rows:
-        L.append(f"- **{e['total']}** ({e['band']}) {e['title']}")
-        L.append(f"  論文・原資料: {e['url']}")
-        L.extend(format_research_links(e["title"]))
-        q = store.list_queue(open_only=True)
-        L += ["", f"## レビューキュー({len(q)}件)"]
+
+        for e in rows:
+            L.append(f"- **{e['total']}** ({e['band']}) {e['title']}")
+            L.append(f"  論文・原資料: {e['url']}")
+            L.extend(format_research_links(e["title"]))
+
+    q = store.list_queue(open_only=True)
+    L += ["", f"## レビューキュー({len(q)}件)"]
+
     for r in q:
         L.append(f"- [{r['kind']}] {r['title']}")
         L.append(f"  理由: {r['reason']}")
@@ -1143,7 +1163,13 @@ def build_report(store, run_id):
         L.append(f"  再評価条件: {', '.join(r['reeval_conditions'] or [])}")
         L.append("  関連情報の検索:")
         L.extend(format_research_links(r["title"]))
-        L += ["", "## 未実装・制約", "- 市場データ・IR・特許・臨床試験登録は未接続。イベント評価は市場予想が無い限り保留になります。"]
+    L += [
+        "",
+        "## 制約",
+        "- IR・特許・臨床試験登録は検索リンクのみ生成し、検索結果の自動取得は行いません。",
+        "- 企業名が未特定の場合は論文タイトル等を検索語に使います。",
+        "- 市場予想が確認できない場合、イベント評価は保留になります。"
+    ]
     return "\n".join(L) + "\n"
 
 

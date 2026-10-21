@@ -40,17 +40,13 @@ jobs:
       TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-
       - name: Check required files
         run: python trl.py check-config
-
       - name: Tests
         run: python -m unittest test_trl -v
-
       - name: Restore data branch
         run: |
           set +e
@@ -66,33 +62,19 @@ jobs:
             echo "::error::Could not check data branch (rc=$rc). Aborting to protect data"
             exit 1
           fi
-
-      - name: Run pipeline
-
+            - name: Run pipeline
         env:
-
           TRL_LLM_PROVIDER: ${{ vars.TRL_LLM_PROVIDER }}
-
           TRL_LLM_MODEL: ${{ vars.TRL_LLM_MODEL }}
-
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-
           NCBI_API_KEY: ${{ secrets.NCBI_API_KEY }}
-
         run: |
-
           python trl.py run --data-dir _data \
-
             --sources "${{ inputs.sources || 'pubmed,arxiv' }}" \
-
             --kinds "${{ inputs.kinds || 'long' }}" \
-
             --max-eval "${{ inputs.max_eval || '10' }}" \
-
             --retry-failed "${{ inputs.retry_failed || 'no' }}"
-
       - name: Persist data (single commit to data branch)
         if: always()
         run: |

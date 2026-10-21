@@ -1018,7 +1018,9 @@ def run_pipeline(store, cfg, llm, *, as_of, sources=("pubmed", "arxiv"), kinds=(
         store.set_status(c["id"], "rejected" if reason else "screened", reason)
         counts["rejected" if reason else "screened"] += 1
     limit = max_eval if max_eval is not None else cfg["scoring"]["screening"]["max_eval_per_run"]
-    selected = select_for_eval(store, cfg, today, limit)
+    selected = select_for_eval(
+    store, cfg, today, limit, retry_failed=retry_failed
+)
     counts["selected"] = len(selected)
     if selected and llm is None:
         counts["skipped_no_llm"] = len(selected)

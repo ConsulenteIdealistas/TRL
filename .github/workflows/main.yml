@@ -17,6 +17,11 @@ on:
         description: "Max candidates to evaluate per run"
         type: string
         default: "10"
+      retry_failed:
+        description: "Retry previously failed evaluations?"
+        type: choice
+        options: ["no", "yes"]
+        default: "no"
   schedule:
     - cron: "17 21 * * 1"   # Mondays 21:17 UTC (Tuesday 06:17 JST)
 
@@ -73,7 +78,8 @@ jobs:
           python trl.py run --data-dir _data \
             --sources "${{ inputs.sources || 'pubmed,arxiv' }}" \
             --kinds "${{ inputs.kinds || 'long' }}" \
-            --max-eval "${{ inputs.max_eval || '10' }}"
+            --max-eval "${{ inputs.max_eval || '10' }}" \
+            --retry-failed "${{ inputs.retry_failed || 'no' }}"
 
       - name: Persist data (single commit to data branch)
         if: always()

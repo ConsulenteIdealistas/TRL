@@ -1299,7 +1299,7 @@ def select_for_eval(store, cfg, today, limit, retry_failed="no"):
     )
 
     statuses = ["screened", "hold", "error"]
-        for c in store.list_by_status(statuses):
+    for c in store.list_by_status(statuses):
         print(
             f"[select:debug] id={c['id']} "
             f"status={c['status']} "

@@ -49,6 +49,46 @@ class EntityTests(unittest.TestCase):
         self.assertEqual(trl.entity_screen(weak, "strong"), "no_linked_entity")
         self.assertIsNone(trl.entity_screen(strong, "strong"))
         self.assertIsNone(trl.entity_screen(weak, "any"))
+        
+    def test_product_link_is_not_company_link(self):
+        links = trl.link_entities(
+            {
+                "title": "Example Device",
+                "abstract": "",
+                "affiliations": [],
+            },
+            ENT,
+        )
+
+        self.assertTrue(
+            any(
+                link["link_type"] == "product"
+                and link["product_id"] == "example_product"
+                for link in links
+            )
+        )
+        self.assertEqual(
+            trl.entity_screen({"entities": links}, "any"),
+            "no_linked_entity",
+        )
+
+    def test_product_alias_matches(self):
+        links = trl.link_entities(
+            {
+                "title": "EX-100 evaluation",
+                "abstract": "",
+                "affiliations": [],
+            },
+            ENT,
+        )
+
+        self.assertTrue(
+            any(
+                link["link_type"] == "product"
+                and link["product_id"] == "example_product"
+                for link in links
+            )
+        )
 
     def test_store_roundtrip_and_upgrade_only(self):
         st = trl.Store(":memory:")

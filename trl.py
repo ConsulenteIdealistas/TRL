@@ -361,6 +361,12 @@ def parse_efetch(xml_bytes):
                 doi = (aid.text or "").strip()
         published = _date_from(a.find("ArticleDate")) or _date_from(a.find("Journal/JournalIssue/PubDate"))
         mesh = [m.text for m in art.findall(".//MeshHeading/DescriptorName") if m.text][:10]
+        affiliations = []
+        for aff in a.findall("AuthorList/Author/AffiliationInfo/Affiliation"):
+            txt = "".join(aff.itertext()).strip()
+            if txt:
+                affiliations.append(txt)
+        affiliations = list(dict.fromkeys(affiliations))
         out.append({
             "source": "pubmed", "source_id": pmid.strip(), "pmid": pmid.strip(), "doi": doi,
             "title": title, "abstract": " ".join(p for p in parts if p),

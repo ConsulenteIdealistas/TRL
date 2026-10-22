@@ -1,0 +1,131 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#00c878">
+  <title>TRL Research Explorer</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#">
+      <span class="brand-mark">T</span>
+      <span>TRL <span class="brand-light">Explorer</span></span>
+    </a>
+    <span class="local-badge">RESEARCH WORKSPACE</span>
+  </header>
+
+  <main class="container">
+    <section class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">TECHNOLOGY INTELLIGENCE</p>
+        <h1>技術の現在地から、<br><span>未来の可能性を探す。</span></h1>
+        <p class="hero-description">
+          論文・技術成熟度・事業化の見通しをまとめて検索する研究台帳。
+        </p>
+      </div>
+      <div class="hero-orbit" aria-hidden="true">
+        <div class="orbit orbit-outer"></div>
+        <div class="orbit orbit-inner"></div>
+        <div class="orbit-core">TRL</div>
+        <span class="orbit-dot dot-green"></span>
+        <span class="orbit-dot dot-blue"></span>
+      </div>
+    </section>
+
+    <section class="stats" aria-label="検索データ概要">
+      <article class="stat-card">
+        <span class="stat-label">論文データ</span>
+        <strong id="totalCount">0</strong>
+        <span class="stat-note">表示対象</span>
+      </article>
+      <article class="stat-card">
+        <span class="stat-label">評価確定</span>
+        <strong id="finalCount">0</strong>
+        <span class="stat-note">FINAL</span>
+      </article>
+      <article class="stat-card">
+        <span class="stat-label">保留</span>
+        <strong id="holdCount">0</strong>
+        <span class="stat-note">HOLD</span>
+      </article>
+      <article class="stat-card">
+        <span class="stat-label">エラー</span>
+        <strong id="errorCount">0</strong>
+        <span class="stat-note">ERROR</span>
+      </article>
+    </section>
+
+    <section class="search-panel">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">DISCOVER</p>
+          <h2>論文を検索</h2>
+        </div>
+        <span class="demo-label">サンプル表示</span>
+      </div>
+
+      <label class="search-box">
+        <span aria-hidden="true">⌕</span>
+        <input id="searchInput" type="search"
+          placeholder="論文名・技術・企業・キーワードで検索..."
+          autocomplete="off">
+        <kbd>/</kbd>
+      </label>
+
+      <div class="filters">
+        <label class="filter-field">
+          <span>評価状態</span>
+          <select id="statusFilter">
+            <option value="all">すべて</option>
+            <option value="final">評価確定</option>
+            <option value="hold">保留</option>
+            <option value="error">エラー</option>
+          </select>
+        </label>
+
+        <label class="filter-field">
+          <span>技術成熟度</span>
+          <select id="trlFilter">
+            <option value="all">すべて</option>
+            <option value="low">TRL 1–3</option>
+            <option value="mid">TRL 4–6</option>
+            <option value="high">TRL 7–9</option>
+            <option value="unknown">未確定</option>
+          </select>
+        </label>
+
+        <button id="resetButton" class="reset-button" type="button">
+          条件をリセット
+        </button>
+      </div>
+    </section>
+
+    <section class="results-section">
+      <div class="results-heading">
+        <div>
+          <p class="eyebrow">PAPER LIBRARY</p>
+          <h2>検索結果 <span id="resultCount">0件</span></h2>
+        </div>
+        <span class="sort-label">更新・関連情報はデータ連携後に対応</span>
+      </div>
+
+      <div id="resultsList" class="results-list" aria-live="polite"></div>
+
+      <div id="emptyState" class="empty-state" hidden>
+        <span class="empty-icon">⌕</span>
+        <h3>該当する論文がありません</h3>
+        <p>検索語や絞り込み条件を変更してみてください。</p>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <span>TRL Research Explorer</span>
+      <span>Personal research workspace · Preview</span>
+    </footer>
+  </main>
+</body>
+</html>

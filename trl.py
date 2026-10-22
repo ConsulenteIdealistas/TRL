@@ -1299,7 +1299,18 @@ def select_for_eval(store, cfg, today, limit, retry_failed="no"):
     )
 
     statuses = ["screened", "hold", "error"]
-    for c in store.list_by_status(statuses):
+        for c in store.list_by_status(statuses):
+        print(
+            f"[select:debug] id={c['id']} "
+            f"status={c['status']} "
+            f"last_eval_at={c['last_eval_at']} "
+            f"today={today} "
+            f"retry_count={c['retry_count']} "
+            f"retry_failed={retry_failed!r}"
+        )
+
+        if c["status"] == "error":
+            # 以下は既存の処理をそのまま残す:
         if c["status"] == "error":
             if retry_failed == "no":
                 continue

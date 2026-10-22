@@ -372,7 +372,7 @@ def parse_efetch(xml_bytes):
             "title": title, "abstract": " ".join(p for p in parts if p),
             "url": f"https://pubmed.ncbi.nlm.nih.gov/{pmid.strip()}/",
             "published": published, "fields": mesh,
-"affiliations": affiliations, "info_type": "paper",
+            "affiliations": affiliations, "info_type": "paper",
         })
     return out
 

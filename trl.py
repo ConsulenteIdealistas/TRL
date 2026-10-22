@@ -1310,8 +1310,6 @@ def select_for_eval(store, cfg, today, limit, retry_failed="no"):
         )
 
         if c["status"] == "error":
-            # 以下は既存の処理をそのまま残す:
-        if c["status"] == "error":
             if retry_failed == "no":
                 continue
             if retry_failed != "force" and c["retry_count"] >= sc["max_retries"]:

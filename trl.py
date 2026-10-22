@@ -1301,12 +1301,9 @@ def select_for_eval(store, cfg, today, limit, retry_failed="no"):
     statuses = ["screened", "hold", "error"]
     for c in store.list_by_status(statuses):
         if c["status"] == "error":
-            if not retry_enabled:
+            if retry_failed == "no":
                 continue
-            if (
-                c["retry_count"] >= sc["max_retries"]
-                and not force_retry
-            ):
+            if retry_failed != "force" and c["retry_count"] >= sc["max_retries"]:
                 continue
 
         if c["status"] == "hold":

@@ -498,6 +498,9 @@ def compute(items, kind, cfg):
     return {"status": "final", "total": total, "band": band_for(total, cfg),
             "missing": [], "critical_missing": [], "errors": []}
 
+def _norm_text(value):
+    text = unicodedata.normalize("NFKC", str(value or "")).casefold()
+    return " ".join(text.split())
 
 # ==================== store ====================
 """SQLite による永続化。重複排除は identifiers テーブルの安定IDで行う。"""

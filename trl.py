@@ -1345,7 +1345,6 @@ def run_pipeline(store, cfg, llm, *, as_of, sources=("pubmed", "arxiv"), kinds=(
         extraction, meta, outcomes = None, None, []
         for kind in kinds:
             eval_t0 = time.monotonic()
-            eval_t0 = time.monotonic()
             log(f"[eval:start] {c['id']} {kind}")
             res = evaluate_one(c, kind, cfg, llm, as_of, extraction, meta, prompt_dir)
             eval_seconds = time.monotonic() - eval_t0

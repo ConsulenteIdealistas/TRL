@@ -3,9 +3,20 @@ import unittest
 import trl
 
 ENT = {"entities": [
-    {"id": "ex_corp", "name": "Example Corp", "aliases": ["Example Corporation", "エグザンプル"]},
-    {"id": "foo_inc", "name": "Foo Inc", "aliases": []}]}
-
+    {
+        "id": "ex_corp",
+        "name": "Example Corp",
+        "aliases": ["Example Corporation", "エグザンプル"],
+        "products": [
+            {
+                "id": "example_product",
+                "name": "Example Device",
+                "aliases": ["EX-100"]
+            }
+        ]
+    },
+    {"id": "foo_inc", "name": "Foo Inc", "aliases": []}
+]}
 
 class EntityTests(unittest.TestCase):
     def test_validate_ok(self):

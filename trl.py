@@ -1535,7 +1535,7 @@ def main(argv=None):
     r.add_argument("--max-eval", type=int)
     r.add_argument(
     "--retry-failed",
-    choices=["yes", "no"],
+    choices=["no", "yes", "force"],
     default="no",
     help="Retry previously failed evaluations",
 )

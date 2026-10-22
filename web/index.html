@@ -1,130 +1,141 @@
 
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#00c878">
-  <title>TRL Research Explorer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#00b987">
+  <meta name="description" content="研究論文の技術成熟度と事業化可能性を調査するTRL Explorer">
+  <title>TRL Explorer — Research Intelligence</title>
   <link rel="stylesheet" href="style.css">
   <script src="app.js" defer></script>
 </head>
 <body>
   <header class="topbar">
-    <a class="brand" href="#">
+    <a class="brand" href="#" aria-label="TRL Explorer ホーム">
       <span class="brand-mark">T</span>
-      <span>TRL <span class="brand-light">Explorer</span></span>
+      <span>TRL<span class="brand-light"> Explorer</span></span>
     </a>
-    <span class="local-badge">RESEARCH WORKSPACE</span>
+    <div class="topbar-meta">
+      <span class="live-dot"></span>
+      <span>Research Intelligence</span>
+    </div>
   </header>
 
-  <main class="container">
+  <main class="workspace">
     <section class="hero">
-      <div class="hero-copy">
-        <p class="eyebrow">TECHNOLOGY INTELLIGENCE</p>
-        <h1>技術の現在地から、<br><span>未来の可能性を探す。</span></h1>
-        <p class="hero-description">
-          論文・技術成熟度・事業化の見通しをまとめて検索する研究台帳。
-        </p>
-      </div>
-      <div class="hero-orbit" aria-hidden="true">
-        <div class="orbit orbit-outer"></div>
-        <div class="orbit orbit-inner"></div>
-        <div class="orbit-core">TRL</div>
-        <span class="orbit-dot dot-green"></span>
-        <span class="orbit-dot dot-blue"></span>
-      </div>
-    </section>
+      <span class="eyebrow">RESEARCH TO REAL-WORLD IMPACT</span>
+      <h1>研究の現在地から、<br class="mobile-break">未来の可能性を探す。</h1>
+      <p>技術成熟度と事業化の実現性を、分けて評価する。</p>
 
-    <section class="stats" aria-label="検索データ概要">
-      <article class="stat-card">
-        <span class="stat-label">論文データ</span>
-        <strong id="totalCount">0</strong>
-        <span class="stat-note">表示対象</span>
-      </article>
-      <article class="stat-card">
-        <span class="stat-label">評価確定</span>
-        <strong id="finalCount">0</strong>
-        <span class="stat-note">FINAL</span>
-      </article>
-      <article class="stat-card">
-        <span class="stat-label">保留</span>
-        <strong id="holdCount">0</strong>
-        <span class="stat-note">HOLD</span>
-      </article>
-      <article class="stat-card">
-        <span class="stat-label">エラー</span>
-        <strong id="errorCount">0</strong>
-        <span class="stat-note">ERROR</span>
-      </article>
-    </section>
-
-    <section class="search-panel">
-      <div class="section-heading">
-        <div>
-          <p class="eyebrow">DISCOVER</p>
-          <h2>論文を検索</h2>
-        </div>
-        <span class="demo-label">サンプル表示</span>
-      </div>
-
-      <label class="search-box">
-        <span aria-hidden="true">⌕</span>
+      <form id="searchForm" class="searchbar">
+        <span class="search-icon" aria-hidden="true">⌕</span>
         <input id="searchInput" type="search"
-          placeholder="論文名・技術・企業・キーワードで検索..."
-          autocomplete="off">
-        <kbd>/</kbd>
-      </label>
+          placeholder="論文名、技術、企業、キーワードで検索"
+          aria-label="論文を検索">
+        <button class="button button-primary" type="submit">検索する</button>
+      </form>
+    </section>
+
+    <section class="stats" aria-label="検索結果の概要">
+      <article class="stat-card">
+        <span class="stat-label">検索対象</span>
+        <strong id="totalCount">0</strong>
+        <span class="stat-foot">件の論文</span>
+      </article>
+      <article class="stat-card stat-green">
+        <span class="stat-label">選定可能</span>
+        <strong id="finalCount">0</strong>
+        <span class="stat-foot">件</span>
+      </article>
+      <article class="stat-card stat-blue">
+        <span class="stat-label">要追加調査</span>
+        <strong id="reviewCount">0</strong>
+        <span class="stat-foot">件</span>
+      </article>
+      <article class="stat-card stat-orange">
+        <span class="stat-label">保留・エラー</span>
+        <strong id="holdCount">0</strong>
+        <span class="stat-foot">件</span>
+      </article>
+    </section>
+
+    <section class="filter-panel" aria-label="検索条件">
+      <div class="filter-heading">
+        <div>
+          <span class="eyebrow">EXPLORE</span>
+          <h2>研究論文</h2>
+        </div>
+        <button id="resetButton" class="button button-quiet" type="button">
+          条件をリセット
+        </button>
+      </div>
 
       <div class="filters">
         <label class="filter-field">
           <span>評価状態</span>
           <select id="statusFilter">
             <option value="all">すべて</option>
-            <option value="final">評価確定</option>
+            <option value="final">選定可能</option>
+            <option value="review">要追加調査</option>
             <option value="hold">保留</option>
             <option value="error">エラー</option>
+            <option value="rejected">除外</option>
           </select>
         </label>
 
         <label class="filter-field">
-          <span>技術成熟度</span>
+          <span>技術成熟度（TRL）</span>
           <select id="trlFilter">
             <option value="all">すべて</option>
-            <option value="low">TRL 1–3</option>
-            <option value="mid">TRL 4–6</option>
-            <option value="high">TRL 7–9</option>
-            <option value="unknown">未確定</option>
+            <option value="known">TRL判定あり</option>
+            <option value="unknown">TRL未確定</option>
+            <option value="early">TRL 1–3</option>
+            <option value="middle">TRL 4–6</option>
+            <option value="late">TRL 7–9</option>
           </select>
         </label>
 
-        <button id="resetButton" class="reset-button" type="button">
-          条件をリセット
-        </button>
+        <label class="filter-field">
+          <span>並び順</span>
+          <select id="sortFilter">
+            <option value="date">新しい順</option>
+            <option value="trl">TRLが高い順</option>
+            <option value="title">タイトル順</option>
+          </select>
+        </label>
       </div>
     </section>
 
-    <section class="results-section">
-      <div class="results-heading">
-        <div>
-          <p class="eyebrow">PAPER LIBRARY</p>
-          <h2>検索結果 <span id="resultCount">0件</span></h2>
+    <div class="results-heading">
+      <div>
+        <h2>検索結果 <span id="resultCount" class="count-pill">0</span></h2>
+        <p>論文を選択すると評価の詳細を確認できます。</p>
+      </div>
+      <span class="demo-label">デモデータ</span>
+    </div>
+
+    <section class="results-layout">
+      <div id="resultsList" class="results-list"
+        aria-label="論文一覧" aria-live="polite"></div>
+
+      <aside id="detailPanel" class="detail-panel"
+        aria-label="選択した論文の詳細">
+        <div class="detail-placeholder">
+          <span class="placeholder-icon">↖</span>
+          <h3>論文を選択してください</h3>
+          <p>一覧から論文を選ぶと、要旨・評価根拠・不足項目をここに表示します。</p>
         </div>
-        <span class="sort-label">更新・関連情報はデータ連携後に対応</span>
-      </div>
-
-      <div id="resultsList" class="results-list" aria-live="polite"></div>
-
-      <div id="emptyState" class="empty-state" hidden>
-        <span class="empty-icon">⌕</span>
-        <h3>該当する論文がありません</h3>
-        <p>検索語や絞り込み条件を変更してみてください。</p>
-      </div>
+      </aside>
     </section>
+
+    <p id="emptyState" class="empty-state" hidden>
+      条件に一致する論文がありません。検索語やフィルターを変更してください。
+    </p>
 
     <footer class="footer">
-      <span>TRL Research Explorer</span>
-      <span>Personal research workspace · Preview</span>
+      <span>TRL Explorer</span>
+      <span>技術成熟度と事業化評価は独立した評価軸です。</span>
     </footer>
   </main>
 </body>

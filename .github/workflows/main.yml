@@ -20,7 +20,7 @@ on:
       retry_failed:
         description: "Retry previously failed evaluations?"
         type: choice
-        options: ["no", "yes"]
+        options: ["no", "yes", "force"]
         default: "no"
   schedule:
     - cron: "17 21 * * 1"   # Mondays 21:17 UTC (Tuesday 06:17 JST)

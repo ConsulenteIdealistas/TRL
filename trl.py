@@ -596,9 +596,8 @@ def _contains(alias, text):
 
     return alias in text
 
-
 def link_entities(rec, data):
-    """論文と企業を照合する。所属機関一致はstrong、それ以外はweak。"""
+    """論文と企業・製品を照合する。所属機関一致はstrong、本文一致はweak。"""
     if not isinstance(data, dict):
         return []
 
@@ -616,6 +615,7 @@ def link_entities(rec, data):
     ]
 
     results = []
+
     for entity in data.get("entities", []):
         names = [entity.get("name", "")] + entity.get("aliases", [])
         match = None
@@ -629,6 +629,7 @@ def link_entities(rec, data):
                             "alias": alias,
                             "field": field,
                             "strength": "strong" if field == "affiliation" else "weak",
+                            "link_type": "entity",
                         }
                         break
                 if match:
@@ -639,8 +640,31 @@ def link_entities(rec, data):
         if match:
             results.append(match)
 
-    return results
+        for product in entity.get("products", []):
+            product_names = [product.get("name", "")] + product.get("aliases", [])
 
+            for field, values in fields:
+                matched = False
+                for value in values:
+                    for alias in product_names:
+                        if alias and _contains(alias, value):
+                            results.append({
+                                "entity_id": entity["id"],
+                                "alias": alias,
+                                "field": field,
+                                "strength": "weak",
+                                "link_type": "product",
+                                "product_id": product["id"],
+                                "product_name": product["name"],
+                            })
+                            matched = True
+                            break
+                    if matched:
+                        break
+                if matched:
+                    break
+
+    return results
 
 def entity_screen(candidate, mode):
     """企業リンクの有無を判定する。通過時はNone、除外時は理由を返す。"""

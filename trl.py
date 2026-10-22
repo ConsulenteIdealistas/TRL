@@ -1349,7 +1349,6 @@ def run_pipeline(store, cfg, llm, *, as_of, sources=("pubmed", "arxiv"), kinds=(
             res = evaluate_one(c, kind, cfg, llm, as_of, extraction, meta, prompt_dir)
             eval_seconds = time.monotonic() - eval_t0
             log(f"[eval:time] {c['id']} {kind}: {eval_seconds:.1f}s")
-            eval_seconds = time.monotonic() - eval_t0
             extraction, meta = res["extraction"], res["prompt_versions"].get("extract")
             store.add_evaluation(run_id, c["id"], res)
             counts[res["status"]] += 1

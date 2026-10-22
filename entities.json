@@ -1,4 +1,5 @@
 
+
 {
   "entities": [
     {
@@ -10,7 +11,36 @@
         "アストロスケールホールディングス"
       ],
       "ticker": "186A",
-      "exchange": "TSE"
+      "exchange": "TSE",
+      "products": [
+        {
+          "id": "adras_j",
+          "name": "ADRAS-J",
+          "aliases": [
+            "ADRAS-J",
+            "ADRAS J"
+          ],
+          "type": "space_mission"
+        },
+        {
+          "id": "elsa_d",
+          "name": "ELSA-d",
+          "aliases": [
+            "ELSA-d",
+            "ELSA D"
+          ],
+          "type": "debris_removal_demonstration"
+        },
+        {
+          "id": "elsa_m",
+          "name": "ELSA-M",
+          "aliases": [
+            "ELSA-M",
+            "ELSA M"
+          ],
+          "type": "debris_removal_service"
+        }
+      ]
     },
     {
       "id": "ispace",
@@ -21,7 +51,36 @@
         "アイスペース"
       ],
       "ticker": "9348",
-      "exchange": "TSE"
+      "exchange": "TSE",
+      "products": [
+        {
+          "id": "hakuto_r",
+          "name": "HAKUTO-R",
+          "aliases": [
+            "HAKUTO-R",
+            "HAKUTO R"
+          ],
+          "type": "lunar_exploration_program"
+        },
+        {
+          "id": "resilience",
+          "name": "RESILIENCE lunar lander",
+          "aliases": [
+            "RESILIENCE lander",
+            "RESILIENCE lunar lander"
+          ],
+          "type": "lunar_lander"
+        },
+        {
+          "id": "tenacious",
+          "name": "TENACIOUS rover",
+          "aliases": [
+            "TENACIOUS rover",
+            "TENACIOUS lunar rover"
+          ],
+          "type": "lunar_rover"
+        }
+      ]
     },
     {
       "id": "synspective",
@@ -32,18 +91,58 @@
         "シンスペクティブ"
       ],
       "ticker": "290A",
-      "exchange": "TSE"
+      "exchange": "TSE",
+      "products": [
+        {
+          "id": "strix",
+          "name": "StriX",
+          "aliases": [
+            "StriX satellite",
+            "StriX SAR satellite",
+            "ストリクス"
+          ],
+          "type": "sar_satellite"
+        },
+        {
+          "id": "sar_data",
+          "name": "SAR data and analytics",
+          "aliases": [
+            "SAR data",
+            "SAR satellite data"
+          ],
+          "type": "data_service"
+        }
+      ]
     },
     {
       "id": "oncolys",
       "name": "Oncolys BioPharma Inc.",
       "aliases": [
         "オンコリスバイオファーマ",
-        "オンコリス",
-        "テロメライシン"
+        "オンコリス"
       ],
       "ticker": "4588",
-      "exchange": "TSE"
+      "exchange": "TSE",
+      "products": [
+        {
+          "id": "telomelysin",
+          "name": "Telomelysin",
+          "aliases": [
+            "テロメライシン",
+            "OBP-301",
+            "OBP301"
+          ],
+          "type": "drug_candidate"
+        },
+        {
+          "id": "obp_702",
+          "name": "OBP-702",
+          "aliases": [
+            "OBP702"
+          ],
+          "type": "drug_candidate"
+        }
+      ]
     },
     {
       "id": "reprocell",
@@ -54,7 +153,44 @@
         "株式会社リプロセル"
       ],
       "ticker": "4978",
-      "exchange": "TSE"
+      "exchange": "TSE",
+      "products": [
+        {
+          "id": "stemchymal",
+          "name": "Stemchymal",
+          "aliases": [
+            "Stemchymal",
+            "ステムカイマル"
+          ],
+          "type": "cell_therapy_candidate"
+        },
+        {
+          "id": "igrp",
+          "name": "iPS-derived neural glial progenitor cells",
+          "aliases": [
+            "iGRP"
+          ],
+          "type": "cell_therapy_candidate"
+        },
+        {
+          "id": "til_therapy",
+          "name": "TIL therapy",
+          "aliases": [
+            "TIL療法",
+            "tumor-infiltrating lymphocyte therapy"
+          ],
+          "type": "cell_therapy"
+        },
+        {
+          "id": "gpc1_cart",
+          "name": "Glypican-1 CAR-T therapy",
+          "aliases": [
+            "GPC1 CAR-T",
+            "Glypican-1 CAR-T"
+          ],
+          "type": "cell_therapy"
+        }
+      ]
     },
     {
       "id": "heartseed",
@@ -63,6 +199,16 @@
         "Heartseed",
         "ハートシード",
         "ハートシード株式会社"
+      ],
+      "products": [
+        {
+          "id": "hs_001",
+          "name": "HS-001",
+          "aliases": [
+            "HS001"
+          ],
+          "type": "cell_therapy_candidate"
+        }
       ]
     },
     {
@@ -74,7 +220,41 @@
         "ペプチドリーム株式会社"
       ],
       "ticker": "4587",
-      "exchange": "TSE"
+      "exchange": "TSE",
+      "products": [
+        {
+          "id": "pdps",
+          "name": "Peptide Discovery Platform System",
+          "aliases": [
+            "PDPS"
+          ],
+          "type": "drug_discovery_platform"
+        },
+        {
+          "id": "pd_32766",
+          "name": "PD-32766",
+          "aliases": [
+            "PD32766"
+          ],
+          "type": "radiopharmaceutical_candidate"
+        },
+        {
+          "id": "pd_29875",
+          "name": "PD-29875",
+          "aliases": [
+            "PD29875"
+          ],
+          "type": "radiopharmaceutical_candidate"
+        },
+        {
+          "id": "mod_b",
+          "name": "MOD-B",
+          "aliases": [
+            "MOD B"
+          ],
+          "type": "drug_candidate"
+        }
+      ]
     }
   ]
 }

@@ -689,6 +689,25 @@ CREATE TABLE IF NOT EXISTS runs(
 CREATE TABLE IF NOT EXISTS run_sources(
   run_id TEXT, source TEXT, query TEXT, fetched INTEGER, new INTEGER, duplicates INTEGER,
   invalid INTEGER, ok INTEGER, error TEXT, seconds REAL);
+CREATE TABLE IF NOT EXISTS candidate_entities (
+    candidate_id TEXT NOT NULL,
+    entity_id TEXT NOT NULL,
+    strength TEXT NOT NULL,
+    matched_by TEXT NOT NULL,
+    matched_alias TEXT NOT NULL,
+    link_type TEXT NOT NULL DEFAULT 'entity',
+    product_id TEXT,
+    product_name TEXT,
+    PRIMARY KEY (
+        candidate_id,
+        entity_id,
+        link_type,
+        product_id,
+        matched_by,
+        matched_alias
+    ),
+    FOREIGN KEY (candidate_id) REFERENCES candidates(id)
+);
 """
 
 

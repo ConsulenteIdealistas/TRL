@@ -769,7 +769,7 @@ class Store:
         d = dict(row)
         d["fields"] = json.loads(d.pop("fields_json") or "[]")
         return d
-            def set_entities(self, cid, links):
+    def set_entities(self, cid, links):
         """企業リンクを保存する。既存リンクは削除しない。"""
         c = self.conn
         for link in links:

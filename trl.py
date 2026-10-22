@@ -1284,16 +1284,29 @@ def collect(store, cfg, run_id, as_of, sources, fetchers, counts, log):
                 + (f" ERROR={err}" if err else ""))
 
 
+
 def select_for_eval(store, cfg, today, limit, retry_failed=False):
     sc = cfg["scoring"]["screening"]
     rows = []
 
+    # 既存の bool 呼び出しとの互換性を維持しつつ、
+    # "no" / "yes" / "force" も受け付ける。
+    force_retry = retry_failed == "force"
+    retry_enabled = (
+        retry_failed is True
+        or retry_failed == "yes"
+        or force_retry
+    )
+
     statuses = ["screened", "hold", "error"]
     for c in store.list_by_status(statuses):
         if c["status"] == "error":
-            if not retry_failed:
+            if not retry_enabled:
                 continue
-            if c["retry_count"] >= sc["max_retries"]:
+            if (
+                c["retry_count"] >= sc["max_retries"]
+                and not force_retry
+            ):
                 continue
 
         if c["status"] == "hold":
@@ -1305,7 +1318,6 @@ def select_for_eval(store, cfg, today, limit, retry_failed=False):
 
     rows.sort(key=lambda c: c["published"] or "", reverse=True)
     return rows[:limit]
-
 
 def _queue_reason(res):
     if res["status"] == "error":

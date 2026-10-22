@@ -302,6 +302,9 @@ def normalize(raw, retrieved_at):
         "published": published,
         "retrieved_at": retrieved_at,
         "fields": [clean_text(f) for f in raw.get("fields", []) if clean_text(f)],
+        "affiliations": list(dict.fromkeys(
+            clean_text(a) for a in raw.get("affiliations", []) if clean_text(a)
+        )),
         "info_type": raw.get("info_type", "paper"),
     }
     return rec, problems

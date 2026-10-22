@@ -796,26 +796,54 @@ class Store:
         return d
         
     def set_entities(self, cid, links):
-        """企業リンクを保存する。既存リンクは削除しない。"""
+        """企業・製品リンクを保存し、既存の強いリンクを維持する。"""
         c = self.conn
+
         for link in links:
+            entity_id = link["entity_id"]
+            strength = link["strength"]
+            matched_by = link.get("matched_by", link.get("field", ""))
+            matched_alias = link.get("matched_alias", link.get("alias", ""))
+            link_type = link.get("link_type", "entity")
+            product_id = link.get("product_id") or ""
+            product_name = link.get("product_name") or ""
+
+            existing = c.execute(
+                "SELECT strength FROM candidate_entities "
+                "WHERE candidate_id=? AND entity_id=? AND link_type=? "
+                "AND product_id=? AND matched_by=? AND matched_alias=?",
+                (
+                    cid, entity_id, link_type, product_id,
+                    matched_by, matched_alias,
+                ),
+            ).fetchone()
+
+            if existing:
+                if existing["strength"] != "strong" and strength == "strong":
+                    c.execute(
+                        "UPDATE candidate_entities SET strength=? "
+                        "WHERE candidate_id=? AND entity_id=? AND link_type=? "
+                        "AND product_id=? AND matched_by=? AND matched_alias=?",
+                        (
+                            "strong", cid, entity_id, link_type,
+                            product_id, matched_by, matched_alias,
+                        ),
+                    )
+                continue
+
             c.execute(
-                "INSERT OR IGNORE INTO candidate_entities "
+                "INSERT INTO candidate_entities "
                 "(candidate_id, entity_id, strength, matched_by, matched_alias, "
                 "link_type, product_id, product_name) "
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
                 (
-                    cid,
-                    link["entity_id"],
-                    link["strength"],
-                    link.get("matched_by", link.get("field", "")),
-                    link.get("matched_alias", link.get("alias", "")),
-                    link.get("link_type", "entity"),
-                    link.get("product_id") or "",
-                    link.get("product_name") or "",
+                    cid, entity_id, strength, matched_by, matched_alias,
+                    link_type, product_id, product_name,
                 ),
             )
+
         c.commit()
+
 
     def get_entities(self, cid):
         """候補論文に紐づく企業・製品リンクを取得する。"""

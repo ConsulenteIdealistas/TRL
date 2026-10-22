@@ -1588,7 +1588,7 @@ def main(argv=None):
     sources=sources,
     kinds=kinds,
     max_eval=a.max_eval,
-    retry_failed=(a.retry_failed == "yes"),
+    retry_failed=a.retry_failed,
     do_collect=not a.skip_collect,
 )
     text = build_report(store, res["run_id"])

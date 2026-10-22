@@ -768,6 +768,7 @@ class Store:
             return None
         d = dict(row)
         d["fields"] = json.loads(d.pop("fields_json") or "[]")
+        d["entities"] = self.get_entities(cid)
         return d
         
     def set_entities(self, cid, links):

@@ -1289,8 +1289,6 @@ def select_for_eval(store, cfg, today, limit, retry_failed="no"):
     sc = cfg["scoring"]["screening"]
     rows = []
 
-    # 既存の bool 呼び出しとの互換性を維持しつつ、
-    # "no" / "yes" / "force" も受け付ける。
     force_retry = retry_failed == "force"
     retry_enabled = (
         retry_failed is True
@@ -1299,26 +1297,19 @@ def select_for_eval(store, cfg, today, limit, retry_failed="no"):
     )
 
     statuses = ["screened", "hold", "error"]
+
     for c in store.list_by_status(statuses):
-        print(
-            f"[select:debug] id={c['id']} "
-            f"status={c['status']} "
-            f"last_eval_at={c['last_eval_at']} "
-            f"today={today} "
-            f"retry_count={c['retry_count']} "
-            f"retry_failed={retry_failed!r}"
-        )
-
-        if c["status"] == "error":
-            if retry_failed == "no":
-                continue
-            if retry_failed != "force" and c["retry_count"] >= sc["max_retries"]:
-                continue
-
+        # エラー候補は、再試行が明示的に許可された場合だけ選ぶ
         if c["status"] == "error":
             if not retry_enabled:
                 continue
             if not force_retry and c["retry_count"] >= sc["max_retries"]:
+                continue
+
+        # 保留候補は、再評価間隔が経過するまで選ばない
+        if c["status"] == "hold":
+            last = parse_date((c["last_eval_at"] or "")[:10])
+            if last and (today - last).days < sc["reeval_after_days"]:
                 continue
 
         rows.append(c)

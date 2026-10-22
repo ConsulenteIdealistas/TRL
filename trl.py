@@ -426,6 +426,7 @@ def parse_feed(xml_bytes):
             "url": f"https://arxiv.org/abs/{aid}",
             "published": (e.findtext("a:published", default="", namespaces=NS) or "")[:10] or None,
             "fields": [c.get("term") for c in e.findall("a:category", NS) if c.get("term")],
+            "affiliations": [],
             "info_type": "paper",
         })
     return out

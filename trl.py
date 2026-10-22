@@ -696,8 +696,8 @@ CREATE TABLE IF NOT EXISTS candidate_entities (
     matched_by TEXT NOT NULL,
     matched_alias TEXT NOT NULL,
     link_type TEXT NOT NULL DEFAULT 'entity',
-    product_id TEXT,
-    product_name TEXT,
+    product_id TEXT NOT NULL DEFAULT '',
+    product_name TEXT NOT NULL DEFAULT '',
     PRIMARY KEY (
         candidate_id,
         entity_id,

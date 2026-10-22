@@ -1467,16 +1467,31 @@ def build_report(store, run_id):
             L.append(f"  論文・原資料: {e['url']}")
             L.extend(format_research_links(e["title"]))
 
+    
     q = store.list_queue(open_only=True)
-    L += ["", f"## レビューキュー({len(q)}件)"]
+    errors = [r for r in q if str(r["reason"]).startswith("evaluation_error:")]
+    holds = [r for r in q if not str(r["reason"]).startswith("evaluation_error:")]
 
-    for r in q:
-        L.append(f"- [{r['kind']}] {r['title']}")
-        L.append(f"  理由: {r['reason']}")
-        L.append(f"  確認先: {', '.join(r['next_sources'] or ['未指定'])}")
-        L.append(f"  再評価条件: {', '.join(r['reeval_conditions'] or [])}")
-        L.append("  関連情報の検索:")
-        L.extend(format_research_links(r["title"]))
+    L += ["", f"## レビューキュー（未解消 {len(q)}件）",
+          f"- 情報不足・保留: {len(holds)}件",
+          f"- 評価エラー: {len(errors)}件"]
+
+    for section, rows in (("情報不足・保留", holds), ("評価エラー", errors)):
+        L += ["", f"### {section}（{len(rows)}件）"]
+        if not rows:
+            L.append("- 該当なし")
+            continue
+
+        for r in rows:
+            L.append(f"- [{r['kind']}] {r['title']}")
+            L.append(f"  理由: {r['reason']}")
+            if section == "情報不足・保留":
+                L.append(f"  確認先: {', '.join(r['next_sources'] or ['未指定'])}")
+                L.append(f"  再評価条件: {', '.join(r['reeval_conditions'] or [])}")
+            else:
+                L.append(f"  最終評価日時: {r['last_eval_at'] or '不明'}")
+            L.append("  関連情報の検索:")
+            L.extend(format_research_links(r["title"]))
     L += [
         "",
         "## 制約",

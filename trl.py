@@ -1215,7 +1215,9 @@ def collect(store, cfg, run_id, as_of, sources, fetchers, counts, log):
                     if rec is None:
                         invalid += 1
                         continue
-                    _, is_new = store.upsert_candidate(rec, run_id)
+                    cid, is_new = store.upsert_candidate(rec, run_id)
+                    entity_links = link_entities(rec, cfg.get("entities", {}))
+                    store.set_entities(cid, entity_links)
                     new += is_new
                     dups += (not is_new)
             except Exception as e:

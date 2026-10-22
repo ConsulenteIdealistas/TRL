@@ -769,6 +769,50 @@ class Store:
         d = dict(row)
         d["fields"] = json.loads(d.pop("fields_json") or "[]")
         return d
+            def set_entities(self, cid, links):
+        """企業リンクを保存する。既存リンクは削除しない。"""
+        c = self.conn
+        for link in links:
+            c.execute(
+                "INSERT OR IGNORE INTO candidate_entities "
+                "(candidate_id, entity_id, strength, matched_by, matched_alias, "
+                "link_type, product_id, product_name) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                (
+                    cid,
+                    link["entity_id"],
+                    link["strength"],
+                    link.get("matched_by", link.get("field", "")),
+                    link.get("matched_alias", link.get("alias", "")),
+                    link.get("link_type", "entity"),
+                    link.get("product_id") or "",
+                    link.get("product_name") or "",
+                ),
+            )
+        c.commit()
+
+    def get_entities(self, cid):
+        """候補論文に紐づく企業・製品リンクを取得する。"""
+        rows = self.conn.execute(
+            "SELECT entity_id, strength, matched_by, matched_alias, "
+            "link_type, product_id, product_name "
+            "FROM candidate_entities WHERE candidate_id=? "
+            "ORDER BY entity_id, link_type, matched_by",
+            (cid,),
+        ).fetchall()
+
+        return [
+            {
+                "entity_id": row["entity_id"],
+                "strength": row["strength"],
+                "matched_by": row["matched_by"],
+                "matched_alias": row["matched_alias"],
+                "link_type": row["link_type"],
+                "product_id": row["product_id"],
+                "product_name": row["product_name"],
+            }
+            for row in rows
+        ]
 
     def list_by_status(self, statuses):
         q = ",".join("?" * len(statuses))

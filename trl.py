@@ -1306,9 +1306,10 @@ def select_for_eval(store, cfg, today, limit, retry_failed="no"):
             if retry_failed != "force" and c["retry_count"] >= sc["max_retries"]:
                 continue
 
-        if c["status"] == "hold":
-            last = parse_date((c["last_eval_at"] or "")[:10])
-            if last and (today - last).days < sc["reeval_after_days"]:
+        if c["status"] == "error":
+            if not retry_enabled:
+                continue
+            if not force_retry and c["retry_count"] >= sc["max_retries"]:
                 continue
 
         rows.append(c)

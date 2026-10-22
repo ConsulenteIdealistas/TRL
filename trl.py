@@ -1285,7 +1285,7 @@ def collect(store, cfg, run_id, as_of, sources, fetchers, counts, log):
 
 
 
-def select_for_eval(store, cfg, today, limit, retry_failed=False):
+def select_for_eval(store, cfg, today, limit, retry_failed="no"):
     sc = cfg["scoring"]["screening"]
     rows = []
 

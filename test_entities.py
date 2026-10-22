@@ -90,14 +90,38 @@ class EntityTests(unittest.TestCase):
             )
         )
 
+    
     def test_store_roundtrip_and_upgrade_only(self):
         st = trl.Store(":memory:")
-        mk = lambda s, f: [{"entity_id": "e", "alias": "x", "field": f, "strength": s}]
+        mk = lambda s, f: [
+            {
+                "entity_id": "e",
+                "alias": "x",
+                "field": f,
+                "strength": s,
+            }
+        ]
+
         st.set_entities("c1", mk("weak", "abstract"))
         st.set_entities("c1", mk("strong", "affiliation"))
-        st.set_entities("c1", mk("weak", "abstract"))
-        self.assertEqual(st.get_entities("c1")[0]["strength"], "strong")
+        st.set_entities("c1", mk("weak", "affiliation"))
 
+        links = st.get_entities("c1")
+
+        self.assertTrue(
+            any(
+                x["strength"] == "strong"
+                and x["matched_by"] == "affiliation"
+                for x in links
+            )
+        )
+        self.assertFalse(
+            any(
+                x["strength"] == "weak"
+                and x["matched_by"] == "affiliation"
+                for x in links
+            )
+        )
 
 if __name__ == "__main__":
     unittest.main()

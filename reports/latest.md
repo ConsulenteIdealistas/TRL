@@ -1,13 +1,12 @@
-# TRL 実行レポート 20261026T164529Z-98f35c
+# TRL 実行レポート 20261026T215921Z-ee9c86
 
 ※ スコアは評価尺度であり、株価上昇確率・成功確率・投資利益率ではありません。売買の自動判定にも使えません。
 
-- 基準日: 2026-10-26 / 設定: 2026.10.0 (92be5f4318a4c9e6)
-- 状態: ok / 所要: 701.45秒
-- 取得 140 / 新規 1 / 重複 107 / 不正 32
-- スクリーニング通過 1 / 除外 0 / 評価対象 5
-- 評価: 確定 0 / 保留 4 / エラー 0 / LLM未設定でスキップ 0
-- ⚠ LLM API失敗 0件(評価結果として保存せず未評価のまま残しています) / 打ち切り理由: phase_budget_exceeded
+- 基準日: 2026-10-26 / 設定: 2026.10.0 (fb72aa4a61fc8da2)
+- 状態: ok / 所要: 122.12秒
+- 取得 140 / 新規 4 / 重複 106 / 不正 30
+- スクリーニング通過 4 / 除外 0 / 評価対象 3
+- 評価: 確定 0 / 保留 3 / エラー 0 / LLM未設定でスキップ 0
 
 ## 情報源ごとの状況
 - [OK] arxiv / solid-state-battery: 取得6 新規0 重複6 不正0
@@ -15,9 +14,9 @@
 - [OK] pubmed / gene-therapy: 取得4 新規0 重複4 不正0
 - [OK] gnews / astroscale-news: 取得20 新規0 重複6 不正14
 - [OK] gnews / ispace-news: 取得20 新規0 重複20 不正0
-- [OK] gnews / synspective-news: 取得20 新規0 重複11 不正9
+- [OK] gnews / synspective-news: 取得20 新規1 重複12 不正7
 - [OK] gnews / oncolys-news: 取得0 新規0 重複0 不正0
-- [OK] gnews / reprocell-news: 取得20 新規1 重複16 不正3
+- [OK] gnews / reprocell-news: 取得20 新規3 重複14 不正3
 - [OK] gnews / heartseed-news: 取得6 新規0 重複4 不正2
 - [OK] gnews / peptidream-news: 取得5 新規0 重複1 不正4
 - [OK] trials / oncolys-trials: 取得1 新規0 重複1 不正0
@@ -38,11 +37,38 @@
 ## イベント評価(確定)
 - 該当なし
 
-## レビューキュー（未解消 23件）
-- 情報不足・保留: 23件
+## レビューキュー（未解消 26件）
+- 情報不足・保留: 26件
 - 評価エラー: 0件
 
-### 情報不足・保留（23件）
+### 情報不足・保留（26件）
+- [long] Demonstration of Logical Error Suppression in a Surface Code Memory on a Cloud-Accessible IBM Superconducting Processor
+  理由: missing_items: monetization,market_growth,financial_sustainability (critical: monetization)
+  確認先: IBMの公式プレスリリースおよび決算報告書, 量子コンピューティング分野の市場調査レポート, Nighthawk r2プロセッサの商用展開に関する技術仕様書
+  再評価条件: 商用量子コンピュータにおける誤り訂正プロセスの収益化および顧客導入の発表があった場合, 長寿命エラー成分の克服やさらなる高スケール化に関する技術的進展が論文等で発表された場合
+  関連情報の検索:
+  - [IR・決算資料 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=%22Demonstration+of+Logical+Error+Suppression+in+a+Surface+Code+Memory+on+a+Cloud-Accessible+IBM+Superconducting+Processor%22+IR)
+  - [特許 [論文タイトル等（企業名未特定）]](https://patents.google.com/?q=Demonstration+of+Logical+Error+Suppression+in+a+Surface+Code+Memory+on+a+Cloud-Accessible+IBM+Superconducting+Processor)
+  - [臨床試験登録 [論文タイトル等（企業名未特定）]](https://clinicaltrials.gov/search?term=Demonstration+of+Logical+Error+Suppression+in+a+Surface+Code+Memory+on+a+Cloud-Accessible+IBM+Superconducting+Processor)
+  - [企業・技術情報 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=Demonstration+of+Logical+Error+Suppression+in+a+Surface+Code+Memory+on+a+Cloud-Accessible+IBM+Superconducting+Processor)
+- [long] Encodings and Node Architecture: Lessons from the Fault-Tolerant Distributed Transversal Fanout
+  理由: missing_items: technology_readiness,technological_advantage,monetization,market_growth,financial_sustainability,moat_durability (critical: technology_readiness,monetization)
+  確認先: 量子コンピューティング分野における分散型アーキテクチャの実用化ロードマップ, 当該技術に関連する特許情報および研究機関・企業の商業化発表
+  再評価条件: 対象企業が明確に特定され、商業化や実証実験の進捗に関するプレスリリースが発表された場合, 市場規模や財務データを含む開示資料が新たに入手できた場合
+  関連情報の検索:
+  - [IR・決算資料 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=%22Encodings+and+Node+Architecture%3A+Lessons+from+the+Fault-Tolerant+Distributed+Transversal+Fanout%22+IR)
+  - [特許 [論文タイトル等（企業名未特定）]](https://patents.google.com/?q=Encodings+and+Node+Architecture%3A+Lessons+from+the+Fault-Tolerant+Distributed+Transversal+Fanout)
+  - [臨床試験登録 [論文タイトル等（企業名未特定）]](https://clinicaltrials.gov/search?term=Encodings+and+Node+Architecture%3A+Lessons+from+the+Fault-Tolerant+Distributed+Transversal+Fanout)
+  - [企業・技術情報 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=Encodings+and+Node+Architecture%3A+Lessons+from+the+Fault-Tolerant+Distributed+Transversal+Fanout)
+- [long] Area Theorems for Quantum Error Correction
+  理由: missing_items: technology_readiness,monetization,market_growth,financial_sustainability,moat_durability (critical: technology_readiness,monetization)
+  確認先: 本理論成果に基づいた実用コードの実装または数値シミュレーション結果を報告する追試論文, 量子誤り訂正技術の商用化を目指す量子ハードウェア関連企業のプレスリリースおよび事業ロードマップ, 量子コンピューティング分野における技術動向および市場成長性に関する業界分析レポート
+  再評価条件: 本技術を実施主体とする特定の対象企業（strong）が特定された場合, 物理量子デバイスまたはシミュレータによる具体的な実証データが公開された場合, 本技術に関連する特許出願、提携、受注、資金調達等の事業化ニュースが確認された場合
+  関連情報の検索:
+  - [IR・決算資料 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=%22Area+Theorems+for+Quantum+Error+Correction%22+IR)
+  - [特許 [論文タイトル等（企業名未特定）]](https://patents.google.com/?q=Area+Theorems+for+Quantum+Error+Correction)
+  - [臨床試験登録 [論文タイトル等（企業名未特定）]](https://clinicaltrials.gov/search?term=Area+Theorems+for+Quantum+Error+Correction)
+  - [企業・技術情報 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=Area+Theorems+for+Quantum+Error+Correction)
 - [long] Quantum error correction well below the color code threshold
   理由: missing_items: monetization,market_growth,financial_sustainability (critical: monetization)
   確認先: Quantinuumの企業プレスリリースおよび財務発表, フォールトトレラント量子コンピュータの商用化ロードマップに関する第三者調査レポート

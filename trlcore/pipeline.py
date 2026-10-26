@@ -35,7 +35,7 @@ def screen(cand, as_of, cfg):
         return "stale"
     if len(cand["abstract"] or "") < sc["min_abstract_chars"]:
         return "abstract_too_short"
-            reason = entity_screen(cand, sc.get("require_entity", "off"))
+    reason = entity_screen(cand, sc.get("require_entity", "off"))
     if reason:
         return reason
     return None
@@ -157,7 +157,7 @@ def run_pipeline(store, cfg, llm, *, as_of, sources=("pubmed", "arxiv"), kinds=(
             degraded = "phase_budget_exceeded"
             log(f"::warning::[eval] 評価フェーズの時間予算({st['phase_budget_sec']}秒)を超えたため打ち切ります")
             break
-        extraction, meta, outcomes = None, None, [], False
+        extraction, meta, outcomes = None, None, [],
         ihash = input_hash(c, as_of)
         for kind in kinds:
             cached = False

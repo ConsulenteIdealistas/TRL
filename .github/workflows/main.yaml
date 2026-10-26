@@ -6,8 +6,8 @@ on:
       sources:
         description: "Sources"
         type: choice
-        options: ["pubmed,arxiv", "pubmed", "arxiv"]
-        default: "pubmed,arxiv"
+        options: ["pubmed,arxiv,gnews,trials,edinet", "pubmed,arxiv", "pubmed", "arxiv"]
+        default: "pubmed,arxiv,gnews,trials,edinet"
       kinds:
         description: "Evaluation kinds"
         type: choice

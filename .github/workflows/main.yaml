@@ -16,7 +16,7 @@ on:
       max_eval:
         description: "Max candidates to evaluate per run"
         type: string
-        default: "10"
+        default: "5"
       retry_failed:
         description: "Retry previously failed evaluations?"
         type: choice
@@ -73,7 +73,7 @@ jobs:
           # 入力はシェルに直接展開せず環境変数経由で渡す(スクリプトインジェクション対策)
           IN_SOURCES: ${{ inputs.sources || 'pubmed,arxiv,gnews,prtimes,trials' }}
           IN_KINDS: ${{ inputs.kinds || 'long' }}
-          IN_MAX_EVAL: ${{ inputs.max_eval || '10' }}
+          IN_MAX_EVAL: ${{ inputs.max_eval || '5' }}
           IN_RETRY: ${{ inputs.retry_failed || 'no' }}
         run: |
           python trl.py run --data-dir _data \

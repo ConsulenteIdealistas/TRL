@@ -1514,6 +1514,78 @@ def build_report(store, run_id):
         "- 市場予想が確認できない場合、イベント評価は保留になります。"
     ]
     return "\n".join(L) + "\n"
+    
+    
+def build_html_report(markdown_text):
+    """既存Markdownレポートをスマホ向けHTMLに変換する。外部ライブラリ不要。"""
+    lines = markdown_text.splitlines()
+    body = []
+    in_list = False
+
+    def inline(text):
+        text = html.escape(text, quote=True)
+        text = re.sub(
+            r"\[([^\]]+)\]\((https?://[^)\s]+)\)",
+            r'<a href="\2" target="_blank" rel="noopener noreferrer">\1</a>',
+            text,
+        )
+        text = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", text)
+        return text
+
+    for line in lines:
+        if line.startswith("- "):
+            if not in_list:
+                body.append("<ul>")
+                in_list = True
+            body.append(f"<li>{inline(line[2:])}</li>")
+            continue
+
+        if in_list:
+            body.append("</ul>")
+            in_list = False
+
+        if not line.strip():
+            continue
+        if line.startswith("### "):
+            body.append(f"<h3>{inline(line[4:])}</h3>")
+        elif line.startswith("## "):
+            body.append(f"<h2>{inline(line[3:])}</h2>")
+        elif line.startswith("# "):
+            body.append(f"<h1>{inline(line[2:])}</h1>")
+        else:
+            body.append(f"<p>{inline(line)}</p>")
+
+    if in_list:
+        body.append("</ul>")
+
+    content = "\n".join(body)
+    return f"""<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>TRL 実行レポート</title>
+<style>
+:root {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+sans-serif; line-height: 1.65; }}
+body {{ max-width: 900px; margin: 0 auto; padding: 16px;
+overflow-wrap: anywhere; }}
+h1 {{ font-size: 1.5rem; line-height: 1.35; }}
+h2 {{ margin-top: 1.8em; padding-bottom: .3em;
+border-bottom: 1px solid #8886; font-size: 1.2rem; }}
+h3 {{ margin-top: 1.4em; font-size: 1.05rem; }}
+li {{ margin: .45em 0; }}
+a {{ overflow-wrap: anywhere; }}
+p {{ margin: .65em 0; }}
+</style>
+</head>
+<body>
+{content}
+</body>
+</html>
+"""
+
 
 
 # ==================== cli ====================

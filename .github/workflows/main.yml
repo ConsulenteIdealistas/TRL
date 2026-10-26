@@ -73,15 +73,35 @@ jobs:
             --kinds "${{ inputs.kinds || 'long' }}" \
             --max-eval "${{ inputs.max_eval || '10' }}" \
             --retry-failed "${{ inputs.retry_failed || 'no' }}"
-      - name: Persist data (single commit to data branch)
+      - name: Persist data (preserve history)
         if: always()
         run: |
+          if [ ! -d _data ]; then
+            echo "No data directory to persist"
+            exit 0
+          fi
+
           cd _data
-          [ -n "$(ls -A .)" ] || exit 0
-          git init -q -b data
+
+          if [ -z "$(ls -A .)" ]; then
+            echo "No data to persist"
+            exit 0
+          fi
+
+          if [ ! -d .git ]; then
+            git init -q -b data
+            git remote add origin "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          fi
+
           git config user.name github-actions
           git config user.email actions@users.noreply.github.com
+
           git add -A
+
+          if git diff --cached --quiet; then
+            echo "No data changes to commit"
+            exit 0
+          fi
+
           git commit -q -m "data $(date -u +%FT%TZ)"
-          git remote add origin "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
-          git push -q --force origin data
+          git push -q origin data

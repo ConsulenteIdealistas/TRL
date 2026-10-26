@@ -26,7 +26,8 @@ jobs:
       - name: Lint (undefined names)
         run: |
           pip install pyflakes
-          python -m pyflakes trlcore
+          python -m pyflakes trlcore | tee /tmp/flakes.txt || true
+          ! grep -E "undefined name|unable to detect" /tmp/flakes.txt
 
       - name: Tests (after)
         run: python -m unittest test_trl test_entities test_site -v

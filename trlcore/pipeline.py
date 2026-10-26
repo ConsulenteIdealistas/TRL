@@ -100,6 +100,19 @@ def collect(store, cfg, run_id, as_of, sources, fetchers, counts, log):
             + (f" ERROR={err}" if err else ""))
 
 
+# 実証・実装の段階を示す語。理論のみの資料には少なく、TRLを決めやすい候補の目印になる
+DEMO_SIGNAL_TERMS = ("demonstrat", "prototype", "proof-of-concept", "proof of concept",
+                     "experimental", "in vivo", "first-in-human", "実証", "試作", "臨床")
+
+
+def has_demo_signal(c):
+    """候補が実証・実装段階の材料を含むか。治験は定義上、検証段階の資料として扱う。"""
+    if c.get("info_type") == "trial":
+        return True
+    text = f"{c.get('title') or ''} {c.get('abstract') or ''}".lower()
+    return any(t in text for t in DEMO_SIGNAL_TERMS)
+
+
 def select_for_eval(store, cfg, today, limit, retry_failed="no"):
     sc = cfg["scoring"]["screening"]
     rows = []
@@ -134,9 +147,12 @@ def select_for_eval(store, cfg, today, limit, retry_failed="no"):
 
     def rank(c):
         # 対象企業に紐付く候補を優先する (TRL・事業項目の根拠が揃いやすい)。
-        # strong(所属・スポンサー等で特定) > weak(言及のみ) > 紐付けなし。同順位内は新しい順
+        # strong(所属・スポンサー等で特定) > weak(言及のみ) > 紐付けなし。
+        # 同じ段では「実証シグナル」のある候補を優先する (TRLを根拠付きで決めやすい)。
+        # それも同じなら新しい順 (呼び出し側の安定ソートで実現)。
         strengths = {e["strength"] for e in c.get("entities", [])}
-        return 0 if "strong" in strengths else (1 if strengths else 2)
+        link = 0 if "strong" in strengths else (1 if strengths else 2)
+        return (link, 0 if has_demo_signal(c) else 1)
 
     rows.sort(key=lambda c: c["published"] or "", reverse=True)
     rows.sort(key=rank)

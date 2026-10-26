@@ -637,6 +637,30 @@ class NewsPoolTests(unittest.TestCase):
         self.assertEqual([c["id"] for c in sel], [strong, weak, unlinked])
         store.close()
 
+    def test_demo_signal_detection(self):
+        self.assertTrue(T.has_demo_signal({"title": "Demonstration of a prototype device", "abstract": ""}))
+        self.assertTrue(T.has_demo_signal({"title": "量子デバイスの実証実験", "abstract": ""}))
+        self.assertTrue(T.has_demo_signal({"title": "A Phase 2 study", "abstract": "", "info_type": "trial"}))
+        self.assertFalse(T.has_demo_signal({"title": "A theory of quantum codes", "abstract": "We propose a framework."}))
+
+    def test_selection_prefers_demo_signal_within_link_tier(self):
+        store = Store(self.path)
+
+        def add(r):
+            rec, _ = normalize(r, "2026-10-20T00:00:00+00:00")
+            cid, _ = store.upsert_candidate(rec, "r0")
+            store.set_entities(cid, link_entities(rec, CFG.get("entities", {})))
+            store.set_status(cid, "screened")
+            return cid
+        # どちらもリンクなし。新しさでは theory が勝つが、実証シグナル優先で demo が先に選ばれる
+        theory = add(raw(sid="2610.9201", title="A theory of fault-tolerant codes", published="2026-10-19"))
+        demo = add(raw(sid="2610.9202", title="Demonstration of a prototype quantum memory", published="2026-10-15"))
+        # リンク段位はシグナルより上位: weak リンク(シグナルなし)がリンクなし+シグナルありより先
+        weak = add(raw(sid="2610.9203", title="アストロスケール関連の市場分析メモ", published="2026-10-10"))
+        sel = select_for_eval(store, CFG, AS_OF, 10)
+        self.assertEqual([c["id"] for c in sel], [weak, demo, theory])
+        store.close()
+
     def test_news_not_selected_but_pooled(self):
         store = Store(self.path)
         paper, _ = normalize(raw(sid="2610.7777", affiliations=["Astroscale Holdings Inc."]),

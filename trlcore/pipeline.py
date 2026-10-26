@@ -51,41 +51,53 @@ def screen(cand, as_of, cfg):
 def collect(store, cfg, run_id, as_of, sources, fetchers, counts, log):
     d = cfg["sources"]["defaults"]
     now = datetime.now(timezone.utc).isoformat(timespec="seconds")
-    for q in cfg["sources"]["queries"]:
-        for sname in sources:
-            qs = q.get(sname)
-            if not qs:
-                continue
-            t0, fetched, new, dups, invalid, err = time.monotonic(), 0, 0, 0, 0, None
-            log(f"[collect:start] {sname}/{q['name']}")
-            try:
-                raws = fetchers[sname](qs, q.get("max_results", d["max_results"]),
-                                       q.get("lookback_days", d["lookback_days"]), as_of)
-                fetched = len(raws)
-                for raw in raws:
-                    rec, problems = normalize(raw, now)
-                    if rec is None:
-                        invalid += 1
-                        continue
-                    entity_links = link_entities(rec, cfg.get("entities", {}))
-                    if rec["info_type"] == "news" and not entity_links:
-                        # ニュースは評価の材料としてだけ使う。対象企業に紐付かないものは残さない
-                        invalid += 1
-                        continue
-                    cid, is_new = store.upsert_candidate(rec, run_id)
-                    store.set_entities(cid, entity_links)
-                    new += is_new
-                    dups += (not is_new)
-            except Exception as e:
-                err = redact(f"{type(e).__name__}: {e}")[:300]
-                log(f"::warning::source {sname} / {q['name']} failed: {err}")
-            store.add_run_source(run_id, sname, q["name"], fetched, new, dups, invalid, err is None, err,
-                                 time.monotonic() - t0)
-            for k, v in (("fetched", fetched), ("new", new), ("duplicates", dups), ("invalid", invalid)):
-                counts[k] += v
-            counts["sources_ok" if err is None else "sources_failed"] += 1
-            log(f"[collect] {sname}/{q['name']}: fetched={fetched} new={new} dup={dups} invalid={invalid}"
-                + (f" ERROR={err}" if err else ""))
+    jobs = [(sname, q) for q in cfg["sources"]["queries"] for sname in sources if q.get(sname)]
+
+    def fetch(job):
+        # 取得だけを並列化する (外部HTTPの待ち時間が支配的)。DB書き込みはメインスレッドで
+        # ジョブ順に行い、従来どおりの決定的な挙動を保つ
+        sname, q = job
+        t0 = time.monotonic()
+        try:
+            return fetchers[sname](q[sname], q.get("max_results", d["max_results"]),
+                                   q.get("lookback_days", d["lookback_days"]), as_of), None, time.monotonic() - t0
+        except Exception as e:
+            return None, e, time.monotonic() - t0
+
+    from concurrent.futures import ThreadPoolExecutor
+    with ThreadPoolExecutor(max_workers=5) as ex:
+        futures = [ex.submit(fetch, j) for j in jobs]
+        results = [f.result() for f in futures]
+    for (sname, q), (raws, exc, elapsed) in zip(jobs, results):
+        fetched, new, dups, invalid, err = 0, 0, 0, 0, None
+        log(f"[collect:start] {sname}/{q['name']}")
+        try:
+            if exc is not None:
+                raise exc
+            fetched = len(raws)
+            for raw in raws:
+                rec, problems = normalize(raw, now)
+                if rec is None:
+                    invalid += 1
+                    continue
+                entity_links = link_entities(rec, cfg.get("entities", {}))
+                if rec["info_type"] == "news" and not entity_links:
+                    # ニュースは評価の材料としてだけ使う。対象企業に紐付かないものは残さない
+                    invalid += 1
+                    continue
+                cid, is_new = store.upsert_candidate(rec, run_id)
+                store.set_entities(cid, entity_links)
+                new += is_new
+                dups += (not is_new)
+        except Exception as e:
+            err = redact(f"{type(e).__name__}: {e}")[:300]
+            log(f"::warning::source {sname} / {q['name']} failed: {err}")
+        store.add_run_source(run_id, sname, q["name"], fetched, new, dups, invalid, err is None, err, elapsed)
+        for k, v in (("fetched", fetched), ("new", new), ("duplicates", dups), ("invalid", invalid)):
+            counts[k] += v
+        counts["sources_ok" if err is None else "sources_failed"] += 1
+        log(f"[collect] {sname}/{q['name']}: fetched={fetched} new={new} dup={dups} invalid={invalid}"
+            + (f" ERROR={err}" if err else ""))
 
 
 def select_for_eval(store, cfg, today, limit, retry_failed="no"):

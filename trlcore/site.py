@@ -4,6 +4,7 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 from .config import ROOT
+from .dates import parse_date
 
 
 SITE_SCHEMA_VERSION = 1
@@ -63,6 +64,8 @@ def build_site_data(store, cfg, now=None):
             continue  # 旧版がAPI失敗を保存した分。論文側の不足ではないので表示しない
         queue[(q["candidate_id"], q["kind"])] = {
             "reason": q["reason"], "next_sources": q["next_sources"] or [], "reeval_conditions": q["reeval_conditions"] or []}
+    run = store.conn.execute("SELECT * FROM runs ORDER BY started_at DESC LIMIT 1").fetchone()
+    pool_as_of = parse_date(run["as_of"]) if run else None
     cands = []
     rows = store.conn.execute("SELECT id FROM candidates ORDER BY published DESC, id").fetchall()
     for (cid,) in rows:
@@ -83,8 +86,8 @@ def build_site_data(store, cfg, now=None):
             "abstract": c["abstract"] or "", "fields": c["fields"],
             "display_status": display_status(c, long_ev, store),
             "long": long_ev, "event": event_ev, "entities": ents,
+            "related_news": store.related_news(cid, pool_as_of) if pool_as_of else [],
             "queue": {k: queue[(cid, k)] for k in ("long", "event") if (cid, k) in queue}})
-    run = store.conn.execute("SELECT * FROM runs ORDER BY started_at DESC LIMIT 1").fetchone()
     run_out = None
     if run:
         counts = json.loads(run["counts_json"] or "{}")

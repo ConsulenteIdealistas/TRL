@@ -378,6 +378,7 @@ class ExportTests(unittest.TestCase):
         names = {p.name for p in out.iterdir()}
         self.assertIn("data.json", names)
         self.assertIn("index.html", names)
+        self.assertIn("detail.html", names)
         self.assertNotIn("schema.json", names)
         self.assertEqual(json.loads((out / "data.json").read_text(encoding="utf-8"))["schema_version"], 1)
 

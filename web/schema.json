@@ -3,7 +3,7 @@
   "schema_version": 1,
   "top_level": ["schema_version", "generated_at", "run", "config", "candidates"],
   "config": ["version", "hash", "long_weights", "item_groups"],
-  "candidate": ["id", "title", "source", "published", "url", "abstract", "fields", "display_status", "long", "event", "entities", "queue"],
+  "candidate": ["id", "title", "source", "published", "url", "abstract", "fields", "display_status", "long", "event", "entities", "related_news", "queue"],
   "evaluation": ["status", "total", "band", "as_of", "evaluated_at", "items", "critical_missing", "errors", "trl_level"],
   "item": ["score", "reason", "evidence", "counter_evidence", "missing_info"],
   "display_status": ["final", "review", "hold", "pending", "error", "rejected"]

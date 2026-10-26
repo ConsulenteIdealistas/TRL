@@ -398,6 +398,13 @@ class PromptTests(unittest.TestCase):
             p = load_prompt(n, CFG["scoring"]["prompts"][n])
             self.assertEqual(len(p["sha"]), 12)
 
+    def test_long_prompt_contains_trl_definitions(self):
+        text = load_prompt("long", CFG["scoring"]["prompts"]["long"])["text"]
+        for anchor in ("TRL 1", "TRL 9", "実施済みだけを数える", "迷ったら切り下げる",
+                       "セクター別の運用", "条件及び期限付き承認", "軌道上での技術実証",
+                       "テープアウト", "PoC"):
+            self.assertIn(anchor, text)
+
 
 class HttpTests(unittest.TestCase):
     def test_retry_then_success(self):

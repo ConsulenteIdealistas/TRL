@@ -6,7 +6,7 @@ Python標準ライブラリのみ。スマホのブラウザだけで運用で�
 
 > スコアは評価尺度です。株価上昇確率・成功確率・投資利益率ではなく、売買の自動判定にも使えません。
 
-## ファイル構成(すべてリポジトリの直下・フォルダなし)
+## ファイル構成
 `trl.py` 本体 / `test_trl.py` `test_entities.py` `test_site.py` テスト / `scoring.json` 配点・設定 / `sources.json` 検索クエリ / `entities.json` 企業辞書 /
 `extract.v1.md` `long.v1.md` `event.v1.md` プロンプト / `README.md` / `.github/workflows/main.yml`
 `web/`(例外: フォルダあり)= 画面。`index.html` `app.js` `style.css` と、Python⇔Web の契約 `schema.json`

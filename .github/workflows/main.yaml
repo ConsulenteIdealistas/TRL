@@ -82,6 +82,9 @@ jobs:
           IN_RETRY: ${{ inputs.retry_failed || 'no' }}
           IN_PURGE: ${{ inputs.purge_evaluations || 'no' }}
         run: |
+          if [ "$IN_PURGE" = "yes" ]; then
+            python trl.py purge --data-dir _data --evaluations
+          fi
           python trl.py run --data-dir _data \
             --sources "$IN_SOURCES" \
             --kinds "$IN_KINDS" \

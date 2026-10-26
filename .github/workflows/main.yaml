@@ -23,7 +23,7 @@ on:
         options: ["no", "yes", "force"]
         default: "no"
   schedule:
-    - cron: "17 21 * * 1"   # Mondays 21:17 UTC (Tuesday 06:17 JST)
+    - cron: "30 21 * * 1"   # Mondays 21:30 UTC (Tuesday 06:30 JST)
 
 permissions:
   contents: write

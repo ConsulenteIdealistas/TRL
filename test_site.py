@@ -126,7 +126,7 @@ class ReportLegacyQueueTests(unittest.TestCase):
 
 class LlmConfigTests(unittest.TestCase):
     def test_shipped_llm_settings_valid(self):
-        self.assertEqual(T.llm_settings(CFG)["timeout_sec"], 60)
+        self.assertEqual(T.llm_settings(CFG)["timeout_sec"], 120)
 
     def test_bad_llm_settings_rejected(self):
         for bad in ({"timeout_sec": 0}, {"retries": -1}, {"nope": 1}, {"timeout_sec": True}):
@@ -139,7 +139,7 @@ class LlmConfigTests(unittest.TestCase):
         class P:
             timeout, retries = 120, 2
         p = T.configure_llm(P(), CFG)
-        self.assertEqual((p.timeout, p.retries), (60, 3))
+        self.assertEqual((p.timeout, p.retries), (120, 3))
         self.assertIsNone(T.configure_llm(None, CFG))
         T.configure_llm(Mock(lambda p: ""), CFG)  # timeout 属性が無いMockは触らない
 

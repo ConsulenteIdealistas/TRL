@@ -37,7 +37,7 @@
     "max_retries": 3
   },
   "llm": {
-    "timeout_sec": 60,
+    "timeout_sec": 120,
     "retries": 3,
     "max_consecutive_failures": 2,
     "phase_budget_sec": 1200

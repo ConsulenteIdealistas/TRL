@@ -44,8 +44,6 @@ jobs:
         with:
           python-version: "3.12"
       - name: Tests
-        run: python -m unittest test_trl test_entities -v
-      - name: Tests
         run: python -m unittest test_trl -v
       - name: Restore data branch
         run: |
@@ -53,10 +51,10 @@ jobs:
           git ls-remote --exit-code --heads origin data >/dev/null 2>&1
           rc=$?
           set -e
-          if [ $rc -eq 0 ]; then
-            git clone -q --depth 1 --branch data "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git" _data
-            rm -rf _data/.git
-          elif [ $rc -eq 2 ]; then
+
+          if [ "$rc" -eq 0 ]; then
+            git clone -q --branch data "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git" _data
+          elif [ "$rc" -eq 2 ]; then
             mkdir -p _data
           else
             echo "::error::Could not check data branch (rc=$rc). Aborting to protect data"

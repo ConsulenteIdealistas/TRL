@@ -2,6 +2,7 @@
 import argparse
 import calendar
 import hashlib
+import html
 import json
 import math
 import os

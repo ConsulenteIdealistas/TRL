@@ -6,8 +6,8 @@ on:
       sources:
         description: "Sources"
         type: choice
-        options: ["pubmed,arxiv,gnews,trials", "pubmed,arxiv", "pubmed", "arxiv"]
-        default: "pubmed,arxiv,gnews,trials"
+        options: ["pubmed,arxiv,gnews,prtimes,trials", "pubmed,arxiv", "pubmed", "arxiv"]
+        default: "pubmed,arxiv,gnews,prtimes,trials"
       kinds:
         description: "Evaluation kinds"
         type: choice
@@ -71,7 +71,7 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           NCBI_API_KEY: ${{ secrets.NCBI_API_KEY }}
           # 入力はシェルに直接展開せず環境変数経由で渡す(スクリプトインジェクション対策)
-          IN_SOURCES: ${{ inputs.sources || 'pubmed,arxiv,gnews,trials' }}
+          IN_SOURCES: ${{ inputs.sources || 'pubmed,arxiv,gnews,prtimes,trials' }}
           IN_KINDS: ${{ inputs.kinds || 'long' }}
           IN_MAX_EVAL: ${{ inputs.max_eval || '10' }}
           IN_RETRY: ${{ inputs.retry_failed || 'no' }}

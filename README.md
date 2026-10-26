@@ -15,7 +15,7 @@ Python標準ライブラリのみ。スマホのブラウザだけで運用で�
 1. GitHubで新規リポジトリを作成(Private推奨)。
 2. Settings → Actions → General → Workflow permissions を **Read and write** にして保存。
 3. Add file → Create new file で、上記ファイルを1つずつ作成(ファイル名を入力し、中身を貼り付けて Commit)。
-   `main.yml` だけはファイル名欄に `.github/workflows/main.yml` と入力。
+   `main.yaml` だけはファイル名欄に `.github/workflows/main.yaml` と入力。
 4. Settings → Pages → Source を **GitHub Actions** にする(初回のみ)。
 5. Actions タブ → TRL pipeline → Run workflow。
 

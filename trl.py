@@ -217,27 +217,35 @@ class HttpError(Exception):
         self.status = status
 
 
-def http_fetch(url, params=None, headers=None, data=None, timeout=30, retries=3,
-          backoff=2.0, opener=None, sleep=time.sleep):
+
+def http_fetch(url, params=None, headers=None, data=None, timeout=30, retries=2,
+               backoff=5.0, opener=None, sleep=time.sleep):
     opener = opener or urllib.request.urlopen
     full = url + ("?" + urllib.parse.urlencode(params) if params else "")
     hdrs = {"User-Agent": "trl-analysis/0.1"}
     hdrs.update(headers or {})
     attempt = 0
+
     while True:
         req = urllib.request.Request(full, data=data, headers=hdrs)
         try:
             with opener(req, timeout=timeout) as resp:
                 return resp.read()
         except urllib.error.HTTPError as e:
-            status, retryable, msg = e.code, (e.code == 429 or e.code >= 500), f"HTTP {e.code}"
+            status = e.code
+            retryable = e.code == 429 or e.code in (500, 502, 503, 504)
+            msg = f"HTTP {e.code}"
         except (urllib.error.URLError, TimeoutError, ConnectionError) as e:
-            status, retryable, msg = None, True, f"network error: {type(e).__name__}"
+            status, retryable = None, True
+            msg = f"network error: {type(e).__name__}"
+
         attempt += 1
         if not retryable or attempt > retries:
             # URLのクエリ(APIキーが入り得る)はメッセージに含めない
             raise HttpError(redact(f"{msg} for {url}"), status)
-        sleep(backoff ** attempt)
+
+        delay = 5 if attempt == 1 else 15
+        sleep(delay)
 
 
 # ==================== normalize ====================

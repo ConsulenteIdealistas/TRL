@@ -103,7 +103,10 @@ def build_report(store, run_id):
             L.extend(format_research_links(e["title"]))
 
     
-    q = store.list_queue(open_only=True)
+    # 旧版が LLM API失敗(429/503等)を評価エラーとして保存したキューは、論文側の不足ではない
+    # ため画面(site.py)と同じく表示から除く。内容起因の評価エラーは従来どおり表示する。
+    q = [r for r in store.list_queue(open_only=True)
+         if not str(r["reason"]).startswith("evaluation_error: HttpError")]
     errors = [r for r in q if str(r["reason"]).startswith("evaluation_error:")]
     holds = [r for r in q if not str(r["reason"]).startswith("evaluation_error:")]
 

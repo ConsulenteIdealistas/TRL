@@ -35,10 +35,12 @@ def _retry_after_seconds(headers, cap=60.0):
 
 
 def backoff_delay(attempt, retry_after=None, rand=random.random):
-    """attempt は 1 から。Retry-After があれば優先。無ければ 5秒→15秒→(以降15秒)に最大20%のジッター。"""
+    """attempt は 1 から。Retry-After があれば優先。無ければ指数バックオフ
+    5秒→15秒→30秒→60秒(上限)に最大20%のジッター。503/429 のような一時的な
+    過負荷は数秒では回復しないことが多いため、再試行間隔を段階的に延ばす。"""
     if retry_after is not None:
         return retry_after
-    base = 5 if attempt == 1 else 15
+    base = {1: 5, 2: 15, 3: 30}.get(attempt, 60)
     return base * (1 + 0.2 * rand())
 
 

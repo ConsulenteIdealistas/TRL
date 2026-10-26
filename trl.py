@@ -30,7 +30,7 @@ from trlcore.entities import _norm_text, ENTITY_MODES, validate_entities, _conta
 from trlcore.config import __version__, ROOT, CONFIG_FILES, LLM_DEFAULTS, validate_config, validate_sources, required_files, missing_files, load_config  # noqa: F401,E402
 from trlcore.store import SCHEMA, now_iso, _j, Store  # noqa: F401,E402
 from trlcore.prompts import PROMPT_DIR, _PH, load_prompt, render  # noqa: F401,E402
-from trlcore.llm import SYSTEM, extract_json, Anthropic, Gemini, Mock, get_provider, llm_settings, configure_llm  # noqa: F401,E402
+from trlcore.llm import SYSTEM, extract_json, Anthropic, Gemini, Mock, get_provider, llm_settings, configure_llm, _fallback_model  # noqa: F401,E402
 from trlcore.evaluate import EVIDENCE_KINDS, EXTRACT_LISTS, STATEMENT_LISTS, validate_extraction, _nonempty_list, validate_assessment, parse_trl_level, _candidate_block, input_hash, run_extraction, evaluate_one  # noqa: F401,E402
 from trlcore.pipeline import DEFAULT_FETCHERS, new_run_id, screen, collect, select_for_eval, _queue_reason, run_pipeline  # noqa: F401,E402
 from trlcore.site import SITE_SCHEMA_VERSION, TECH_ITEMS, LEGACY_INFRA_QUEUE_PREFIX, _ev_for_site, display_status, build_site_data, export_site  # noqa: F401,E402

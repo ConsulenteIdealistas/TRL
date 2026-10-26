@@ -44,12 +44,84 @@ class RetryTests(unittest.TestCase):
         self.assertAlmostEqual(T.backoff_delay(2, rand=lambda: 1.0), 18.0)
         self.assertEqual(T.backoff_delay(1, retry_after=3.0), 3.0)
 
+    def test_backoff_extends_for_later_attempts(self):
+        # 503/429 の過負荷は数秒では回復しないため、3回目以降は間隔を延ばし上限60秒にする
+        self.assertEqual(T.backoff_delay(3, rand=lambda: 0.0), 30)
+        self.assertEqual(T.backoff_delay(4, rand=lambda: 0.0), 60)
+        self.assertEqual(T.backoff_delay(9, rand=lambda: 0.0), 60)
+        self.assertAlmostEqual(T.backoff_delay(4, rand=lambda: 1.0), 72.0)
+        self.assertEqual(T.backoff_delay(4, retry_after=3.0), 3.0)  # Retry-After が常に優先
+
     def test_transient_classification(self):
         self.assertTrue(T.HttpError("x", 429).transient)
         self.assertTrue(T.HttpError("x", 503).transient)
         self.assertTrue(T.HttpError("x", None).transient)
         self.assertFalse(T.HttpError("x", 404).transient)
         self.assertFalse(T.HttpError("x", 401).transient)
+
+
+class FallbackModelTests(unittest.TestCase):
+    def setUp(self):
+        import os
+        self._env = dict(os.environ)
+        os.environ["GEMINI_API_KEY"] = os.environ["ANTHROPIC_API_KEY"] = "k" * 10
+        os.environ.pop("TRL_LLM_FALLBACK_MODEL", None)
+
+    def tearDown(self):
+        import os
+        os.environ.clear()
+        os.environ.update(self._env)
+
+    def test_gemini_fallback_on_503(self):
+        seen = []
+
+        def http(url, **kw):
+            seen.append(url)
+            if "gemini-main" in url:
+                raise T.HttpError("HTTP 503 for x", 503)
+            return json.dumps({"candidates": [{"content": {"parts": [{"text": "fb-ok"}]}}]}).encode()
+        g = T.Gemini(model="gemini-main", http=http, fallback_model="gemini-sub")
+        self.assertEqual(g.complete("p"), "fb-ok")
+        self.assertEqual(len(seen), 2)
+
+    def test_no_fallback_on_permanent_error(self):
+        def http(url, **kw):
+            raise T.HttpError("HTTP 404 for x", 404)
+        g = T.Gemini(model="gemini-main", http=http, fallback_model="gemini-sub")
+        with self.assertRaises(T.HttpError):
+            g.complete("p")
+
+    def test_no_fallback_when_unset_or_same_model(self):
+        def http(url, **kw):
+            raise T.HttpError("HTTP 503 for x", 503)
+        self.assertIsNone(T.Gemini(model="m", http=http).fallback_model)
+        self.assertIsNone(T.Gemini(model="m", http=http, fallback_model="m").fallback_model)
+        with self.assertRaises(T.HttpError):
+            T.Gemini(model="m", http=http).complete("p")
+
+    def test_fallback_from_env(self):
+        import os
+        os.environ["TRL_LLM_FALLBACK_MODEL"] = "gemini-sub"
+        self.assertEqual(T.Gemini(model="m", http=lambda *a, **k: b"{}").fallback_model, "gemini-sub")
+
+
+class ReportLegacyQueueTests(unittest.TestCase):
+    def test_report_hides_legacy_http_error_queue(self):
+        tmp = tempfile.TemporaryDirectory()
+        store = T.Store(Path(tmp.name) / "d" / "trl.sqlite")
+        try:
+            cfg = cfg_with()
+            T.run_pipeline(store, cfg, None, as_of=AS_OF, kinds=("long",), fetchers=fetch_n(1),
+                           sources=("arxiv",), today=AS_OF, log=lambda *_: None)
+            cid = store.conn.execute("SELECT id FROM candidates").fetchone()[0]
+            store.upsert_queue(cid, "long", "evaluation_error: HttpError: HTTP 503 for x", [], [], [], "t", {})
+            run_id = store.conn.execute("SELECT run_id FROM runs ORDER BY started_at DESC LIMIT 1").fetchone()[0]
+            text = T.build_report(store, run_id)
+            self.assertIn("レビューキュー（未解消 0件）", text)
+            self.assertNotIn("HTTP 503 for x", text)
+        finally:
+            store.close()
+            tmp.cleanup()
 
 
 class LlmConfigTests(unittest.TestCase):
@@ -67,7 +139,7 @@ class LlmConfigTests(unittest.TestCase):
         class P:
             timeout, retries = 120, 2
         p = T.configure_llm(P(), CFG)
-        self.assertEqual((p.timeout, p.retries), (60, 1))
+        self.assertEqual((p.timeout, p.retries), (60, 3))
         self.assertIsNone(T.configure_llm(None, CFG))
         T.configure_llm(Mock(lambda p: ""), CFG)  # timeout 属性が無いMockは触らない
 

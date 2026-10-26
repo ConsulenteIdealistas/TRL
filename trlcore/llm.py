@@ -3,7 +3,7 @@
 import json
 import os
 import re
-from .errors import LLMError
+from .errors import HttpError, LLMError
 from .http import http_fetch
 from .config import LLM_DEFAULTS
 
@@ -26,11 +26,18 @@ def extract_json(text):
     return obj
 
 
+def _fallback_model(model, fallback_model=None):
+    """代替モデル名。未指定なら環境変数 TRL_LLM_FALLBACK_MODEL、主モデルと同じなら無効。"""
+    fb = fallback_model or os.environ.get("TRL_LLM_FALLBACK_MODEL") or None
+    return fb if fb and fb != model else None
+
+
 class Anthropic:
     name = "anthropic"
 
-    def __init__(self, model=None, http=None):
+    def __init__(self, model=None, http=None, fallback_model=None):
         self.model = model or os.environ.get("TRL_LLM_MODEL") or "claude-haiku-5-5"
+        self.fallback_model = _fallback_model(self.model, fallback_model)
         self.http = http or http_fetch
         self.timeout, self.retries = 120, 2  # configure_llm() で scoring.json の llm 設定に上書き
         self.key = os.environ.get("ANTHROPIC_API_KEY")
@@ -38,7 +45,17 @@ class Anthropic:
             raise LLMError("ANTHROPIC_API_KEY is not set")
 
     def complete(self, prompt):
-        body = json.dumps({"model": self.model, "max_tokens": 3000, "system": SYSTEM,
+        try:
+            return self._complete(self.model, prompt)
+        except HttpError as e:
+            # 503/429 等の一時的失敗はモデル側の過負荷であることが多く、同一プロバイダの
+            # 別モデルでは応答することがある。恒常的な失敗(404/401等)では切り替えない。
+            if not (self.fallback_model and e.transient):
+                raise
+            return self._complete(self.fallback_model, prompt)
+
+    def _complete(self, model, prompt):
+        body = json.dumps({"model": model, "max_tokens": 3000, "system": SYSTEM,
                            "messages": [{"role": "user", "content": prompt}]}).encode()
         raw = self.http("https://api.anthropic.com/v1/messages", data=body, headers={
             "x-api-key": self.key, "anthropic-version": "2023-06-01", "content-type": "application/json"},
@@ -52,8 +69,9 @@ class Anthropic:
 class Gemini:
     name = "gemini"
 
-    def __init__(self, model=None, http=None):
+    def __init__(self, model=None, http=None, fallback_model=None):
         self.model = model or os.environ.get("TRL_LLM_MODEL") or "gemini-3.8-flash"
+        self.fallback_model = _fallback_model(self.model, fallback_model)
         self.http = http or http_fetch
         self.timeout, self.retries = 120, 2  # configure_llm() で scoring.json の llm 設定に上書き
         self.key = os.environ.get("GEMINI_API_KEY")
@@ -61,11 +79,21 @@ class Gemini:
             raise LLMError("GEMINI_API_KEY is not set")
 
     def complete(self, prompt):
+        try:
+            return self._complete(self.model, prompt)
+        except HttpError as e:
+            # 503/429 等の一時的失敗はモデル側の過負荷であることが多く、同一プロバイダの
+            # 別モデルでは応答することがある。恒常的な失敗(404/401等)では切り替えない。
+            if not (self.fallback_model and e.transient):
+                raise
+            return self._complete(self.fallback_model, prompt)
+
+    def _complete(self, model, prompt):
         body = json.dumps({
             "systemInstruction": {"parts": [{"text": SYSTEM}]},
             "contents": [{"role": "user", "parts": [{"text": prompt}]}],
             "generationConfig": {"responseMimeType": "application/json", "temperature": 0}}).encode()
-        raw = self.http(f"https://generativelanguage.googleapis.com/v1beta/models/{self.model}:generateContent",
+        raw = self.http(f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
                         data=body, headers={"x-goog-api-key": self.key, "content-type": "application/json"},
                         timeout=self.timeout, retries=self.retries)
         try:
@@ -87,14 +115,14 @@ class Mock:
         return self.fn(prompt)
 
 
-def get_provider(name, model=None, http=None):
+def get_provider(name, model=None, http=None, fallback_model=None):
     name = (name or "none").lower()
     if name == "none":
         return None
     if name == "anthropic":
-        return Anthropic(model, http)
+        return Anthropic(model, http, fallback_model)
     if name == "gemini":
-        return Gemini(model, http)
+        return Gemini(model, http, fallback_model)
     raise LLMError(f"unknown provider: {name}")
 
 

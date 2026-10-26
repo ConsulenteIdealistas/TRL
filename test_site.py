@@ -417,6 +417,22 @@ class ExportTests(unittest.TestCase):
         self.assertNotIn("schema.json", names)
         self.assertEqual(json.loads((out / "data.json").read_text(encoding="utf-8"))["schema_version"], 1)
 
+    def test_pre_stage_final_flows_to_site(self):
+        def fn(p):
+            if "根拠抽出」担当" in p:
+                return json.dumps(EXTRACTION)
+            o = assessment(LONG_KEYS, {"technology_readiness": 80, "technological_advantage": 60,
+                                       "monetization": None, "market_growth": None,
+                                       "financial_sustainability": None, "moat_durability": None})
+            o["trl_level"] = {"level": 2, "reason": "r", "evidence": [{"ref": "u", "summary": "s", "kind": "fact"}]}
+            return json.dumps(o)
+        data = self.build(Mock(fn), n=1)
+        c = data["candidates"][0]
+        self.assertEqual(c["display_status"], "final")
+        self.assertEqual(c["long"]["total"], 72.5)
+        self.assertEqual(c["long"]["total_scope"], "technology")
+        self.assertEqual(c["long"]["business_stage"], "pre_stage")
+
     def test_trl_level_flows_to_export_and_not_inferred_from_score(self):
         def fn(p):
             if "根拠抽出」担当" in p:

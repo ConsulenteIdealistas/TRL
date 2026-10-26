@@ -100,6 +100,38 @@ class ScoringTests(unittest.TestCase):
         self.assertIsNone(r["total"])
         self.assertEqual(r["critical_missing"], ["monetization"])
 
+    def test_pre_stage_business_not_required(self):
+        # TRL 2 で技術軸だけ揃えば、事業軸は段階未達として final (技術軸の総合点)
+        items = {k: None for k in LONG_KEYS}
+        items["technology_readiness"] = 80
+        items["technological_advantage"] = 60
+        r = scoring.compute(items, "long", CFG, trl_level=2)
+        self.assertEqual(r["status"], "final")
+        self.assertEqual(r["total_scope"], "technology")
+        self.assertEqual(r["total"], 72.5)  # (80*25 + 60*15) / 40
+        self.assertEqual(r["business_stage"], "pre_stage")
+        self.assertEqual(r["axes"]["business"]["status"], "pre_stage")
+        self.assertEqual(r["critical_missing"], [])  # monetization は不足に数えない
+
+    def test_pre_stage_needs_trl_and_tech(self):
+        items = {k: None for k in LONG_KEYS}
+        items["technology_readiness"] = 80
+        items["technological_advantage"] = 60
+        # TRL が高い/未確定なら従来どおり事業項目が必須
+        self.assertEqual(scoring.compute(items, "long", CFG, trl_level=5)["status"], "hold")
+        self.assertEqual(scoring.compute(items, "long", CFG, trl_level=None)["status"], "hold")
+        self.assertEqual(scoring.compute(items, "long", CFG)["status"], "hold")
+        # 技術軸が欠けていれば TRL が低くても hold
+        items["technology_readiness"] = None
+        r = scoring.compute(items, "long", CFG, trl_level=1)
+        self.assertEqual(r["status"], "hold")
+        self.assertEqual(r["critical_missing"], ["technology_readiness"])
+
+    def test_pre_stage_full_scores_still_full_total(self):
+        items = {k: 80 for k in LONG_KEYS}
+        r = scoring.compute(items, "long", CFG, trl_level=2)
+        self.assertEqual((r["status"], r["total"], r["total_scope"]), ("final", 80.0, "full"))
+
     def test_event_hold_on_critical_missing(self):
         items = {k: 60 for k in EVENT_KEYS}
         items["not_priced_in"] = None

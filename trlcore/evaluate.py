@@ -167,7 +167,10 @@ def evaluate_one(cand, kind, cfg, llm, as_of, extraction=None, extract_meta=None
                         scores[k] = None
                         details[k]["score"] = None
                         details[k]["missing_info"] = list(details[k]["missing_info"]) + ["市場予想が未確認のため保留"]
-        res = compute(scores, kind, cfg)
+        trl_lv = (result["extra"].get("trl_level") or {}).get("level") if kind == "long" else None
+        res = compute(scores, kind, cfg, trl_level=trl_lv)
+        result["extra"].update({"axes": res.get("axes"), "business_stage": res.get("business_stage"),
+                                 "total_scope": res.get("total_scope")})
         result.update({"status": res["status"], "total": res["total"], "band": res["band"], "items": details,
                        "missing": res["missing"], "critical_missing": res["critical_missing"], "errors": res["errors"],
                        "next_sources": [str(x) for x in obj.get("next_sources") or []],

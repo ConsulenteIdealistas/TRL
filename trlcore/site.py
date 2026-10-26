@@ -33,9 +33,14 @@ def _ev_for_site(ev, cfg):
     return {
         "status": ev["status"], "total": ev["total"], "band": ev["band"], "as_of": ev["as_of"],
         "evaluated_at": ev["evaluated_at"], "items": out_items,
-        "critical_missing": [k for k in required if k in out_items and out_items[k]["score"] is None],
+        "critical_missing": [k for k in required
+                             if k in out_items and out_items[k]["score"] is None
+                             and not (extra.get("business_stage") == "pre_stage" and k not in TECH_ITEMS)],
         "errors": json.loads(ev["errors_json"] or "[]") if ev["status"] == "error" else [],
         "trl_level": extra.get("trl_level"),
+        "axes": extra.get("axes"),
+        "business_stage": extra.get("business_stage"),
+        "total_scope": extra.get("total_scope"),
     }
 
 

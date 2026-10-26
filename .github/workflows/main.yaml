@@ -80,6 +80,7 @@ jobs:
           IN_KINDS: ${{ inputs.kinds || 'long' }}
           IN_MAX_EVAL: ${{ inputs.max_eval || '3' }}
           IN_RETRY: ${{ inputs.retry_failed || 'no' }}
+          IN_PURGE: ${{ inputs.purge_evaluations || 'no' }}
         run: |
           python trl.py run --data-dir _data \
             --sources "$IN_SOURCES" \

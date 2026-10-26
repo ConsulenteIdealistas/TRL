@@ -66,6 +66,7 @@ jobs:
         env:
           TRL_LLM_PROVIDER: ${{ vars.TRL_LLM_PROVIDER }}
           TRL_LLM_MODEL: ${{ vars.TRL_LLM_MODEL }}
+          TRL_LLM_FALLBACK_MODEL: ${{ vars.TRL_LLM_FALLBACK_MODEL }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           NCBI_API_KEY: ${{ secrets.NCBI_API_KEY }}

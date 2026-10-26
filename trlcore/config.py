@@ -58,33 +58,104 @@ def validate_config(cfg):
     elif mode != "off":
         raise ConfigError("scoring.json: screening.require_entity needs entities.json")
     validate_sources(cfg["sources"])
+    src = cfg["sources"]
+    if cfg.get("entities") is not None and ("topics" in src or "keyword_sets" in src):
+        generated = build_entity_queries(cfg["entities"], src)  # sector/news_name の不整合はここで落ちる
+        topic_names = {q["name"] for q in src.get("topics") or []}
+        for q in generated:
+            if q["name"] in topic_names:
+                raise ConfigError(f"sources.json: generated query name collides with a topic: {q['name']}")
+
+
+def _validate_query_list(qs, label):
+    if not isinstance(qs, list):
+        raise ConfigError(f"sources.json: {label} must be a list")
+    names = set()
+    for i, q in enumerate(qs):
+        if not isinstance(q, dict) or not isinstance(q.get("name"), str) or not q["name"].strip():
+            raise ConfigError(f"sources.json: {label}[{i}].name is required")
+        if q["name"] in names:
+            raise ConfigError(f"sources.json: duplicate query name: {q['name']}")
+        names.add(q["name"])
+        if not any(isinstance(q.get(s), str) and q[s].strip() for s in SOURCE_NAMES):
+            raise ConfigError(f"sources.json: {label}[{i}] needs a non-empty query string for one of {SOURCE_NAMES}")
+        for k in ("max_results", "lookback_days"):
+            if k in q and (isinstance(q[k], bool) or not isinstance(q[k], int) or q[k] <= 0):
+                raise ConfigError(f"sources.json: {label}[{i}].{k} must be a positive integer")
+    return names
 
 
 def validate_sources(src):
     """sources.json のスキーマ検証。
     {"defaults": {"max_results": int>0, "lookback_days": int>0},
-     "queries": [{"name": str, "pubmed"/"arxiv"/"gnews"/"trials"/"edinet": str?, "max_results": int?, "lookback_days": int?}]}"""
+     "keyword_sets": {sector: [str, ...]},
+     "entity_watch": {"lookback_days": {"gnews"/"prtimes"/"trials"/"edinet": int>0}},
+     "topics": [クエリ, ...]}
+    企業クエリは entities.json の watch から生成する(build_entity_queries)。
+    "queries" は生成後に load_config が付ける実効リストで、あれば同じ形で検証する。"""
     d = src.get("defaults")
     if not isinstance(d, dict):
         raise ConfigError("sources.json: defaults must be an object")
     for k in ("max_results", "lookback_days"):
         if isinstance(d.get(k), bool) or not isinstance(d.get(k), int) or d[k] <= 0:
             raise ConfigError(f"sources.json: defaults.{k} must be a positive integer")
-    qs = src.get("queries")
-    if not isinstance(qs, list) or not qs:
-        raise ConfigError("sources.json: queries must be a non-empty list")
-    names = set()
-    for i, q in enumerate(qs):
-        if not isinstance(q, dict) or not isinstance(q.get("name"), str) or not q["name"].strip():
-            raise ConfigError(f"sources.json: queries[{i}].name is required")
-        if q["name"] in names:
-            raise ConfigError(f"sources.json: duplicate query name: {q['name']}")
-        names.add(q["name"])
-        if not any(isinstance(q.get(s), str) and q[s].strip() for s in SOURCE_NAMES):
-            raise ConfigError(f"sources.json: queries[{i}] needs a non-empty query string for one of {SOURCE_NAMES}")
-        for k in ("max_results", "lookback_days"):
-            if k in q and (isinstance(q[k], bool) or not isinstance(q[k], int) or q[k] <= 0):
-                raise ConfigError(f"sources.json: queries[{i}].{k} must be a positive integer")
+    ks = src.get("keyword_sets")
+    if ks is not None:
+        if not isinstance(ks, dict) or not ks:
+            raise ConfigError("sources.json: keyword_sets must be a non-empty object")
+        for sector, words in ks.items():
+            if not isinstance(words, list) or not words or any(not isinstance(w, str) or not w.strip() for w in words):
+                raise ConfigError(f"sources.json: keyword_sets.{sector} must be a non-empty list of strings")
+    ew = src.get("entity_watch")
+    if ew is not None:
+        if not isinstance(ew, dict) or not isinstance(ew.get("lookback_days"), dict):
+            raise ConfigError("sources.json: entity_watch.lookback_days must be an object")
+        for sname, v in ew["lookback_days"].items():
+            if sname not in SOURCE_NAMES or isinstance(v, bool) or not isinstance(v, int) or v <= 0:
+                raise ConfigError(f"sources.json: entity_watch.lookback_days.{sname} must be a positive integer")
+    if "topics" not in src and "queries" not in src:
+        raise ConfigError("sources.json: topics is required")
+    if "topics" in src:
+        _validate_query_list(src["topics"], "topics")
+    if "queries" in src:
+        if not isinstance(src["queries"], list) or not src["queries"]:
+            raise ConfigError("sources.json: queries must be a non-empty list")
+        _validate_query_list(src["queries"], "queries")
+
+
+WATCH_LOOKBACK_DEFAULTS = {"prtimes": 90, "trials": 365, "edinet": 60}
+
+
+def build_entity_queries(entities, src):
+    """entities.json の watch から企業クエリを生成する。
+    生成順は gnews(全社) → trials → edinet → prtimes で、各系統内は entities の並び順。
+    watch の無い企業は監視対象にしない。sponsor が無ければ trials、ticker が無ければ edinet を生成しない。"""
+    ks = src.get("keyword_sets") or {}
+    params = (src.get("entity_watch") or {}).get("lookback_days") or {}
+    groups = {"gnews": [], "trials": [], "edinet": [], "prtimes": []}
+    for e in (entities or {}).get("entities", []):
+        w = e.get("watch")
+        if not isinstance(w, dict):
+            continue
+        eid = e.get("id")
+        news_name = w.get("news_name")
+        if not isinstance(news_name, str) or not news_name.strip():
+            raise ConfigError(f"entities.json: {eid}.watch.news_name is required")
+        sector = e.get("sector")
+        if sector not in ks:
+            raise ConfigError(f"entities.json: {eid}.sector {sector!r} has no keyword_sets entry in sources.json")
+        words = list(ks[sector]) + list(w.get("extra_keywords") or [])
+        groups["gnews"].append({"name": f"{eid}-news", "gnews": f"{news_name} ({' OR '.join(words)})"})
+        if w.get("sponsor"):
+            groups["trials"].append({"name": f"{eid}-trials", "trials": w["sponsor"],
+                                     "lookback_days": params.get("trials", WATCH_LOOKBACK_DEFAULTS["trials"])})
+        if e.get("ticker"):
+            groups["edinet"].append({"name": f"{eid}-edinet", "edinet": e["ticker"],
+                                     "lookback_days": params.get("edinet", WATCH_LOOKBACK_DEFAULTS["edinet"])})
+        terms = w.get("prtimes_terms") or [news_name]
+        groups["prtimes"].append({"name": f"{eid}-prtimes", "prtimes": "|".join(terms),
+                                  "lookback_days": params.get("prtimes", WATCH_LOOKBACK_DEFAULTS["prtimes"])})
+    return groups["gnews"] + groups["trials"] + groups["edinet"] + groups["prtimes"]
 
 
 CONFIG_FILES = ("scoring.json", "sources.json")
@@ -137,4 +208,6 @@ def load_config(config_dir=None):
         "config_hash": h.hexdigest()[:16],
     }
     validate_config(cfg)
+    if entities is not None:
+        cfg["sources"]["queries"] = list(cfg["sources"].get("topics") or []) + build_entity_queries(entities, cfg["sources"])
     return cfg

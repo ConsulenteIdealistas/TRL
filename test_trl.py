@@ -849,5 +849,180 @@ class SourcesSchemaTests(unittest.TestCase):
             validate_config(bad)
 
 
+class EntityQueryGenerationTests(unittest.TestCase):
+    # 移行前の手書きクエリ全27件。生成結果がこれと完全一致すること(移行の等価性)。
+    GOLDEN = [
+    {
+        "arxiv": "all:\"solid-state battery\"",
+        "name": "solid-state-battery"
+    },
+    {
+        "arxiv": "all:\"quantum error correction\"",
+        "name": "quantum-error-correction"
+    },
+    {
+        "name": "gene-therapy",
+        "pubmed": "gene therapy[Title/Abstract] AND clinical trial[Publication Type]"
+    },
+    {
+        "gnews": "アストロスケール (決算 OR 受注 OR 契約 OR 提携 OR 資金調達 OR 業績 OR 採択)",
+        "name": "astroscale-news"
+    },
+    {
+        "gnews": "ispace (決算 OR 受注 OR 契約 OR 提携 OR 資金調達 OR 業績 OR 採択 OR 月面)",
+        "name": "ispace-news"
+    },
+    {
+        "gnews": "Synspective (決算 OR 受注 OR 契約 OR 提携 OR 資金調達 OR 業績 OR 採択 OR 衛星)",
+        "name": "synspective-news"
+    },
+    {
+        "gnews": "オンコリスバイオファーマ (決算 OR 契約 OR 提携 OR 導出 OR 承認 OR 治験 OR 資金調達 OR 採択 OR 助言)",
+        "name": "oncolys-news"
+    },
+    {
+        "gnews": "リプロセル (決算 OR 契約 OR 提携 OR 導出 OR 承認 OR 治験 OR 資金調達 OR 採択 OR 助言)",
+        "name": "reprocell-news"
+    },
+    {
+        "gnews": "ハートシード (決算 OR 契約 OR 提携 OR 導出 OR 承認 OR 治験 OR 資金調達 OR 採択 OR 助言)",
+        "name": "heartseed-news"
+    },
+    {
+        "gnews": "ペプチドリーム (決算 OR 契約 OR 提携 OR 導出 OR 承認 OR 治験 OR 資金調達 OR 採択 OR 助言)",
+        "name": "peptidream-news"
+    },
+    {
+        "lookback_days": 365,
+        "name": "oncolys-trials",
+        "trials": "Oncolys BioPharma"
+    },
+    {
+        "lookback_days": 365,
+        "name": "reprocell-trials",
+        "trials": "REPROCELL"
+    },
+    {
+        "lookback_days": 365,
+        "name": "heartseed-trials",
+        "trials": "Heartseed"
+    },
+    {
+        "lookback_days": 365,
+        "name": "peptidream-trials",
+        "trials": "PeptiDream"
+    },
+    {
+        "edinet": "186A",
+        "lookback_days": 60,
+        "name": "astroscale-edinet"
+    },
+    {
+        "edinet": "9348",
+        "lookback_days": 60,
+        "name": "ispace-edinet"
+    },
+    {
+        "edinet": "290A",
+        "lookback_days": 60,
+        "name": "synspective-edinet"
+    },
+    {
+        "edinet": "4588",
+        "lookback_days": 60,
+        "name": "oncolys-edinet"
+    },
+    {
+        "edinet": "4978",
+        "lookback_days": 60,
+        "name": "reprocell-edinet"
+    },
+    {
+        "edinet": "4587",
+        "lookback_days": 60,
+        "name": "peptidream-edinet"
+    },
+    {
+        "name": "astroscale-prtimes",
+        "prtimes": "Astroscale|アストロスケール",
+        "lookback_days": 90
+    },
+    {
+        "name": "ispace-prtimes",
+        "prtimes": "ispace",
+        "lookback_days": 90
+    },
+    {
+        "name": "synspective-prtimes",
+        "prtimes": "Synspective|シンスペクティブ",
+        "lookback_days": 90
+    },
+    {
+        "name": "oncolys-prtimes",
+        "prtimes": "Oncolys|オンコリス",
+        "lookback_days": 90
+    },
+    {
+        "name": "reprocell-prtimes",
+        "prtimes": "REPROCELL|リプロセル",
+        "lookback_days": 90
+    },
+    {
+        "name": "heartseed-prtimes",
+        "prtimes": "Heartseed|ハートシード",
+        "lookback_days": 90
+    },
+    {
+        "name": "peptidream-prtimes",
+        "prtimes": "PeptiDream|ペプチドリーム",
+        "lookback_days": 90
+    }
+]
+
+    def test_generated_queries_match_golden(self):
+        self.assertEqual(CFG["sources"]["queries"], self.GOLDEN)
+
+    def src(self):
+        return {"keyword_sets": {"space": ["決算", "受注"], "bio": ["治験"]},
+                "entity_watch": {"lookback_days": {"prtimes": 90, "trials": 365, "edinet": 60}}}
+
+    def test_generation_rules(self):
+        ents = {"entities": [
+            {"id": "a", "sector": "space", "ticker": "1000",
+             "watch": {"news_name": "A社", "extra_keywords": ["月面"]}},
+            {"id": "b", "sector": "bio",
+             "watch": {"news_name": "B社", "prtimes_terms": ["B", "ビー"], "sponsor": "B Inc"}},
+            {"id": "c"},
+        ]}
+        qs = T.build_entity_queries(ents, self.src())
+        by_name = {q["name"]: q for q in qs}
+        self.assertEqual(by_name["a-news"]["gnews"], "A社 (決算 OR 受注 OR 月面)")
+        self.assertEqual(by_name["a-prtimes"]["prtimes"], "A社")  # prtimes_terms 省略時は news_name
+        self.assertEqual(by_name["a-edinet"]["edinet"], "1000")
+        self.assertNotIn("a-trials", by_name)  # sponsor が無い
+        self.assertEqual(by_name["b-trials"]["trials"], "B Inc")
+        self.assertEqual(by_name["b-prtimes"]["prtimes"], "B|ビー")
+        self.assertNotIn("b-edinet", by_name)  # ticker が無い
+        self.assertFalse(any(n.startswith("c-") for n in by_name))  # watch が無い企業は生成しない
+
+    def test_unknown_sector_rejected(self):
+        ents = {"entities": [{"id": "x", "sector": "chem", "watch": {"news_name": "X社"}}]}
+        with self.assertRaises(ConfigError):
+            T.build_entity_queries(ents, self.src())
+
+    def test_missing_news_name_rejected(self):
+        ents = {"entities": [{"id": "x", "sector": "space", "watch": {}}]}
+        with self.assertRaises(ConfigError):
+            T.build_entity_queries(ents, self.src())
+
+    def test_invalid_keyword_sets_rejected(self):
+        s = copy.deepcopy(CFG["sources"]); s["keyword_sets"]["bio"] = "治験"
+        with self.assertRaises(ConfigError):
+            T.validate_sources(s)
+        s = copy.deepcopy(CFG["sources"]); s["topics"] = [{"name": "t"}]
+        with self.assertRaises(ConfigError):
+            T.validate_sources(s)
+
+
 if __name__ == "__main__":
     unittest.main()

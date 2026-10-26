@@ -12,6 +12,14 @@
       ],
       "ticker": "186A",
       "exchange": "TSE",
+      "sector": "space",
+      "watch": {
+        "news_name": "アストロスケール",
+        "prtimes_terms": [
+          "Astroscale",
+          "アストロスケール"
+        ]
+      },
       "products": [
         {
           "id": "adras_j",
@@ -52,6 +60,16 @@
       ],
       "ticker": "9348",
       "exchange": "TSE",
+      "sector": "space",
+      "watch": {
+        "news_name": "ispace",
+        "prtimes_terms": [
+          "ispace"
+        ],
+        "extra_keywords": [
+          "月面"
+        ]
+      },
       "products": [
         {
           "id": "hakuto_r",
@@ -92,6 +110,17 @@
       ],
       "ticker": "290A",
       "exchange": "TSE",
+      "sector": "space",
+      "watch": {
+        "news_name": "Synspective",
+        "prtimes_terms": [
+          "Synspective",
+          "シンスペクティブ"
+        ],
+        "extra_keywords": [
+          "衛星"
+        ]
+      },
       "products": [
         {
           "id": "strix",
@@ -123,6 +152,15 @@
       ],
       "ticker": "4588",
       "exchange": "TSE",
+      "sector": "bio",
+      "watch": {
+        "news_name": "オンコリスバイオファーマ",
+        "prtimes_terms": [
+          "Oncolys",
+          "オンコリス"
+        ],
+        "sponsor": "Oncolys BioPharma"
+      },
       "products": [
         {
           "id": "telomelysin",
@@ -154,6 +192,15 @@
       ],
       "ticker": "4978",
       "exchange": "TSE",
+      "sector": "bio",
+      "watch": {
+        "news_name": "リプロセル",
+        "prtimes_terms": [
+          "REPROCELL",
+          "リプロセル"
+        ],
+        "sponsor": "REPROCELL"
+      },
       "products": [
         {
           "id": "stemchymal",
@@ -200,6 +247,15 @@
         "ハートシード",
         "ハートシード株式会社"
       ],
+      "sector": "bio",
+      "watch": {
+        "news_name": "ハートシード",
+        "prtimes_terms": [
+          "Heartseed",
+          "ハートシード"
+        ],
+        "sponsor": "Heartseed"
+      },
       "products": [
         {
           "id": "hs_001",
@@ -221,6 +277,15 @@
       ],
       "ticker": "4587",
       "exchange": "TSE",
+      "sector": "bio",
+      "watch": {
+        "news_name": "ペプチドリーム",
+        "prtimes_terms": [
+          "PeptiDream",
+          "ペプチドリーム"
+        ],
+        "sponsor": "PeptiDream"
+      },
       "products": [
         {
           "id": "pdps",

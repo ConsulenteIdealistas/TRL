@@ -48,6 +48,7 @@ def main(argv=None):
     ex.add_argument("--out", default="_site")
     ex.add_argument("--web", default=None, help="web/ のパス(既定: リポジトリ内の web)")
     sub.add_parser("check-config")
+    sub.add_parser("queries")
     a = ap.parse_args(argv)
     if a.cmd == "check-config":
         for n, ok in required_files():
@@ -63,6 +64,13 @@ def main(argv=None):
         return 2
     if a.cmd == "check-config":
         print(f"OK config={cfg['config_version']} hash={cfg['config_hash']}")
+        return 0
+    if a.cmd == "queries":
+        defaults = cfg["sources"]["defaults"]
+        for q in cfg["sources"]["queries"]:
+            sname = next(s for s in SOURCE_NAMES if q.get(s))
+            lookback = q.get("lookback_days", defaults["lookback_days"])
+            print(f"{q['name']} [{sname}] lookback={lookback}d: {q[sname]}")
         return 0
     if a.cmd == "export":
         db = Path(a.data_dir) / "trl.sqlite"

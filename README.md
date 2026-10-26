@@ -7,7 +7,7 @@ Python標準ライブラリのみ。スマホのブラウザだけで運用で�
 > スコアは評価尺度です。株価上昇確率・成功確率・投資利益率ではなく、売買の自動判定にも使えません。
 
 ## ファイル構成
-`trl.py` 本体 / `test_trl.py` `test_entities.py` `test_site.py` テスト / `scoring.json` 配点・設定 / `sources.json` 検索クエリ / `entities.json` 企業辞書 /
+`trl.py` 本体 / `test_trl.py` `test_entities.py` `test_site.py` テスト / `scoring.json` 配点・設定 / `sources.json` 収集設定(キーワード集合・トピック) / `entities.json` 企業辞書 /
 `extract.v1.md` `long.v1.md` `event.v1.md` プロンプト / `README.md` / `.github/workflows/main.yml`
 `web/`(例外: フォルダあり)= 画面。`index.html` `app.js` `style.css` と、Python⇔Web の契約 `schema.json`
 
@@ -51,6 +51,7 @@ Gemini 3.8 Flash は従量課金の料金表がある一方、無料枠の有無
 - 情報源は PubMed / arXiv(論文)に加え、Google News RSS(`gnews`、企業名+ビジネス語クエリ)、ClinicalTrials.gov(`trials`、スポンサー名クエリ。published は最終更新日)、EDINET(`edinet`、証券コードクエリ。開示書類のメタデータ)を利用できる。論文以外の短文ソース(news / disclosure)は `screening.min_abstract_chars_by_info_type` で最低文字数を別に定める。
 - ニュースは評価単位にしない。企業に紐付かないニュースは収集段階で捨て、転載・定型ページ・値動きまとめは媒体/タイトルフィルタで落とす。残ったニュースは「関連事業ニュース」として、同一企業(製品リンク経由を含む)の論文・治験・開示を評価するときにプロンプトへ同梱する補助根拠であり、サイトの候補一覧にも表示しない。
 - ニュースプールは報道(`gnews`)と企業発表(`prtimes`、PR TIMES の公式発表を site: 指定で収集)の二系統。同梱時に origin(企業発表/報道)を付け、同じ事実が両方で確認できる場合を信頼度の高い根拠として扱う擦り合わせを行う。
+- 企業クエリは sources.json には書かず、entities.json の `sector` と `watch`(news_name / prtimes_terms / sponsor / extra_keywords)から起動時に自動生成する(gnews=代表名+セクター別キーワード集合、trials=sponsor がある企業のみ、edinet=ticker がある企業のみ、prtimes=英日表記)。sources.json にはキーワード集合・生成パラメータ(entity_watch)とトピッククエリ(topics)だけを置く。生成結果は `trl.py queries` で確認できる。企業追加は entities.json の1エントリで完結する。
 - EDINET は Secret `EDINET_API_KEY` が必要。未設定のときは取得を自動でスキップする(エラーにしない)。現行はメタデータのみで、XBRL の財務数値抽出は未実装。
 - 失敗した情報源はログの `::warning::` とレポートに表示。全情報源が失敗したときだけジョブが失敗。
 

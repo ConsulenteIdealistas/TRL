@@ -30,7 +30,7 @@ from trlcore.sources.trials import parse_studies, trials_fetch  # noqa: F401,E40
 from trlcore.sources.edinet import sec_code, parse_results as edinet_parse_results, edinet_fetch  # noqa: F401,E402
 from trlcore.scoring import item_keys, validate_items, band_for, compute  # noqa: F401,E402
 from trlcore.entities import _norm_text, ENTITY_MODES, validate_entities, _contains, link_entities, entity_screen  # noqa: F401,E402
-from trlcore.config import __version__, ROOT, CONFIG_FILES, LLM_DEFAULTS, SOURCE_NAMES, validate_config, validate_sources, required_files, missing_files, load_config  # noqa: F401,E402
+from trlcore.config import __version__, ROOT, CONFIG_FILES, LLM_DEFAULTS, SOURCE_NAMES, validate_config, validate_sources, build_entity_queries, required_files, missing_files, load_config  # noqa: F401,E402
 from trlcore.store import SCHEMA, now_iso, _j, Store  # noqa: F401,E402
 from trlcore.prompts import PROMPT_DIR, _PH, load_prompt, render  # noqa: F401,E402
 from trlcore.llm import SYSTEM, extract_json, Anthropic, Gemini, Mock, get_provider, llm_settings, configure_llm, _fallback_model  # noqa: F401,E402

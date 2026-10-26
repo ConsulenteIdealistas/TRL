@@ -40,6 +40,24 @@ def validate_entities(data):
         if not isinstance(name, str) or not name.strip():
             raise ConfigError(f"entities[{i}].name is required")
 
+        sector = entity.get("sector")
+        if sector is not None and (not isinstance(sector, str) or not sector.strip()):
+            raise ConfigError(f"entities[{i}].sector must be a non-empty string")
+        watch = entity.get("watch")
+        if watch is not None:
+            if not isinstance(watch, dict):
+                raise ConfigError(f"entities[{i}].watch must be an object")
+            news_name = watch.get("news_name")
+            if not isinstance(news_name, str) or not news_name.strip():
+                raise ConfigError(f"entities[{i}].watch.news_name is required")
+            for k in ("prtimes_terms", "extra_keywords"):
+                v = watch.get(k)
+                if v is not None and (not isinstance(v, list) or any(not isinstance(x, str) or not x.strip() for x in v)):
+                    raise ConfigError(f"entities[{i}].watch.{k} must be a list of strings")
+            sponsor = watch.get("sponsor")
+            if sponsor is not None and (not isinstance(sponsor, str) or not sponsor.strip()):
+                raise ConfigError(f"entities[{i}].watch.sponsor must be a non-empty string")
+
         entity_aliases = entity.get("aliases", [])
         if not isinstance(entity_aliases, list):
             raise ConfigError(f"entities[{i}].aliases must be a list")

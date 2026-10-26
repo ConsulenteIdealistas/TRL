@@ -49,10 +49,28 @@ def main(argv=None):
     ex.add_argument("--web", default=None, help="web/ のパス(既定: リポジトリ内の web)")
     sub.add_parser("check-config")
     sub.add_parser("queries")
+    pg = sub.add_parser("purge")
+    pg.add_argument("--data-dir", default="data")
+    pg.add_argument("--evaluations", action="store_true",
+                    help="評価とレビューキューを全削除し、候補を未評価に戻す")
     a = ap.parse_args(argv)
     if a.cmd == "check-config":
         for n, ok in required_files():
             print(f"{'OK     ' if ok else 'MISSING'} {n}")
+    if a.cmd == "purge":
+        if not a.evaluations:
+            print("::error::削除対象を指定してください(現状は --evaluations のみ対応)")
+            return 2
+        db = Path(a.data_dir) / "trl.sqlite"
+        if not db.is_file():
+            print(f"[purge] {db} が無いため、削除する評価はありません")
+            return 0
+        store = Store(db)
+        counts = store.purge_evaluations()
+        store.close()
+        print(f"[purge] evaluations={counts['evaluations']} queue={counts['queue']} "
+              f"candidates_reset={counts['candidates_reset']}")
+        return 0
     gone = missing_files()
     if gone:
         print(f"::error::必須ファイルがありません: {', '.join(gone)}。リポジトリ直下に同名で作成してください(README参照)")

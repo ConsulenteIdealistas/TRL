@@ -786,6 +786,27 @@ class IntegrationTests(unittest.TestCase):
         self.assertIn("投資利益率ではありません", text)
         store.close()
 
+    def test_purge_evaluations_resets_candidates(self):
+        store = Store(self.path)
+        llm = Mock(make_llm_fn(long_scores={"monetization": None}))
+        r1 = run_pipeline(store, self.cfg(), llm, as_of=AS_OF, kinds=("long",), fetchers=self.fetchers(),
+                          today=AS_OF, log=lambda *_: None)
+        self.assertEqual(r1["counts"]["hold"], 2)
+        self.assertEqual(len(store.list_queue()), 2)
+        n_candidates = store.count_candidates()
+        counts = store.purge_evaluations()
+        self.assertEqual(counts, {"evaluations": 2, "queue": 2, "candidates_reset": 2})
+        self.assertEqual(store.list_queue(), [])
+        self.assertEqual(store.evaluations_for_run(r1["run_id"], "long"), [])
+        self.assertEqual(store.count_candidates(), n_candidates)  # 候補・材料は残る
+        statuses = {c["status"] for c in store.list_by_status(["screened", "hold", "error", "final"])}
+        self.assertEqual(statuses, {"screened"})
+        # purge 直後は再評価間隔を待たずに再評価できる
+        r2 = run_pipeline(store, self.cfg(), llm, as_of=AS_OF, kinds=("long",), do_collect=False,
+                          today=AS_OF, log=lambda *_: None)
+        self.assertEqual(r2["counts"]["hold"], 2)
+        store.close()
+
     def test_source_failure_isolated_and_secret_redacted(self):
         store = Store(self.path)
         logs = []

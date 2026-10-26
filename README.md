@@ -54,6 +54,7 @@ Gemini 3.8 Flash は従量課金の料金表がある一方、無料枠の有無
 - 企業クエリは sources.json には書かず、entities.json の `sector` と `watch`(news_name / prtimes_terms / sponsor / extra_keywords)から起動時に自動生成する(gnews=代表名+セクター別キーワード集合、trials=sponsor がある企業のみ、edinet=ticker がある企業のみ、prtimes=英日表記)。sources.json にはキーワード集合・生成パラメータ(entity_watch)とトピッククエリ(topics)だけを置く。生成結果は `trl.py queries` で確認できる。企業追加は entities.json の1エントリで完結する。
 - EDINET は Secret `EDINET_API_KEY` が必要。未設定のときは取得を自動でスキップする(エラーにしない)。現行はメタデータのみで、XBRL の財務数値抽出は未実装。
 - 失敗した情報源はログの `::warning::` とレポートに表示。全情報源が失敗したときだけジョブが失敗。
+- 評価基準を大きく変えたときは `trl.py purge --evaluations` で評価とレビューキューを全削除し、候補を未評価に戻せる(候補・収集物・実行履歴は残る)。ワークフローの手動実行で purge_evaluations=yes を選ぶと、削除→再評価→サイト再出力が一回の実行で完結する。
 
 ## 実装状況
 **テスト済み(自動テスト `test_trl` 52件 + `test_entities` 10件 + `test_site`)**: 設定検証、採点・hold・スコア帯、日付/鮮度、正規化、重複排除、保存/再読込、レビューキュー、プロンプト差し込み、不正AI応答の検出、HTTPリトライと秘密情報マスク、PubMed/arXivのXML解析(固定サンプル)、収集→評価→保存の統合(モックAI)。

@@ -210,6 +210,19 @@ class Store:
     def count_candidates(self):
         return self.conn.execute("SELECT COUNT(*) FROM candidates").fetchone()[0]
 
+    def purge_evaluations(self):
+        """評価とレビューキューを全て削除し、評価済み候補を screened(未評価) に戻す。
+        候補・収集物・企業リンク・抽出キャッシュ・実行履歴は残す。削除件数を返す。"""
+        c = self.conn
+        n_eval = c.execute("SELECT COUNT(*) FROM evaluations").fetchone()[0]
+        n_queue = c.execute("SELECT COUNT(*) FROM review_queue").fetchone()[0]
+        c.execute("DELETE FROM evaluations")
+        c.execute("DELETE FROM review_queue")
+        cur = c.execute("UPDATE candidates SET status='screened', last_eval_at=NULL, retry_count=0 "
+                        "WHERE status IN ('hold','error','final')")
+        c.commit()
+        return {"evaluations": n_eval, "queue": n_queue, "candidates_reset": cur.rowcount}
+
     def related_news(self, cid, as_of, limit=8, window_days=90):
         """同一企業に紐付く直近ニュースを、評価時の補助根拠として返す。
 

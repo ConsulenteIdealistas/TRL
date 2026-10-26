@@ -22,6 +22,11 @@ on:
         type: choice
         options: ["no", "yes", "force"]
         default: "no"
+      purge_evaluations:
+        description: "Purge all evaluations before running?"
+        type: choice
+        options: ["no", "yes"]
+        default: "no"
   schedule:
     - cron: "30 21 * * 1"   # Mondays 21:30 UTC (Tuesday 06:30 JST)
 

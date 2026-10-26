@@ -1,4 +1,4 @@
-"""v0.2 追加分のテスト(一時エラーの扱い・抽出再利用・export・Webとの契約)。実行: python -m unittest test_site -v"""
+"""追加分のテスト(一時エラーの扱い・抽出再利用・export・Webとの契約)。実行: python -m unittest test_site -v"""
 import copy
 import json
 import tempfile

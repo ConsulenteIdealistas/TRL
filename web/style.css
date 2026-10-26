@@ -83,3 +83,17 @@ textarea{width:100%;min-height:90px;resize:vertical;padding:10px;border:1px soli
 .ft{display:flex;justify-content:space-between;gap:12px;margin-top:26px;padding-top:16px;border-top:1px solid var(--line);color:var(--muted);font-size:11px}
 @media(max-width:900px){.lay{grid-template-columns:minmax(0,1fr)}.panelD{position:static;max-height:none}.filters{grid-template-columns:1fr 1fr}}
 @media(max-width:560px){body{font-size:13px}.stats{grid-template-columns:1fr 1fr;gap:9px}.filters{grid-template-columns:1fr}.sb{flex-wrap:wrap}.sb .btn{width:100%}.main{grid-template-columns:1fr}.side{justify-items:start;grid-auto-flow:column;align-items:center}.ft{flex-direction:column}}
+
+/* v0.2: data.json 連携用 */
+.st-pending{color:#607080;background:#edf1f4}
+.warn{margin:14px 0 0;padding:10px 14px;border:1px solid #f0c36a;border-radius:12px;color:#8a5a00;background:#fff3dc;font-size:12px;font-weight:700}
+.sc{display:grid;gap:4px;margin:0 0 12px}
+.sc .h{display:flex;justify-content:space-between;gap:8px;font-size:12px;font-weight:750}
+.sc .h span:last-child{color:var(--gd)}
+.sc .h span.u{color:var(--muted);font-weight:600}
+.sc .bar{height:7px;border-radius:4px;background:var(--line);overflow:hidden}
+.sc .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--green),var(--cyan))}
+.sc p{margin:0;color:var(--sub);font-size:11px;line-height:1.7}
+.sc p.m{color:#a96500}
+.note{padding:9px 11px;border-radius:10px;color:var(--sub);background:var(--field);border:1px solid var(--line);font-size:11px;line-height:1.8}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]) .warn{color:#f5c76a;background:#3a2c0d;border-color:#6b5116}}

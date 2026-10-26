@@ -1,4 +1,4 @@
-"""TRL投資分析システム (単一ファイル版 v0.2.0)。使い方は README.md を参照。"""
+"""TRL投資分析システム (単一ファイル版 v0.1.0)。使い方は README.md を参照。"""
 import argparse
 import calendar
 import hashlib
@@ -19,7 +19,7 @@ import xml.etree.ElementTree as ET
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
-__version__ = "0.2.0"
+__version__ = "0.1.0"
 
 
 # ==================== config ====================

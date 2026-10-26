@@ -173,7 +173,6 @@ def run_pipeline(store, cfg, llm, *, as_of, sources=("pubmed", "arxiv"), kinds=(
                 store.put_extraction(ihash, extract_sha, model, res["extraction"], res["prompt_versions"].get("extract"))
             if res.get("infra_failure"):
                 # API側の失敗は評価結果として保存しない(error滞留とキュー汚染を防ぐ)。候補は未評価のまま次回へ
-                infra_failed = True
                 consecutive += 1
                 counts["llm_infra_failed"] += 1
                 log(f"::warning::[eval] {c['id']} {kind}: LLM API失敗のため未評価のまま残します: {res['errors'][0]}")

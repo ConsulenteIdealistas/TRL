@@ -25,7 +25,7 @@ from trlcore.http import SECRET_ENV, _PARAM_RE, redact, _retry_after_seconds, ba
 from trlcore.normalize import clean_text, norm_doi, norm_url, FATAL, normalize  # noqa: F401,E402
 from trlcore.sources.pubmed import BASE, MONTHS, _month, _date_from, parse_efetch, pubmed_fetch  # noqa: F401,E402
 from trlcore.sources.arxiv import URL, NS, _last_call, parse_feed, arxiv_fetch  # noqa: F401,E402
-from trlcore.sources.gnews import parse_feed as gnews_parse_feed, gnews_fetch  # noqa: F401,E402
+from trlcore.sources.gnews import parse_feed as gnews_parse_feed, gnews_fetch, prtimes_fetch  # noqa: F401,E402
 from trlcore.sources.trials import parse_studies, trials_fetch  # noqa: F401,E402
 from trlcore.sources.edinet import sec_code, parse_results as edinet_parse_results, edinet_fetch  # noqa: F401,E402
 from trlcore.scoring import item_keys, validate_items, band_for, compute  # noqa: F401,E402

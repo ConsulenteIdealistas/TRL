@@ -93,6 +93,41 @@
       "edinet": "4587",
       "lookback_days": 60,
       "name": "peptidream-edinet"
+    },
+    {
+      "name": "astroscale-prtimes",
+      "prtimes": "Astroscale|アストロスケール",
+      "lookback_days": 90
+    },
+    {
+      "name": "ispace-prtimes",
+      "prtimes": "ispace",
+      "lookback_days": 90
+    },
+    {
+      "name": "synspective-prtimes",
+      "prtimes": "Synspective|シンスペクティブ",
+      "lookback_days": 90
+    },
+    {
+      "name": "oncolys-prtimes",
+      "prtimes": "Oncolys|オンコリス",
+      "lookback_days": 90
+    },
+    {
+      "name": "reprocell-prtimes",
+      "prtimes": "REPROCELL|リプロセル",
+      "lookback_days": 90
+    },
+    {
+      "name": "heartseed-prtimes",
+      "prtimes": "Heartseed|ハートシード",
+      "lookback_days": 90
+    },
+    {
+      "name": "peptidream-prtimes",
+      "prtimes": "PeptiDream|ペプチドリーム",
+      "lookback_days": 90
     }
   ]
 }

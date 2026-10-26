@@ -217,7 +217,7 @@ class Store:
         """
         start = (as_of - timedelta(days=window_days)).isoformat()
         rows = self.conn.execute(
-            "SELECT DISTINCT n.title, n.published, n.url, n.fields_json FROM candidates n "
+            "SELECT DISTINCT n.title, n.published, n.url, n.fields_json, n.source FROM candidates n "
             "JOIN candidate_entities ne ON ne.candidate_id = n.id "
             "JOIN candidate_entities ce ON ce.entity_id = ne.entity_id "
             "WHERE ce.candidate_id = ? AND n.id != ? AND n.info_type = 'news' "
@@ -228,7 +228,8 @@ class Store:
         for r in rows:
             fields = json.loads(r["fields_json"] or "[]")
             out.append({"title": r["title"], "published": r["published"], "url": r["url"],
-                        "media": fields[0] if fields else ""})
+                        "media": fields[0] if fields else "",
+                        "origin": "企業発表" if r["source"] == "prtimes" else "報道"})
         return out
 
     # --- evaluations ---

@@ -9,6 +9,7 @@ http = NS(fetch=T.http_fetch, redact=T.redact, HttpError=T.HttpError)
 pubmed = NS(parse_efetch=T.parse_efetch, fetch=T.pubmed_fetch)
 arxiv = NS(parse_feed=T.parse_feed, fetch=T.arxiv_fetch)
 gnews = NS(parse_feed=T.gnews_parse_feed, fetch=T.gnews_fetch)
+prtimes = NS(fetch=T.prtimes_fetch)
 trials = NS(parse=T.parse_studies, fetch=T.trials_fetch)
 edinet = NS(parse=T.edinet_parse_results, fetch=T.edinet_fetch, sec_code=T.sec_code)
 ev = NS(validate_assessment=T.validate_assessment, validate_extraction=T.validate_extraction, evaluate_one=T.evaluate_one)
@@ -262,6 +263,17 @@ class NewSourceParseTests(unittest.TestCase):
     def test_gnews_fetch_window(self):
         out = gnews.fetch("アストロスケール", 20, 30, AS_OF, http=lambda url, params=None, **kw: GNEWS_XML)
         self.assertEqual(len(out), 1)  # 2026-08-01 は lookback 30 日の外
+
+    def test_prtimes_fetch_uses_site_filter(self):
+        calls = []
+
+        def fake(url, params=None, **kw):
+            calls.append(params)
+            return GNEWS_XML
+        out = prtimes.fetch("Example", 20, 30, AS_OF, http=fake)  # 固定XMLの見出し語で厳密フィルタを通す
+        self.assertIn("site:prtimes.jp", calls[0]["q"])
+        self.assertTrue(out)
+        self.assertTrue(all(r["source"] == "prtimes" for r in out))
 
     def test_trials(self):
         r = trials.parse(TRIALS_DATA)[0]
@@ -556,8 +568,8 @@ class NewsPoolTests(unittest.TestCase):
     def tearDown(self):
         self.tmp.cleanup()
 
-    def news_raw(self, sid, title, published="2026-10-19"):
-        return {"source": "gnews", "source_id": sid, "title": title,
+    def news_raw(self, sid, title, published="2026-10-19", source="gnews"):
+        return {"source": source, "source_id": sid, "title": title,
                 "abstract": title + " に関する事業ニュースの見出し。",
                 "url": f"https://example.org/{sid}", "published": published,
                 "fields": ["日本経済新聞"], "affiliations": [], "info_type": "news"}
@@ -602,9 +614,14 @@ class NewsPoolTests(unittest.TestCase):
                             "2026-10-20T00:00:00+00:00")
         prid, _ = store.upsert_candidate(prod, "r0")
         store.set_entities(prid, link_entities(prod, CFG.get("entities", {})))
+        news3, _ = normalize(self.news_raw("n11", "オンコリスバイオファーマが新薬候補の導出契約を締結",
+                                           source="prtimes"),
+                             "2026-10-20T00:00:00+00:00")
+        n3id, _ = store.upsert_candidate(news3, "r0")
+        store.set_entities(n3id, link_entities(news3, CFG.get("entities", {})))
         rel2 = store.related_news(prid, AS_OF)
-        self.assertEqual(len(rel2), 1)
-        self.assertIn("提携", rel2[0]["title"])
+        self.assertEqual(len(rel2), 2)  # 報道(gnews)と企業発表(prtimes)が擦り合わさる
+        self.assertEqual({r["origin"] for r in rel2}, {"報道", "企業発表"})
         store.close()
 
     def test_evaluate_one_includes_related(self):

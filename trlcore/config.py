@@ -9,7 +9,7 @@ from .entities import ENTITY_MODES, validate_entities
 
 __version__ = "0.1.0"
 
-SOURCE_NAMES = ("pubmed", "arxiv", "gnews", "trials", "edinet")
+SOURCE_NAMES = ("pubmed", "arxiv", "gnews", "prtimes", "trials", "edinet")
 
 
 ROOT = Path(__file__).resolve().parent.parent  # リポジトリ直下(trlcore/ の1つ上)

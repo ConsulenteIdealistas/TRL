@@ -9,7 +9,7 @@ from .http import redact
 from .normalize import normalize
 from .sources.pubmed import pubmed_fetch
 from .sources.arxiv import arxiv_fetch
-from .sources.gnews import gnews_fetch
+from .sources.gnews import gnews_fetch, prtimes_fetch
 from .sources.trials import trials_fetch
 from .sources.edinet import edinet_fetch
 from .entities import entity_screen, link_entities
@@ -19,7 +19,7 @@ from .evaluate import evaluate_one, input_hash
 
 
 DEFAULT_FETCHERS = {"pubmed": pubmed_fetch, "arxiv": arxiv_fetch, "gnews": gnews_fetch,
-                    "trials": trials_fetch, "edinet": edinet_fetch}
+                    "prtimes": prtimes_fetch, "trials": trials_fetch, "edinet": edinet_fetch}
 
 
 def new_run_id(now=None):

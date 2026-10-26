@@ -39,7 +39,7 @@ def _date_of(item):
         return None
 
 
-def parse_feed(xml_bytes):
+def parse_feed(xml_bytes, source="gnews"):
     root = ET.fromstring(xml_bytes)
     out = []
     for item in root.findall(".//item"):
@@ -64,7 +64,7 @@ def parse_feed(xml_bytes):
             abstract += f"（配信元: {media}）"
         sid = hashlib.sha1(link.encode("utf-8")).hexdigest()[:16]
         out.append({
-            "source": "gnews", "source_id": sid,
+            "source": source, "source_id": sid,
             "title": title, "abstract": abstract,
             "url": link, "published": published,
             "fields": [media] if media else [],
@@ -73,12 +73,31 @@ def parse_feed(xml_bytes):
     return out
 
 
-def gnews_fetch(query, max_results, lookback_days, as_of, http=None):
-    http = http or http_fetch
+def _rss_fetch(query, max_results, lookback_days, as_of, http, source):
     start = as_of - timedelta(days=lookback_days)
     q = f"{query} after:{start.isoformat()}"
     xml = http(URL, params={"q": q, "hl": "ja", "gl": "JP", "ceid": "JP:ja"})
-    items = [r for r in parse_feed(xml)
+    items = [r for r in parse_feed(xml, source=source)
              if r["published"] and start.isoformat() <= r["published"] <= as_of.isoformat()]
     items.sort(key=lambda r: r["published"], reverse=True)
     return items[:max_results]
+
+
+def gnews_fetch(query, max_results, lookback_days, as_of, http=None):
+    return _rss_fetch(query, max_results, lookback_days, as_of, http or http_fetch, "gnews")
+
+
+def prtimes_fetch(query, max_results, lookback_days, as_of, http=None):
+    """PR TIMES の企業公式プレスリリースだけを Google News RSS から拾う一次情報ソース。
+
+    クエリは企業名 ("|" 区切りで英日などの別表記を併記可)。Google News の site:
+    検索は関連性が緩く無関係なリリースが混ざるため、引用符付きフレーズで検索し、
+    タイトルに企業名を含むものだけを残す厳密フィルタを併用する。件数は少なくて
+    よい (一次情報プールは精度優先)。gnews(報道)と併用し、関連ニュースの同梱時に
+    origin=企業発表 として区別する (擦り合わせ用)。
+    """
+    terms = [t.strip() for t in query.split("|") if t.strip()]
+    phrase = " OR ".join(f'"{t}"' for t in terms)
+    items = _rss_fetch(f"({phrase}) site:prtimes.jp", max_results, lookback_days, as_of,
+                       http or http_fetch, "prtimes")
+    return [i for i in items if any(t.lower() in i["title"].lower() for t in terms)]

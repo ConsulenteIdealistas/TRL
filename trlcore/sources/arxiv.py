@@ -7,8 +7,7 @@ from datetime import timedelta
 from ..http import http_fetch
 
 
-URL = "http://export.arxiv.org/api/query"
-
+URL = "https://export.arxiv.org/api/query"
 
 NS = {"a": "http://www.w3.org/2005/Atom", "x": "http://arxiv.org/schemas/atom"}
 

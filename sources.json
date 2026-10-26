@@ -1,8 +1,1 @@
-{
-  "defaults": {"max_results": 20, "lookback_days": 30},
-  "queries": [
-    {"name": "solid-state-battery", "arxiv": "all:\"solid-state battery\""},
-    {"name": "quantum-error-correction", "arxiv": "all:\"quantum error correction\""},
-    {"name": "gene-therapy", "pubmed": "gene therapy[Title/Abstract] AND clinical trial[Publication Type]"}
-  ]
-}
+{"defaults":{"lookback_days":30,"max_results":20},"queries":[{"arxiv":"all:\"solid-state battery\"","name":"solid-state-battery"},{"arxiv":"all:\"quantum error correction\"","name":"quantum-error-correction"},{"name":"gene-therapy","pubmed":"gene therapy[Title/Abstract] AND clinical trial[Publication Type]"},{"gnews":"アストロスケール","name":"astroscale-news"},{"gnews":"ispace 月面","name":"ispace-news"},{"gnews":"Synspective 衛星","name":"synspective-news"},{"gnews":"オンコリスバイオファーマ","name":"oncolys-news"},{"gnews":"リプロセル","name":"reprocell-news"},{"gnews":"ハートシード","name":"heartseed-news"},{"gnews":"ペプチドリーム","name":"peptidream-news"},{"lookback_days":365,"name":"oncolys-trials","trials":"Oncolys BioPharma"},{"lookback_days":365,"name":"reprocell-trials","trials":"REPROCELL"},{"lookback_days":365,"name":"heartseed-trials","trials":"Heartseed"},{"lookback_days":365,"name":"peptidream-trials","trials":"PeptiDream"},{"edinet":"186A","lookback_days":60,"name":"astroscale-edinet"},{"edinet":"9348","lookback_days":60,"name":"ispace-edinet"},{"edinet":"290A","lookback_days":60,"name":"synspective-edinet"},{"edinet":"4588","lookback_days":60,"name":"oncolys-edinet"},{"edinet":"4978","lookback_days":60,"name":"reprocell-edinet"},{"edinet":"4587","lookback_days":60,"name":"peptidream-edinet"}]}

@@ -9,6 +9,8 @@ from .entities import ENTITY_MODES, validate_entities
 
 __version__ = "0.1.0"
 
+SOURCE_NAMES = ("pubmed", "arxiv", "gnews", "trials", "edinet")
+
 
 ROOT = Path(__file__).resolve().parent.parent  # リポジトリ直下(trlcore/ の1つ上)
 
@@ -45,6 +47,9 @@ def validate_config(cfg):
             raise ConfigError(f"scoring.json: unknown llm.{k}")
         if isinstance(v, bool) or not isinstance(v, int) or v < (0 if k == "retries" else 1):
             raise ConfigError(f"scoring.json: llm.{k} must be an integer ({'>=0' if k == 'retries' else '>=1'})")
+    for k, v in (sc.get("screening", {}).get("min_abstract_chars_by_info_type") or {}).items():
+        if isinstance(v, bool) or not isinstance(v, int) or v < 0:
+            raise ConfigError(f"scoring.json: screening.min_abstract_chars_by_info_type.{k} must be a non-negative integer")
     mode = sc.get("screening", {}).get("require_entity", "off")
     if mode not in ENTITY_MODES:
         raise ConfigError("scoring.json: screening.require_entity must be off/strong/any")
@@ -58,7 +63,7 @@ def validate_config(cfg):
 def validate_sources(src):
     """sources.json のスキーマ検証。
     {"defaults": {"max_results": int>0, "lookback_days": int>0},
-     "queries": [{"name": str, "pubmed": str?, "arxiv": str?, "max_results": int?, "lookback_days": int?}]}"""
+     "queries": [{"name": str, "pubmed"/"arxiv"/"gnews"/"trials"/"edinet": str?, "max_results": int?, "lookback_days": int?}]}"""
     d = src.get("defaults")
     if not isinstance(d, dict):
         raise ConfigError("sources.json: defaults must be an object")
@@ -75,8 +80,8 @@ def validate_sources(src):
         if q["name"] in names:
             raise ConfigError(f"sources.json: duplicate query name: {q['name']}")
         names.add(q["name"])
-        if not any(isinstance(q.get(s), str) and q[s].strip() for s in ("pubmed", "arxiv")):
-            raise ConfigError(f"sources.json: queries[{i}] needs a non-empty 'pubmed' or 'arxiv' query string")
+        if not any(isinstance(q.get(s), str) and q[s].strip() for s in SOURCE_NAMES):
+            raise ConfigError(f"sources.json: queries[{i}] needs a non-empty query string for one of {SOURCE_NAMES}")
         for k in ("max_results", "lookback_days"):
             if k in q and (isinstance(q[k], bool) or not isinstance(q[k], int) or q[k] <= 0):
                 raise ConfigError(f"sources.json: queries[{i}].{k} must be a positive integer")

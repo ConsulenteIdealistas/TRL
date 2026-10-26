@@ -9,13 +9,17 @@ from .http import redact
 from .normalize import normalize
 from .sources.pubmed import pubmed_fetch
 from .sources.arxiv import arxiv_fetch
+from .sources.gnews import gnews_fetch
+from .sources.trials import trials_fetch
+from .sources.edinet import edinet_fetch
 from .entities import entity_screen, link_entities
 from .prompts import load_prompt
 from .llm import llm_settings
 from .evaluate import evaluate_one, input_hash
 
 
-DEFAULT_FETCHERS = {"pubmed": pubmed_fetch, "arxiv": arxiv_fetch}
+DEFAULT_FETCHERS = {"pubmed": pubmed_fetch, "arxiv": arxiv_fetch, "gnews": gnews_fetch,
+                    "trials": trials_fetch, "edinet": edinet_fetch}
 
 
 def new_run_id(now=None):
@@ -33,7 +37,10 @@ def screen(cand, as_of, cfg):
         return "published_after_as_of"
     if days_since(cand["published"], as_of) > sc["max_age_days"]:
         return "stale"
-    if len(cand["abstract"] or "") < sc["min_abstract_chars"]:
+    # ニュース・開示のような短文ソースは info_type 別の最低文字数を優先する
+    by_type = sc.get("min_abstract_chars_by_info_type") or {}
+    min_chars = by_type.get(cand.get("info_type"), sc["min_abstract_chars"])
+    if len(cand["abstract"] or "") < min_chars:
         return "abstract_too_short"
     reason = entity_screen(cand, sc.get("require_entity", "off"))
     if reason:

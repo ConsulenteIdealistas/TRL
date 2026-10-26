@@ -10,8 +10,10 @@ const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "
 const safeUrl = u => /^https?:\/\//i.test(String(u || "")) ? String(u) : "#";
 const ok = t => Number.isInteger(t) && t >= 1 && t <= 9;
 const lvl = p => (p.long && p.long.trl_level && p.long.trl_level.level) ?? null;
-const src = s => "badge " + (s === "arxiv" ? "s-arxiv" : s === "pubmed" ? "s-pubmed" : "");
-const srcName = s => s === "arxiv" ? "arXiv" : s === "pubmed" ? "PubMed" : esc(s);
+const SRC_CLASS = {arxiv: "s-arxiv", pubmed: "s-pubmed", gnews: "s-gnews", trials: "s-trials", edinet: "s-edinet"};
+const SRC_LABEL = {arxiv: "arXiv", pubmed: "PubMed", gnews: "News", trials: "ClinicalTrials", edinet: "EDINET"};
+const src = s => "badge " + (SRC_CLASS[s] || "");
+const srcName = s => SRC_LABEL[s] || esc(s);
 const stB = s => `<span class="st ${s === "final" ? "" : "st-" + s}">${SL[s] || esc(s)}</span>`;
 const jst = iso => { try { return new Date(iso).toLocaleString("ja-JP", {timeZone: "Asia/Tokyo", hour12: false}); } catch (e) { return iso; } };
 const label = k => IL[k] || k;

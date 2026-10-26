@@ -25,9 +25,12 @@ from trlcore.http import SECRET_ENV, _PARAM_RE, redact, _retry_after_seconds, ba
 from trlcore.normalize import clean_text, norm_doi, norm_url, FATAL, normalize  # noqa: F401,E402
 from trlcore.sources.pubmed import BASE, MONTHS, _month, _date_from, parse_efetch, pubmed_fetch  # noqa: F401,E402
 from trlcore.sources.arxiv import URL, NS, _last_call, parse_feed, arxiv_fetch  # noqa: F401,E402
+from trlcore.sources.gnews import parse_feed as gnews_parse_feed, gnews_fetch  # noqa: F401,E402
+from trlcore.sources.trials import parse_studies, trials_fetch  # noqa: F401,E402
+from trlcore.sources.edinet import sec_code, parse_results as edinet_parse_results, edinet_fetch  # noqa: F401,E402
 from trlcore.scoring import item_keys, validate_items, band_for, compute  # noqa: F401,E402
 from trlcore.entities import _norm_text, ENTITY_MODES, validate_entities, _contains, link_entities, entity_screen  # noqa: F401,E402
-from trlcore.config import __version__, ROOT, CONFIG_FILES, LLM_DEFAULTS, validate_config, validate_sources, required_files, missing_files, load_config  # noqa: F401,E402
+from trlcore.config import __version__, ROOT, CONFIG_FILES, LLM_DEFAULTS, SOURCE_NAMES, validate_config, validate_sources, required_files, missing_files, load_config  # noqa: F401,E402
 from trlcore.store import SCHEMA, now_iso, _j, Store  # noqa: F401,E402
 from trlcore.prompts import PROMPT_DIR, _PH, load_prompt, render  # noqa: F401,E402
 from trlcore.llm import SYSTEM, extract_json, Anthropic, Gemini, Mock, get_provider, llm_settings, configure_llm, _fallback_model  # noqa: F401,E402

@@ -8,6 +8,9 @@ freshness = NS(parse_date=T.parse_date, days_since=T.days_since, freshness_info=
 http = NS(fetch=T.http_fetch, redact=T.redact, HttpError=T.HttpError)
 pubmed = NS(parse_efetch=T.parse_efetch, fetch=T.pubmed_fetch)
 arxiv = NS(parse_feed=T.parse_feed, fetch=T.arxiv_fetch)
+gnews = NS(parse_feed=T.gnews_parse_feed, fetch=T.gnews_fetch)
+trials = NS(parse=T.parse_studies, fetch=T.trials_fetch)
+edinet = NS(parse=T.edinet_parse_results, fetch=T.edinet_fetch, sec_code=T.sec_code)
 ev = NS(validate_assessment=T.validate_assessment, validate_extraction=T.validate_extraction, evaluate_one=T.evaluate_one)
 
 import json
@@ -200,6 +203,83 @@ class SourceParseTests(unittest.TestCase):
         self.assertEqual(len(out), 1)
         self.assertEqual(calls[0]["maxdate"], "2026/10/20")
         self.assertEqual(calls[0]["mindate"], "2026/09/20")
+
+
+GNEWS_XML = b"""<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0"><channel><title>news</title>
+<item><title>Astroscale wins a debris removal contract - Example News</title>
+<link>https://news.google.com/rss/articles/AAA</link>
+<pubDate>Sun, 18 Oct 2026 01:00:00 GMT</pubDate>
+<description>&lt;a href="https://example.com"&gt;Astroscale wins a debris removal contract&lt;/a&gt;</description>
+<source url="https://example.com">Example News</source></item>
+<item><title>Old news about Astroscale funding</title>
+<link>https://news.google.com/rss/articles/BBB</link>
+<pubDate>Sat, 01 Aug 2026 01:00:00 GMT</pubDate>
+<description>Old news about Astroscale funding</description>
+<source url="https://example.com">Example News</source></item>
+</channel></rss>"""
+
+TRIALS_DATA = {"studies": [{
+    "protocolSection": {
+        "identificationModule": {"nctId": "NCT00000001", "officialTitle": "Phase 1 study of PD-1",
+                                 "briefTitle": "PD-1 study"},
+        "descriptionModule": {"briefSummary": "A first-in-human study. " * 12,
+                              "detailedDescription": "Dose escalation in patients."},
+        "statusModule": {"overallStatus": "RECRUITING",
+                         "lastUpdatePostDateStruct": {"date": "2026-10-01"},
+                         "startDateStruct": {"date": "2026-05-01"}},
+        "designModule": {"phases": ["PHASE1"]},
+        "conditionsModule": {"conditions": ["Cancer"]},
+        "armsInterventionsModule": {"interventions": [{"name": "PD-1"}]},
+        "sponsorCollaboratorsModule": {"leadSponsor": {"name": "PeptiDream Inc."}},
+    }}]}
+
+EDINET_RESULTS = [
+    {"docID": "S100AAAA", "edinetCode": "E00001", "secCode": "93480", "filerName": "株式会社ispace",
+     "docDescription": "臨時報告書", "submitDateTime": "2026-10-15 15:00", "periodStart": None,
+     "periodEnd": None, "withdrawalStatus": "0"},
+    {"docID": "S100BBBB", "edinetCode": "E00002", "secCode": "99990", "filerName": "別会社",
+     "docDescription": "四半期報告書", "submitDateTime": "2026-10-15 15:00", "withdrawalStatus": "0"},
+    {"docID": "S100CCCC", "edinetCode": "E00001", "secCode": "93480", "filerName": "株式会社ispace",
+     "docDescription": "取下げ", "submitDateTime": "2026-10-14 15:00", "withdrawalStatus": "1"},
+]
+
+
+class NewSourceParseTests(unittest.TestCase):
+    def test_gnews(self):
+        r = gnews.parse_feed(GNEWS_XML)[0]
+        self.assertEqual((r["source"], r["info_type"], r["published"]), ("gnews", "news", "2026-10-18"))
+        self.assertIn("配信元: Example News", r["abstract"])
+        self.assertTrue(r["url"].startswith("https://news.google.com/"))
+
+    def test_gnews_fetch_window(self):
+        out = gnews.fetch("アストロスケール", 20, 30, AS_OF, http=lambda url, params=None, **kw: GNEWS_XML)
+        self.assertEqual(len(out), 1)  # 2026-08-01 は lookback 30 日の外
+
+    def test_trials(self):
+        r = trials.parse(TRIALS_DATA)[0]
+        self.assertEqual((r["source"], r["info_type"], r["published"]), ("trials", "trial", "2026-10-01"))
+        self.assertEqual(r["url"], "https://clinicaltrials.gov/study/NCT00000001")
+        self.assertIn("Status: RECRUITING", r["abstract"])
+        self.assertEqual(r["affiliations"], ["PeptiDream Inc."])
+
+    def test_edinet_sec_code_and_parse(self):
+        self.assertEqual(edinet.sec_code("9348"), "93480")
+        self.assertEqual(edinet.sec_code("186A"), "186A0")
+        out = edinet.parse(EDINET_RESULTS, "9348")
+        self.assertEqual(len(out), 1)  # 他社と取下げを除外
+        self.assertEqual(out[0]["info_type"], "disclosure")
+        self.assertIn("臨時報告書", out[0]["abstract"])
+
+    def test_edinet_without_key_fetches_nothing(self):
+        import os
+        from unittest import mock
+        with mock.patch.dict(os.environ, {}, clear=False):
+            os.environ.pop("EDINET_API_KEY", None)
+            called = []
+            out = edinet.fetch("9348", 20, 30, AS_OF, http=lambda *a, **k: called.append(a) or b"{}")
+        self.assertEqual(out, [])
+        self.assertEqual(called, [])
 
 
 class DedupeStoreTests(unittest.TestCase):
@@ -453,6 +533,10 @@ class ScreenTests(unittest.TestCase):
         self.assertEqual(screen(self.c(published="2026-10"), date(2026, 10, 15), CFG), "published_after_as_of")  # 月末まで未確定
         self.assertEqual(screen(self.c(published="2024-01-01"), AS_OF, CFG), "stale")
         self.assertEqual(screen(self.c(abstract="short"), AS_OF, CFG), "abstract_too_short")
+        # ニュース/開示は info_type 別の低い閾値で通る (論文は従来どおり)
+        self.assertIsNone(screen(self.c(abstract="x" * 40, info_type="news"), AS_OF, CFG))
+        self.assertIsNone(screen(self.c(abstract="x" * 40, info_type="disclosure"), AS_OF, CFG))
+        self.assertEqual(screen(self.c(abstract="x" * 40, info_type="paper"), AS_OF, CFG), "abstract_too_short")
 
 
 class IntegrationTests(unittest.TestCase):

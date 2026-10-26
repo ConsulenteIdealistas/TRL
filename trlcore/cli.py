@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from .errors import ConfigError, LLMError
 from .dates import parse_date
-from .config import load_config, missing_files, required_files
+from .config import SOURCE_NAMES, load_config, missing_files, required_files
 from .store import Store
 from .llm import configure_llm, get_provider
 from .pipeline import run_pipeline
@@ -86,7 +86,7 @@ def main(argv=None):
         return 2
     kinds = [k for k in a.kinds.split(",") if k]
     sources = [s for s in a.sources.split(",") if s]
-    if not set(kinds) <= {"long", "event"} or not set(sources) <= {"pubmed", "arxiv"}:
+    if not set(kinds) <= {"long", "event"} or not set(sources) <= set(SOURCE_NAMES):
         print("invalid --kinds or --sources")
         return 2
     try:

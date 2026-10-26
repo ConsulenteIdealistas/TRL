@@ -31,6 +31,7 @@
   ],
   "screening": {
     "min_abstract_chars": 200,
+    "min_abstract_chars_by_info_type": {"news": 30, "disclosure": 30},
     "max_age_days": 365,
     "max_eval_per_run": 10,
     "reeval_after_days": 14,

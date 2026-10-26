@@ -33,7 +33,7 @@
     "min_abstract_chars": 200,
     "min_abstract_chars_by_info_type": {"news": 30, "disclosure": 30},
     "max_age_days": 365,
-    "max_eval_per_run": 5,
+    "max_eval_per_run": 3,
     "reeval_after_days": 14,
     "max_retries": 3
   },
@@ -41,7 +41,8 @@
     "timeout_sec": 120,
     "retries": 3,
     "max_consecutive_failures": 2,
-    "phase_budget_sec": 600
+    "phase_budget_sec": 600,
+    "eval_workers": 3
   },
   "prompts": {"extract": "v1", "long": "v1", "event": "v1"}
 }

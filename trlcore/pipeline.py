@@ -177,57 +177,87 @@ def run_pipeline(store, cfg, llm, *, as_of, sources=("pubmed", "arxiv"), kinds=(
         extract_sha = load_prompt("extract", cfg["scoring"]["prompts"]["extract"], prompt_dir)["sha"]
     except PromptError:
         extract_sha = None  # 評価側でエラーになる。キャッシュは使わない
-    for c in selected:
+    workers = max(1, st.get("eval_workers", 1))
+
+    def eval_candidate(c, extraction, meta, related, was_cached):
+        # ワーカースレッドで動く。Store には触らず LLM 評価だけを行い、結果を返す。
+        # 系統(long/event)は抽出を共有するため候補内では従来どおり直列に処理する
+        per_kind = []
+        entry_cached = was_cached
+        for kind in kinds:
+            eval_t0 = time.monotonic()
+            res = evaluate_one(c, kind, cfg, llm, as_of, extraction, meta, prompt_dir, related=related)
+            per_kind.append((kind, res, time.monotonic() - eval_t0, entry_cached))
+            if res.get("infra_failure"):
+                break  # この候補の残りの系統は打ち切る (従来どおり)
+            extraction, meta = res["extraction"], res["prompt_versions"].get("extract")
+            entry_cached = False
+        return per_kind
+
+    from concurrent.futures import ThreadPoolExecutor
+    idx = 0
+    while idx < len(selected) and not degraded:
         if st["phase_budget_sec"] and time.monotonic() - phase_t0 > st["phase_budget_sec"]:
             degraded = "phase_budget_exceeded"
             log(f"::warning::[eval] 評価フェーズの時間予算({st['phase_budget_sec']}秒)を超えたため打ち切ります")
             break
-        extraction, meta, outcomes = None, None, [],
-        ihash = input_hash(c, as_of)
-        for kind in kinds:
-            cached = False
-            if extraction is None and extract_sha:
-                extraction, meta = store.get_extraction(ihash, extract_sha, model)
-                cached = extraction is not None
-            eval_t0 = time.monotonic()
-            log(f"[eval:start] {c['id']} {kind}")
+        batch = selected[idx:idx + workers]
+        idx += len(batch)
+        # Store の読み取り(抽出キャッシュ・関連ニュース)はメインスレッドで事前に済ませる
+        prepared = []
+        for c in batch:
+            extraction, meta = None, None
+            if extract_sha:
+                extraction, meta = store.get_extraction(input_hash(c, as_of), extract_sha, model)
             related = store.related_news(c["id"], as_of) if c.get("info_type") != "news" else None
-            res = evaluate_one(c, kind, cfg, llm, as_of, extraction, meta, prompt_dir, related=related)
-            eval_seconds = time.monotonic() - eval_t0
-            log(f"[eval:time] {c['id']} {kind}: {eval_seconds:.1f}s")
-            if res["extraction"] is not None and not cached and extract_sha:
-                store.put_extraction(ihash, extract_sha, model, res["extraction"], res["prompt_versions"].get("extract"))
-            if res.get("infra_failure"):
-                # API側の失敗は評価結果として保存しない(error滞留とキュー汚染を防ぐ)。候補は未評価のまま次回へ
-                consecutive += 1
-                counts["llm_infra_failed"] += 1
-                log(f"::warning::[eval] {c['id']} {kind}: LLM API失敗のため未評価のまま残します: {res['errors'][0]}")
-                if not res["infra_failure"]["transient"]:
-                    degraded = "llm_fatal_error"
-                elif consecutive >= st["max_consecutive_failures"]:
-                    degraded = "llm_consecutive_failures"
+            prepared.append((extraction, meta, related, extraction is not None))
+            for kind in kinds:
+                log(f"[eval:start] {c['id']} {kind}")
+        if workers > 1:
+            with ThreadPoolExecutor(max_workers=workers) as ex:
+                batch_results = list(ex.map(lambda bc: eval_candidate(bc[0], *bc[1]), zip(batch, prepared)))
+        else:
+            batch_results = [eval_candidate(c, *p) for c, p in zip(batch, prepared)]
+        # 保存と連続失敗の判定は候補順に行う。打ち切りが決まったらバッチ内の残りは破棄する
+        # (並列化で無駄になる呼び出しは最大でバッチの残り分に限る)
+        for c, p, per_kind in zip(batch, prepared, batch_results):
+            if degraded:
                 break
-            consecutive = 0
-            res["extra"].update({"eval_seconds": round(eval_seconds, 2), "extract_cached": cached})
-            extraction, meta = res["extraction"], res["prompt_versions"].get("extract")
-            store.add_evaluation(run_id, c["id"], res)
-            counts[res["status"]] += 1
-            outcomes.append(res["status"])
-            if res["status"] == "final":
-                store.resolve_queue(c["id"], kind)
-            else:
-                store.upsert_queue(c["id"], kind, _queue_reason(res), res["missing"] or res["errors"],
-                                   res["next_sources"], res["reeval_conditions"] or ["追加情報の取得後、または再評価間隔の経過後"],
-                                   datetime.now(timezone.utc).isoformat(timespec="seconds"), res["prompt_versions"])
-            log(f"[eval] {c['id']} {kind}: {res['status']} total={res['total']} errors={res['errors']} "
-                f"missing={res['missing']} critical_missing={res['critical_missing']}")
-        if outcomes:
-            status = "hold" if "hold" in outcomes else ("error" if "error" in outcomes else "evaluated")
-            store.set_status(c["id"], status, eval_at=datetime.now(timezone.utc).isoformat(timespec="seconds"),
-                             retry_inc=(status == "error"))
-        if degraded:
-            log(f"::warning::[eval] LLM APIの失敗が続くため評価フェーズを打ち切ります ({degraded})。未評価の候補は次回に回します")
-            break
+            ihash = input_hash(c, as_of)
+            outcomes = []
+            for kind, res, eval_seconds, cached in per_kind:
+                log(f"[eval:time] {c['id']} {kind}: {eval_seconds:.1f}s")
+                if res["extraction"] is not None and not cached and extract_sha:
+                    store.put_extraction(ihash, extract_sha, model, res["extraction"], res["prompt_versions"].get("extract"))
+                if res.get("infra_failure"):
+                    # API側の失敗は評価結果として保存しない(error滞留とキュー汚染を防ぐ)。候補は未評価のまま次回へ
+                    consecutive += 1
+                    counts["llm_infra_failed"] += 1
+                    log(f"::warning::[eval] {c['id']} {kind}: LLM API失敗のため未評価のまま残します: {res['errors'][0]}")
+                    if not res["infra_failure"]["transient"]:
+                        degraded = "llm_fatal_error"
+                    elif consecutive >= st["max_consecutive_failures"]:
+                        degraded = "llm_consecutive_failures"
+                    break
+                consecutive = 0
+                res["extra"].update({"eval_seconds": round(eval_seconds, 2), "extract_cached": cached})
+                store.add_evaluation(run_id, c["id"], res)
+                counts[res["status"]] += 1
+                outcomes.append(res["status"])
+                if res["status"] == "final":
+                    store.resolve_queue(c["id"], kind)
+                else:
+                    store.upsert_queue(c["id"], kind, _queue_reason(res), res["missing"] or res["errors"],
+                                       res["next_sources"], res["reeval_conditions"] or ["追加情報の取得後、または再評価間隔の経過後"],
+                                       datetime.now(timezone.utc).isoformat(timespec="seconds"), res["prompt_versions"])
+                log(f"[eval] {c['id']} {kind}: {res['status']} total={res['total']} errors={res['errors']} "
+                    f"missing={res['missing']} critical_missing={res['critical_missing']}")
+            if outcomes:
+                status = "hold" if "hold" in outcomes else ("error" if "error" in outcomes else "evaluated")
+                store.set_status(c["id"], status, eval_at=datetime.now(timezone.utc).isoformat(timespec="seconds"),
+                                 retry_inc=(status == "error"))
+    if degraded in ("llm_fatal_error", "llm_consecutive_failures"):
+        log(f"::warning::[eval] LLM APIの失敗が続くため評価フェーズを打ち切ります ({degraded})。未評価の候補は次回に回します")
     if degraded:
         counts["llm_degraded"] = degraded
     all_failed = do_collect and counts["sources_ok"] == 0 and counts["sources_failed"] > 0

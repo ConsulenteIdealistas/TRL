@@ -221,6 +221,41 @@ class PipelineResilienceTests(unittest.TestCase):
         self.assertIsNone(r["llm_degraded"])
         self.assertEqual((r["counts"]["llm_infra_failed"], r["counts"]["final"]), (2, 1))
 
+    def test_parallel_eval_processes_all_candidates(self):
+        import threading
+        import time as time_mod
+        base = make_llm_fn(long_scores={k: 70 for k in LONG_KEYS})
+        lock = threading.Lock()
+        calls = {"n": 0}
+
+        def fn(p):
+            with lock:
+                calls["n"] += 1
+            time_mod.sleep(0.25)
+            return base(p)
+        t0 = time_mod.monotonic()
+        r = self.run_p(Mock(fn), cfg_with(eval_workers=3), n=4, max_eval=4)
+        elapsed = time_mod.monotonic() - t0
+        self.assertEqual(r["counts"]["final"], 4)
+        self.assertEqual(self.store.conn.execute("SELECT COUNT(*) FROM evaluations").fetchone()[0], 4)
+        # 直列なら 4候補×2コール×0.25秒 = 2秒。3並列バッチならその半分未満に収まる
+        self.assertLess(elapsed, 1.6)
+
+    def test_parallel_batch_stops_after_infra_failures(self):
+        import threading
+        lock = threading.Lock()
+        calls = {"n": 0}
+
+        def fn(p):
+            with lock:
+                calls["n"] += 1
+            raise T.HttpError("HTTP 503 for https://x", 503)
+        r = self.run_p(Mock(fn), cfg_with(eval_workers=3, max_consecutive_failures=2), n=5, max_eval=5)
+        self.assertEqual(calls["n"], 3)  # 最初のバッチ(3件)までで止まる。残り2件は呼ばない
+        self.assertEqual(r["llm_degraded"], "llm_consecutive_failures")
+        self.assertEqual(r["counts"]["llm_infra_failed"], 2)  # 保存側の判定は候補順どおり
+        self.assertEqual(self.store.conn.execute("SELECT COUNT(*) FROM evaluations").fetchone()[0], 0)
+
     def test_content_errors_are_still_stored(self):
         r = self.run_p(Mock(make_llm_fn(bad="not json")), cfg_with(), n=2)
         self.assertEqual(r["counts"]["error"], 2)

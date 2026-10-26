@@ -90,7 +90,8 @@ def validate_sources(src):
 CONFIG_FILES = ("scoring.json", "sources.json")
 
 
-LLM_DEFAULTS = {"timeout_sec": 120, "retries": 3, "max_consecutive_failures": 2, "phase_budget_sec": 1200}
+LLM_DEFAULTS = {"timeout_sec": 120, "retries": 3, "max_consecutive_failures": 2, "phase_budget_sec": 1200,
+                "eval_workers": 1}
 
 
 def required_files(config_dir=None):

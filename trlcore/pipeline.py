@@ -132,7 +132,14 @@ def select_for_eval(store, cfg, today, limit, retry_failed="no"):
 
         rows.append(c)
 
+    def rank(c):
+        # 対象企業に紐付く候補を優先する (TRL・事業項目の根拠が揃いやすい)。
+        # strong(所属・スポンサー等で特定) > weak(言及のみ) > 紐付けなし。同順位内は新しい順
+        strengths = {e["strength"] for e in c.get("entities", [])}
+        return 0 if "strong" in strengths else (1 if strengths else 2)
+
     rows.sort(key=lambda c: c["published"] or "", reverse=True)
+    rows.sort(key=rank)
     return rows[:limit]
 
 

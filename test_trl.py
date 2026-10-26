@@ -587,6 +587,24 @@ class NewsPoolTests(unittest.TestCase):
         self.assertEqual(r["counts"]["invalid"], 1)
         store.close()
 
+    def test_selection_prefers_entity_linked_candidates(self):
+        store = Store(self.path)
+
+        def add(r):
+            rec, _ = normalize(r, "2026-10-20T00:00:00+00:00")
+            cid, _ = store.upsert_candidate(rec, "r0")
+            store.set_entities(cid, link_entities(rec, CFG.get("entities", {})))
+            store.set_status(cid, "screened")
+            return cid
+        # 新しい順は unlinked > weak > strong だが、選定は企業リンク優先になる
+        unlinked = add(raw(sid="2610.9101", title="Unrelated quantum theory", published="2026-10-19"))
+        weak = add(raw(sid="2610.9102", title="アストロスケール関連の市場分析メモ", published="2026-10-18"))
+        strong = add(raw(sid="2610.9103", title="Debris removal study", published="2026-10-17",
+                         affiliations=["Astroscale Holdings Inc."]))
+        sel = select_for_eval(store, CFG, AS_OF, 10)
+        self.assertEqual([c["id"] for c in sel], [strong, weak, unlinked])
+        store.close()
+
     def test_news_not_selected_but_pooled(self):
         store = Store(self.path)
         paper, _ = normalize(raw(sid="2610.7777", affiliations=["Astroscale Holdings Inc."]),

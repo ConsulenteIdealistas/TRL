@@ -1,5 +1,5 @@
 {
-  "config_version": "2026.10.1",
+  "config_version": "2026.10.0",
   "long": {
     "weights": {
       "technology_readiness": 25,
@@ -42,5 +42,5 @@
     "max_consecutive_failures": 2,
     "phase_budget_sec": 1200
   },
-  "prompts": {"extract": "v1", "long": "v2", "event": "v1"}
+  "prompts": {"extract": "v1", "long": "v1", "event": "v1"}
 }

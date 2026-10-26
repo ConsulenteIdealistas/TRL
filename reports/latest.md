@@ -1,28 +1,36 @@
-# TRL 実行レポート 20261026T143345Z-e30991
+# TRL 実行レポート 20261026T164529Z-98f35c
 
 ※ スコアは評価尺度であり、株価上昇確率・成功確率・投資利益率ではありません。売買の自動判定にも使えません。
 
-- 基準日: 2026-10-26 / 設定: 2026.10.0 (3bb450a997f8d108)
-- 状態: ok / 所要: 154.12秒
-- 取得 155 / 新規 125 / 重複 30 / 不正 0
-- スクリーニング通過 125 / 除外 0 / 評価対象 3
-- 評価: 確定 0 / 保留 6 / エラー 0 / LLM未設定でスキップ 0
+- 基準日: 2026-10-26 / 設定: 2026.10.0 (92be5f4318a4c9e6)
+- 状態: ok / 所要: 701.45秒
+- 取得 140 / 新規 1 / 重複 107 / 不正 32
+- スクリーニング通過 1 / 除外 0 / 評価対象 5
+- 評価: 確定 0 / 保留 4 / エラー 0 / LLM未設定でスキップ 0
+- ⚠ LLM API失敗 0件(評価結果として保存せず未評価のまま残しています) / 打ち切り理由: phase_budget_exceeded
 
 ## 情報源ごとの状況
 - [OK] arxiv / solid-state-battery: 取得6 新規0 重複6 不正0
 - [OK] arxiv / quantum-error-correction: 取得20 新規0 重複20 不正0
 - [OK] pubmed / gene-therapy: 取得4 新規0 重複4 不正0
-- [OK] gnews / astroscale-news: 取得20 新規20 重複0 不正0
-- [OK] gnews / ispace-news: 取得20 新規20 重複0 不正0
-- [OK] gnews / synspective-news: 取得20 新規20 重複0 不正0
-- [OK] gnews / oncolys-news: 取得4 新規4 重複0 不正0
-- [OK] gnews / reprocell-news: 取得20 新規20 重複0 不正0
-- [OK] gnews / heartseed-news: 取得15 新規15 重複0 不正0
-- [OK] gnews / peptidream-news: 取得20 新規20 重複0 不正0
-- [OK] trials / oncolys-trials: 取得1 新規1 重複0 不正0
-- [OK] trials / reprocell-trials: 取得1 新規1 重複0 不正0
-- [OK] trials / heartseed-trials: 取得2 新規2 重複0 不正0
-- [OK] trials / peptidream-trials: 取得2 新規2 重複0 不正0
+- [OK] gnews / astroscale-news: 取得20 新規0 重複6 不正14
+- [OK] gnews / ispace-news: 取得20 新規0 重複20 不正0
+- [OK] gnews / synspective-news: 取得20 新規0 重複11 不正9
+- [OK] gnews / oncolys-news: 取得0 新規0 重複0 不正0
+- [OK] gnews / reprocell-news: 取得20 新規1 重複16 不正3
+- [OK] gnews / heartseed-news: 取得6 新規0 重複4 不正2
+- [OK] gnews / peptidream-news: 取得5 新規0 重複1 不正4
+- [OK] trials / oncolys-trials: 取得1 新規0 重複1 不正0
+- [OK] trials / reprocell-trials: 取得1 新規0 重複1 不正0
+- [OK] trials / heartseed-trials: 取得2 新規0 重複2 不正0
+- [OK] trials / peptidream-trials: 取得2 新規0 重複2 不正0
+- [OK] prtimes / astroscale-prtimes: 取得2 新規0 重複2 不正0
+- [OK] prtimes / ispace-prtimes: 取得5 新規0 重複5 不正0
+- [OK] prtimes / synspective-prtimes: 取得5 新規0 重複5 不正0
+- [OK] prtimes / oncolys-prtimes: 取得0 新規0 重複0 不正0
+- [OK] prtimes / reprocell-prtimes: 取得0 新規0 重複0 不正0
+- [OK] prtimes / heartseed-prtimes: 取得0 新規0 重複0 不正0
+- [OK] prtimes / peptidream-prtimes: 取得1 新規0 重複1 不正0
 
 ## 長期成長評価(確定)
 - 該当なし
@@ -30,11 +38,92 @@
 ## イベント評価(確定)
 - 該当なし
 
-## レビューキュー（未解消 14件）
-- 情報不足・保留: 14件
+## レビューキュー（未解消 23件）
+- 情報不足・保留: 23件
 - 評価エラー: 0件
 
-### 情報不足・保留（14件）
+### 情報不足・保留（23件）
+- [long] Quantum error correction well below the color code threshold
+  理由: missing_items: monetization,market_growth,financial_sustainability (critical: monetization)
+  確認先: Quantinuumの企業プレスリリースおよび財務発表, フォールトトレラント量子コンピュータの商用化ロードマップに関する第三者調査レポート
+  再評価条件: 商用顧客との契約や受注実績が公表された場合, 財務諸表や資金調達に関する信頼性の高いデータが取得できた場合
+  関連情報の検索:
+  - [IR・決算資料 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=%22Quantum+error+correction+well+below+the+color+code+threshold%22+IR)
+  - [特許 [論文タイトル等（企業名未特定）]](https://patents.google.com/?q=Quantum+error+correction+well+below+the+color+code+threshold)
+  - [臨床試験登録 [論文タイトル等（企業名未特定）]](https://clinicaltrials.gov/search?term=Quantum+error+correction+well+below+the+color+code+threshold)
+  - [企業・技術情報 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=Quantum+error+correction+well+below+the+color+code+threshold)
+- [long] Transversal syndrome extraction: A unifying construction for measuring the error syndromes of any stabilizer code
+  理由: missing_items: technology_readiness,monetization,market_growth,financial_sustainability,moat_durability (critical: technology_readiness,monetization)
+  確認先: 対象企業の特定に関する情報, 当該技術の実機での実験結果やベンチマークを扱った続報論文, 量子コンピューティング企業による商用化・実装のプレスリリース
+  再評価条件: 対象企業が明確になり、財務情報や事業展開が確認できた場合, 本技術が実際の量子ハードウェアで実装され、性能評価が公開された場合
+  関連情報の検索:
+  - [IR・決算資料 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=%22Transversal+syndrome+extraction%3A+A+unifying+construction+for+measuring+the+error+syndromes+of+any+stabilizer+code%22+IR)
+  - [特許 [論文タイトル等（企業名未特定）]](https://patents.google.com/?q=Transversal+syndrome+extraction%3A+A+unifying+construction+for+measuring+the+error+syndromes+of+any+stabilizer+code)
+  - [臨床試験登録 [論文タイトル等（企業名未特定）]](https://clinicaltrials.gov/search?term=Transversal+syndrome+extraction%3A+A+unifying+construction+for+measuring+the+error+syndromes+of+any+stabilizer+code)
+  - [企業・技術情報 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=Transversal+syndrome+extraction%3A+A+unifying+construction+for+measuring+the+error+syndromes+of+any+stabilizer+code)
+- [long] Injection is all you need: parallel universal logic in high-rate concatenated self-dual codes
+  理由: missing_items: technology_readiness,technological_advantage,monetization,market_growth,financial_sustainability,moat_durability (critical: technology_readiness,monetization)
+  確認先: 対象企業の公式リリース、財務報告書、および関連する特許出願情報
+  再評価条件: 対象企業が明確になり、その企業による当該技術の商用化または実証実験の進捗が発表された場合
+  関連情報の検索:
+  - [IR・決算資料 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=%22Injection+is+all+you+need%3A+parallel+universal+logic+in+high-rate+concatenated+self-dual+codes%22+IR)
+  - [特許 [論文タイトル等（企業名未特定）]](https://patents.google.com/?q=Injection+is+all+you+need%3A+parallel+universal+logic+in+high-rate+concatenated+self-dual+codes)
+  - [臨床試験登録 [論文タイトル等（企業名未特定）]](https://clinicaltrials.gov/search?term=Injection+is+all+you+need%3A+parallel+universal+logic+in+high-rate+concatenated+self-dual+codes)
+  - [企業・技術情報 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=Injection+is+all+you+need%3A+parallel+universal+logic+in+high-rate+concatenated+self-dual+codes)
+- [long] A Phase I/II Study of Human Induced Pluripotent Stem (iPS) Cell-derived Cardiomyocyte Spheroids (HS-001) in Patients With Severe Heart Failure, Secondary to Ischemic Heart Disease
+  理由: missing_items: technological_advantage,market_growth,financial_sustainability,moat_durability
+  確認先: Heartseed Inc.の有価証券報告書・決算説明資料, Phase I/II治験（NCT04945018）の学会発表・論文による詳細データ, 心不全再生医療市場に関する業界調査レポート
+  再評価条件: Phase I/II治験の安全性・有効性に関する数値データの公表, 次相臨床試験の開始または製造販売承認申請の公表, 決算発表による売上・開発費・手元資金等の財務数値の確認
+  関連情報の検索:
+  - [IR・決算資料 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=%22A+Phase+I%2FII+Study+of+Human+Induced+Pluripotent+Stem+%28iPS%29+Cell-derived+Cardiomyocyte+Spheroids+%28HS-001%29+in+Patients+With+Severe+Heart+Failure%2C+Secondary+to+Ischemic+Heart+Disease%22+IR)
+  - [特許 [論文タイトル等（企業名未特定）]](https://patents.google.com/?q=A+Phase+I%2FII+Study+of+Human+Induced+Pluripotent+Stem+%28iPS%29+Cell-derived+Cardiomyocyte+Spheroids+%28HS-001%29+in+Patients+With+Severe+Heart+Failure%2C+Secondary+to+Ischemic+Heart+Disease)
+  - [臨床試験登録 [論文タイトル等（企業名未特定）]](https://clinicaltrials.gov/search?term=A+Phase+I%2FII+Study+of+Human+Induced+Pluripotent+Stem+%28iPS%29+Cell-derived+Cardiomyocyte+Spheroids+%28HS-001%29+in+Patients+With+Severe+Heart+Failure%2C+Secondary+to+Ischemic+Heart+Disease)
+  - [企業・技術情報 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=A+Phase+I%2FII+Study+of+Human+Induced+Pluripotent+Stem+%28iPS%29+Cell-derived+Cardiomyocyte+Spheroids+%28HS-001%29+in+Patients+With+Severe+Heart+Failure%2C+Secondary+to+Ischemic+Heart+Disease)
+- [long] A Phase I/II Study of Endocardial Delivery for Myocardial Regeneration Using Human Induced Pluripotent Stem (iPS) Cell-derived Cardiomyocyte Spheroids for Heart Failure Reduced Ejection Fraction
+  理由: missing_items: financial_sustainability
+  確認先: Heartseed社の最新の有価証券報告書および決算短信, 進行中のPhase I/II試験の中間・最終結果報告, 特許出願状況や製薬企業との提携に関する公式発表
+  再評価条件: Phase I/II臨床試験の主要評価項目達成の公表, 製品の承認申請や商用化に向けた具体的な進捗の確認, 財務状況の大幅な改善または悪化が判明したとき
+  関連情報の検索:
+  - [IR・決算資料 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=%22A+Phase+I%2FII+Study+of+Endocardial+Delivery+for+Myocardial+Regeneration+Using+Human+Induced+Pluripotent+Stem+%28iPS%29+Cell-derived+Cardiomyocyte+Spheroids+for+Heart+Failure+Reduced+Ejection+Fraction%22+IR)
+  - [特許 [論文タイトル等（企業名未特定）]](https://patents.google.com/?q=A+Phase+I%2FII+Study+of+Endocardial+Delivery+for+Myocardial+Regeneration+Using+Human+Induced+Pluripotent+Stem+%28iPS%29+Cell-derived+Cardiomyocyte+Spheroids+for+Heart+Failure+Reduced+Ejection+Fraction)
+  - [臨床試験登録 [論文タイトル等（企業名未特定）]](https://clinicaltrials.gov/search?term=A+Phase+I%2FII+Study+of+Endocardial+Delivery+for+Myocardial+Regeneration+Using+Human+Induced+Pluripotent+Stem+%28iPS%29+Cell-derived+Cardiomyocyte+Spheroids+for+Heart+Failure+Reduced+Ejection+Fraction)
+  - [企業・技術情報 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=A+Phase+I%2FII+Study+of+Endocardial+Delivery+for+Myocardial+Regeneration+Using+Human+Induced+Pluripotent+Stem+%28iPS%29+Cell-derived+Cardiomyocyte+Spheroids+for+Heart+Failure+Reduced+Ejection+Fraction)
+- [long] Noise redistribution by stabilizer codes: an organizing view of concatenated three-qubit codes
+  理由: missing_items: technology_readiness,technological_advantage,monetization,market_growth,financial_sustainability,moat_durability (critical: technology_readiness,monetization)
+  確認先: 企業の公式発表・プレスリリース, 特許出願情報, 量子誤り訂正に関する実験的実証論文
+  再評価条件: 対象企業の特定および商用化に向けた実証実験の成功が確認できた場合
+  関連情報の検索:
+  - [IR・決算資料 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=%22Noise+redistribution+by+stabilizer+codes%3A+an+organizing+view+of+concatenated+three-qubit+codes%22+IR)
+  - [特許 [論文タイトル等（企業名未特定）]](https://patents.google.com/?q=Noise+redistribution+by+stabilizer+codes%3A+an+organizing+view+of+concatenated+three-qubit+codes)
+  - [臨床試験登録 [論文タイトル等（企業名未特定）]](https://clinicaltrials.gov/search?term=Noise+redistribution+by+stabilizer+codes%3A+an+organizing+view+of+concatenated+three-qubit+codes)
+  - [企業・技術情報 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=Noise+redistribution+by+stabilizer+codes%3A+an+organizing+view+of+concatenated+three-qubit+codes)
+- [long] ConQEC: Concolic Testing for Quantum Error-Correcting Code Implementations
+  理由: missing_items: monetization,market_growth,financial_sustainability,moat_durability (critical: monetization)
+  確認先: 対象企業の公式発表や決算資料, 量子誤り訂正テストツールの市場規模に関する調査レポート
+  再評価条件: 対象企業が明確になり、財務および収益化のデータが公開された場合, ConQECの商用展開やエコシステムでの採用事例が確認できた場合
+  関連情報の検索:
+  - [IR・決算資料 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=%22ConQEC%3A+Concolic+Testing+for+Quantum+Error-Correcting+Code+Implementations%22+IR)
+  - [特許 [論文タイトル等（企業名未特定）]](https://patents.google.com/?q=ConQEC%3A+Concolic+Testing+for+Quantum+Error-Correcting+Code+Implementations)
+  - [臨床試験登録 [論文タイトル等（企業名未特定）]](https://clinicaltrials.gov/search?term=ConQEC%3A+Concolic+Testing+for+Quantum+Error-Correcting+Code+Implementations)
+  - [企業・技術情報 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=ConQEC%3A+Concolic+Testing+for+Quantum+Error-Correcting+Code+Implementations)
+- [long] Quantum Secret Sharing from CSS qLDPC Codes: Computable Access Structures, Accessible Logical Dimension, and Topology-Aware Network Cost
+  理由: missing_items: technology_readiness,technological_advantage,monetization,market_growth,financial_sustainability,moat_durability (critical: technology_readiness,monetization)
+  確認先: 対象企業に関するIR資料, 量子通信・量子暗号市場の調査レポート
+  再評価条件: 対象企業が明確になり、商用化に向けた実証試験や資金調達のニュースが発表された場合
+  関連情報の検索:
+  - [IR・決算資料 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=%22Quantum+Secret+Sharing+from+CSS+qLDPC+Codes%3A+Computable+Access+Structures%2C+Accessible+Logical+Dimension%2C+and+Topology-Aware+Network+Cost%22+IR)
+  - [特許 [論文タイトル等（企業名未特定）]](https://patents.google.com/?q=Quantum+Secret+Sharing+from+CSS+qLDPC+Codes%3A+Computable+Access+Structures%2C+Accessible+Logical+Dimension%2C+and+Topology-Aware+Network+Cost)
+  - [臨床試験登録 [論文タイトル等（企業名未特定）]](https://clinicaltrials.gov/search?term=Quantum+Secret+Sharing+from+CSS+qLDPC+Codes%3A+Computable+Access+Structures%2C+Accessible+Logical+Dimension%2C+and+Topology-Aware+Network+Cost)
+  - [企業・技術情報 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=Quantum+Secret+Sharing+from+CSS+qLDPC+Codes%3A+Computable+Access+Structures%2C+Accessible+Logical+Dimension%2C+and+Topology-Aware+Network+Cost)
+- [long] Combining Simulations and Spectroscopy to Design Protective Coatings on Sulfide Solid Electrolytes
+  理由: missing_items: monetization,market_growth,financial_sustainability,moat_durability (critical: monetization)
+  確認先: 全固体電池および固体電解質市場の市場調査レポート（市場規模・成長率推移）, 本技術の事業化・ライセンス化を行う企業の特許出願情報, 実用全固体電池セルにおける充放電サイクル・長期信頼性評価論文・レポート
+  再評価条件: 特定企業による本コーティング技術の商用ライセンス取得または事業化の発表, 実用電池セルレベルでの高耐久性・高安全性の実証データの公開, 市場成長性を示す定量的な業界調査データの取得
+  関連情報の検索:
+  - [IR・決算資料 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=%22Combining+Simulations+and+Spectroscopy+to+Design+Protective+Coatings+on+Sulfide+Solid+Electrolytes%22+IR)
+  - [特許 [論文タイトル等（企業名未特定）]](https://patents.google.com/?q=Combining+Simulations+and+Spectroscopy+to+Design+Protective+Coatings+on+Sulfide+Solid+Electrolytes)
+  - [臨床試験登録 [論文タイトル等（企業名未特定）]](https://clinicaltrials.gov/search?term=Combining+Simulations+and+Spectroscopy+to+Design+Protective+Coatings+on+Sulfide+Solid+Electrolytes)
+  - [企業・技術情報 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=Combining+Simulations+and+Spectroscopy+to+Design+Protective+Coatings+on+Sulfide+Solid+Electrolytes)
 - [event] Synspective、国連開発計画の事業に採択｜ジャマイカで衛星・AIによる沿岸監視を実証へ - SPACE CONNECT
   理由: missing_items: catalyst_quality,expectation_gap,not_priced_in,timing_feasibility,supply_demand,downside_resilience (critical: catalyst_quality,expectation_gap,not_priced_in)
   確認先: Synspective公式プレスリリース・IR開示資料（契約規模・スケジュール）, 国連開発計画（UNDP）の採択事業に関する公式公表資料, 株価推移および市場のコンセンサス情報

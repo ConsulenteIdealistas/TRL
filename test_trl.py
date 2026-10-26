@@ -980,7 +980,11 @@ class EntityQueryGenerationTests(unittest.TestCase):
 ]
 
     def test_generated_queries_match_golden(self):
-        self.assertEqual(CFG["sources"]["queries"], self.GOLDEN)
+        # 移行前の手書き27件が、生成結果の中に同じ相対順序で全て含まれること(企業追加後も不変)。
+        qs = CFG["sources"]["queries"]
+        it = iter(qs)
+        for g in self.GOLDEN:
+            self.assertTrue(any(q == g for q in it), f"golden query missing or out of order: {g['name']}")
 
     def src(self):
         return {"keyword_sets": {"space": ["決算", "受注"], "bio": ["治験"]},

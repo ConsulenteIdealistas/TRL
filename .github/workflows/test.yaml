@@ -1,0 +1,26 @@
+name: Tests
+
+# push / PR のたびにテストだけを実行する(LLM・外部APIは使わない)。
+# 週次パイプライン(main.yaml)の中でしか落ちに気づけない状態を解消する。
+on:
+  push:
+    branches-ignore: [data]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m unittest test_trl test_entities test_site -v

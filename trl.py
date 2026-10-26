@@ -1662,12 +1662,20 @@ def main(argv=None):
     retry_failed=a.retry_failed,
     do_collect=not a.skip_collect,
 )
+
     text = build_report(store, res["run_id"])
+    html_text = build_html_report(text)
+
     rep = Path(a.data_dir) / "reports"
     rep.mkdir(parents=True, exist_ok=True)
+
     (rep / f"{res['run_id']}.md").write_text(text, encoding="utf-8")
     (rep / "latest.md").write_text(text, encoding="utf-8")
+    (rep / f"{res['run_id']}.html").write_text(html_text, encoding="utf-8")
+    (rep / "latest.html").write_text(html_text, encoding="utf-8")
+
     _prune(rep)
+
     if os.environ.get("GITHUB_STEP_SUMMARY"):
         with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as f:
             f.write(text)

@@ -1,16 +1,14 @@
-# TRL 実行レポート 20261026T034351Z-aa3c1c
+# TRL 実行レポート 20261026T040741Z-8f8965
 
 ※ スコアは評価尺度であり、株価上昇確率・成功確率・投資利益率ではありません。売買の自動判定にも使えません。
 
 - 基準日: 2026-10-26 / 設定: 2026.10.0 (a10a0865cd38df06)
-- 状態: ok / 所要: 115.03秒
-- 取得 30 / 新規 6 / 重複 24 / 不正 0
-- スクリーニング通過 6 / 除外 0 / 評価対象 1
+- 状態: ok / 所要: 148.75秒
+- 取得 4 / 新規 0 / 重複 4 / 不正 0
+- スクリーニング通過 0 / 除外 0 / 評価対象 1
 - 評価: 確定 0 / 保留 0 / エラー 1 / LLM未設定でスキップ 0
 
 ## 情報源ごとの状況
-- [OK] arxiv / solid-state-battery: 取得6 新規2 重複4 不正0
-- [OK] arxiv / quantum-error-correction: 取得20 新規4 重複16 不正0
 - [OK] pubmed / gene-therapy: 取得4 新規0 重複4 不正0
 
 ## 長期成長評価(確定)
@@ -19,9 +17,9 @@
 ## イベント評価(確定)
 - 該当なし
 
-## レビューキュー（未解消 35件）
+## レビューキュー（未解消 36件）
 - 情報不足・保留: 7件
-- 評価エラー: 28件
+- 評価エラー: 29件
 
 ### 情報不足・保留（7件）
 - [long] Synthesis and modification of thin NaSICON solid electrolytes using ion beams
@@ -88,7 +86,15 @@
   - [臨床試験登録 [論文タイトル等（企業名未特定）]](https://clinicaltrials.gov/search?term=LiftDiff%3A+Guided+Discrete+Diffusion+for+Quantum+Code+Construction)
   - [企業・技術情報 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=LiftDiff%3A+Guided+Discrete+Diffusion+for+Quantum+Code+Construction)
 
-### 評価エラー（28件）
+### 評価エラー（29件）
+- [long] Combining Simulations and Spectroscopy to Design Protective Coatings on Sulfide Solid Electrolytes
+  理由: evaluation_error: HttpError: HTTP 503 for https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent
+  最終評価日時: 2026-10-26T04:10:10+00:00
+  関連情報の検索:
+  - [IR・決算資料 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=%22Combining+Simulations+and+Spectroscopy+to+Design+Protective+Coatings+on+Sulfide+Solid+Electrolytes%22+IR)
+  - [特許 [論文タイトル等（企業名未特定）]](https://patents.google.com/?q=Combining+Simulations+and+Spectroscopy+to+Design+Protective+Coatings+on+Sulfide+Solid+Electrolytes)
+  - [臨床試験登録 [論文タイトル等（企業名未特定）]](https://clinicaltrials.gov/search?term=Combining+Simulations+and+Spectroscopy+to+Design+Protective+Coatings+on+Sulfide+Solid+Electrolytes)
+  - [企業・技術情報 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=Combining+Simulations+and+Spectroscopy+to+Design+Protective+Coatings+on+Sulfide+Solid+Electrolytes)
 - [long] Vacancy-enhanced Li solid-solution anodes for solid-state batteries: computational screening enabling high critical current density
   理由: evaluation_error: HttpError: HTTP 503 for https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent
   最終評価日時: 2026-10-26T03:45:46+00:00

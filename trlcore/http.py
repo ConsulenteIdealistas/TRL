@@ -43,7 +43,7 @@ def backoff_delay(attempt, retry_after=None, rand=random.random):
 
 
 def http_fetch(url, params=None, headers=None, data=None, timeout=30, retries=2,
-               backoff=5.0, opener=None, sleep=time.sleep):
+               opener=None, sleep=time.sleep):
     opener = opener or urllib.request.urlopen
     full = url + ("?" + urllib.parse.urlencode(params) if params else "")
     hdrs = {"User-Agent": "trl-analysis/0.1"}

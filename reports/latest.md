@@ -1,13 +1,12 @@
-# TRL 実行レポート 20261026T114924Z-5e06e6
+# TRL 実行レポート 20261026T122320Z-56c041
 
 ※ スコアは評価尺度であり、株価上昇確率・成功確率・投資利益率ではありません。売買の自動判定にも使えません。
 
 - 基準日: 2026-10-26 / 設定: 2026.10.0 (e1a99b9635cb20de)
-- 状態: ok / 所要: 305.86秒
+- 状態: ok / 所要: 133.12秒
 - 取得 30 / 新規 0 / 重複 30 / 不正 0
 - スクリーニング通過 0 / 除外 0 / 評価対象 1
-- 評価: 確定 0 / 保留 0 / エラー 0 / LLM未設定でスキップ 0
-- ⚠ LLM API失敗 1件(評価結果として保存せず未評価のまま残しています)
+- 評価: 確定 0 / 保留 1 / エラー 0 / LLM未設定でスキップ 0
 
 ## 情報源ごとの状況
 - [OK] arxiv / solid-state-battery: 取得6 新規0 重複6 不正0
@@ -20,11 +19,20 @@
 ## イベント評価(確定)
 - 該当なし
 
-## レビューキュー（未解消 7件）
-- 情報不足・保留: 7件
+## レビューキュー（未解消 8件）
+- 情報不足・保留: 8件
 - 評価エラー: 0件
 
-### 情報不足・保留（7件）
+### 情報不足・保留（8件）
+- [long] Vacancy-enhanced Li solid-solution anodes for solid-state batteries: computational screening enabling high critical current density
+  理由: missing_items: monetization,market_growth,financial_sustainability,moat_durability (critical: monetization)
+  確認先: Ag、Ge、Cd固溶体リチウム負極に関する分子動力学（MD）シミュレーションおよび実験室レベルでのセル試作・充放電試験に関する最新論文, 全固体電池およびリチウム金属負極関連技術の特許出願情報および主要参入企業動向, 全固体電池市場および構成部材市場に関する市場調査レポート
+  再評価条件: 実セルを用いた充放電サイクル特性および臨界電流密度（CCD）の実験的検証データが公表された場合, 本計算スクリーニング手法および材料構成をライセンスまたは権利化して事業展開する企業が特定された場合
+  関連情報の検索:
+  - [IR・決算資料 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=%22Vacancy-enhanced+Li+solid-solution+anodes+for+solid-state+batteries%3A+computational+screening+enabling+high+critical+current+density%22+IR)
+  - [特許 [論文タイトル等（企業名未特定）]](https://patents.google.com/?q=Vacancy-enhanced+Li+solid-solution+anodes+for+solid-state+batteries%3A+computational+screening+enabling+high+critical+current+density)
+  - [臨床試験登録 [論文タイトル等（企業名未特定）]](https://clinicaltrials.gov/search?term=Vacancy-enhanced+Li+solid-solution+anodes+for+solid-state+batteries%3A+computational+screening+enabling+high+critical+current+density)
+  - [企業・技術情報 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=Vacancy-enhanced+Li+solid-solution+anodes+for+solid-state+batteries%3A+computational+screening+enabling+high+critical+current+density)
 - [long] Synthesis and modification of thin NaSICON solid electrolytes using ion beams
   理由: missing_items: monetization,market_growth,financial_sustainability,moat_durability (critical: monetization)
   確認先: 当該論文の本文（Niイオン照射条件ごとのEIS測定データ、膜厚、イオン伝導度の具体的数値）, 全固体ナトリウム電池（ASSBs）および電解質市場の成長性に関する市場調査レポート, 当該合成・改質技術に関連する特許出願状況および出願人・ライセンス保有企業情報

@@ -9,7 +9,7 @@ from .http import redact
 from .normalize import normalize
 from .sources.pubmed import pubmed_fetch
 from .sources.arxiv import arxiv_fetch
-from .entities import link_entities
+from .entities import entity_screen, link_entities
 from .prompts import load_prompt
 from .llm import llm_settings
 from .evaluate import evaluate_one, input_hash
@@ -35,6 +35,9 @@ def screen(cand, as_of, cfg):
         return "stale"
     if len(cand["abstract"] or "") < sc["min_abstract_chars"]:
         return "abstract_too_short"
+            reason = entity_screen(cand, sc.get("require_entity", "off"))
+    if reason:
+        return reason
     return None
 
 

@@ -1589,11 +1589,14 @@ p {{ margin: .65em 0; }}
 
 
 # ==================== cli ====================
-def _prune(d, keep=30):
-    files = sorted(p for p in d.glob("2*.md"))
-    for p in files[:-keep]:
-        p.unlink()
 
+def _prune(d, keep=30):
+    for suffix in (".md", ".html"):
+        files = sorted(
+            p for p in d.glob(f"2*{suffix}") if p.is_file()
+        )
+        for p in files[:-keep]:
+            p.unlink()
 
 def main(argv=None):
     ap = argparse.ArgumentParser(prog="trl")

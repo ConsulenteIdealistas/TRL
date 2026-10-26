@@ -334,6 +334,17 @@ class ExportTests(unittest.TestCase):
         got = sorted(c["display_status"] for c in data["candidates"])
         self.assertEqual(got, ["final", "hold", "review"])
 
+    def test_news_candidates_hidden_from_site(self):
+        self.build(None, n=1)
+        rec, _ = T.normalize({"source": "gnews", "source_id": "z1", "title": "アストロスケール news",
+                              "abstract": "x" * 60, "url": "https://example.org/z1",
+                              "published": "2026-10-19", "fields": ["日本経済新聞"],
+                              "info_type": "news"}, T.now_iso())
+        self.store.upsert_candidate(rec, "rX")
+        data = T.build_site_data(self.store, cfg_with(), datetime(2026, 10, 26, tzinfo=timezone.utc))
+        self.assertTrue(data["candidates"])
+        self.assertTrue(all(c["source"] != "gnews" for c in data["candidates"]))
+
     def test_pending_rejected_and_legacy_api_errors(self):
         data = self.build(None)  # LLM未設定 → すべて未評価
         self.assertEqual({c["display_status"] for c in data["candidates"]}, {"pending"})

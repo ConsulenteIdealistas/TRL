@@ -16,6 +16,13 @@ from ..http import http_fetch
 
 URL = "https://news.google.com/rss/search"
 
+# 転載・コラム系で根拠として弱い媒体は収集段階で落とす (媒体名の部分一致)
+EXCLUDED_MEDIA_PARTS = ("BigGo", "つぶやき")
+
+# 媒体を問わず、定型ページや相場の寄せ集めで中身の無い見出しは落とす (タイトル部分一致)
+EXCLUDED_TITLE_PARTS = ("株つぶやき", "現物信用売買内訳", "：決算情報", "企業情報（決算時期",
+                        "掲示板", "空売", "テンバガー")
+
 
 def _strip_html(s):
     s = re.sub(r"<[^>]+>", " ", s or "")
@@ -41,6 +48,13 @@ def parse_feed(xml_bytes):
         if not title or not link:
             continue
         media = (item.findtext("source") or "").strip()
+        if any(p in media for p in EXCLUDED_MEDIA_PARTS):
+            continue
+        if any(p in title for p in EXCLUDED_TITLE_PARTS):
+            continue
+        if "上昇" in title and "下落" in title:
+            continue  # 複数銘柄の値動きまとめは事業の根拠にならない
+
         published = _date_of(item)
         desc = _strip_html(item.findtext("description"))
         # description は多くの場合タイトルの繰り返し+媒体名。タイトルと異なる情報が

@@ -48,7 +48,8 @@ Gemini 3.8 Flash は従量課金の料金表がある一方、無料枠の有無
 - 画面の状態: 選定可能=final / 要追加調査=必須項目は揃い他が不足 / 保留=必須項目が不足 / 未評価 / エラー / 除外。画面側で点数の再計算・換算・平均はしない。
 - `trl_level`(1〜9またはnull)は `long.v1.md` で別項目として出力させる。`technology_readiness`(0〜100)からは換算しない。
 - arXiv は所属情報を取得しないため、企業との `strong` 一致は成立しない(現時点では対象外として扱う)。
-- 情報源は PubMed / arXiv(論文)に加え、Google News RSS(`gnews`、企業名クエリ。受注・契約・決算などの事業ニュース)、ClinicalTrials.gov(`trials`、スポンサー名クエリ。published は最終更新日)、EDINET(`edinet`、証券コードクエリ。開示書類のメタデータ)を利用できる。論文以外の短文ソース(news / disclosure)は `screening.min_abstract_chars_by_info_type` で最低文字数を別に定める。
+- 情報源は PubMed / arXiv(論文)に加え、Google News RSS(`gnews`、企業名+ビジネス語クエリ)、ClinicalTrials.gov(`trials`、スポンサー名クエリ。published は最終更新日)、EDINET(`edinet`、証券コードクエリ。開示書類のメタデータ)を利用できる。論文以外の短文ソース(news / disclosure)は `screening.min_abstract_chars_by_info_type` で最低文字数を別に定める。
+- ニュースは評価単位にしない。企業に紐付かないニュースは収集段階で捨て、転載・定型ページ・値動きまとめは媒体/タイトルフィルタで落とす。残ったニュースは「関連事業ニュース」として、同一企業(製品リンク経由を含む)の論文・治験・開示を評価するときにプロンプトへ同梱する補助根拠であり、サイトの候補一覧にも表示しない。
 - EDINET は Secret `EDINET_API_KEY` が必要。未設定のときは取得を自動でスキップする(エラーにしない)。現行はメタデータのみで、XBRL の財務数値抽出は未実装。
 - 失敗した情報源はログの `::warning::` とレポートに表示。全情報源が失敗したときだけジョブが失敗。
 

@@ -126,7 +126,7 @@ def run_extraction(cand, cfg, llm, as_of, prompt_dir=None):
     return obj, {"name": "extract", "version": p["version"], "sha": p["sha"]}
 
 
-def evaluate_one(cand, kind, cfg, llm, as_of, extraction=None, extract_meta=None, prompt_dir=None):
+def evaluate_one(cand, kind, cfg, llm, as_of, extraction=None, extract_meta=None, prompt_dir=None, related=None):
     """1候補・1系統の評価。失敗しても例外を投げず status=error の結果を返す。"""
     versions = {}
     result = {"kind": kind, "as_of": as_of.isoformat(), "status": "error", "total": None, "band": None,
@@ -142,8 +142,10 @@ def evaluate_one(cand, kind, cfg, llm, as_of, extraction=None, extract_meta=None
         versions["extract"] = extract_meta
         p = load_prompt(kind, cfg["scoring"]["prompts"][kind], prompt_dir)
         versions[kind] = {"name": kind, "version": p["version"], "sha": p["sha"]}
+        result["extra"]["related_news_count"] = len(related or [])
         text = render(p["text"], {"as_of": as_of.isoformat(), "candidate": _candidate_block(cand),
                                   "extraction": json.dumps(extraction, ensure_ascii=False),
+                                  "related": json.dumps(related or [], ensure_ascii=False),
                                   "item_keys": ", ".join(item_keys(kind, cfg))})
         obj = extract_json(llm.complete(text))
         scores, details, errs = validate_assessment(obj, kind, cfg)

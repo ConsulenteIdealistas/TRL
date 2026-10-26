@@ -67,8 +67,12 @@ def collect(store, cfg, run_id, as_of, sources, fetchers, counts, log):
                     if rec is None:
                         invalid += 1
                         continue
-                    cid, is_new = store.upsert_candidate(rec, run_id)
                     entity_links = link_entities(rec, cfg.get("entities", {}))
+                    if rec["info_type"] == "news" and not entity_links:
+                        # ニュースは評価の材料としてだけ使う。対象企業に紐付かないものは残さない
+                        invalid += 1
+                        continue
+                    cid, is_new = store.upsert_candidate(rec, run_id)
                     store.set_entities(cid, entity_links)
                     new += is_new
                     dups += (not is_new)
@@ -98,6 +102,8 @@ def select_for_eval(store, cfg, today, limit, retry_failed="no"):
     statuses = ["screened", "hold", "error"]
 
     for c in store.list_by_status(statuses):
+        if c.get("info_type") == "news":
+            continue  # ニュースは単体評価せず、同一企業の評価へ関連ニュースとして同梱する
         # エラー候補は、再試行が明示的に許可された場合だけ選ぶ
         if c["status"] == "error" and not store.only_infra_errors(c["id"]):
             # (旧版がAPI失敗を error として保存した候補は only_infra_errors で再試行対象に戻す)
@@ -173,7 +179,8 @@ def run_pipeline(store, cfg, llm, *, as_of, sources=("pubmed", "arxiv"), kinds=(
                 cached = extraction is not None
             eval_t0 = time.monotonic()
             log(f"[eval:start] {c['id']} {kind}")
-            res = evaluate_one(c, kind, cfg, llm, as_of, extraction, meta, prompt_dir)
+            related = store.related_news(c["id"], as_of) if c.get("info_type") != "news" else None
+            res = evaluate_one(c, kind, cfg, llm, as_of, extraction, meta, prompt_dir, related=related)
             eval_seconds = time.monotonic() - eval_t0
             log(f"[eval:time] {c['id']} {kind}: {eval_seconds:.1f}s")
             if res["extraction"] is not None and not cached and extract_sha:

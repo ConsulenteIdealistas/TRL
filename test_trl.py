@@ -217,6 +217,11 @@ GNEWS_XML = b"""<?xml version="1.0" encoding="UTF-8"?>
 <pubDate>Sat, 01 Aug 2026 01:00:00 GMT</pubDate>
 <description>Old news about Astroscale funding</description>
 <source url="https://example.com">Example News</source></item>
+<item><title>Astroscale column republished by an aggregator</title>
+<link>https://news.google.com/rss/articles/CCC</link>
+<pubDate>Mon, 19 Oct 2026 01:00:00 GMT</pubDate>
+<description>Astroscale column</description>
+<source url="https://biggo.example">BigGo Finance</source></item>
 </channel></rss>"""
 
 TRIALS_DATA = {"studies": [{
@@ -247,7 +252,9 @@ EDINET_RESULTS = [
 
 class NewSourceParseTests(unittest.TestCase):
     def test_gnews(self):
-        r = gnews.parse_feed(GNEWS_XML)[0]
+        items = gnews.parse_feed(GNEWS_XML)
+        self.assertEqual(len(items), 2)  # BigGo の転載コラムは媒体フィルタで除外
+        r = items[0]
         self.assertEqual((r["source"], r["info_type"], r["published"]), ("gnews", "news", "2026-10-18"))
         self.assertIn("配信元: Example News", r["abstract"])
         self.assertTrue(r["url"].startswith("https://news.google.com/"))
@@ -537,6 +544,84 @@ class ScreenTests(unittest.TestCase):
         self.assertIsNone(screen(self.c(abstract="x" * 40, info_type="news"), AS_OF, CFG))
         self.assertIsNone(screen(self.c(abstract="x" * 40, info_type="disclosure"), AS_OF, CFG))
         self.assertEqual(screen(self.c(abstract="x" * 40, info_type="paper"), AS_OF, CFG), "abstract_too_short")
+
+
+class NewsPoolTests(unittest.TestCase):
+    """ニュースは単体評価せず、同一企業の評価へ同梱する材料として扱う再設計の検証。"""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.path = Path(self.tmp.name) / "d" / "trl.sqlite"
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def news_raw(self, sid, title, published="2026-10-19"):
+        return {"source": "gnews", "source_id": sid, "title": title,
+                "abstract": title + " に関する事業ニュースの見出し。",
+                "url": f"https://example.org/{sid}", "published": published,
+                "fields": ["日本経済新聞"], "affiliations": [], "info_type": "news"}
+
+    def test_collect_drops_news_without_entity(self):
+        store = Store(self.path)
+        cfg = dict(CFG)
+        cfg["sources"] = {"defaults": {"max_results": 5, "lookback_days": 30},
+                          "queries": [{"name": "n", "gnews": "q"}]}
+        raws = [self.news_raw("n1", "アストロスケールが防衛案件の大型契約を獲得"),
+                self.news_raw("n2", "人気アニメのポップアップショップが開店")]
+        r = run_pipeline(store, cfg, None, as_of=AS_OF, sources=("gnews",), kinds=("long",),
+                         fetchers={"gnews": lambda q, n, d, a: raws}, today=AS_OF, log=lambda *_: None)
+        self.assertEqual(store.count_candidates(), 1)
+        self.assertEqual(r["counts"]["invalid"], 1)
+        store.close()
+
+    def test_news_not_selected_but_pooled(self):
+        store = Store(self.path)
+        paper, _ = normalize(raw(sid="2610.7777", affiliations=["Astroscale Holdings Inc."]),
+                             "2026-10-20T00:00:00+00:00")
+        pid, _ = store.upsert_candidate(paper, "r0")
+        store.set_entities(pid, link_entities(paper, CFG.get("entities", {})))
+        news, _ = normalize(self.news_raw("n9", "アストロスケールが200億円規模の受注見込みを発表"),
+                            "2026-10-20T00:00:00+00:00")
+        nid, _ = store.upsert_candidate(news, "r0")
+        store.set_entities(nid, link_entities(news, CFG.get("entities", {})))
+        store.set_status(pid, "screened")
+        store.set_status(nid, "screened")
+        sel = select_for_eval(store, CFG, AS_OF, 10)
+        self.assertEqual([c["id"] for c in sel], [pid])
+        rel = store.related_news(pid, AS_OF)
+        self.assertEqual(len(rel), 1)
+        self.assertIn("受注見込み", rel[0]["title"])
+        # 製品リンクだけの候補 (スポンサー名が資料に無い治験など) にも同じ企業のニュースが付く
+        news2, _ = normalize(self.news_raw("n10", "オンコリスバイオファーマが海外企業と提携を発表"),
+                             "2026-10-20T00:00:00+00:00")
+        n2id, _ = store.upsert_candidate(news2, "r0")
+        store.set_entities(n2id, link_entities(news2, CFG.get("entities", {})))
+        prod, _ = normalize(raw(sid="2610.8888", title="OBP-301 Phase II study results",
+                                abstract="Results of the OBP-301 study. " * 12),
+                            "2026-10-20T00:00:00+00:00")
+        prid, _ = store.upsert_candidate(prod, "r0")
+        store.set_entities(prid, link_entities(prod, CFG.get("entities", {})))
+        rel2 = store.related_news(prid, AS_OF)
+        self.assertEqual(len(rel2), 1)
+        self.assertIn("提携", rel2[0]["title"])
+        store.close()
+
+    def test_evaluate_one_includes_related(self):
+        cand = {"id": "c1", "title": "T", "abstract": "A" * 300, "url": "u", "source": "trials",
+                "published": "2026-10-10", "fields": []}
+        seen = []
+        base = make_llm_fn(long_scores={k: 70 for k in LONG_KEYS})
+
+        def fn(p):
+            seen.append(p)
+            return base(p)
+        related = [{"title": "アストロスケールが200億円規模の受注見込み", "published": "2026-10-19",
+                    "url": "https://example.org/n9", "media": "日本経済新聞"}]
+        res = evaluate_one(cand, "long", CFG, Mock(fn), AS_OF, related=related)
+        self.assertEqual(res["status"], "final")
+        self.assertEqual(res["extra"]["related_news_count"], 1)
+        self.assertTrue(any("受注見込み" in p and "関連事業ニュース" in p for p in seen))
 
 
 class IntegrationTests(unittest.TestCase):

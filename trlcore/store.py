@@ -3,7 +3,7 @@
 import hashlib
 import json
 import sqlite3
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 
@@ -209,6 +209,27 @@ class Store:
 
     def count_candidates(self):
         return self.conn.execute("SELECT COUNT(*) FROM candidates").fetchone()[0]
+
+    def related_news(self, cid, as_of, limit=8, window_days=90):
+        """同一企業に紐付く直近ニュースを、評価時の補助根拠として返す。
+
+        ニュースは単体では評価せず、論文・治験などの評価に同梱する材料と位置付ける。
+        """
+        start = (as_of - timedelta(days=window_days)).isoformat()
+        rows = self.conn.execute(
+            "SELECT DISTINCT n.title, n.published, n.url, n.fields_json FROM candidates n "
+            "JOIN candidate_entities ne ON ne.candidate_id = n.id "
+            "JOIN candidate_entities ce ON ce.entity_id = ne.entity_id "
+            "WHERE ce.candidate_id = ? AND n.id != ? AND n.info_type = 'news' "
+            "AND n.published IS NOT NULL AND n.published <= ? AND n.published >= ? "
+            "ORDER BY n.published DESC LIMIT ?",
+            (cid, cid, as_of.isoformat(), start, limit)).fetchall()
+        out = []
+        for r in rows:
+            fields = json.loads(r["fields_json"] or "[]")
+            out.append({"title": r["title"], "published": r["published"], "url": r["url"],
+                        "media": fields[0] if fields else ""})
+        return out
 
     # --- evaluations ---
     def add_evaluation(self, run_id, cid, ev):

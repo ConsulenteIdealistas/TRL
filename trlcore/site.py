@@ -67,6 +67,8 @@ def build_site_data(store, cfg, now=None):
     rows = store.conn.execute("SELECT id FROM candidates ORDER BY published DESC, id").fetchall()
     for (cid,) in rows:
         c = store.get_candidate(cid)
+        if c["info_type"] == "news":
+            continue  # ニュースは評価単位ではなく材料。候補一覧には出さない
         long_ev = _ev_for_site(store.latest_evaluation(cid, "long"), cfg)
         event_ev = _ev_for_site(store.latest_evaluation(cid, "event"), cfg)
         seen, ents = set(), []

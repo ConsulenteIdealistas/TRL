@@ -343,8 +343,14 @@ class NewSourceParseTests(unittest.TestCase):
         self.assertEqual(r["affiliations"], ["Astroscale", "University of Tokyo"])
         self.assertEqual(r["doi"], "10.1000/xyz")
         self.assertEqual(r["fields"], ["Acta Astronautica"])
-        out = openalex.fetch("I999", 5, 365, AS_OF, http=lambda url, params=None, **kw: json.dumps(data))
+        seen = {}
+        def stub(url, params=None, **kw):
+            seen.update(params or {})
+            return json.dumps(data)
+        out = openalex.fetch("I999", 5, 365, AS_OF, http=stub)
         self.assertEqual(len(out), 1)
+        # フィルタのフィールド名は複数形 institutions(単数形はAPIが拒否する)
+        self.assertIn("authorships.institutions.id:I999", seen.get("filter", ""))
 
     def test_trials(self):
         r = trials.parse(TRIALS_DATA)[0]

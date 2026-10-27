@@ -129,11 +129,13 @@ WATCH_LOOKBACK_DEFAULTS = {"prtimes": 90, "trials": 365, "edinet": 60, "yahoo": 
 
 
 # 市場ごとの Yahoo シンボル接尾辞と Google News ロケール。market 未指定は JP。
-YAHOO_SUFFIX = {"JP": ".T", "US": "", "GB": ".L", "CH": ".SW", "DE": ".DE"}
+YAHOO_SUFFIX = {"JP": ".T", "US": "", "GB": ".L", "CH": ".SW", "DE": ".DE", "CA": ".TO", "AU": ".AX"}
 GNEWS_LOCALE = {"US": {"hl": "en", "gl": "US", "ceid": "US:en"},
                 "GB": {"hl": "en", "gl": "GB", "ceid": "GB:en"},
                 "CH": {"hl": "en", "gl": "CH", "ceid": "CH:en"},
-                "DE": {"hl": "de", "gl": "DE", "ceid": "DE:de"}}
+                "DE": {"hl": "de", "gl": "DE", "ceid": "DE:de"},
+                "CA": {"hl": "en", "gl": "CA", "ceid": "CA:en"},
+                "AU": {"hl": "en", "gl": "AU", "ceid": "AU:en"}}
 # 市場ごとのキーワード集合の置き場所 (JP は日本語、それ以外は市場言語。DE のみ独語で他は英語)
 KEYWORD_SETS_BY_MARKET = {"JP": "keyword_sets", "DE": "keyword_sets_de"}
 

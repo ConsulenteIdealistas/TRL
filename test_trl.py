@@ -1422,6 +1422,23 @@ class EntityQueryGenerationTests(unittest.TestCase):
         self.assertNotIn("de1-edinet", by_name)
         self.assertNotIn("de1-prtimes", by_name)
 
+    def test_generation_rules_canada_australia(self):
+        src = {"keyword_sets": {"space": ["決算"]},
+               "keyword_sets_en": {"space": ["earnings", "contract"]},
+               "entity_watch": {"lookback_days": {}}}
+        ents = {"entities": [
+            {"id": "ca1", "sector": "space", "market": "CA", "ticker": "MDA",
+             "watch": {"news_name": "MDA Space"}},
+            {"id": "au1", "sector": "space", "market": "AU", "ticker": "EOS",
+             "watch": {"news_name": "EOS Ltd"}},
+        ]}
+        by_name = {q["name"]: q for q in T.build_entity_queries(ents, src)}
+        self.assertEqual(by_name["ca1-news"]["gnews"]["gl"], "CA")
+        self.assertEqual(by_name["ca1-yahoo"]["yahoo"], "MDA.TO")
+        self.assertEqual(by_name["au1-news"]["gnews"]["ceid"], "AU:en")
+        self.assertEqual(by_name["au1-yahoo"]["yahoo"], "EOS.AX")
+        self.assertNotIn("au1-prtimes", by_name)
+
     def test_invalid_market_rejected(self):
         ents = {"entities": [{"id": "x", "name": "X Corp", "aliases": ["X Corp Ltd"], "market": "FR"}]}
         with self.assertRaises(ConfigError):

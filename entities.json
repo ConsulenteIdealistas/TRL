@@ -1370,6 +1370,146 @@
           "precision timing"
         ]
       }
+    },
+    {
+      "id": "mda_space",
+      "name": "MDA Space Ltd.",
+      "aliases": [
+        "MDA Space"
+      ],
+      "ticker": "MDA",
+      "exchange": "TSX",
+      "sector": "space",
+      "market": "CA",
+      "watch": {
+        "news_name": "MDA Space",
+        "extra_keywords": [
+          "Canadarm3",
+          "satellite systems",
+          "geointelligence"
+        ]
+      }
+    },
+    {
+      "id": "telesat",
+      "name": "Telesat Corporation",
+      "aliases": [
+        "Telesat",
+        "テレサット"
+      ],
+      "ticker": "TSAT",
+      "exchange": "TSX",
+      "sector": "space",
+      "market": "CA",
+      "watch": {
+        "news_name": "Telesat",
+        "extra_keywords": [
+          "Lightspeed",
+          "LEO constellation"
+        ]
+      }
+    },
+    {
+      "id": "coveo",
+      "name": "Coveo Solutions Inc.",
+      "aliases": [
+        "Coveo",
+        "コベオ"
+      ],
+      "ticker": "CVO",
+      "exchange": "TSX",
+      "sector": "ai",
+      "market": "CA",
+      "watch": {
+        "news_name": "Coveo",
+        "extra_keywords": [
+          "AI search",
+          "generative answering",
+          "ecommerce"
+        ]
+      }
+    },
+    {
+      "id": "celestica",
+      "name": "Celestica Inc.",
+      "aliases": [
+        "Celestica",
+        "セレスティカ"
+      ],
+      "ticker": "CLS",
+      "exchange": "TSX",
+      "sector": "ai",
+      "market": "CA",
+      "watch": {
+        "news_name": "Celestica",
+        "extra_keywords": [
+          "data center",
+          "hyperscale",
+          "800G switch"
+        ]
+      }
+    },
+    {
+      "id": "telix",
+      "name": "Telix Pharmaceuticals Limited",
+      "aliases": [
+        "Telix Pharmaceuticals",
+        "Telix",
+        "テリックス"
+      ],
+      "ticker": "TLX",
+      "exchange": "ASX",
+      "sector": "bio",
+      "market": "AU",
+      "watch": {
+        "news_name": "Telix Pharmaceuticals",
+        "sponsor": "Telix Pharmaceuticals",
+        "extra_keywords": [
+          "radiopharmaceutical",
+          "Illuccix",
+          "theranostics"
+        ]
+      }
+    },
+    {
+      "id": "mesoblast",
+      "name": "Mesoblast Limited",
+      "aliases": [
+        "Mesoblast",
+        "メソブラスト"
+      ],
+      "ticker": "MSB",
+      "exchange": "ASX",
+      "sector": "bio",
+      "market": "AU",
+      "watch": {
+        "news_name": "Mesoblast",
+        "sponsor": "Mesoblast, Inc.",
+        "extra_keywords": [
+          "Ryoncil",
+          "remestemcel-L",
+          "stem cell therapy"
+        ]
+      }
+    },
+    {
+      "id": "eos",
+      "name": "Electro Optic Systems Holdings Limited",
+      "aliases": [
+        "Electro Optic Systems"
+      ],
+      "ticker": "EOS",
+      "exchange": "ASX",
+      "sector": "space",
+      "market": "AU",
+      "watch": {
+        "news_name": "Electro Optic Systems",
+        "extra_keywords": [
+          "space surveillance",
+          "satellite tracking",
+          "defence"
+        ]
+      }
     }
   ]
 }

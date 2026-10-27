@@ -35,7 +35,8 @@ MODULES = ("incomeStatementHistoryQuarterly,incomeStatementHistory,balanceSheetH
 # 財務諸表の報告通貨ごとの金額単位。数値は百万単位で整形するため、通貨を取り違えると
 # 根拠が桁違いになる。price モジュールの currency から決め、無ければ円とみなす。
 MONEY_UNITS = {"JPY": "百万円", "USD": "百万米ドル", "GBP": "百万英ポンド", "GBp": "百万英ポンド",
-               "CHF": "百万スイスフラン", "EUR": "百万ユーロ"}
+               "CHF": "百万スイスフラン", "EUR": "百万ユーロ",
+               "CAD": "百万カナダドル", "AUD": "百万豪ドル"}
 FINANCIAL_MARKER = "財務数値(Yahoo Finance)"
 
 # 実在するブラウザの User-Agent 候補。bot 判定の回避のため、セッション (プロセス)

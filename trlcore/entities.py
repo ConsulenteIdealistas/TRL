@@ -14,7 +14,7 @@ ENTITY_MODES = ("off", "strong", "any")
 
 # 上場市場。未指定は JP とみなす。EDINET / PR TIMES は JP のみ、Yahoo シンボルと
 # Google News のロケールは市場で切り替える (trlcore/config.py の生成規則)。
-MARKETS = ("JP", "US", "GB", "CH", "DE")
+MARKETS = ("JP", "US", "GB", "CH", "DE", "CA", "AU")
 
 
 def validate_entities(data):

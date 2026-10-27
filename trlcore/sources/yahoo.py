@@ -12,6 +12,7 @@
 """
 
 import json
+import random
 import time
 import urllib.request
 from http.cookiejar import CookieJar
@@ -26,10 +27,26 @@ QUOTE_URL = "https://finance.yahoo.co.jp/quote/{symbol}"
 MODULES = ("incomeStatementHistoryQuarterly,incomeStatementHistory,balanceSheetHistory,"
            "cashflowStatementHistoryQuarterly,financialData,quoteType")
 FINANCIAL_MARKER = "財務数値(Yahoo Finance)"
-_UA = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-                     "(KHTML, like Gecko) Chrome/126.0 Safari/537.36"}
 
-_session = {"opener": None, "crumb": None}
+# 実在するブラウザの User-Agent 候補。bot 判定の回避のため、セッション (プロセス)
+# ごとに1つをランダムに選び、そのセッション内では使い続ける (実ブラウザは
+# セッション途中で UA を変えない)。失敗時は選び直して再試行する。
+_UA_POOL = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36 Edg/126.0.0.0",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Safari/605.1.15",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:127.0) Gecko/20100101 Firefox/127.0",
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
+)
+
+_session = {"opener": None, "crumb": None, "ua": None}
+
+
+def _session_ua():
+    if not _session["ua"]:
+        _session["ua"] = random.choice(_UA_POOL)
+    return _session["ua"]
 
 
 def _fmt_money(v):
@@ -136,11 +153,12 @@ def parse_quote_summary(data):
 def _ensure_crumb(fetch):
     if _session["crumb"]:
         return _session["crumb"]
+    headers = {"User-Agent": _session_ua()}
     try:
-        fetch(COOKIE_URL, headers=_UA)
+        fetch(COOKIE_URL, headers=headers)
     except Exception:
         pass  # エラー応答でも cookie は付くことがある。そのまま crumb 取得に進む
-    raw = fetch(CRUMB_URL, headers=_UA)
+    raw = fetch(CRUMB_URL, headers=headers)
     crumb = raw.decode("utf-8", "replace").strip() if isinstance(raw, (bytes, bytearray)) else str(raw).strip()
     if not crumb or "<" in crumb or len(crumb) > 40:
         raise ValueError("crumb の取得に失敗しました")
@@ -170,11 +188,13 @@ def yahoo_fetch(query, max_results, lookback_days, as_of, http=None, sleep=time.
             crumb = _ensure_crumb(fetch)
             raw = fetch(SUMMARY_URL.format(symbol=symbol),
                         params={"modules": MODULES, "crumb": crumb},
-                        headers=_UA)
+                        headers={"User-Agent": _session_ua()})
             data = json.loads(raw)
             break
         except Exception:
-            _session["crumb"] = None  # crumb 失効の可能性があるため次回は取り直す
+            # crumb 失効や bot 判定の可能性があるため、次回は crumb と UA を取り直す
+            _session["crumb"] = None
+            _session["ua"] = None
             if attempt == 1:
                 return []
     text, period, name = parse_quote_summary(data)

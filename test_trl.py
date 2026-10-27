@@ -463,6 +463,13 @@ class YahooFinancialTests(unittest.TestCase):
         from trlcore.sources import yahoo as yahoo_mod
         yahoo_mod._session["crumb"] = None
         yahoo_mod._session["opener"] = None
+        yahoo_mod._session["ua"] = None
+
+    def test_session_ua_from_pool_and_stable(self):
+        from trlcore.sources import yahoo as yahoo_mod
+        ua1 = yahoo_mod._session_ua()
+        self.assertIn(ua1, yahoo_mod._UA_POOL)
+        self.assertEqual(yahoo_mod._session_ua(), ua1)  # セッション内では変わらない
 
     def test_parse_quote_summary(self):
         text, period, name = yahoo.parse(YAHOO_SUMMARY)

@@ -134,6 +134,8 @@ GNEWS_LOCALE = {"US": {"hl": "en", "gl": "US", "ceid": "US:en"},
                 "GB": {"hl": "en", "gl": "GB", "ceid": "GB:en"},
                 "CH": {"hl": "en", "gl": "CH", "ceid": "CH:en"},
                 "DE": {"hl": "de", "gl": "DE", "ceid": "DE:de"}}
+# 市場ごとのキーワード集合の置き場所 (JP は日本語、それ以外は市場言語。DE のみ独語で他は英語)
+KEYWORD_SETS_BY_MARKET = {"JP": "keyword_sets", "DE": "keyword_sets_de"}
 
 
 def build_entity_queries(entities, src):
@@ -143,7 +145,6 @@ def build_entity_queries(entities, src):
     market が JP 以外の企業は海外扱い: EDINET と PR TIMES は生成せず、gnews は市場のロケールと
     英語キーワード集合(keyword_sets_en)を使い、yahoo は市場の接尾辞つきシンボルにする。"""
     ks = src.get("keyword_sets") or {}
-    ks_en = src.get("keyword_sets_en") or {}
     params = (src.get("entity_watch") or {}).get("lookback_days") or {}
     groups = {"gnews": [], "trials": [], "edinet": [], "yahoo": [], "prtimes": []}
     for e in (entities or {}).get("entities", []):
@@ -162,9 +163,11 @@ def build_entity_queries(entities, src):
             words = list(ks[sector]) + list(w.get("extra_keywords") or [])
             groups["gnews"].append({"name": f"{eid}-news", "gnews": f"{news_name} ({' OR '.join(words)})"})
         else:
-            if sector not in ks_en:
-                raise ConfigError(f"entities.json: {eid}.sector {sector!r} has no keyword_sets_en entry in sources.json")
-            words = list(ks_en[sector]) + list(w.get("extra_keywords") or [])
+            set_key = KEYWORD_SETS_BY_MARKET.get(market, "keyword_sets_en")
+            sets = src.get(set_key) or {}
+            if sector not in sets:
+                raise ConfigError(f"entities.json: {eid}.sector {sector!r} has no {set_key} entry in sources.json")
+            words = list(sets[sector]) + list(w.get("extra_keywords") or [])
             q = {"q": f"{news_name} ({' OR '.join(words)})"}
             q.update(GNEWS_LOCALE[market])
             groups["gnews"].append({"name": f"{eid}-news", "gnews": q})

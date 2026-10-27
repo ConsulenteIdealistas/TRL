@@ -93,6 +93,42 @@
       "revenue"
     ]
   },
+  "keyword_sets_de": {
+    "bio": [
+      "Ergebnisse",
+      "klinische Studie",
+      "Zulassung",
+      "Partnerschaft",
+      "Lizenzierung",
+      "Finanzierung",
+      "Umsatz"
+    ],
+    "space": [
+      "Ergebnisse",
+      "Auftrag",
+      "Vertrag",
+      "Partnerschaft",
+      "Finanzierung",
+      "Raketenstart",
+      "Umsatz"
+    ],
+    "ai": [
+      "Ergebnisse",
+      "Partnerschaft",
+      "Finanzierung",
+      "Vertrag",
+      "Einführung",
+      "Umsatz"
+    ],
+    "semiconductor": [
+      "Ergebnisse",
+      "Aufträge",
+      "Vertrag",
+      "Partnerschaft",
+      "Finanzierung",
+      "Umsatz"
+    ]
+  },
   "topics": [
     {
       "arxiv": "all:\"solid-state battery\"",

@@ -1405,6 +1405,23 @@ class EntityQueryGenerationTests(unittest.TestCase):
         self.assertNotIn("us1-edinet", by_name)   # EDINET は JP のみ
         self.assertNotIn("us1-prtimes", by_name)  # PR TIMES も JP のみ
 
+    def test_generation_rules_german_market(self):
+        src = {"keyword_sets": {"space": ["決算"]},
+               "keyword_sets_en": {"space": ["earnings"]},
+               "keyword_sets_de": {"space": ["Ergebnisse", "Auftrag"]},
+               "entity_watch": {"lookback_days": {}}}
+        ents = {"entities": [
+            {"id": "de1", "sector": "space", "market": "DE", "ticker": "OHB",
+             "watch": {"news_name": "OHB", "extra_keywords": ["Satelliten"]}},
+        ]}
+        by_name = {q["name"]: q for q in T.build_entity_queries(ents, src)}
+        q = by_name["de1-news"]["gnews"]
+        self.assertEqual((q["hl"], q["gl"], q["ceid"]), ("de", "DE", "DE:de"))
+        self.assertEqual(q["q"], "OHB (Ergebnisse OR Auftrag OR Satelliten)")  # 独語キーワード集合を使う
+        self.assertEqual(by_name["de1-yahoo"]["yahoo"], "OHB.DE")
+        self.assertNotIn("de1-edinet", by_name)
+        self.assertNotIn("de1-prtimes", by_name)
+
     def test_invalid_market_rejected(self):
         ents = {"entities": [{"id": "x", "name": "X Corp", "aliases": ["X Corp Ltd"], "market": "FR"}]}
         with self.assertRaises(ConfigError):

@@ -408,7 +408,7 @@
         "GITAI Japan"
       ],
       "sector": "space",
-      "tier": "core",
+      "tier": "watch",
       "watch": {
         "news_name": "GITAI",
         "prtimes_terms": [
@@ -723,7 +723,7 @@
       "ticker": "7779",
       "exchange": "TSE",
       "sector": "ai",
-      "tier": "core",
+      "tier": "watch",
       "watch": {
         "news_name": "サイバーダイン",
         "prtimes_terms": [
@@ -812,7 +812,7 @@
       "ticker": "6769",
       "exchange": "TSE",
       "sector": "semiconductor",
-      "tier": "core",
+      "tier": "watch",
       "watch": {
         "news_name": "ザインエレクトロニクス",
         "prtimes_terms": [
@@ -841,7 +841,7 @@
       "ticker": "6616",
       "exchange": "TSE",
       "sector": "semiconductor",
-      "tier": "core",
+      "tier": "watch",
       "watch": {
         "news_name": "トレックス・セミコンダクター",
         "prtimes_terms": [

@@ -700,6 +700,14 @@ class PromptTests(unittest.TestCase):
         for anchor in ("材料の方向性", "positive", "negative", "mixed", "点数や TRL とは独立"):
             self.assertIn(anchor, text)
 
+    def test_long_prompt_contains_low_band_procedure(self):
+        # TRL 1〜3 が null に逃げないための判定手順・原則・具体例が欠けないこと
+        text = load_prompt("long", CFG["scoring"]["prompts"]["long"])["text"]
+        for anchor in ("[判定手順]", "原則として 1〜3 のいずれかに必ず位置づけられる",
+                       "null は最後の手段", "1〜3 を否定する理由にはならない",
+                       "[具体例]", "誤り率の閾値", "合成経路を提案"):
+            self.assertIn(anchor, text)
+
 
 class HttpTests(unittest.TestCase):
     def test_retry_then_success(self):

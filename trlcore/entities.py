@@ -14,7 +14,7 @@ ENTITY_MODES = ("off", "strong", "any")
 
 # 上場市場。未指定は JP とみなす。EDINET / PR TIMES は JP のみ、Yahoo シンボルと
 # Google News のロケールは市場で切り替える (trlcore/config.py の生成規則)。
-MARKETS = ("JP", "US", "GB", "CH", "DE", "CA", "AU", "IT", "SE")
+MARKETS = ("JP", "US", "GB", "CH", "DE", "CA", "AU", "IT", "SE", "DK")
 
 # 監視の層。core は評価予算を使う対象、watch は収集とプール専用 (評価しない)。
 # 評価選定はコア企業のリンクがある候補だけを対象にする (trlcore/pipeline.py)。

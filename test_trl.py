@@ -1288,10 +1288,6 @@ class EntityQueryGenerationTests(unittest.TestCase):
         "name": "reprocell-news"
     },
     {
-        "gnews": "ハートシード (決算 OR 契約 OR 提携 OR 導出 OR 承認 OR 治験 OR 資金調達 OR 採択 OR 助言)",
-        "name": "heartseed-news"
-    },
-    {
         "gnews": "ペプチドリーム (決算 OR 契約 OR 提携 OR 導出 OR 承認 OR 治験 OR 資金調達 OR 採択 OR 助言)",
         "name": "peptidream-news"
     },
@@ -1304,11 +1300,6 @@ class EntityQueryGenerationTests(unittest.TestCase):
         "lookback_days": 365,
         "name": "reprocell-trials",
         "trials": "REPROCELL"
-    },
-    {
-        "lookback_days": 365,
-        "name": "heartseed-trials",
-        "trials": "Heartseed"
     },
     {
         "lookback_days": 365,
@@ -1368,11 +1359,6 @@ class EntityQueryGenerationTests(unittest.TestCase):
     {
         "name": "reprocell-prtimes",
         "prtimes": "REPROCELL|リプロセル",
-        "lookback_days": 90
-    },
-    {
-        "name": "heartseed-prtimes",
-        "prtimes": "Heartseed|ハートシード",
         "lookback_days": 90
     },
     {
@@ -1481,6 +1467,22 @@ class EntityQueryGenerationTests(unittest.TestCase):
         self.assertEqual(by_name["it1-yahoo"]["yahoo"], "AVIO.MI")
         self.assertEqual(by_name["se1-news"]["gnews"]["hl"], "sv")
         self.assertEqual(by_name["se1-yahoo"]["yahoo"], "AAC.ST")
+
+    def test_generation_rules_denmark(self):
+        # デンマークは Google News のデンマーク語圏の収載が薄いため英語集合+DKロケールを使う
+        src = {"keyword_sets": {"bio": ["治験"]},
+               "keyword_sets_en": {"bio": ["earnings", "clinical trial"]},
+               "entity_watch": {"lookback_days": {}}}
+        ents = {"entities": [
+            {"id": "dk1", "sector": "bio", "market": "DK", "ticker": "GMAB",
+             "watch": {"news_name": "Genmab", "sponsor": "Genmab"}},
+        ]}
+        by_name = {q["name"]: q for q in T.build_entity_queries(ents, src)}
+        q = by_name["dk1-news"]["gnews"]
+        self.assertEqual((q["hl"], q["gl"]), ("en", "DK"))
+        self.assertEqual(q["q"], "Genmab (earnings OR clinical trial)")
+        self.assertEqual(by_name["dk1-yahoo"]["yahoo"], "GMAB.CO")
+        self.assertEqual(by_name["dk1-trials"]["trials"], "Genmab")
 
     def test_invalid_market_rejected(self):
         ents = {"entities": [{"id": "x", "name": "X Corp", "aliases": ["X Corp Ltd"], "market": "FR"}]}

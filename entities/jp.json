@@ -243,35 +243,6 @@
       ]
     },
     {
-      "id": "heartseed",
-      "name": "Heartseed Inc.",
-      "aliases": [
-        "Heartseed",
-        "ハートシード",
-        "ハートシード株式会社"
-      ],
-      "sector": "bio",
-      "tier": "watch",
-      "watch": {
-        "news_name": "ハートシード",
-        "prtimes_terms": [
-          "Heartseed",
-          "ハートシード"
-        ],
-        "sponsor": "Heartseed"
-      },
-      "products": [
-        {
-          "id": "hs_001",
-          "name": "HS-001",
-          "aliases": [
-            "HS001"
-          ],
-          "type": "cell_therapy_candidate"
-        }
-      ]
-    },
-    {
       "id": "peptidream",
       "name": "PeptiDream Inc.",
       "aliases": [
@@ -397,40 +368,6 @@
             "AxelLiner"
           ],
           "type": "satellite_platform"
-        }
-      ]
-    },
-    {
-      "id": "gitai",
-      "name": "GITAI Inc.",
-      "aliases": [
-        "GITAI",
-        "GITAI Japan"
-      ],
-      "sector": "space",
-      "tier": "watch",
-      "watch": {
-        "news_name": "GITAI",
-        "prtimes_terms": [
-          "GITAI"
-        ]
-      },
-      "products": [
-        {
-          "id": "s1",
-          "name": "GITAI S1",
-          "aliases": [
-            "GITAI S1"
-          ],
-          "type": "space_robot_arm"
-        },
-        {
-          "id": "r1",
-          "name": "GITAI R1",
-          "aliases": [
-            "GITAI R1"
-          ],
-          "type": "lunar_rover"
         }
       ]
     },
@@ -856,33 +793,6 @@
             "XCLシリーズ"
           ],
           "type": "power_ic"
-        }
-      ]
-    },
-    {
-      "id": "rapidus",
-      "name": "Rapidus Corporation",
-      "aliases": [
-        "Rapidus",
-        "ラピダス"
-      ],
-      "sector": "semiconductor",
-      "tier": "core",
-      "watch": {
-        "news_name": "ラピダス",
-        "prtimes_terms": [
-          "Rapidus",
-          "ラピダス"
-        ]
-      },
-      "products": [
-        {
-          "id": "iim1",
-          "name": "IIM-1",
-          "aliases": [
-            "IIM-1"
-          ],
-          "type": "semiconductor_fab"
         }
       ]
     }

@@ -385,6 +385,18 @@ class NewSourceParseTests(unittest.TestCase):
         store.close()
         tmp.cleanup()
 
+    def test_translate_enabled_config(self):
+        # 停止スイッチは 0/1 のみ許可し、現行設定は 0 (停止中)
+        self.assertEqual(CFG["scoring"]["llm"].get("translate_enabled"), 0)
+        ok = copy.deepcopy(CFG)
+        ok["scoring"]["llm"]["translate_enabled"] = 1
+        validate_config(ok)
+        for bad in (2, True, "0"):
+            ng = copy.deepcopy(CFG)
+            ng["scoring"]["llm"]["translate_enabled"] = bad
+            with self.assertRaises(ConfigError):
+                validate_config(ng)
+
     def test_trials(self):
         r = trials.parse(TRIALS_DATA)[0]
         self.assertEqual((r["source"], r["info_type"], r["published"]), ("trials", "trial", "2026-10-01"))
@@ -1271,6 +1283,26 @@ class IntegrationTests(unittest.TestCase):
         text = build_report(store, r3["run_id"])
         self.assertIn("65.0", text)
         self.assertIn("投資利益率ではありません", text)
+        store.close()
+
+    def test_translation_disabled_skips_translation(self):
+        # translate_enabled=0 の間は翻訳プロンプトを一切呼ばず、訳も作らない
+        cfg = copy.deepcopy(self.cfg())
+        cfg["scoring"]["llm"]["translate_enabled"] = 0
+        seen = []
+        base = make_llm_fn(long_scores={k: 65 for k in LONG_KEYS})
+
+        def fn(p):
+            seen.append(p)
+            return base(p)
+        store = Store(self.path)
+        r = run_pipeline(store, cfg, Mock(fn), as_of=AS_OF, kinds=("long",), fetchers=self.fetchers(),
+                         today=AS_OF, log=lambda *_: None)
+        self.assertEqual(r["counts"]["translated"], 0)
+        self.assertFalse(any("翻訳担当" in p for p in seen))
+        cands = store.list_by_status(["evaluated", "hold", "final", "error", "screened"])
+        self.assertTrue(cands)
+        self.assertTrue(all(not c.get("title_ja") for c in cands))
         store.close()
 
     def test_purge_evaluations_resets_candidates(self):

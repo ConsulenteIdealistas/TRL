@@ -340,7 +340,13 @@ def run_pipeline(store, cfg, llm, *, as_of, sources=("pubmed", "arxiv"), kinds=(
     if degraded:
         counts["llm_degraded"] = degraded
     if llm is not None and not degraded:
-        counts["translated"] = translate_display_set(store, cfg, llm, today, log)
+        if st.get("translate_enabled", 1):
+            counts["translated"] = translate_display_set(store, cfg, llm, today, log)
+        else:
+            # 翻訳は scoring.json の llm.translate_enabled=0 で停止中(2026-10-28〜)。
+            # 実装と DB 内の既存訳は残し、再開はこの値を 1 に戻すだけ。
+            counts["translated"] = 0
+            log("[translate] translate_enabled=0 のため翻訳をスキップ")
     all_failed = do_collect and counts["sources_ok"] == 0 and counts["sources_failed"] > 0
     store.finish_run(run_id, counts, "failed" if all_failed else "ok", time.monotonic() - t0)
     return {"run_id": run_id, "counts": counts, "failed": all_failed, "llm_degraded": degraded}

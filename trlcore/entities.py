@@ -124,6 +124,52 @@ def _contains(alias, text):
     return alias in text
 
 
+_PREPARED_CACHE = {}
+
+
+def _alias_matcher(alias):
+    """alias を正規化し、英数字を含む場合は単語境界つきパターンを compile して返す。"""
+    norm = _norm_text(alias)
+    pattern = None
+    if norm and re.search(r"[a-z0-9]", norm):
+        pattern = re.compile(r"(?<![a-z0-9])" + re.escape(norm) + r"(?![a-z0-9])")
+    return norm, pattern
+
+
+def _match_prepared(norm, pattern, norm_text):
+    if not norm or not norm_text:
+        return False
+    if pattern is not None:
+        return pattern.search(norm_text) is not None
+    return norm in norm_text
+
+
+def _prepared_entities(data):
+    """entities の alias 正規化とパターン compile を設定ごとに使い回す。
+
+    link_entities は収集した全レコードに対して呼ばれるため、alias 側の準備を
+    レコードごとに繰り返さない。キーは entities の内容そのもの。
+    """
+    key = tuple(
+        (e.get("id"), e.get("name"), tuple(e.get("aliases", []) or []),
+         tuple((p.get("id"), p.get("name"), tuple(p.get("aliases", []) or []))
+               for p in (e.get("products", []) or [])))
+        for e in (data.get("entities", []) or []))
+    prep = _PREPARED_CACHE.get(key)
+    if prep is None:
+        prep = []
+        for entity in data.get("entities", []) or []:
+            names = [entity.get("name", "")] + list(entity.get("aliases", []) or [])
+            products = []
+            for product in entity.get("products", []) or []:
+                pnames = [product.get("name", "")] + list(product.get("aliases", []) or [])
+                products.append((product, [(a, *_alias_matcher(a)) for a in pnames if a]))
+            prep.append((entity, [(a, *_alias_matcher(a)) for a in names if a], products))
+        _PREPARED_CACHE.clear()
+        _PREPARED_CACHE[key] = prep
+    return prep
+
+
 def link_entities(rec, data):
     """論文と企業・製品を照合する。所属機関一致はstrong、本文一致はweak。"""
     if not isinstance(data, dict):
@@ -136,22 +182,22 @@ def link_entities(rec, data):
     if isinstance(affiliations, str):
         affiliations = [affiliations]
 
+    # テキストの正規化は値ごとに1回だけ (alias ごとに繰り返すと収集が遅くなる)
     fields = [
-        ("affiliation", affiliations),
-        ("title", [title]),
-        ("abstract", [abstract]),
+        ("affiliation", [_norm_text(v) for v in affiliations]),
+        ("title", [_norm_text(title)]),
+        ("abstract", [_norm_text(abstract)]),
     ]
 
     results = []
 
-    for entity in data.get("entities", []):
-        names = [entity.get("name", "")] + entity.get("aliases", [])
+    for entity, names, products in _prepared_entities(data):
         match = None
 
         for field, values in fields:
             for value in values:
-                for alias in names:
-                    if alias and _contains(alias, value):
+                for alias, norm, pattern in names:
+                    if _match_prepared(norm, pattern, value):
                         match = {
                             "entity_id": entity["id"],
                             "alias": alias,
@@ -168,14 +214,12 @@ def link_entities(rec, data):
         if match:
             results.append(match)
 
-        for product in entity.get("products", []):
-            product_names = [product.get("name", "")] + product.get("aliases", [])
-
+        for product, product_names in products:
             for field, values in fields:
                 matched = False
                 for value in values:
-                    for alias in product_names:
-                        if alias and _contains(alias, value):
+                    for alias, norm, pattern in product_names:
+                        if _match_prepared(norm, pattern, value):
                             results.append({
                                 "entity_id": entity["id"],
                                 "alias": alias,

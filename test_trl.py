@@ -352,6 +352,39 @@ class NewSourceParseTests(unittest.TestCase):
         # フィルタのフィールド名は複数形 institutions(単数形はAPIが拒否する)
         self.assertIn("authorships.institutions.id:I999", seen.get("filter", ""))
 
+    def test_translation(self):
+        self.assertTrue(T.needs_translation("High-throughput actinic mask inspection for EUV lithography"))
+        self.assertFalse(T.needs_translation("月面探査ローバーの熱制御の設計と実装"))
+        self.assertFalse(T.needs_translation("AI"))
+        llm = T.Mock(lambda p: '```json\n[{"i": 0, "title_ja": "邦題", "abstract_ja": "邦文抄録"}]\n```')
+        self.assertEqual(T.translate_batch(llm, [("Title", "Abstract")]), {0: ("邦題", "邦文抄録")})
+        bad = T.Mock(lambda p: "not json")
+        self.assertEqual(T.translate_batch(bad, [("Title", "Abstract")]), {})
+
+    def test_translate_display_set(self):
+        import tempfile
+        from pathlib import Path as _P
+        tmp = tempfile.TemporaryDirectory()
+        store = T.Store(_P(tmp.name) / "d.sqlite")
+        rec, _ = T.normalize(raw(), T.now_iso())
+        cid, _ = store.upsert_candidate(rec, "rX")
+        store.conn.execute(
+            "INSERT INTO evaluations(run_id, candidate_id, kind, status) VALUES('rX', ?, 'long', 'ok')", (cid,))
+        store.conn.commit()
+
+        def fn(p):
+            if "翻訳担当" in p:
+                return json.dumps([{"i": 0, "title_ja": "邦題タイトル", "abstract_ja": "邦文の抄録です"}])
+            raise AssertionError("unknown prompt")
+        n = T.translate_display_set(store, CFG, T.Mock(fn), AS_OF, log=lambda *_: None)
+        self.assertEqual(n, 1)
+        c = store.get_candidate(cid)
+        self.assertEqual(c["title_ja"], "邦題タイトル")
+        # 2回目は未訳が無いので 0 件 (LLM は呼ばれない)
+        self.assertEqual(T.translate_display_set(store, CFG, T.Mock(fn), AS_OF, log=lambda *_: None), 0)
+        store.close()
+        tmp.cleanup()
+
     def test_trials(self):
         r = trials.parse(TRIALS_DATA)[0]
         self.assertEqual((r["source"], r["info_type"], r["published"]), ("trials", "trial", "2026-10-01"))

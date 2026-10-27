@@ -106,6 +106,7 @@ def build_site_data(store, cfg, now=None):
         cands.append({
             "id": cid, "title": c["title"], "source": c["source"], "published": c["published"], "url": c["url"],
             "abstract": c["abstract"] or "", "fields": c["fields"],
+            "title_ja": c.get("title_ja") or None, "abstract_ja": c.get("abstract_ja") or None,
             "display_status": display_status(c, long_ev, store),
             "next_up": cid in next_ids and long_ev is None and event_ev is None,
             "long": long_ev, "event": event_ev, "entities": ents,

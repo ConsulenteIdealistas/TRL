@@ -17,6 +17,8 @@
   "candidate": [
     "id",
     "title",
+    "title_ja",
+    "abstract_ja",
     "source",
     "published",
     "url",

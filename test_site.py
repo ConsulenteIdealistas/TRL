@@ -387,6 +387,15 @@ class ExportTests(unittest.TestCase):
         self.assertTrue(ents)
         self.assertTrue(all(e["market"] == "JP" and e["sector"] == "space" for e in ents))
 
+    def test_translation_exported(self):
+        data = self.build(None, n=1)
+        cid = data["candidates"][0]["id"]
+        self.assertIsNone(data["candidates"][0]["title_ja"])
+        self.store.set_translation(cid, "邦題", "邦文抄録")
+        data = T.build_site_data(self.store, cfg_with(), datetime(2026, 10, 26, tzinfo=timezone.utc))
+        got = next(c for c in data["candidates"] if c["id"] == cid)
+        self.assertEqual((got["title_ja"], got["abstract_ja"]), ("邦題", "邦文抄録"))
+
     def test_pending_rejected_and_legacy_api_errors(self):
         data = self.build(None)  # LLM未設定 → すべて未評価
         self.assertEqual({c["display_status"] for c in data["candidates"]}, {"pending"})

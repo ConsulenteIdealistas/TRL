@@ -12,7 +12,8 @@ CREATE TABLE IF NOT EXISTS candidates(
   id TEXT PRIMARY KEY, title TEXT, abstract TEXT, url TEXT, source TEXT, source_id TEXT,
   doi TEXT, published TEXT, retrieved_at TEXT, fields_json TEXT, info_type TEXT,
   status TEXT NOT NULL DEFAULT 'new', screen_reason TEXT, last_eval_at TEXT,
-  retry_count INTEGER NOT NULL DEFAULT 0, first_seen_run TEXT);
+  retry_count INTEGER NOT NULL DEFAULT 0, first_seen_run TEXT,
+  title_ja TEXT, abstract_ja TEXT);
 CREATE TABLE IF NOT EXISTS identifiers(key TEXT PRIMARY KEY, candidate_id TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS evaluations(
   id INTEGER PRIMARY KEY AUTOINCREMENT, run_id TEXT, candidate_id TEXT, kind TEXT, as_of TEXT,
@@ -76,6 +77,15 @@ class Store:
         cols = {r[1] for r in self.conn.execute("PRAGMA table_info(evaluations)")}
         if "extra_json" not in cols:
             self.conn.execute("ALTER TABLE evaluations ADD COLUMN extra_json TEXT")
+        ccols = {r[1] for r in self.conn.execute("PRAGMA table_info(candidates)")}
+        for col in ("title_ja", "abstract_ja"):
+            if col not in ccols:
+                self.conn.execute(f"ALTER TABLE candidates ADD COLUMN {col} TEXT")
+        self.conn.commit()
+
+    def set_translation(self, cid, title_ja, abstract_ja):
+        self.conn.execute("UPDATE candidates SET title_ja=?, abstract_ja=? WHERE id=?",
+                          (title_ja, abstract_ja, cid))
         self.conn.commit()
 
     def close(self):

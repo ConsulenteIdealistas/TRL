@@ -17,7 +17,7 @@ from .sources.openalex import openalex_fetch
 from .translate import translate_display_set
 from .entities import entity_screen, link_entities
 from .prompts import load_prompt
-from .llm import llm_settings
+from .llm import llm_settings, translation_llm
 from .evaluate import evaluate_one, input_hash
 
 
@@ -341,7 +341,7 @@ def run_pipeline(store, cfg, llm, *, as_of, sources=("pubmed", "arxiv"), kinds=(
         counts["llm_degraded"] = degraded
     if llm is not None and not degraded:
         if st.get("translate_enabled", 1):
-            counts["translated"] = translate_display_set(store, cfg, llm, today, log)
+            counts["translated"] = translate_display_set(store, cfg, translation_llm(llm, cfg), today, log)
         else:
             # 翻訳は scoring.json の llm.translate_enabled=0 で停止中(2026-10-28〜)。
             # 実装と DB 内の既存訳は残し、再開はこの値を 1 に戻すだけ。

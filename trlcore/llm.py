@@ -139,3 +139,27 @@ def configure_llm(llm, cfg):
         st = llm_settings(cfg)
         llm.timeout, llm.retries = st["timeout_sec"], st["retries"]
     return llm
+
+
+def translation_llm(llm, cfg):
+    """翻訳専用クライアントを評価用とは別に作る。
+
+    翻訳は単純作業なので、評価用の主モデルではなく軽いモデルを使う:
+    モデル名は TRL_LLM_TRANSLATE_MODEL があればそれ、無ければ代替モデル
+    (TRL_LLM_FALLBACK_MODEL)、それも無ければ主モデル。タイムアウトと
+    再試行は llm.translate_timeout_sec / translate_retries で短くする
+    (失敗した分は原文表示に落ちるだけなので、長く粘る価値がない)。
+    作れない場合や Mock 等は評価用クライアントをそのまま使う。
+    """
+    if llm is None or not hasattr(llm, "timeout"):
+        return llm
+    st = llm_settings(cfg)
+    model = os.environ.get("TRL_LLM_TRANSLATE_MODEL") or getattr(llm, "fallback_model", None) or llm.model
+    try:
+        tl = get_provider(llm.name, model=model, http=llm.http)
+    except Exception:
+        return llm
+    if tl is None:
+        return llm
+    tl.timeout, tl.retries = st["translate_timeout_sec"], st["translate_retries"]
+    return tl

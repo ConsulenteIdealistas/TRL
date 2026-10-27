@@ -1,14 +1,19 @@
 """表示用タイトル・抄録の日本語訳。
 
-サイトに載る候補(評価済み+次に評価される上位)だけを、評価と同じ LLM で邦訳して
-DB に保存する。訳は1回作れば再利用されるため、実行ごとの追加コストは新規分だけ。
-作成のオン/オフは scoring.json の llm.translate_enabled(1/0)で切り替える。
-停止中も既存の訳はそのまま表示に使われる。
-複数候補を1コールにまとめて訳し、翻訳の失敗はその分を原文表示に落とすだけで
-実行全体は止めない。LLM が劣化状態(連続失敗等)の実行では翻訳自体を行わない。
+サイトに載る候補(評価済み+次に評価される上位)だけを邦訳して DB に保存する。
+使うのは評価用とは別に作る翻訳専用クライアント(llm.translation_llm:
+軽いモデル+短いタイムアウト)。訳は1回作れば再利用されるため、実行ごとの
+追加コストは新規分だけ。作成のオン/オフは scoring.json の
+llm.translate_enabled(1/0)で切り替える。停止中も既存の訳はそのまま表示に使われる。
+複数候補を1コールにまとめて訳し、バッチ同士は並列に呼ぶ(結果の保存は
+候補順に直列で行う)。翻訳の失敗はその分を原文表示に落とすだけで実行全体は
+止めない。LLM が劣化状態(連続失敗等)の実行では翻訳自体を行わない。
 """
 import json
 import re
+from concurrent.futures import ThreadPoolExecutor
+
+from .llm import llm_settings
 
 MAX_PER_RUN = 30  # 1回の実行で訳す候補数の上限(初回のバックフィル用。定常は新規分のみ)
 BATCH = 5         # 1コールでまとめて訳す候補数
@@ -82,13 +87,25 @@ def translate_display_set(store, cfg, llm, today, log=print):
             todo.append((cid, c, want_title, want_abs))
         if len(todo) >= MAX_PER_RUN:
             break
-    done = 0
-    for s in range(0, len(todo), BATCH):
-        chunk = todo[s:s + BATCH]
+    chunks = [todo[s:s + BATCH] for s in range(0, len(todo), BATCH)]
+
+    def call(chunk):
         try:
-            got = translate_batch(llm, [(c["title"], c["abstract"]) for _, c, _, _ in chunk])
-        except Exception as e:  # 翻訳の失敗で実行を止めない
-            log(f"[translate] バッチ翻訳に失敗: {type(e).__name__}")
+            return translate_batch(llm, [(c["title"], c["abstract"]) for _, c, _, _ in chunk])
+        except Exception as e:  # 翻訳の失敗で実行を止めない(バッチ単位で切り離す)
+            return e
+
+    # LLM 呼び出しだけを並列化する。Store への保存はこのスレッドで候補順に行う
+    workers = max(1, llm_settings(cfg).get("translate_workers", 1))
+    if workers > 1 and len(chunks) > 1:
+        with ThreadPoolExecutor(max_workers=workers) as ex:
+            results = list(ex.map(call, chunks))
+    else:
+        results = [call(chunk) for chunk in chunks]
+    done = 0
+    for chunk, got in zip(chunks, results):
+        if isinstance(got, Exception):
+            log(f"[translate] バッチ翻訳に失敗: {type(got).__name__}")
             continue
         for i, (cid, c, want_title, want_abs) in enumerate(chunk):
             if i not in got:
@@ -99,5 +116,5 @@ def translate_display_set(store, cfg, llm, today, log=print):
                                   a_ja if want_abs else c.get("abstract_ja"))
             done += 1
     if done:
-        log(f"[translate] 日本語訳を {done} 件作成")
+        log(f"[translate] 日本語訳を {done} 件作成 (model={getattr(llm, 'model', '?')}, workers={workers})")
     return done

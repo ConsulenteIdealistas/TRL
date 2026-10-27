@@ -55,8 +55,8 @@ def validate_config(cfg):
             if isinstance(v, bool) or v not in (0, 1):
                 raise ConfigError("scoring.json: llm.translate_enabled must be 0 or 1")
             continue
-        if isinstance(v, bool) or not isinstance(v, int) or v < (0 if k == "retries" else 1):
-            raise ConfigError(f"scoring.json: llm.{k} must be an integer ({'>=0' if k == 'retries' else '>=1'})")
+        if isinstance(v, bool) or not isinstance(v, int) or v < (0 if k in ("retries", "translate_retries") else 1):
+            raise ConfigError(f"scoring.json: llm.{k} must be an integer ({'>=0' if k in ('retries', 'translate_retries') else '>=1'})")
     for k, v in (sc.get("screening", {}).get("min_abstract_chars_by_info_type") or {}).items():
         if isinstance(v, bool) or not isinstance(v, int) or v < 0:
             raise ConfigError(f"scoring.json: screening.min_abstract_chars_by_info_type.{k} must be a non-negative integer")
@@ -224,7 +224,8 @@ ENTITY_FILE_ORDER = ("jp", "us", "gb", "ch", "de", "ca", "au", "it", "se", "dk")
 
 
 LLM_DEFAULTS = {"timeout_sec": 120, "retries": 3, "max_consecutive_failures": 2, "phase_budget_sec": 1200,
-                "eval_workers": 1, "translate_enabled": 1}
+                "eval_workers": 1, "translate_enabled": 1, "translate_workers": 3,
+                "translate_timeout_sec": 60, "translate_retries": 1}
 
 
 def required_files(config_dir=None):

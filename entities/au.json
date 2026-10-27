@@ -1,0 +1,69 @@
+{
+  "entities": [
+    {
+      "id": "telix",
+      "name": "Telix Pharmaceuticals Limited",
+      "aliases": [
+        "Telix Pharmaceuticals",
+        "Telix",
+        "テリックス"
+      ],
+      "ticker": "TLX",
+      "exchange": "ASX",
+      "sector": "bio",
+      "tier": "core",
+      "market": "AU",
+      "watch": {
+        "news_name": "Telix Pharmaceuticals",
+        "sponsor": "Telix Pharmaceuticals",
+        "extra_keywords": [
+          "radiopharmaceutical",
+          "Illuccix",
+          "theranostics"
+        ]
+      }
+    },
+    {
+      "id": "mesoblast",
+      "name": "Mesoblast Limited",
+      "aliases": [
+        "Mesoblast",
+        "メソブラスト"
+      ],
+      "ticker": "MSB",
+      "exchange": "ASX",
+      "sector": "bio",
+      "tier": "core",
+      "market": "AU",
+      "watch": {
+        "news_name": "Mesoblast",
+        "sponsor": "Mesoblast, Inc.",
+        "extra_keywords": [
+          "Ryoncil",
+          "remestemcel-L",
+          "stem cell therapy"
+        ]
+      }
+    },
+    {
+      "id": "eos",
+      "name": "Electro Optic Systems Holdings Limited",
+      "aliases": [
+        "Electro Optic Systems"
+      ],
+      "ticker": "EOS",
+      "exchange": "ASX",
+      "sector": "space",
+      "tier": "core",
+      "market": "AU",
+      "watch": {
+        "news_name": "Electro Optic Systems",
+        "extra_keywords": [
+          "space surveillance",
+          "satellite tracking",
+          "defence"
+        ]
+      }
+    }
+  ]
+}

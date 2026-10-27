@@ -1,0 +1,25 @@
+{
+  "entities": [
+    {
+      "id": "oxford_nanopore",
+      "name": "Oxford Nanopore Technologies plc",
+      "aliases": [
+        "Oxford Nanopore Technologies",
+        "Oxford Nanopore",
+        "オックスフォード・ナノポア"
+      ],
+      "ticker": "ONT",
+      "exchange": "LSE",
+      "sector": "bio",
+      "tier": "core",
+      "market": "GB",
+      "watch": {
+        "news_name": "Oxford Nanopore",
+        "extra_keywords": [
+          "nanopore sequencing",
+          "MinION"
+        ]
+      }
+    }
+  ]
+}

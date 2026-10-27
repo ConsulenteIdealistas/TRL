@@ -195,6 +195,9 @@ def build_entity_queries(entities, src):
 
 CONFIG_FILES = ("scoring.json", "sources.json")
 
+# entities/ ディレクトリ内の市場別ファイルの合体順 (辞書の並び = クエリ生成順を決める)
+ENTITY_FILE_ORDER = ("jp", "us", "gb", "ch", "de", "ca", "au", "it", "se")
+
 
 LLM_DEFAULTS = {"timeout_sec": 120, "retries": 3, "max_consecutive_failures": 2, "phase_budget_sec": 1200,
                 "eval_workers": 1}
@@ -228,10 +231,22 @@ def load_config(config_dir=None):
         h.update(text.encode("utf-8"))
         raw[name] = json.loads(text)
 
-    entities_path = d / "entities.json"
+    # 企業辞書は市場別ファイル entities/<market>.json に分けて置き、合体して読む。
+    # 合体順は ENTITY_FILE_ORDER (新しい市場は末尾に追加)。旧形式の entities.json も読める。
     entities = None
-    if entities_path.is_file():
-        entities_text = entities_path.read_text(encoding="utf-8-sig")
+    ent_dir = d / "entities"
+    if ent_dir.is_dir():
+        files = sorted(ent_dir.glob("*.json"),
+                       key=lambda p: (ENTITY_FILE_ORDER.index(p.stem) if p.stem in ENTITY_FILE_ORDER
+                                      else len(ENTITY_FILE_ORDER), p.stem))
+        merged = []
+        for p in files:
+            text = p.read_text(encoding="utf-8-sig")
+            h.update(text.encode("utf-8"))
+            merged.extend((json.loads(text) or {}).get("entities") or [])
+        entities = {"entities": merged}
+    elif (d / "entities.json").is_file():
+        entities_text = (d / "entities.json").read_text(encoding="utf-8-sig")
         h.update(entities_text.encode("utf-8"))
         entities = json.loads(entities_text)
 

@@ -1502,6 +1502,32 @@ class EntityQueryGenerationTests(unittest.TestCase):
         with self.assertRaises(ConfigError):
             T.build_entity_queries(ents, self.src())
 
+    def test_entities_dir_split_loading(self):
+        import tempfile
+        root = os.path.dirname(os.path.abspath(__file__))
+        with tempfile.TemporaryDirectory() as td:
+            for n in ("scoring.json", "sources.json"):
+                with open(os.path.join(root, n), encoding="utf-8") as f:
+                    data = f.read()
+                with open(os.path.join(td, n), "w", encoding="utf-8") as f:
+                    f.write(data)
+            os.mkdir(os.path.join(td, "entities"))
+            jp = {"entities": [{"id": "jp1", "name": "JP Corp", "aliases": ["JP Corp Ltd"],
+                                "sector": "space", "ticker": "1000",
+                                "watch": {"news_name": "JP Corp"}}]}
+            us = {"entities": [{"id": "us1", "name": "US Corp", "aliases": ["US Corp Inc"],
+                                "sector": "space", "market": "US", "ticker": "USX",
+                                "watch": {"news_name": "US Corp"}}]}
+            # ファイル名の辞書順 (jp < us) ではなく ENTITY_FILE_ORDER で合体される
+            for fname, data in (("us.json", us), ("jp.json", jp)):
+                with open(os.path.join(td, "entities", fname), "w", encoding="utf-8") as f:
+                    json.dump(data, f)
+            cfg = T.load_config(td)
+            self.assertEqual([e["id"] for e in cfg["entities"]["entities"]], ["jp1", "us1"])
+            names = [q["name"] for q in cfg["sources"]["queries"]]
+            self.assertIn("jp1-news", names)
+            self.assertIn("us1-yahoo", names)
+
     def test_invalid_keyword_sets_rejected(self):
         s = copy.deepcopy(CFG["sources"]); s["keyword_sets"]["bio"] = "治験"
         with self.assertRaises(ConfigError):

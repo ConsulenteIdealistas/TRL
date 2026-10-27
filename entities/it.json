@@ -1,0 +1,25 @@
+{
+  "entities": [
+    {
+      "id": "avio",
+      "name": "Avio S.p.A.",
+      "aliases": [
+        "Avio",
+        "アヴィオ"
+      ],
+      "ticker": "AVIO",
+      "exchange": "BIT",
+      "sector": "space",
+      "tier": "core",
+      "market": "IT",
+      "watch": {
+        "news_name": "Avio",
+        "extra_keywords": [
+          "Vega C",
+          "Vega E",
+          "lanciatore"
+        ]
+      }
+    }
+  ]
+}

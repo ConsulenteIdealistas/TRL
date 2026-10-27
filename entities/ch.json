@@ -1,0 +1,48 @@
+{
+  "entities": [
+    {
+      "id": "idorsia",
+      "name": "Idorsia Ltd",
+      "aliases": [
+        "Idorsia",
+        "Idorsia Pharmaceuticals",
+        "イドルシア"
+      ],
+      "ticker": "IDIA",
+      "exchange": "SIX",
+      "sector": "bio",
+      "tier": "core",
+      "market": "CH",
+      "watch": {
+        "news_name": "Idorsia",
+        "sponsor": "Idorsia Pharmaceuticals Ltd.",
+        "extra_keywords": [
+          "Quviviq",
+          "daridorexant",
+          "aprocitentan"
+        ]
+      }
+    },
+    {
+      "id": "lonza",
+      "name": "Lonza Group AG",
+      "aliases": [
+        "Lonza Group",
+        "Lonza",
+        "ロンザ"
+      ],
+      "ticker": "LONN",
+      "exchange": "SIX",
+      "sector": "bio",
+      "tier": "core",
+      "market": "CH",
+      "watch": {
+        "news_name": "Lonza",
+        "extra_keywords": [
+          "CDMO",
+          "biologics manufacturing"
+        ]
+      }
+    }
+  ]
+}

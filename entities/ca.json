@@ -1,0 +1,86 @@
+{
+  "entities": [
+    {
+      "id": "mda_space",
+      "name": "MDA Space Ltd.",
+      "aliases": [
+        "MDA Space"
+      ],
+      "ticker": "MDA",
+      "exchange": "TSX",
+      "sector": "space",
+      "tier": "core",
+      "market": "CA",
+      "watch": {
+        "news_name": "MDA Space",
+        "extra_keywords": [
+          "Canadarm3",
+          "satellite systems",
+          "geointelligence"
+        ]
+      }
+    },
+    {
+      "id": "telesat",
+      "name": "Telesat Corporation",
+      "aliases": [
+        "Telesat",
+        "テレサット"
+      ],
+      "ticker": "TSAT",
+      "exchange": "TSX",
+      "sector": "space",
+      "tier": "core",
+      "market": "CA",
+      "watch": {
+        "news_name": "Telesat",
+        "extra_keywords": [
+          "Lightspeed",
+          "LEO constellation"
+        ]
+      }
+    },
+    {
+      "id": "coveo",
+      "name": "Coveo Solutions Inc.",
+      "aliases": [
+        "Coveo",
+        "コベオ"
+      ],
+      "ticker": "CVO",
+      "exchange": "TSX",
+      "sector": "ai",
+      "tier": "core",
+      "market": "CA",
+      "watch": {
+        "news_name": "Coveo",
+        "extra_keywords": [
+          "AI search",
+          "generative answering",
+          "ecommerce"
+        ]
+      }
+    },
+    {
+      "id": "celestica",
+      "name": "Celestica Inc.",
+      "aliases": [
+        "Celestica",
+        "セレスティカ"
+      ],
+      "ticker": "CLS",
+      "exchange": "TSX",
+      "sector": "ai",
+      "tier": "core",
+      "market": "CA",
+      "watch": {
+        "news_name": "Celestica",
+        "extra_keywords": [
+          "data center",
+          "hyperscale",
+          "800G switch"
+        ]
+      }
+    }
+  ]
+}

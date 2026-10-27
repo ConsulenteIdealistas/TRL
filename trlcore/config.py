@@ -9,7 +9,7 @@ from .entities import ENTITY_MODES, validate_entities
 
 __version__ = "0.1.0"
 
-SOURCE_NAMES = ("pubmed", "arxiv", "gnews", "prtimes", "trials", "edinet", "yahoo")
+SOURCE_NAMES = ("pubmed", "arxiv", "gnews", "prtimes", "trials", "edinet", "yahoo", "openalex")
 
 
 ROOT = Path(__file__).resolve().parent.parent  # リポジトリ直下(trlcore/ の1つ上)
@@ -131,7 +131,8 @@ def validate_sources(src):
         _validate_query_list(src["queries"], "queries")
 
 
-WATCH_LOOKBACK_DEFAULTS = {"prtimes": 90, "trials": 365, "edinet": 60, "yahoo": 400, "pubmed": 365}
+WATCH_LOOKBACK_DEFAULTS = {"prtimes": 90, "trials": 365, "edinet": 60, "yahoo": 400, "pubmed": 365,
+                           "openalex": 365}
 
 
 # 市場ごとの Yahoo シンボル接尾辞と Google News ロケール。market 未指定は JP。
@@ -160,7 +161,8 @@ def build_entity_queries(entities, src):
     英語キーワード集合(keyword_sets_en)を使い、yahoo は市場の接尾辞つきシンボルにする。"""
     ks = src.get("keyword_sets") or {}
     params = (src.get("entity_watch") or {}).get("lookback_days") or {}
-    groups = {"gnews": [], "trials": [], "edinet": [], "yahoo": [], "prtimes": [], "pubmed": []}
+    groups = {"gnews": [], "trials": [], "edinet": [], "yahoo": [], "prtimes": [], "pubmed": [],
+              "openalex": []}
     for e in (entities or {}).get("entities", []):
         w = e.get("watch")
         if not isinstance(w, dict):
@@ -203,8 +205,12 @@ def build_entity_queries(entities, src):
             # 論文を出す研究型の企業だけに watch.pubmed を設定する
             groups["pubmed"].append({"name": f"{eid}-pubmed", "pubmed": w["pubmed"],
                                      "lookback_days": params.get("pubmed", WATCH_LOOKBACK_DEFAULTS["pubmed"])})
+        if w.get("openalex"):
+            # OpenAlex の機関所属の論文 (全分野)。watch.openalex は機関ID
+            groups["openalex"].append({"name": f"{eid}-openalex", "openalex": w["openalex"],
+                                       "lookback_days": params.get("openalex", WATCH_LOOKBACK_DEFAULTS["openalex"])})
     return (groups["gnews"] + groups["trials"] + groups["edinet"] + groups["yahoo"]
-            + groups["prtimes"] + groups["pubmed"])
+            + groups["prtimes"] + groups["pubmed"] + groups["openalex"])
 
 
 CONFIG_FILES = ("scoring.json", "sources.json")

@@ -15,6 +15,7 @@ edinet = NS(parse=T.edinet_parse_results, fetch=T.edinet_fetch, sec_code=T.sec_c
             parse_facts_csv=T.edinet_parse_facts_csv, parse_facts_xbrl=T.edinet_parse_facts_xbrl,
             select_financials=T.edinet_select_financials, format_financials=T.edinet_format_financials)
 yahoo = NS(fetch=T.yahoo_fetch, parse=T.yahoo_parse_quote_summary)
+openalex = NS(parse=T.openalex_parse_works, fetch=T.openalex_fetch)
 ev = NS(validate_assessment=T.validate_assessment, validate_extraction=T.validate_extraction, evaluate_one=T.evaluate_one)
 
 import json
@@ -324,6 +325,26 @@ class NewSourceParseTests(unittest.TestCase):
         self.assertIn("site:prtimes.jp", calls[0]["q"])
         self.assertTrue(out)
         self.assertTrue(all(r["source"] == "prtimes" for r in out))
+
+    def test_openalex_parse_and_fetch(self):
+        data = {"results": [{
+            "id": "https://openalex.org/W123", "doi": "https://doi.org/10.1000/xyz",
+            "title": "On-orbit demonstration of a debris removal system",
+            "publication_date": "2026-09-15",
+            "abstract_inverted_index": {"On-orbit": [0], "demonstration": [1], "results": [2]},
+            "authorships": [{"institutions": [{"display_name": "Astroscale"}]},
+                            {"institutions": [{"display_name": "University of Tokyo"},
+                                              {"display_name": "Astroscale"}]}],
+            "primary_location": {"source": {"display_name": "Acta Astronautica"}},
+            "type": "article"}]}
+        r = openalex.parse(data)[0]
+        self.assertEqual((r["source"], r["source_id"], r["info_type"]), ("openalex", "W123", "paper"))
+        self.assertEqual(r["abstract"], "On-orbit demonstration results")
+        self.assertEqual(r["affiliations"], ["Astroscale", "University of Tokyo"])
+        self.assertEqual(r["doi"], "10.1000/xyz")
+        self.assertEqual(r["fields"], ["Acta Astronautica"])
+        out = openalex.fetch("I999", 5, 365, AS_OF, http=lambda url, params=None, **kw: json.dumps(data))
+        self.assertEqual(len(out), 1)
 
     def test_trials(self):
         r = trials.parse(TRIALS_DATA)[0]
@@ -1564,6 +1585,20 @@ class EntityQueryGenerationTests(unittest.TestCase):
         self.assertEqual(q["q"], "Genmab (earnings OR clinical trial)")
         self.assertEqual(by_name["dk1-yahoo"]["yahoo"], "GMAB.CO")
         self.assertEqual(by_name["dk1-trials"]["trials"], "Genmab")
+
+    def test_generation_rules_openalex(self):
+        src = {"keyword_sets": {"space": ["契約"]},
+               "entity_watch": {"lookback_days": {"openalex": 365}}}
+        ents = {"entities": [
+            {"id": "sp1", "sector": "space", "market": "JP",
+             "watch": {"news_name": "Example Space", "openalex": "I123456789"}},
+            {"id": "sp2", "sector": "space", "market": "JP",
+             "watch": {"news_name": "No Papers Co"}},
+        ]}
+        by_name = {q["name"]: q for q in T.build_entity_queries(ents, src)}
+        self.assertEqual(by_name["sp1-openalex"]["openalex"], "I123456789")
+        self.assertEqual(by_name["sp1-openalex"]["lookback_days"], 365)
+        self.assertNotIn("sp2-openalex", by_name)
 
     def test_invalid_market_rejected(self):
         ents = {"entities": [{"id": "x", "name": "X Corp", "aliases": ["X Corp Ltd"], "market": "FR"}]}

@@ -9,7 +9,8 @@
       "yahoo": 400,
       "prtimes": 90,
       "trials": 180,
-      "pubmed": 365
+      "pubmed": 365,
+      "openalex": 365
     }
   },
   "keyword_sets": {

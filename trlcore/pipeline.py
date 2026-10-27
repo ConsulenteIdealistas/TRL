@@ -13,6 +13,7 @@ from .sources.gnews import gnews_fetch, prtimes_fetch
 from .sources.trials import trials_fetch
 from .sources.edinet import edinet_fetch
 from .sources.yahoo import yahoo_fetch
+from .sources.openalex import openalex_fetch
 from .entities import entity_screen, link_entities
 from .prompts import load_prompt
 from .llm import llm_settings
@@ -21,7 +22,7 @@ from .evaluate import evaluate_one, input_hash
 
 DEFAULT_FETCHERS = {"pubmed": pubmed_fetch, "arxiv": arxiv_fetch, "gnews": gnews_fetch,
                     "prtimes": prtimes_fetch, "trials": trials_fetch, "edinet": edinet_fetch,
-                    "yahoo": yahoo_fetch}
+                    "yahoo": yahoo_fetch, "openalex": openalex_fetch}
 
 
 def new_run_id(now=None):

@@ -1,77 +1,77 @@
-# TRL 実行レポート 20261027T044131Z-09c582
+# TRL 実行レポート 20261027T054548Z-d66f87
 
 ※ スコアは評価尺度であり、株価上昇確率・成功確率・投資利益率ではありません。売買の自動判定にも使えません。
 
-- 基準日: 2026-10-27 / 設定: 2026.10.0 (87bb936ba9975111)
-- 状態: ok / 所要: 286.0秒
-- 取得 1186 / 新規 59 / 重複 777 / 不正 350
-- スクリーニング通過 59 / 除外 0 / 評価対象 6
-- 評価: 確定 6 / 保留 0 / エラー 0 / LLM未設定でスキップ 0
+- 基準日: 2026-10-27 / 設定: 2026.10.0 (d0b5997ae671e10e)
+- 状態: ok / 所要: 296.75秒
+- 取得 1413 / 新規 328 / 重複 766 / 不正 319
+- スクリーニング通過 289 / 除外 39 / 評価対象 6
+- 評価: 確定 4 / 保留 1 / エラー 1 / LLM未設定でスキップ 0
 
 ## 情報源ごとの状況
 - [OK] arxiv / solid-state-battery: 取得7 新規0 重複0 不正7
 - [OK] arxiv / quantum-error-correction: 取得20 新規0 重複0 不正20
 - [OK] pubmed / gene-therapy: 取得4 新規0 重複0 不正4
-- [OK] gnews / astroscale-news: 取得20 新規0 重複13 不正7
+- [OK] gnews / astroscale-news: 取得20 新規0 重複5 不正15
 - [OK] gnews / ispace-news: 取得20 新規0 重複20 不正0
-- [OK] gnews / synspective-news: 取得20 新規1 重複10 不正9
-- [OK] gnews / oncolys-news: 取得1 新規0 重複0 不正1
+- [OK] gnews / synspective-news: 取得16 新規0 重複15 不正1
+- [OK] gnews / oncolys-news: 取得3 新規0 重複0 不正3
 - [OK] gnews / reprocell-news: 取得20 新規0 重複17 不正3
-- [OK] gnews / peptidream-news: 取得6 新規0 重複2 不正4
+- [OK] gnews / peptidream-news: 取得7 新規0 重複2 不正5
 - [OK] gnews / qps-news: 取得9 新規0 重複5 不正4
-- [OK] gnews / axelspace-news: 取得20 新規6 重複11 不正3
-- [OK] gnews / sanbio-news: 取得14 新規0 重複12 不正2
-- [OK] gnews / healios-news: 取得10 新規1 重複7 不正2
-- [OK] gnews / stella_pharma-news: 取得8 新規0 重複6 不正2
-- [OK] gnews / kringle-news: 取得10 新規1 重複8 不正1
-- [OK] gnews / stemrim-news: 取得10 新規0 重複10 不正0
-- [OK] gnews / pksha-news: 取得20 新規0 重複9 不正11
-- [OK] gnews / fronteo-news: 取得20 新規0 重複20 不正0
+- [OK] gnews / axelspace-news: 取得20 新規0 重複16 不正4
+- [OK] gnews / sanbio-news: 取得16 新規1 重複13 不正2
+- [OK] gnews / healios-news: 取得12 新規0 重複8 不正4
+- [OK] gnews / stella_pharma-news: 取得15 新規0 重複8 不正7
+- [OK] gnews / kringle-news: 取得10 新規0 重複9 不正1
+- [OK] gnews / stemrim-news: 取得7 新規0 重複7 不正0
+- [OK] gnews / pksha-news: 取得20 新規0 重複8 不正12
+- [OK] gnews / fronteo-news: 取得10 新規0 重複10 不正0
 - [OK] gnews / exawizards-news: 取得12 新規0 重複11 不正1
-- [OK] gnews / heroz-news: 取得20 新規2 重複17 不正1
+- [OK] gnews / heroz-news: 取得20 新規0 重複19 不正1
 - [OK] gnews / cyberdyne-news: 取得4 新規0 重複1 不正3
-- [OK] gnews / lasertec-news: 取得20 新規0 重複9 不正11
-- [OK] gnews / socionext-news: 取得20 新規1 重複9 不正10
-- [OK] gnews / thine-news: 取得7 新規0 重複3 不正4
+- [OK] gnews / lasertec-news: 取得13 新規0 重複13 不正0
+- [OK] gnews / socionext-news: 取得10 新規0 重複9 不正1
+- [OK] gnews / thine-news: 取得5 新規0 重複3 不正2
 - [OK] gnews / torex-news: 取得2 新規0 重複2 不正0
 - [OK] gnews / rocketlab-news: 取得20 新規0 重複19 不正1
-- [OK] gnews / ast_spacemobile-news: 取得20 新規0 重複17 不正3
+- [OK] gnews / ast_spacemobile-news: 取得20 新規9 重複9 不正2
 - [OK] gnews / intuitive_machines-news: 取得8 新規0 重複3 不正5
-- [OK] gnews / planet_labs-news: 取得20 新規1 重複13 不正6
-- [OK] gnews / redwire-news: 取得20 新規12 重複5 不正3
+- [OK] gnews / planet_labs-news: 取得20 新規0 重複14 不正6
+- [OK] gnews / redwire-news: 取得7 新規0 重複5 不正2
 - [OK] gnews / crispr-news: 取得20 新規0 重複6 不正14
-- [OK] gnews / moderna-news: 取得20 新規6 重複10 不正4
+- [OK] gnews / moderna-news: 取得20 新規0 重複16 不正4
 - [OK] gnews / beam-news: 取得10 新規0 重複6 不正4
-- [OK] gnews / arm-news: 取得20 新規3 重複6 不正11
-- [OK] gnews / firefly-news: 取得20 新規0 重複12 不正8
-- [OK] gnews / tempus-news: 取得20 新規4 重複7 不正9
-- [OK] gnews / recursion-news: 取得10 新規0 重複7 不正3
+- [OK] gnews / arm-news: 取得20 新規0 重複9 不正11
+- [OK] gnews / firefly-news: 取得19 新規0 重複12 不正7
+- [OK] gnews / tempus-news: 取得15 新規0 重複8 不正7
+- [OK] gnews / recursion-news: 取得11 新規1 重複7 不正3
 - [OK] gnews / intellia-news: 取得7 新規0 重複4 不正3
-- [OK] gnews / sitime-news: 取得11 新規0 重複11 不正0
+- [OK] gnews / sitime-news: 取得12 新規1 重複11 不正0
 - [OK] gnews / oxford_nanopore-news: 取得10 新規0 重複8 不正2
-- [OK] gnews / idorsia-news: 取得10 新規0 重複7 不正3
-- [OK] gnews / lonza-news: 取得20 新規1 重複12 不正7
-- [OK] gnews / ohb-news: 取得20 新規0 重複20 不正0
+- [OK] gnews / idorsia-news: 取得9 新規0 重複7 不正2
+- [OK] gnews / lonza-news: 取得9 新規0 重複6 不正3
+- [OK] gnews / ohb-news: 取得20 新規2 重複18 不正0
 - [OK] gnews / evotec-news: 取得12 新規0 重複12 不正0
-- [OK] gnews / aixtron-news: 取得20 新規2 重複18 不正0
-- [OK] gnews / siltronic-news: 取得20 新規0 重複19 不正1
-- [OK] gnews / formycon-news: 取得9 新規0 重複8 不正1
-- [OK] gnews / biontech-news: 取得20 新規3 重複17 不正0
-- [OK] gnews / sartorius-news: 取得20 新規12 重複8 不正0
+- [OK] gnews / aixtron-news: 取得20 新規1 重複19 不正0
+- [OK] gnews / siltronic-news: 取得20 新規3 重複15 不正2
+- [OK] gnews / formycon-news: 取得20 新規1 重複18 不正1
+- [OK] gnews / biontech-news: 取得20 新規1 重複19 不正0
+- [OK] gnews / sartorius-news: 取得12 新規0 重複12 不正0
 - [OK] gnews / suss_microtec-news: 取得20 新規0 重複6 不正14
-- [OK] gnews / mda_space-news: 取得20 新規0 重複14 不正6
-- [OK] gnews / telesat-news: 取得8 新規0 重複7 不正1
+- [OK] gnews / mda_space-news: 取得20 新規0 重複15 不正5
+- [OK] gnews / telesat-news: 取得9 新規2 重複7 不正0
 - [OK] gnews / coveo-news: 取得7 新規0 重複6 不正1
-- [OK] gnews / celestica-news: 取得20 新規0 重複19 不正1
-- [OK] gnews / telix-news: 取得20 新規0 重複19 不正1
-- [OK] gnews / mesoblast-news: 取得7 新規0 重複5 不正2
-- [OK] gnews / eos-news: 取得20 新規0 重複7 不正13
-- [OK] gnews / avio-news: 取得20 新規0 重複15 不正5
+- [OK] gnews / celestica-news: 取得13 新規9 重複4 不正0
+- [OK] gnews / telix-news: 取得20 新規1 重複18 不正1
+- [OK] gnews / mesoblast-news: 取得8 新規1 重複5 不正2
+- [OK] gnews / eos-news: 取得20 新規1 重複7 不正12
+- [OK] gnews / avio-news: 取得20 新規0 重複18 不正2
 - [OK] gnews / bioarctic-news: 取得0 新規0 重複0 不正0
 - [OK] gnews / aac_clyde-news: 取得4 新規0 重複4 不正0
-- [OK] gnews / genmab-news: 取得20 新規1 重複18 不正1
-- [OK] gnews / bavarian_nordic-news: 取得15 新規2 重複10 不正3
-- [OK] gnews / zealand_pharma-news: 取得20 新規0 重複5 不正15
+- [OK] gnews / genmab-news: 取得13 新規3 重複10 不正0
+- [OK] gnews / bavarian_nordic-news: 取得5 新規0 重複5 不正0
+- [OK] gnews / zealand_pharma-news: 取得20 新規6 重複3 不正11
 - [OK] trials / oncolys-trials: 取得0 新規0 重複0 不正0
 - [OK] trials / reprocell-trials: 取得1 新規0 重複0 不正1
 - [OK] trials / peptidream-trials: 取得1 新規0 重複1 不正0
@@ -95,14 +95,14 @@
 - [OK] trials / bavarian_nordic-trials: 取得10 新規0 重複6 不正4
 - [OK] trials / zealand_pharma-trials: 取得20 新規0 重複0 不正20
 - [OK] yahoo / astroscale-yahoo: 取得1 新規0 重複1 不正0
-- [OK] yahoo / ispace-yahoo: 取得0 新規0 重複0 不正0
-- [OK] yahoo / synspective-yahoo: 取得1 新規0 重複1 不正0
+- [OK] yahoo / ispace-yahoo: 取得1 新規0 重複1 不正0
+- [OK] yahoo / synspective-yahoo: 取得0 新規0 重複0 不正0
 - [OK] yahoo / oncolys-yahoo: 取得1 新規0 重複1 不正0
 - [OK] yahoo / reprocell-yahoo: 取得1 新規0 重複1 不正0
 - [OK] yahoo / peptidream-yahoo: 取得1 新規0 重複1 不正0
 - [OK] yahoo / qps-yahoo: 取得0 新規0 重複0 不正0
-- [OK] yahoo / axelspace-yahoo: 取得0 新規0 重複0 不正0
-- [OK] yahoo / sanbio-yahoo: 取得1 新規0 重複1 不正0
+- [OK] yahoo / axelspace-yahoo: 取得1 新規0 重複1 不正0
+- [OK] yahoo / sanbio-yahoo: 取得0 新規0 重複0 不正0
 - [OK] yahoo / healios-yahoo: 取得1 新規0 重複1 不正0
 - [OK] yahoo / stella_pharma-yahoo: 取得1 新規0 重複1 不正0
 - [OK] yahoo / kringle-yahoo: 取得1 新規0 重複1 不正0
@@ -112,8 +112,8 @@
 - [OK] yahoo / exawizards-yahoo: 取得1 新規0 重複1 不正0
 - [OK] yahoo / heroz-yahoo: 取得1 新規0 重複1 不正0
 - [OK] yahoo / cyberdyne-yahoo: 取得1 新規0 重複1 不正0
-- [OK] yahoo / lasertec-yahoo: 取得0 新規0 重複0 不正0
-- [OK] yahoo / socionext-yahoo: 取得0 新規0 重複0 不正0
+- [OK] yahoo / lasertec-yahoo: 取得1 新規0 重複1 不正0
+- [OK] yahoo / socionext-yahoo: 取得1 新規0 重複1 不正0
 - [OK] yahoo / thine-yahoo: 取得1 新規0 重複1 不正0
 - [OK] yahoo / torex-yahoo: 取得1 新規0 重複1 不正0
 - [OK] yahoo / rocketlab-yahoo: 取得1 新規0 重複1 不正0
@@ -153,10 +153,10 @@
 - [OK] yahoo / aac_clyde-yahoo: 取得1 新規0 重複1 不正0
 - [OK] yahoo / genmab-yahoo: 取得1 新規0 重複1 不正0
 - [OK] yahoo / bavarian_nordic-yahoo: 取得1 新規0 重複1 不正0
-- [OK] yahoo / zealand_pharma-yahoo: 取得0 新規0 重複0 不正0
+- [OK] yahoo / zealand_pharma-yahoo: 取得1 新規0 重複1 不正0
 - [OK] prtimes / astroscale-prtimes: 取得2 新規0 重複2 不正0
-- [OK] prtimes / ispace-prtimes: 取得6 新規0 重複6 不正0
-- [OK] prtimes / synspective-prtimes: 取得5 新規0 重複5 不正0
+- [OK] prtimes / ispace-prtimes: 取得5 新規0 重複5 不正0
+- [OK] prtimes / synspective-prtimes: 取得6 新規1 重複5 不正0
 - [OK] prtimes / oncolys-prtimes: 取得0 新規0 重複0 不正0
 - [OK] prtimes / reprocell-prtimes: 取得0 新規0 重複0 不正0
 - [OK] prtimes / peptidream-prtimes: 取得1 新規0 重複1 不正0
@@ -169,64 +169,95 @@
 - [OK] prtimes / stemrim-prtimes: 取得0 新規0 重複0 不正0
 - [OK] prtimes / pksha-prtimes: 取得1 新規0 重複1 不正0
 - [OK] prtimes / fronteo-prtimes: 取得7 新規0 重複7 不正0
-- [OK] prtimes / exawizards-prtimes: 取得5 新規0 重複5 不正0
+- [OK] prtimes / exawizards-prtimes: 取得9 新規0 重複9 不正0
 - [OK] prtimes / heroz-prtimes: 取得7 新規0 重複7 不正0
 - [OK] prtimes / cyberdyne-prtimes: 取得0 新規0 重複0 不正0
 - [OK] prtimes / lasertec-prtimes: 取得0 新規0 重複0 不正0
 - [OK] prtimes / socionext-prtimes: 取得6 新規0 重複6 不正0
 - [OK] prtimes / thine-prtimes: 取得0 新規0 重複0 不正0
 - [OK] prtimes / torex-prtimes: 取得0 新規0 重複0 不正0
+- [OK] pubmed / peptidream-pubmed: 取得1 新規1 重複0 不正0
+- [OK] pubmed / sanbio-pubmed: 取得0 新規0 重複0 不正0
+- [OK] pubmed / healios-pubmed: 取得5 新規5 重複0 不正0
+- [OK] pubmed / crispr-pubmed: 取得7 新規7 重複0 不正0
+- [OK] pubmed / moderna-pubmed: 取得20 新規20 重複0 不正0
+- [OK] pubmed / beam-pubmed: 取得6 新規5 重複1 不正0
+- [OK] pubmed / tempus-pubmed: 取得3 新規0 重複0 不正3
+- [OK] pubmed / recursion-pubmed: 取得4 新規4 重複0 不正0
+- [OK] pubmed / oxford_nanopore-pubmed: 取得20 新規20 重複0 不正0
+- [OK] pubmed / idorsia-pubmed: 取得20 新規20 重複0 不正0
+- [OK] pubmed / lonza-pubmed: 取得20 新規20 重複0 不正0
+- [OK] pubmed / biontech-pubmed: 取得20 新規20 重複0 不正0
+- [OK] pubmed / telix-pubmed: 取得6 新規6 重複0 不正0
+- [OK] pubmed / genmab-pubmed: 取得20 新規19 重複1 不正0
+- [OK] openalex / ispace-openalex: 取得3 新規3 重複0 不正0
+- [OK] openalex / exawizards-openalex: 取得2 新規2 重複0 不正0
+- [OK] openalex / cyberdyne-openalex: 取得2 新規2 重複0 不正0
+- [OK] openalex / lasertec-openalex: 取得5 新規5 重複0 不正0
+- [OK] openalex / socionext-openalex: 取得4 新規4 重複0 不正0
+- [OK] openalex / planet_labs-openalex: 取得20 新規20 重複0 不正0
+- [OK] openalex / ohb-openalex: 取得20 新規20 重複0 不正0
+- [OK] openalex / evotec-openalex: 取得20 新規19 重複1 不正0
+- [OK] openalex / aixtron-openalex: 取得20 新規20 重複0 不正0
+- [OK] openalex / sartorius-openalex: 取得20 新規20 重複0 不正0
+- [OK] openalex / suss_microtec-openalex: 取得4 新規4 重複0 不正0
+- [OK] openalex / aac_clyde-openalex: 取得2 新規2 重複0 不正0
+- [OK] openalex / bavarian_nordic-openalex: 取得6 新規6 重複0 不正0
+- [OK] openalex / zealand_pharma-openalex: 取得10 新規10 重複0 不正0
 
 ## 長期成長評価(確定)
-- **54.0** (moderate_uncertain) A Phase 1/2 Dose Evaluation Trial of the Safety and Preliminary Efficacy of Anti CD19 Allogeneic CRISPR-Cas9-Engineered T Cells (CTX112) in Adult Participants With Relapsed/Refractory Hematologic Autoimmune Disease
-  論文・原資料: https://clinicaltrials.gov/study/NCT07549698
-  - [IR・決算資料 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=%22A+Phase+1%2F2+Dose+Evaluation+Trial+of+the+Safety+and+Preliminary+Efficacy+of+Anti+CD19+Allogeneic+CRISPR-Cas9-Engineered+T+Cells+%28CTX112%29+in+Adult+Participants+With+Relapsed%2FRefractory+Hematologic+Autoimmune+Disease%22+IR)
-  - [特許 [論文タイトル等（企業名未特定）]](https://patents.google.com/?q=A+Phase+1%2F2+Dose+Evaluation+Trial+of+the+Safety+and+Preliminary+Efficacy+of+Anti+CD19+Allogeneic+CRISPR-Cas9-Engineered+T+Cells+%28CTX112%29+in+Adult+Participants+With+Relapsed%2FRefractory+Hematologic+Autoimmune+Disease)
-  - [臨床試験登録 [論文タイトル等（企業名未特定）]](https://clinicaltrials.gov/search?term=A+Phase+1%2F2+Dose+Evaluation+Trial+of+the+Safety+and+Preliminary+Efficacy+of+Anti+CD19+Allogeneic+CRISPR-Cas9-Engineered+T+Cells+%28CTX112%29+in+Adult+Participants+With+Relapsed%2FRefractory+Hematologic+Autoimmune+Disease)
-  - [企業・技術情報 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=A+Phase+1%2F2+Dose+Evaluation+Trial+of+the+Safety+and+Preliminary+Efficacy+of+Anti+CD19+Allogeneic+CRISPR-Cas9-Engineered+T+Cells+%28CTX112%29+in+Adult+Participants+With+Relapsed%2FRefractory+Hematologic+Autoimmune+Disease)
-- **49.9** (moderate_uncertain) A Randomized, Double-Blind, Multicenter, Pharmacokinetic Equivalence Clinical Trial of Adjuvant FYB206 (Keytruda Biosimilar Candidate) in Comparison With Keytruda (Pembrolizumab) to Demonstrate Pharmacokinetic Similarity in Patients With Completely Resected Stage IIB/IIC or Stage III Melanoma
-  論文・原資料: https://clinicaltrials.gov/study/NCT06551064
-  - [IR・決算資料 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=%22A+Randomized%2C+Double-Blind%2C+Multicenter%2C+Pharmacokinetic+Equivalence+Clinical+Trial+of+Adjuvant+FYB206+%28Keytruda+Biosimilar+Candidate%29+in+Comparison+With+Keytruda+%28Pembrolizumab%29+to+Demonstrate+Pharmacokinetic+Similarity+in+Patients+With+Completely+Resected+Stage+IIB%2FIIC+or+Stage+III+Melanoma%22+IR)
-  - [特許 [論文タイトル等（企業名未特定）]](https://patents.google.com/?q=A+Randomized%2C+Double-Blind%2C+Multicenter%2C+Pharmacokinetic+Equivalence+Clinical+Trial+of+Adjuvant+FYB206+%28Keytruda+Biosimilar+Candidate%29+in+Comparison+With+Keytruda+%28Pembrolizumab%29+to+Demonstrate+Pharmacokinetic+Similarity+in+Patients+With+Completely+Resected+Stage+IIB%2FIIC+or+Stage+III+Melanoma)
-  - [臨床試験登録 [論文タイトル等（企業名未特定）]](https://clinicaltrials.gov/search?term=A+Randomized%2C+Double-Blind%2C+Multicenter%2C+Pharmacokinetic+Equivalence+Clinical+Trial+of+Adjuvant+FYB206+%28Keytruda+Biosimilar+Candidate%29+in+Comparison+With+Keytruda+%28Pembrolizumab%29+to+Demonstrate+Pharmacokinetic+Similarity+in+Patients+With+Completely+Resected+Stage+IIB%2FIIC+or+Stage+III+Melanoma)
-  - [企業・技術情報 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=A+Randomized%2C+Double-Blind%2C+Multicenter%2C+Pharmacokinetic+Equivalence+Clinical+Trial+of+Adjuvant+FYB206+%28Keytruda+Biosimilar+Candidate%29+in+Comparison+With+Keytruda+%28Pembrolizumab%29+to+Demonstrate+Pharmacokinetic+Similarity+in+Patients+With+Completely+Resected+Stage+IIB%2FIIC+or+Stage+III+Melanoma)
-- **49.0** (moderate_uncertain) A Phase I/II First-in-human, Open-label, Multi-site Trial to Evaluate the Safety and Preliminary Efficacy of BNT3210 in Participants With Advanced Solid Tumors Known to Express Sialyl-Tn
-  論文・原資料: https://clinicaltrials.gov/study/NCT07886684
-  - [IR・決算資料 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=%22A+Phase+I%2FII+First-in-human%2C+Open-label%2C+Multi-site+Trial+to+Evaluate+the+Safety+and+Preliminary+Efficacy+of+BNT3210+in+Participants+With+Advanced+Solid+Tumors+Known+to+Express+Sialyl-Tn%22+IR)
-  - [特許 [論文タイトル等（企業名未特定）]](https://patents.google.com/?q=A+Phase+I%2FII+First-in-human%2C+Open-label%2C+Multi-site+Trial+to+Evaluate+the+Safety+and+Preliminary+Efficacy+of+BNT3210+in+Participants+With+Advanced+Solid+Tumors+Known+to+Express+Sialyl-Tn)
-  - [臨床試験登録 [論文タイトル等（企業名未特定）]](https://clinicaltrials.gov/search?term=A+Phase+I%2FII+First-in-human%2C+Open-label%2C+Multi-site+Trial+to+Evaluate+the+Safety+and+Preliminary+Efficacy+of+BNT3210+in+Participants+With+Advanced+Solid+Tumors+Known+to+Express+Sialyl-Tn)
-  - [企業・技術情報 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=A+Phase+I%2FII+First-in-human%2C+Open-label%2C+Multi-site+Trial+to+Evaluate+the+Safety+and+Preliminary+Efficacy+of+BNT3210+in+Participants+With+Advanced+Solid+Tumors+Known+to+Express+Sialyl-Tn)
-- **48.0** (moderate_uncertain) Phase I, Randomized, Observer-blinded, 3-part, Dose Escalation and Expanded Safety and Dose Evaluation Trial to Evaluate the Safety, Tolerability, and Immunogenicity of an Investigational Prophylactic Vaccine for the Prevention of Genital Lesions Caused by Herpes Simplex Virus (HSV)-2 and Potentially HSV-1
-  論文・原資料: https://clinicaltrials.gov/study/NCT05432583
-  - [IR・決算資料 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=%22Phase+I%2C+Randomized%2C+Observer-blinded%2C+3-part%2C+Dose+Escalation+and+Expanded+Safety+and+Dose+Evaluation+Trial+to+Evaluate+the+Safety%2C+Tolerability%2C+and+Immunogenicity+of+an+Investigational+Prophylactic+Vaccine+for+the+Prevention+of+Genital+Lesions+Caused+by+Herpes+Simplex+Virus+%28HSV%29-2+and+Potentially+HSV-1%22+IR)
-  - [特許 [論文タイトル等（企業名未特定）]](https://patents.google.com/?q=Phase+I%2C+Randomized%2C+Observer-blinded%2C+3-part%2C+Dose+Escalation+and+Expanded+Safety+and+Dose+Evaluation+Trial+to+Evaluate+the+Safety%2C+Tolerability%2C+and+Immunogenicity+of+an+Investigational+Prophylactic+Vaccine+for+the+Prevention+of+Genital+Lesions+Caused+by+Herpes+Simplex+Virus+%28HSV%29-2+and+Potentially+HSV-1)
-  - [臨床試験登録 [論文タイトル等（企業名未特定）]](https://clinicaltrials.gov/search?term=Phase+I%2C+Randomized%2C+Observer-blinded%2C+3-part%2C+Dose+Escalation+and+Expanded+Safety+and+Dose+Evaluation+Trial+to+Evaluate+the+Safety%2C+Tolerability%2C+and+Immunogenicity+of+an+Investigational+Prophylactic+Vaccine+for+the+Prevention+of+Genital+Lesions+Caused+by+Herpes+Simplex+Virus+%28HSV%29-2+and+Potentially+HSV-1)
-  - [企業・技術情報 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=Phase+I%2C+Randomized%2C+Observer-blinded%2C+3-part%2C+Dose+Escalation+and+Expanded+Safety+and+Dose+Evaluation+Trial+to+Evaluate+the+Safety%2C+Tolerability%2C+and+Immunogenicity+of+an+Investigational+Prophylactic+Vaccine+for+the+Prevention+of+Genital+Lesions+Caused+by+Herpes+Simplex+Virus+%28HSV%29-2+and+Potentially+HSV-1)
-- **47.0** (moderate_uncertain) A Phase I/Ib, First-in-human, Open-label, Multi-site, Multi-regional, Dose Escalation Trial With Expansion Cohorts to Evaluate Safety and Preliminary Efficacy of BNT3219 Monotherapy or BNT3219 in Combination With Other Investigational Therapies in Participants With Advanced Solid Tumors
-  論文・原資料: https://clinicaltrials.gov/study/NCT07893054
-  - [IR・決算資料 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=%22A+Phase+I%2FIb%2C+First-in-human%2C+Open-label%2C+Multi-site%2C+Multi-regional%2C+Dose+Escalation+Trial+With+Expansion+Cohorts+to+Evaluate+Safety+and+Preliminary+Efficacy+of+BNT3219+Monotherapy+or+BNT3219+in+Combination+With+Other+Investigational+Therapies+in+Participants+With+Advanced+Solid+Tumors%22+IR)
-  - [特許 [論文タイトル等（企業名未特定）]](https://patents.google.com/?q=A+Phase+I%2FIb%2C+First-in-human%2C+Open-label%2C+Multi-site%2C+Multi-regional%2C+Dose+Escalation+Trial+With+Expansion+Cohorts+to+Evaluate+Safety+and+Preliminary+Efficacy+of+BNT3219+Monotherapy+or+BNT3219+in+Combination+With+Other+Investigational+Therapies+in+Participants+With+Advanced+Solid+Tumors)
-  - [臨床試験登録 [論文タイトル等（企業名未特定）]](https://clinicaltrials.gov/search?term=A+Phase+I%2FIb%2C+First-in-human%2C+Open-label%2C+Multi-site%2C+Multi-regional%2C+Dose+Escalation+Trial+With+Expansion+Cohorts+to+Evaluate+Safety+and+Preliminary+Efficacy+of+BNT3219+Monotherapy+or+BNT3219+in+Combination+With+Other+Investigational+Therapies+in+Participants+With+Advanced+Solid+Tumors)
-  - [企業・技術情報 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=A+Phase+I%2FIb%2C+First-in-human%2C+Open-label%2C+Multi-site%2C+Multi-regional%2C+Dose+Escalation+Trial+With+Expansion+Cohorts+to+Evaluate+Safety+and+Preliminary+Efficacy+of+BNT3219+Monotherapy+or+BNT3219+in+Combination+With+Other+Investigational+Therapies+in+Participants+With+Advanced+Solid+Tumors)
-- **44.0** (moderate_uncertain) A Two-Part Study of REC-994 in the Treatment of Adults With Symptomatic Cerebral Cavernous Malformation (CCM); Part 1: A Phase 2 Randomized, Double-Blind, Placebo-Controlled Clinical Trial to Evaluate the Safety, Efficacy and Pharmacokinetics of Two Doses of REC-994; Part 2: A Long-Term Blinded Extension Clinical Trial to Evaluate Long-Term Safety Tolerability and Efficacy of REC-994
-  論文・原資料: https://clinicaltrials.gov/study/NCT05085561
-  - [IR・決算資料 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=%22A+Two-Part+Study+of+REC-994+in+the+Treatment+of+Adults+With+Symptomatic+Cerebral+Cavernous+Malformation+%28CCM%29%3B+Part+1%3A+A+Phase+2+Randomized%2C+Double-Blind%2C+Placebo-Controlled+Clinical+Trial+to+Evaluate+the+Safety%2C+Efficacy+and+Pharmacokinetics+of+Two+Doses+of+REC-994%3B+Part+2%3A+A+Long-Term+Blinded+Extension+Clinical+Trial+to+Evaluate+Long-Term+Safety+Tolerability+and+Efficacy+of+REC-994%22+IR)
-  - [特許 [論文タイトル等（企業名未特定）]](https://patents.google.com/?q=A+Two-Part+Study+of+REC-994+in+the+Treatment+of+Adults+With+Symptomatic+Cerebral+Cavernous+Malformation+%28CCM%29%3B+Part+1%3A+A+Phase+2+Randomized%2C+Double-Blind%2C+Placebo-Controlled+Clinical+Trial+to+Evaluate+the+Safety%2C+Efficacy+and+Pharmacokinetics+of+Two+Doses+of+REC-994%3B+Part+2%3A+A+Long-Term+Blinded+Extension+Clinical+Trial+to+Evaluate+Long-Term+Safety+Tolerability+and+Efficacy+of+REC-994)
-  - [臨床試験登録 [論文タイトル等（企業名未特定）]](https://clinicaltrials.gov/search?term=A+Two-Part+Study+of+REC-994+in+the+Treatment+of+Adults+With+Symptomatic+Cerebral+Cavernous+Malformation+%28CCM%29%3B+Part+1%3A+A+Phase+2+Randomized%2C+Double-Blind%2C+Placebo-Controlled+Clinical+Trial+to+Evaluate+the+Safety%2C+Efficacy+and+Pharmacokinetics+of+Two+Doses+of+REC-994%3B+Part+2%3A+A+Long-Term+Blinded+Extension+Clinical+Trial+to+Evaluate+Long-Term+Safety+Tolerability+and+Efficacy+of+REC-994)
-  - [企業・技術情報 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=A+Two-Part+Study+of+REC-994+in+the+Treatment+of+Adults+With+Symptomatic+Cerebral+Cavernous+Malformation+%28CCM%29%3B+Part+1%3A+A+Phase+2+Randomized%2C+Double-Blind%2C+Placebo-Controlled+Clinical+Trial+to+Evaluate+the+Safety%2C+Efficacy+and+Pharmacokinetics+of+Two+Doses+of+REC-994%3B+Part+2%3A+A+Long-Term+Blinded+Extension+Clinical+Trial+to+Evaluate+Long-Term+Safety+Tolerability+and+Efficacy+of+REC-994)
+- **78.5** (strong) A PHASE 3, RANDOMIZED, DOUBLE-BLIND, PLACEBO-CONTROLLED CLINICAL STUDY EVALUATING THE SAFETY, TOLERABILITY, IMMUNOGENICITY AND EFFICACY OF A VARIANT-ADAPTED BNT162B2 VACCINE IN HEALTHY PARTICIPANTS 50 THROUGH 64 YEARS OF AGE
+  論文・原資料: https://clinicaltrials.gov/study/NCT07300839
+  - [IR・決算資料 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=%22A+PHASE+3%2C+RANDOMIZED%2C+DOUBLE-BLIND%2C+PLACEBO-CONTROLLED+CLINICAL+STUDY+EVALUATING+THE+SAFETY%2C+TOLERABILITY%2C+IMMUNOGENICITY+AND+EFFICACY+OF+A+VARIANT-ADAPTED+BNT162B2+VACCINE+IN+HEALTHY+PARTICIPANTS+50+THROUGH+64+YEARS+OF+AGE%22+IR)
+  - [特許 [論文タイトル等（企業名未特定）]](https://patents.google.com/?q=A+PHASE+3%2C+RANDOMIZED%2C+DOUBLE-BLIND%2C+PLACEBO-CONTROLLED+CLINICAL+STUDY+EVALUATING+THE+SAFETY%2C+TOLERABILITY%2C+IMMUNOGENICITY+AND+EFFICACY+OF+A+VARIANT-ADAPTED+BNT162B2+VACCINE+IN+HEALTHY+PARTICIPANTS+50+THROUGH+64+YEARS+OF+AGE)
+  - [臨床試験登録 [論文タイトル等（企業名未特定）]](https://clinicaltrials.gov/search?term=A+PHASE+3%2C+RANDOMIZED%2C+DOUBLE-BLIND%2C+PLACEBO-CONTROLLED+CLINICAL+STUDY+EVALUATING+THE+SAFETY%2C+TOLERABILITY%2C+IMMUNOGENICITY+AND+EFFICACY+OF+A+VARIANT-ADAPTED+BNT162B2+VACCINE+IN+HEALTHY+PARTICIPANTS+50+THROUGH+64+YEARS+OF+AGE)
+  - [企業・技術情報 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=A+PHASE+3%2C+RANDOMIZED%2C+DOUBLE-BLIND%2C+PLACEBO-CONTROLLED+CLINICAL+STUDY+EVALUATING+THE+SAFETY%2C+TOLERABILITY%2C+IMMUNOGENICITY+AND+EFFICACY+OF+A+VARIANT-ADAPTED+BNT162B2+VACCINE+IN+HEALTHY+PARTICIPANTS+50+THROUGH+64+YEARS+OF+AGE)
+- **77.0** (strong) High-throughput actinic patterned mask inspection and advanced defect management for efficient EUV mask qualification
+  論文・原資料: https://doi.org/10.1117/12.3117938
+  - [IR・決算資料 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=%22High-throughput+actinic+patterned+mask+inspection+and+advanced+defect+management+for+efficient+EUV+mask+qualification%22+IR)
+  - [特許 [論文タイトル等（企業名未特定）]](https://patents.google.com/?q=High-throughput+actinic+patterned+mask+inspection+and+advanced+defect+management+for+efficient+EUV+mask+qualification)
+  - [臨床試験登録 [論文タイトル等（企業名未特定）]](https://clinicaltrials.gov/search?term=High-throughput+actinic+patterned+mask+inspection+and+advanced+defect+management+for+efficient+EUV+mask+qualification)
+  - [企業・技術情報 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=High-throughput+actinic+patterned+mask+inspection+and+advanced+defect+management+for+efficient+EUV+mask+qualification)
+- **74.0** (strong) A Single Arm, Multicenter, Prospective, Open Label, Longitudinal Phase 3 Study of Prostate Specific Membrane Antigen (PSMA) Positron Emission Tomography (PET) Combined With Magnetic Resonance Imaging (MRI) Compared to Standard of Care (SOC) for the Detection of Prostate Cancer (PCa).
+  論文・原資料: https://clinicaltrials.gov/study/NCT07052214
+  - [IR・決算資料 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=%22A+Single+Arm%2C+Multicenter%2C+Prospective%2C+Open+Label%2C+Longitudinal+Phase+3+Study+of+Prostate+Specific+Membrane+Antigen+%28PSMA%29+Positron+Emission+Tomography+%28PET%29+Combined+With+Magnetic+Resonance+Imaging+%28MRI%29+Compared+to+Standard+of+Care+%28SOC%29+for+the+Detection+of+Prostate+Cancer+%28PCa%29.%22+IR)
+  - [特許 [論文タイトル等（企業名未特定）]](https://patents.google.com/?q=A+Single+Arm%2C+Multicenter%2C+Prospective%2C+Open+Label%2C+Longitudinal+Phase+3+Study+of+Prostate+Specific+Membrane+Antigen+%28PSMA%29+Positron+Emission+Tomography+%28PET%29+Combined+With+Magnetic+Resonance+Imaging+%28MRI%29+Compared+to+Standard+of+Care+%28SOC%29+for+the+Detection+of+Prostate+Cancer+%28PCa%29.)
+  - [臨床試験登録 [論文タイトル等（企業名未特定）]](https://clinicaltrials.gov/search?term=A+Single+Arm%2C+Multicenter%2C+Prospective%2C+Open+Label%2C+Longitudinal+Phase+3+Study+of+Prostate+Specific+Membrane+Antigen+%28PSMA%29+Positron+Emission+Tomography+%28PET%29+Combined+With+Magnetic+Resonance+Imaging+%28MRI%29+Compared+to+Standard+of+Care+%28SOC%29+for+the+Detection+of+Prostate+Cancer+%28PCa%29.)
+  - [企業・技術情報 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=A+Single+Arm%2C+Multicenter%2C+Prospective%2C+Open+Label%2C+Longitudinal+Phase+3+Study+of+Prostate+Specific+Membrane+Antigen+%28PSMA%29+Positron+Emission+Tomography+%28PET%29+Combined+With+Magnetic+Resonance+Imaging+%28MRI%29+Compared+to+Standard+of+Care+%28SOC%29+for+the+Detection+of+Prostate+Cancer+%28PCa%29.)
+- **64.5** (strong) A Phase III, Randomized, Open-label Trial of BNT324 Versus Docetaxel With Prednisone/Prednisolone in Metastatic Castration-resistant Prostate Cancer
+  論文・原資料: https://clinicaltrials.gov/study/NCT07365995
+  - [IR・決算資料 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=%22A+Phase+III%2C+Randomized%2C+Open-label+Trial+of+BNT324+Versus+Docetaxel+With+Prednisone%2FPrednisolone+in+Metastatic+Castration-resistant+Prostate+Cancer%22+IR)
+  - [特許 [論文タイトル等（企業名未特定）]](https://patents.google.com/?q=A+Phase+III%2C+Randomized%2C+Open-label+Trial+of+BNT324+Versus+Docetaxel+With+Prednisone%2FPrednisolone+in+Metastatic+Castration-resistant+Prostate+Cancer)
+  - [臨床試験登録 [論文タイトル等（企業名未特定）]](https://clinicaltrials.gov/search?term=A+Phase+III%2C+Randomized%2C+Open-label+Trial+of+BNT324+Versus+Docetaxel+With+Prednisone%2FPrednisolone+in+Metastatic+Castration-resistant+Prostate+Cancer)
+  - [企業・技術情報 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=A+Phase+III%2C+Randomized%2C+Open-label+Trial+of+BNT324+Versus+Docetaxel+With+Prednisone%2FPrednisolone+in+Metastatic+Castration-resistant+Prostate+Cancer)
 
 ## イベント評価(確定)
 - 該当なし
 
-## レビューキュー（未解消 0件）
-- 情報不足・保留: 0件
-- 評価エラー: 0件
+## レビューキュー（未解消 2件）
+- 情報不足・保留: 1件
+- 評価エラー: 1件
 
-### 情報不足・保留（0件）
-- 該当なし
+### 情報不足・保留（1件）
+- [long] A Phase III, Multisite, Randomized, Double-Blind Trial of BNT327 in Combination With Chemotherapy Versus Placebo With Chemotherapy in Patients With Previously Untreated Locally Recurrent Inoperable or Metastatic TNBC Determined Ineligible for PD(L)1 Therapy Based on PD-L1 Negative Disease
+  理由: missing_items: monetization (critical: monetization)
+  確認先: 臨床試験（NCT07173751）の中間結果またはトップラインデータの発表, BioNTech SEの四半期決算およびパイプライン進捗レポート
+  再評価条件: 第III相臨床試験の主要評価項目の達成または未達の判明, 薬事承認申請の開始または承認取得
+  関連情報の検索:
+  - [IR・決算資料 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=%22A+Phase+III%2C+Multisite%2C+Randomized%2C+Double-Blind+Trial+of+BNT327+in+Combination+With+Chemotherapy+Versus+Placebo+With+Chemotherapy+in+Patients+With+Previously+Untreated+Locally+Recurrent+Inoperable+or+Metastatic+TNBC+Determined+Ineligible+for+PD%28L%291+Therapy+Based+on+PD-L1+Negative+Disease%22+IR)
+  - [特許 [論文タイトル等（企業名未特定）]](https://patents.google.com/?q=A+Phase+III%2C+Multisite%2C+Randomized%2C+Double-Blind+Trial+of+BNT327+in+Combination+With+Chemotherapy+Versus+Placebo+With+Chemotherapy+in+Patients+With+Previously+Untreated+Locally+Recurrent+Inoperable+or+Metastatic+TNBC+Determined+Ineligible+for+PD%28L%291+Therapy+Based+on+PD-L1+Negative+Disease)
+  - [臨床試験登録 [論文タイトル等（企業名未特定）]](https://clinicaltrials.gov/search?term=A+Phase+III%2C+Multisite%2C+Randomized%2C+Double-Blind+Trial+of+BNT327+in+Combination+With+Chemotherapy+Versus+Placebo+With+Chemotherapy+in+Patients+With+Previously+Untreated+Locally+Recurrent+Inoperable+or+Metastatic+TNBC+Determined+Ineligible+for+PD%28L%291+Therapy+Based+on+PD-L1+Negative+Disease)
+  - [企業・技術情報 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=A+Phase+III%2C+Multisite%2C+Randomized%2C+Double-Blind+Trial+of+BNT327+in+Combination+With+Chemotherapy+Versus+Placebo+With+Chemotherapy+in+Patients+With+Previously+Untreated+Locally+Recurrent+Inoperable+or+Metastatic+TNBC+Determined+Ineligible+for+PD%28L%291+Therapy+Based+on+PD-L1+Negative+Disease)
 
-### 評価エラー（0件）
-- 該当なし
+### 評価エラー（1件）
+- [long] Serotype‐Tailored Midstream and Downstream Operations to Advance the Manufacturing of Adeno‐Associated Viral Vectors
+  理由: evaluation_error: evidence_required:moat_durability
+  最終評価日時: 2026-10-27T05:48:42+00:00
+  関連情報の検索:
+  - [IR・決算資料 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=%22Serotype%E2%80%90Tailored+Midstream+and+Downstream+Operations+to+Advance+the+Manufacturing+of+Adeno%E2%80%90Associated+Viral+Vectors%22+IR)
+  - [特許 [論文タイトル等（企業名未特定）]](https://patents.google.com/?q=Serotype%E2%80%90Tailored+Midstream+and+Downstream+Operations+to+Advance+the+Manufacturing+of+Adeno%E2%80%90Associated+Viral+Vectors)
+  - [臨床試験登録 [論文タイトル等（企業名未特定）]](https://clinicaltrials.gov/search?term=Serotype%E2%80%90Tailored+Midstream+and+Downstream+Operations+to+Advance+the+Manufacturing+of+Adeno%E2%80%90Associated+Viral+Vectors)
+  - [企業・技術情報 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=Serotype%E2%80%90Tailored+Midstream+and+Downstream+Operations+to+Advance+the+Manufacturing+of+Adeno%E2%80%90Associated+Viral+Vectors)
 
 ## 制約
 - IR・特許・臨床試験登録は検索リンクのみ生成し、検索結果の自動取得は行いません。

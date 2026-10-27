@@ -9,7 +9,10 @@
       "financial_sustainability": 10,
       "moat_durability": 10
     },
-    "required": ["technology_readiness", "monetization"]
+    "required": [
+      "technology_readiness",
+      "monetization"
+    ]
   },
   "event": {
     "weights": {
@@ -20,22 +23,55 @@
       "supply_demand": 10,
       "downside_resilience": 10
     },
-    "required": ["catalyst_quality", "expectation_gap", "not_priced_in"]
+    "required": [
+      "catalyst_quality",
+      "expectation_gap",
+      "not_priced_in"
+    ]
   },
   "bands": [
-    {"min": 0,  "max": 19,  "label": "extremely_weak", "description": "極めて弱い"},
-    {"min": 20, "max": 39,  "label": "weak",           "description": "弱い"},
-    {"min": 40, "max": 59,  "label": "moderate_uncertain", "description": "中程度・不確実"},
-    {"min": 60, "max": 79,  "label": "strong",         "description": "強い"},
-    {"min": 80, "max": 100, "label": "very_strong",    "description": "非常に強い"}
+    {
+      "min": 0,
+      "max": 19,
+      "label": "extremely_weak",
+      "description": "極めて弱い"
+    },
+    {
+      "min": 20,
+      "max": 39,
+      "label": "weak",
+      "description": "弱い"
+    },
+    {
+      "min": 40,
+      "max": 59,
+      "label": "moderate_uncertain",
+      "description": "中程度・不確実"
+    },
+    {
+      "min": 60,
+      "max": 79,
+      "label": "strong",
+      "description": "強い"
+    },
+    {
+      "min": 80,
+      "max": 100,
+      "label": "very_strong",
+      "description": "非常に強い"
+    }
   ],
   "screening": {
     "min_abstract_chars": 200,
-    "min_abstract_chars_by_info_type": {"news": 30, "disclosure": 30},
+    "min_abstract_chars_by_info_type": {
+      "news": 30,
+      "disclosure": 30
+    },
     "max_age_days": 365,
-    "max_eval_per_run": 3,
+    "max_eval_per_run": 6,
     "reeval_after_days": 14,
-    "max_retries": 3
+    "max_retries": 3,
+    "eval_queue_per_entity": 10
   },
   "llm": {
     "timeout_sec": 120,
@@ -44,5 +80,9 @@
     "phase_budget_sec": 600,
     "eval_workers": 3
   },
-  "prompts": {"extract": "v1", "long": "v1", "event": "v1"}
+  "prompts": {
+    "extract": "v1",
+    "long": "v1",
+    "event": "v1"
+  }
 }

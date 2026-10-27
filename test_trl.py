@@ -30,7 +30,8 @@ ABSTRACT = "This study reports a new battery electrolyte with improved stability
 
 def raw(source="arxiv", sid="2610.00001", title="Paper A", doi=None, published="2026-10-10", abstract=ABSTRACT, **kw):
     d = {"source": source, "source_id": sid, "title": title, "abstract": abstract, "doi": doi,
-         "published": published, "url": f"https://example.org/{sid}", "fields": ["x"]}
+         "published": published, "url": f"https://example.org/{sid}", "fields": ["x"],
+         "affiliations": ["Astroscale Holdings Inc."]}
     if source == "arxiv":
         d["arxiv_id"] = sid
     if source == "pubmed":
@@ -961,6 +962,20 @@ class NewsPoolTests(unittest.TestCase):
         self.assertEqual(r["counts"]["invalid"], 1)
         store.close()
 
+    def test_collect_drops_paper_without_entity(self):
+        store = Store(self.path)
+        cfg = json.loads(json.dumps(CFG))
+        cfg["sources"] = {"defaults": {"max_results": 10, "lookback_days": 365},
+                          "queries": [{"name": "t", "arxiv": "q"}]}
+        raws = [raw(sid="2610.9701", title="Debris removal demonstration",
+                    affiliations=["Astroscale Holdings Inc."]),
+                raw(sid="2610.9702", title="Unrelated quantum theory", affiliations=[])]
+        r = run_pipeline(store, cfg, None, as_of=AS_OF, sources=("arxiv",), kinds=("long",),
+                         fetchers={"arxiv": lambda q, n, d, a: raws}, today=AS_OF, log=lambda *_: None)
+        self.assertEqual(store.count_candidates(), 1)
+        self.assertEqual(r["counts"]["invalid"], 1)
+        store.close()
+
     def test_selection_prefers_entity_linked_candidates(self):
         store = Store(self.path)
 
@@ -970,13 +985,16 @@ class NewsPoolTests(unittest.TestCase):
             store.set_entities(cid, link_entities(rec, CFG.get("entities", {})))
             store.set_status(cid, "screened")
             return cid
-        # 新しい順は unlinked > weak > strong だが、選定は企業リンク優先になる
-        unlinked = add(raw(sid="2610.9101", title="Unrelated quantum theory", published="2026-10-19"))
-        weak = add(raw(sid="2610.9102", title="アストロスケール関連の市場分析メモ", published="2026-10-18"))
+        # 新しい順は unlinked > weak > strong だが、選定は企業リンク優先になり、
+        # リンクの無い候補は評価対象から外れる
+        unlinked = add(raw(sid="2610.9101", title="Unrelated quantum theory", published="2026-10-19",
+                           affiliations=[]))
+        weak = add(raw(sid="2610.9102", title="アストロスケール関連の市場分析メモ", published="2026-10-18",
+                       affiliations=[]))
         strong = add(raw(sid="2610.9103", title="Debris removal study", published="2026-10-17",
                          affiliations=["Astroscale Holdings Inc."]))
         sel = select_for_eval(store, CFG, AS_OF, 10)
-        self.assertEqual([c["id"] for c in sel], [strong, weak, unlinked])
+        self.assertEqual([c["id"] for c in sel], [strong, weak])
         store.close()
 
     def test_demo_signal_detection(self):
@@ -994,13 +1012,47 @@ class NewsPoolTests(unittest.TestCase):
             store.set_entities(cid, link_entities(rec, CFG.get("entities", {})))
             store.set_status(cid, "screened")
             return cid
-        # どちらもリンクなし。新しさでは theory が勝つが、実証シグナル優先で demo が先に選ばれる
-        theory = add(raw(sid="2610.9201", title="A theory of fault-tolerant codes", published="2026-10-19"))
-        demo = add(raw(sid="2610.9202", title="Demonstration of a prototype quantum memory", published="2026-10-15"))
-        # リンク段位はシグナルより上位: weak リンク(シグナルなし)がリンクなし+シグナルありより先
-        weak = add(raw(sid="2610.9203", title="アストロスケール関連の市場分析メモ", published="2026-10-10"))
+        # どちらも weak リンク。新しさでは theory が勝つが、実証シグナル優先で demo が先に選ばれる
+        theory = add(raw(sid="2610.9201", title="アストロスケール関連メモ: A theory of fault-tolerant codes",
+                         published="2026-10-19", affiliations=[]))
+        demo = add(raw(sid="2610.9202", title="アストロスケール関連メモ: Demonstration of a prototype quantum memory",
+                       published="2026-10-15", affiliations=[]))
+        # リンク段位はシグナルより上位: strong リンク(シグナルなし)が weak+シグナルありより先
+        strong = add(raw(sid="2610.9203", title="Debris removal study", published="2026-10-10",
+                         affiliations=["Astroscale Holdings Inc."]))
         sel = select_for_eval(store, CFG, AS_OF, 10)
-        self.assertEqual([c["id"] for c in sel], [weak, demo, theory])
+        self.assertEqual([c["id"] for c in sel], [strong, demo, theory])
+        store.close()
+
+    def test_selection_excludes_disclosure(self):
+        store = Store(self.path)
+        rec, _ = normalize(raw(sid="2610.9401", affiliations=["Astroscale Holdings Inc."]),
+                           "2026-10-20T00:00:00+00:00")
+        rec["info_type"] = "disclosure"  # Yahoo等の財務スナップショットはプール専用で単体評価しない
+        cid, _ = store.upsert_candidate(rec, "r0")
+        store.set_entities(cid, link_entities(rec, CFG.get("entities", {})))
+        store.set_status(cid, "screened")
+        sel = select_for_eval(store, CFG, AS_OF, 10)
+        self.assertEqual(sel, [])
+        store.close()
+
+    def test_selection_caps_per_entity(self):
+        store = Store(self.path)
+
+        def add(r):
+            rec, _ = normalize(r, "2026-10-20T00:00:00+00:00")
+            cid, _ = store.upsert_candidate(rec, "r0")
+            store.set_entities(cid, link_entities(rec, CFG.get("entities", {})))
+            store.set_status(cid, "screened")
+            return cid
+        for i in range(12):  # 同一企業に12件あってもキューには上限10件まで
+            add(raw(sid=f"2610.95{i:02d}", title=f"Debris removal study {i}",
+                    published="2026-10-19", affiliations=["Astroscale Holdings Inc."]))
+        for i in range(2):  # 別企業は上限の対象外
+            add(raw(sid=f"2610.96{i:02d}", title=f"ペプチドリーム関連の研究メモ {i}",
+                    published="2026-10-19", affiliations=[]))
+        sel = select_for_eval(store, CFG, AS_OF, 100)
+        self.assertEqual(len(sel), 12)
         store.close()
 
     def test_selection_excludes_watch_only_candidates(self):
@@ -1013,7 +1065,8 @@ class NewsPoolTests(unittest.TestCase):
             store.set_status(cid, "screened")
             return cid
         # オンコリスはウォッチ層: リンクがあっても評価対象にしない
-        watch = add(raw(sid="2610.9301", title="オンコリスの臨床試験に関する報告", published="2026-10-19"))
+        watch = add(raw(sid="2610.9301", title="オンコリスの臨床試験に関する報告", published="2026-10-19",
+                        affiliations=[]))
         core = add(raw(sid="2610.9302", title="アストロスケール関連の市場分析メモ", published="2026-10-18"))
         sel = select_for_eval(store, CFG, AS_OF, 10)
         self.assertEqual([c["id"] for c in sel], [core])
@@ -1042,7 +1095,7 @@ class NewsPoolTests(unittest.TestCase):
         n2id, _ = store.upsert_candidate(news2, "r0")
         store.set_entities(n2id, link_entities(news2, CFG.get("entities", {})))
         prod, _ = normalize(raw(sid="2610.8888", title="OBP-301 Phase II study results",
-                                abstract="Results of the OBP-301 study. " * 12),
+                                abstract="Results of the OBP-301 study. " * 12, affiliations=[]),
                             "2026-10-20T00:00:00+00:00")
         prid, _ = store.upsert_candidate(prod, "r0")
         store.set_entities(prid, link_entities(prod, CFG.get("entities", {})))
@@ -1292,17 +1345,17 @@ class EntityQueryGenerationTests(unittest.TestCase):
         "name": "peptidream-news"
     },
     {
-        "lookback_days": 365,
+        "lookback_days": 180,
         "name": "oncolys-trials",
         "trials": "Oncolys BioPharma"
     },
     {
-        "lookback_days": 365,
+        "lookback_days": 180,
         "name": "reprocell-trials",
         "trials": "REPROCELL"
     },
     {
-        "lookback_days": 365,
+        "lookback_days": 180,
         "name": "peptidream-trials",
         "trials": "PeptiDream"
     },

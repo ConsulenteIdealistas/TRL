@@ -39,6 +39,9 @@ def validate_config(cfg):
         v = sc.get("screening", {}).get(k)
         if isinstance(v, bool) or not isinstance(v, int) or v < 0:
             raise ConfigError(f"scoring.json: screening.{k} must be a non-negative integer")
+    v = sc.get("screening", {}).get("eval_queue_per_entity", 10)
+    if isinstance(v, bool) or not isinstance(v, int) or v < 0:
+        raise ConfigError("scoring.json: screening.eval_queue_per_entity must be a non-negative integer")
     for k in ("extract", "long", "event"):
         if not isinstance(sc.get("prompts", {}).get(k), str) or not sc["prompts"][k]:
             raise ConfigError(f"scoring.json: prompts.{k} (version string) is required")

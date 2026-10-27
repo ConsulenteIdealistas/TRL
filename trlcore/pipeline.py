@@ -83,8 +83,9 @@ def collect(store, cfg, run_id, as_of, sources, fetchers, counts, log):
                     invalid += 1
                     continue
                 entity_links = link_entities(rec, cfg.get("entities", {}))
-                if rec["info_type"] == "news" and not entity_links:
-                    # ニュースは評価の材料としてだけ使う。対象企業に紐付かないものは残さない
+                if not entity_links:
+                    # 評価もプールも企業リンクが前提。対象企業に紐付かない候補は
+                    # 種別を問わず残さない (キューに死蔵されるだけになるため)
                     invalid += 1
                     continue
                 cid, is_new = store.upsert_candidate(rec, run_id)
@@ -130,16 +131,16 @@ def select_for_eval(store, cfg, today, limit, retry_failed="no"):
 
     # 評価予算はコア企業に集中させる (案1)。リンク先がコア企業でない候補
     # (ウォッチ企業のみ、または辞書から外れた企業のみ) は評価しない。
-    # 収集とプールの対象ではあり続ける。企業リンクの無い候補は rank で
-    # 最後尾になるため、コアの材料がある限り予算はコアに回る。
+    # 収集とプールの対象ではあり続ける。企業リンクの無い候補は収集段階で
+    # 破棄されるため、ここに残っていても評価しない。
     core_ids = {e["id"] for e in (cfg.get("entities") or {}).get("entities", [])
                 if (e.get("tier") or "core") == "core"}
 
     for c in store.list_by_status(statuses):
-        if c.get("info_type") == "news":
-            continue  # ニュースは単体評価せず、同一企業の評価へ関連ニュースとして同梱する
+        if c.get("info_type") in ("news", "disclosure"):
+            continue  # ニュースと開示(財務スナップショット)は単体評価せず、プールとして同梱する
         linked = {e["entity_id"] for e in c.get("entities", [])}
-        if linked and not (linked & core_ids):
+        if not linked or not (linked & core_ids):
             continue
         # エラー候補は、再試行が明示的に許可された場合だけ選ぶ
         if c["status"] == "error" and not store.only_infra_errors(c["id"]):
@@ -168,7 +169,19 @@ def select_for_eval(store, cfg, today, limit, retry_failed="no"):
 
     rows.sort(key=lambda c: c["published"] or "", reverse=True)
     rows.sort(key=rank)
-    return rows[:limit]
+    # 企業あたりの保持上限: 材料の多い大手がキューを抱え込まないようにする。
+    # 上限を超えた分は今回の選定から外れる (新しい材料が来れば順位で入れ替わる)。
+    cap = sc.get("eval_queue_per_entity", 10)
+    counts, capped = {}, []
+    for c in rows:
+        ents = sorted({e["entity_id"] for e in c.get("entities", [])} & core_ids)
+        key = ents[0] if ents else None
+        if key is not None and counts.get(key, 0) >= cap:
+            continue
+        if key is not None:
+            counts[key] = counts.get(key, 0) + 1
+        capped.append(c)
+    return capped[:limit]
 
 
 def _queue_reason(res):

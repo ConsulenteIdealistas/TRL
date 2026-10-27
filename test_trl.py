@@ -569,6 +569,60 @@ class FinancialPoolTests(unittest.TestCase):
         self.assertTrue(any("関連財務根拠" in p and "30,000百万円" in p for p in seen))
 
 
+class DirectionTests(unittest.TestCase):
+    """材料の方向性: 点数とは独立に追い風/逆風を判定し、サイトへバッジ表示する。"""
+
+    def test_parse_direction(self):
+        self.assertEqual(T.parse_direction({"direction": "negative", "reason": "治験が中止された"}),
+                         {"direction": "negative", "reason": "治験が中止された"})
+        self.assertEqual(T.parse_direction({"direction": "positive"})["direction"], "positive")
+        self.assertIsNone(T.parse_direction({"direction": "bullish"}))  # 未知の値は捨てる
+        self.assertIsNone(T.parse_direction({"direction": None}))
+        self.assertIsNone(T.parse_direction(None))
+        self.assertIsNone(T.parse_direction("positive"))
+
+    def _eval_with_direction(self, direction_obj):
+        cand = {"id": "c1", "title": "T", "abstract": "A" * 300, "url": "u", "source": "trials",
+                "published": "2026-10-10", "fields": []}
+        base = make_llm_fn(long_scores={k: 70 for k in LONG_KEYS})
+
+        def fn(p):
+            out = base(p)
+            if "長期成長評価" in p:
+                obj = json.loads(out)
+                obj["direction"] = direction_obj
+                return json.dumps(obj)
+            return out
+
+        return ev.evaluate_one(cand, "long", CFG, Mock(fn), AS_OF)
+
+    def test_evaluate_one_records_direction(self):
+        res = self._eval_with_direction({"direction": "negative", "reason": "第3相治験が中止された"})
+        self.assertEqual(res["status"], "final")  # 全項目に点が付いても方向は negative であり得る
+        self.assertEqual(res["extra"]["direction"],
+                         {"direction": "negative", "reason": "第3相治験が中止された"})
+
+    def test_invalid_direction_does_not_fail_evaluation(self):
+        res = self._eval_with_direction({"direction": "strong_buy"})
+        self.assertEqual(res["status"], "final")
+        self.assertIsNone(res["extra"]["direction"])
+
+    def test_site_data_includes_direction(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        store = Store(Path(tmp.name) / "trl.sqlite")
+        rec, _ = normalize(raw(sid="2610.8888", title="Terminated trial study"),
+                           "2026-10-20T00:00:00+00:00")
+        cid, _ = store.upsert_candidate(rec, "r0")
+        store.set_status(cid, "screened")
+        res = self._eval_with_direction({"direction": "mixed", "reason": "進展と悪材料が混在"})
+        store.add_evaluation("r0", cid, res)
+        data = T.build_site_data(store, CFG)
+        cand = [c for c in data["candidates"] if c["id"] == cid][0]
+        self.assertEqual(cand["long"]["direction"], {"direction": "mixed", "reason": "進展と悪材料が混在"})
+        store.close()
+
+
 class DedupeStoreTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
@@ -639,6 +693,11 @@ class PromptTests(unittest.TestCase):
         for anchor in ("TRL 1", "TRL 9", "実施済みだけを数える", "迷ったら切り下げる",
                        "セクター別の運用", "条件及び期限付き承認", "軌道上での技術実証",
                        "テープアウト", "PoC"):
+            self.assertIn(anchor, text)
+
+    def test_long_prompt_contains_direction_guidance(self):
+        text = load_prompt("long", CFG["scoring"]["prompts"]["long"])["text"]
+        for anchor in ("材料の方向性", "positive", "negative", "mixed", "点数や TRL とは独立"):
             self.assertIn(anchor, text)
 
 

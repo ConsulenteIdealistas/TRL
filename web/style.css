@@ -87,6 +87,8 @@ textarea{width:100%;min-height:90px;resize:vertical;padding:10px;border:1px soli
 
 /* v0.2: data.json 連携用 */
 .st-pending{color:#607080;background:#edf1f4}
+.dir{padding:6px 9px;border-radius:7px;font-size:10px;font-weight:800}
+.dir-positive{color:#087b5a;background:var(--gs)}.dir-negative{color:#b52f49;background:#ffedf0}.dir-mixed{color:#a96500;background:#fff3dc}
 .warn{margin:14px 0 0;padding:10px 14px;border:1px solid #f0c36a;border-radius:12px;color:#8a5a00;background:#fff3dc;font-size:12px;font-weight:700}
 .sc{display:grid;gap:4px;margin:0 0 12px}
 .sc .h{display:flex;justify-content:space-between;gap:8px;font-size:12px;font-weight:750}

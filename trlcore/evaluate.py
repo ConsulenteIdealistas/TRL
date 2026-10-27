@@ -105,6 +105,19 @@ def parse_trl_level(v):
     return out, errs
 
 
+DIRECTIONS = ("positive", "negative", "mixed")
+
+
+def parse_direction(v):
+    """材料の方向性(任意・表示補助)。壊れた値や欠落は None として扱い、評価自体は失敗させない。"""
+    if not isinstance(v, dict):
+        return None
+    d = v.get("direction")
+    if d not in DIRECTIONS:
+        return None
+    return {"direction": d, "reason": str(v.get("reason") or "")[:300]}
+
+
 def _candidate_block(cand):
     return json.dumps({k: cand.get(k) for k in ("id", "title", "abstract", "url", "source", "published", "fields")},
                       ensure_ascii=False, indent=1)
@@ -156,6 +169,7 @@ def evaluate_one(cand, kind, cfg, llm, as_of, extraction=None, extract_meta=None
             trl, trl_errs = parse_trl_level(obj.get("trl_level"))
             errs = errs + trl_errs
             result["extra"]["trl_level"] = trl
+            result["extra"]["direction"] = parse_direction(obj.get("direction"))
         if errs:
             result["errors"] = errs
             return result

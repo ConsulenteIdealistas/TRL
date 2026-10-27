@@ -38,6 +38,7 @@ def _ev_for_site(ev, cfg):
                              and not (extra.get("business_stage") == "pre_stage" and k not in TECH_ITEMS)],
         "errors": json.loads(ev["errors_json"] or "[]") if ev["status"] == "error" else [],
         "trl_level": extra.get("trl_level"),
+        "direction": extra.get("direction"),
         "axes": extra.get("axes"),
         "business_stage": extra.get("business_stage"),
         "total_scope": extra.get("total_scope"),

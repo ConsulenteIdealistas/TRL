@@ -8,7 +8,7 @@ from .dates import parse_date
 from .pipeline import select_for_eval
 
 
-SITE_SCHEMA_VERSION = 1
+SITE_SCHEMA_VERSION = 2
 
 # サイトに載せる未評価は「次に評価される上位」だけ。未評価の在庫を全件出すと
 # 評価結果が埋もれてしまうため、書き出し側で絞る (エンジン側の選定と一致させる)
@@ -106,7 +106,6 @@ def build_site_data(store, cfg, now=None):
         cands.append({
             "id": cid, "title": c["title"], "source": c["source"], "published": c["published"], "url": c["url"],
             "abstract": c["abstract"] or "", "fields": c["fields"],
-            "title_ja": c.get("title_ja") or None, "abstract_ja": c.get("abstract_ja") or None,
             "display_status": display_status(c, long_ev, store),
             "next_up": cid in next_ids and long_ev is None and event_ev is None,
             "long": long_ev, "event": event_ev, "entities": ents,

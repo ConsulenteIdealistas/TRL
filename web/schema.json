@@ -1,6 +1,6 @@
 {
   "_comment": "Python(trl.py export)とWeb(app.js)の契約。Webが読むキーだけを列挙する。変更時は schema_version を上げる。",
-  "schema_version": 1,
+  "schema_version": 2,
   "top_level": [
     "schema_version",
     "generated_at",
@@ -17,8 +17,6 @@
   "candidate": [
     "id",
     "title",
-    "title_ja",
-    "abstract_ja",
     "source",
     "published",
     "url",

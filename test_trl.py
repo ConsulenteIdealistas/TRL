@@ -352,74 +352,12 @@ class NewSourceParseTests(unittest.TestCase):
         # フィルタのフィールド名は複数形 institutions(単数形はAPIが拒否する)
         self.assertIn("authorships.institutions.id:I999", seen.get("filter", ""))
 
-    def test_translation(self):
-        self.assertTrue(T.needs_translation("High-throughput actinic mask inspection for EUV lithography"))
-        self.assertFalse(T.needs_translation("月面探査ローバーの熱制御の設計と実装"))
-        self.assertFalse(T.needs_translation("AI"))
-        llm = T.Mock(lambda p: '```json\n[{"i": 0, "title_ja": "邦題", "abstract_ja": "邦文抄録"}]\n```')
-        self.assertEqual(T.translate_batch(llm, [("Title", "Abstract")]), {0: ("邦題", "邦文抄録")})
-        bad = T.Mock(lambda p: "not json")
-        self.assertEqual(T.translate_batch(bad, [("Title", "Abstract")]), {})
-
-    def test_translate_display_set(self):
-        import tempfile
-        from pathlib import Path as _P
-        tmp = tempfile.TemporaryDirectory()
-        store = T.Store(_P(tmp.name) / "d.sqlite")
-        rec, _ = T.normalize(raw(), T.now_iso())
-        cid, _ = store.upsert_candidate(rec, "rX")
-        store.conn.execute(
-            "INSERT INTO evaluations(run_id, candidate_id, kind, status) VALUES('rX', ?, 'long', 'ok')", (cid,))
-        store.conn.commit()
-
-        def fn(p):
-            if "翻訳担当" in p:
-                return json.dumps([{"i": 0, "title_ja": "邦題タイトル", "abstract_ja": "邦文の抄録です"}])
-            raise AssertionError("unknown prompt")
-        n = T.translate_display_set(store, CFG, T.Mock(fn), AS_OF, log=lambda *_: None)
-        self.assertEqual(n, 1)
-        c = store.get_candidate(cid)
-        self.assertEqual(c["title_ja"], "邦題タイトル")
-        # 2回目は未訳が無いので 0 件 (LLM は呼ばれない)
-        self.assertEqual(T.translate_display_set(store, CFG, T.Mock(fn), AS_OF, log=lambda *_: None), 0)
-        store.close()
-        tmp.cleanup()
-
-    def test_translate_display_set_parallel(self):
-        # 12件=3バッチを並列に訳す。1バッチが失敗しても他のバッチは保存される
-        tmp = tempfile.TemporaryDirectory()
-        store = T.Store(Path(tmp.name) / "d.sqlite")
-        cids = []
-        for i in range(12):
-            rec, _ = T.normalize(raw(sid=f"2610.2{i:03d}", title=f"Paper {i}"), T.now_iso())
-            cid, _ = store.upsert_candidate(rec, "rX")
-            store.conn.execute(
-                "INSERT INTO evaluations(run_id, candidate_id, kind, status) VALUES('rX', ?, 'long', 'ok')", (cid,))
-            cids.append(cid)
-        store.conn.commit()
-
-        def fn(p):
-            if "Paper 3" in p:
-                raise RuntimeError("boom")
-            n = p.count("--- 資料")
-            return json.dumps([{"i": j, "title_ja": f"邦題{j}", "abstract_ja": "邦文の抄録"} for j in range(n)])
-        n = T.translate_display_set(store, CFG, T.Mock(fn), AS_OF, log=lambda *_: None)
-        self.assertEqual(n, 7)  # Paper 3 を含む先頭バッチ(5件)だけが落ちる
-        got = [store.get_candidate(c)["title_ja"] for c in cids]
-        self.assertEqual(sum(1 for t in got if t), 7)
-        store.close()
-        tmp.cleanup()
-
-    def test_translate_enabled_config(self):
-        # 停止スイッチは 0/1 のみ許可し、現行設定は 1 (軽量モデル+並列で再開)
-        self.assertEqual(CFG["scoring"]["llm"].get("translate_enabled"), 1)
-        self.assertEqual(CFG["scoring"]["llm"].get("translate_workers"), 3)
-        ok = copy.deepcopy(CFG)
-        ok["scoring"]["llm"]["translate_enabled"] = 1
-        validate_config(ok)
-        for bad in (2, True, "0"):
+    def test_translate_keys_removed(self):
+        # 翻訳機能は削除済み。旧 llm.translate_* キーは未知キーとして弾かれる
+        for k in ("translate_enabled", "translate_workers", "translate_timeout_sec", "translate_retries"):
+            self.assertNotIn(k, CFG["scoring"]["llm"])
             ng = copy.deepcopy(CFG)
-            ng["scoring"]["llm"]["translate_enabled"] = bad
+            ng["scoring"]["llm"][k] = 1
             with self.assertRaises(ConfigError):
                 validate_config(ng)
 
@@ -997,32 +935,6 @@ class EvaluateOneTests(unittest.TestCase):
             if saved:
                 os.environ["TRL_LLM_MODEL"] = saved
 
-    def test_translation_llm_uses_light_model(self):
-        import os
-        keys = ("GEMINI_API_KEY", "TRL_LLM_MODEL", "TRL_LLM_FALLBACK_MODEL", "TRL_LLM_TRANSLATE_MODEL")
-        saved = {k: os.environ.get(k) for k in keys}
-        os.environ["GEMINI_API_KEY"] = "k" * 10
-        os.environ["TRL_LLM_MODEL"] = "gemini-main"
-        os.environ["TRL_LLM_FALLBACK_MODEL"] = "gemini-lite"
-        os.environ.pop("TRL_LLM_TRANSLATE_MODEL", None)
-        try:
-            g = Gemini(http=lambda *a, **k: b"{}")
-            tl = T.translation_llm(g, CFG)
-            self.assertIsNot(tl, g)
-            self.assertEqual(tl.model, "gemini-lite")  # 翻訳は軽い代替モデルで
-            self.assertEqual((tl.timeout, tl.retries), (60, 1))  # 翻訳用に短く
-            self.assertEqual((g.timeout, g.retries), (120, 2))  # 評価側は不変
-            os.environ["TRL_LLM_TRANSLATE_MODEL"] = "gemini-tr"
-            self.assertEqual(T.translation_llm(g, CFG).model, "gemini-tr")  # 専用指定が最優先
-            m = T.Mock(lambda p: "x")
-            self.assertIs(T.translation_llm(m, CFG), m)  # Mock は素通し
-        finally:
-            for k, v in saved.items():
-                if v is None:
-                    os.environ.pop(k, None)
-                else:
-                    os.environ[k] = v
-
     def test_anthropic_gemini_response_parsing(self):
         import os
         os.environ["ANTHROPIC_API_KEY"] = os.environ["GEMINI_API_KEY"] = "k" * 10
@@ -1335,26 +1247,6 @@ class IntegrationTests(unittest.TestCase):
         text = build_report(store, r3["run_id"])
         self.assertIn("65.0", text)
         self.assertIn("投資利益率ではありません", text)
-        store.close()
-
-    def test_translation_disabled_skips_translation(self):
-        # translate_enabled=0 の間は翻訳プロンプトを一切呼ばず、訳も作らない
-        cfg = copy.deepcopy(self.cfg())
-        cfg["scoring"]["llm"]["translate_enabled"] = 0
-        seen = []
-        base = make_llm_fn(long_scores={k: 65 for k in LONG_KEYS})
-
-        def fn(p):
-            seen.append(p)
-            return base(p)
-        store = Store(self.path)
-        r = run_pipeline(store, cfg, Mock(fn), as_of=AS_OF, kinds=("long",), fetchers=self.fetchers(),
-                         today=AS_OF, log=lambda *_: None)
-        self.assertEqual(r["counts"]["translated"], 0)
-        self.assertFalse(any("翻訳担当" in p for p in seen))
-        cands = store.list_by_status(["evaluated", "hold", "final", "error", "screened"])
-        self.assertTrue(cands)
-        self.assertTrue(all(not c.get("title_ja") for c in cands))
         store.close()
 
     def test_purge_evaluations_resets_candidates(self):

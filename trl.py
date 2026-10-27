@@ -33,13 +33,12 @@ from trlcore.sources.edinet import select_financials as edinet_select_financials
 from trlcore.sources.edinet import fetch_financial_text as edinet_fetch_financial_text, FINANCIAL_MARKER as EDINET_FINANCIAL_MARKER  # noqa: F401,E402
 from trlcore.sources.yahoo import yahoo_fetch, parse_quote_summary as yahoo_parse_quote_summary  # noqa: F401,E402
 from trlcore.sources.openalex import openalex_fetch, parse_works as openalex_parse_works  # noqa: F401,E402
-from trlcore.translate import needs_translation, translate_batch, translate_display_set  # noqa: F401,E402
 from trlcore.scoring import item_keys, validate_items, band_for, compute  # noqa: F401,E402
 from trlcore.entities import _norm_text, ENTITY_MODES, validate_entities, _contains, link_entities, entity_screen  # noqa: F401,E402
 from trlcore.config import __version__, ROOT, CONFIG_FILES, LLM_DEFAULTS, SOURCE_NAMES, validate_config, validate_sources, build_entity_queries, required_files, missing_files, load_config  # noqa: F401,E402
 from trlcore.store import SCHEMA, now_iso, _j, Store  # noqa: F401,E402
 from trlcore.prompts import PROMPT_DIR, _PH, load_prompt, render  # noqa: F401,E402
-from trlcore.llm import SYSTEM, extract_json, Anthropic, Gemini, Mock, get_provider, llm_settings, configure_llm, translation_llm, _fallback_model  # noqa: F401,E402
+from trlcore.llm import SYSTEM, extract_json, Anthropic, Gemini, Mock, get_provider, llm_settings, configure_llm, _fallback_model  # noqa: F401,E402
 from trlcore.evaluate import EVIDENCE_KINDS, EXTRACT_LISTS, STATEMENT_LISTS, validate_extraction, _nonempty_list, validate_assessment, parse_trl_level, parse_direction, DIRECTIONS, _candidate_block, input_hash, run_extraction, evaluate_one  # noqa: F401,E402
 from trlcore.pipeline import DEFAULT_FETCHERS, new_run_id, screen, collect, select_for_eval, has_demo_signal, _queue_reason, run_pipeline  # noqa: F401,E402
 from trlcore.site import SITE_SCHEMA_VERSION, TECH_ITEMS, LEGACY_INFRA_QUEUE_PREFIX, _ev_for_site, display_status, build_site_data, export_site  # noqa: F401,E402

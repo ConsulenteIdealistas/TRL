@@ -387,14 +387,16 @@ class ExportTests(unittest.TestCase):
         self.assertTrue(ents)
         self.assertTrue(all(e["market"] == "JP" and e["sector"] == "space" for e in ents))
 
-    def test_translation_exported(self):
+    def test_translation_not_exported(self):
+        # 翻訳機能は削除済み。DB列に旧訳が残っていても data.json には出さない
         data = self.build(None, n=1)
         cid = data["candidates"][0]["id"]
-        self.assertIsNone(data["candidates"][0]["title_ja"])
-        self.store.set_translation(cid, "邦題", "邦文抄録")
+        self.store.conn.execute("UPDATE candidates SET title_ja='邦題', abstract_ja='邦文抄録' WHERE id=?", (cid,))
+        self.store.conn.commit()
         data = T.build_site_data(self.store, cfg_with(), datetime(2026, 10, 26, tzinfo=timezone.utc))
         got = next(c for c in data["candidates"] if c["id"] == cid)
-        self.assertEqual((got["title_ja"], got["abstract_ja"]), ("邦題", "邦文抄録"))
+        self.assertNotIn("title_ja", got)
+        self.assertNotIn("abstract_ja", got)
 
     def test_pending_rejected_and_legacy_api_errors(self):
         data = self.build(None)  # LLM未設定 → すべて未評価
@@ -445,7 +447,7 @@ class ExportTests(unittest.TestCase):
         self.assertIn("index.html", names)
         self.assertIn("detail.html", names)
         self.assertNotIn("schema.json", names)
-        self.assertEqual(json.loads((out / "data.json").read_text(encoding="utf-8"))["schema_version"], 1)
+        self.assertEqual(json.loads((out / "data.json").read_text(encoding="utf-8"))["schema_version"], 2)
 
     def test_pre_stage_final_flows_to_site(self):
         def fn(p):

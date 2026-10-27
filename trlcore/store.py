@@ -83,11 +83,6 @@ class Store:
                 self.conn.execute(f"ALTER TABLE candidates ADD COLUMN {col} TEXT")
         self.conn.commit()
 
-    def set_translation(self, cid, title_ja, abstract_ja):
-        self.conn.execute("UPDATE candidates SET title_ja=?, abstract_ja=? WHERE id=?",
-                          (title_ja, abstract_ja, cid))
-        self.conn.commit()
-
     def close(self):
         self.conn.commit()
         self.conn.close()

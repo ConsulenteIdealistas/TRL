@@ -9,7 +9,7 @@
 <body>
 <header class="topbar"><a class="brand" href="index.html"><span class="mark">T</span><span>TRL<span class="light"> Explorer</span></span></a><div class="meta"><span class="dot"></span>Research Intelligence</div></header>
 <main class="ws">
-<p style="margin:0 0 12px"><a class="tg" href="index.html">← 一覧に戻る</a> <button id="lt" class="btn quiet" type="button" style="float:right"></button></p>
+<p style="margin:0 0 12px"><a class="tg" href="index.html">← 一覧に戻る</a></p>
 <section class="panel"><div id="det"><div class="ph"><i>⌕</i><h3>読み込み中…</h3></div></div></section>
 <footer class="ft"><span>TRL Explorer</span><span>技術成熟度と事業化評価は独立した評価軸です。スコアは評価尺度であり、株価上昇確率・成功確率・投資利益率ではありません。</span></footer>
 </main>
@@ -22,10 +22,8 @@ const IL = {technology_readiness: "技術成熟度", technological_advantage: "�
   catalyst_quality: "触媒の質", expectation_gap: "期待ギャップ", not_priced_in: "未織り込み度",
   timing_feasibility: "タイミングの実現性", supply_demand: "需給", downside_resilience: "下値耐性"};
 const $ = s => document.querySelector(s);
-let LANG = "ja";
-try { LANG = localStorage.getItem("trl-lang") || "ja"; } catch (e) { /* 既定のまま */ }
-const dispT = p => LANG === "ja" && p.title_ja ? p.title_ja : p.title;
-const dispA = p => LANG === "ja" && p.abstract_ja ? p.abstract_ja : p.abstract || "";
+const dispT = p => p.title;
+const dispA = p => p.abstract || "";
 const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
 const safeUrl = u => /^https?:\/\//i.test(String(u || "")) ? String(u) : "#";
 const ok = t => Number.isInteger(t) && t >= 1 && t <= 9;
@@ -72,9 +70,6 @@ async function load() {
     return;
   }
   document.title = dispT(p) + " — TRL Explorer";
-  const lt = $("#lt");
-  lt.textContent = LANG === "ja" ? "原文で表示" : "日本語訳で表示";
-  lt.onclick = () => { LANG = LANG === "ja" ? "orig" : "ja"; try { localStorage.setItem("trl-lang", LANG); } catch (e) { /* 保存できなくても切替は効く */ } load(); };
   const G = d.config.item_groups;
   const LL = p.long && p.long.status !== "error" ? p.long : null;
   const EV = p.event && p.event.status !== "error" ? p.event : null;

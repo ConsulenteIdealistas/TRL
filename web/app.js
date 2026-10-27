@@ -2,10 +2,8 @@
 /* TRL Explorer: trl.py export が出力した data.json を読んで表示する(契約: schema.json)。
    評価値はすべて data.json の値をそのまま表示し、画面側で再計算・換算・平均はしない。 */
 let P = [], META = null, sel = null;
-let LANG = "ja";
-try { LANG = localStorage.getItem("trl-lang") || "ja"; } catch (e) { /* 保存不可なら既定のまま */ }
-const dispT = p => LANG === "ja" && p.title_ja ? p.title_ja : p.title;
-const dispA = p => LANG === "ja" && p.abstract_ja ? p.abstract_ja : p.abstract || "";
+const dispT = p => p.title;
+const dispA = p => p.abstract || "";
 const SL = {final: "選定可能", review: "要追加調査", hold: "保留", pending: "未評価", error: "エラー", rejected: "除外"};
 const SO = {final: 0, review: 1, hold: 2, pending: 3, error: 4, rejected: 5};  // おすすめ順での状態の優先度
 const IL = {technology_readiness: "技術成熟度", technological_advantage: "技術的優位性", monetization: "収益化能力",
@@ -45,7 +43,7 @@ function inR(t, f) {
 }
 function haystack(p) {
   const items = p.long ? Object.values(p.long.items).flatMap(i => i.missing_info) : [];
-  return [p.title, p.title_ja || "", p.source, p.abstract, p.abstract_ja || "", ...(p.fields || []), ...p.entities.map(e => e.name), ...items].join(" ").toLowerCase();
+  return [p.title, p.source, p.abstract, ...(p.fields || []), ...p.entities.map(e => e.name), ...items].join(" ").toLowerCase();
 }
 function filtered() {
   const q = $("#q").value.trim().toLowerCase(), s = $("#fs").value, t = $("#ft").value, o = $("#fo").value, fd = $("#fd").value;
@@ -163,16 +161,14 @@ async function load() {
     showError("data.json を読み込めません。実行(Run workflow)が完了し、ページが配備されているか確認してください。");
     return;
   }
-  if (d.schema_version !== 1) { showError("data.json の形式(schema_version)がこの画面に対応していません。"); return; }
+  if (d.schema_version !== 2) { showError("data.json の形式(schema_version)がこの画面に対応していません。"); return; }
   META = d; P = d.candidates;
   $("#gen").textContent = "更新 " + jst(d.generated_at);
-  $("#fl").value = LANG;
   facetOptions(); warn(d); stats(); render();
 }
 $("#sf").addEventListener("submit", e => { e.preventDefault(); render(); });
 $("#q").addEventListener("input", render);
 ["#fs", "#ft", "#fo", "#fd", "#fm", "#fc"].forEach(s => $(s).addEventListener("change", render));
-$("#fl").addEventListener("change", () => { LANG = $("#fl").value; try { localStorage.setItem("trl-lang", LANG); } catch (e) { /* 保存できなくても切替は効く */ } render(); });
 $("#rs").addEventListener("click", () => { $("#q").value = ""; $("#fs").value = "all"; $("#ft").value = "all"; $("#fo").value = "status"; $("#fd").value = "all"; $("#fm").value = "all"; $("#fc").value = "all"; sel = P[0] ? P[0].id : null; render(); });
 $("#list").addEventListener("click", e => { const c = e.target.closest("[data-id]"); if (c) { sel = c.dataset.id; render(); } });
 $("#det").addEventListener("click", e => {

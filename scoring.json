@@ -79,11 +79,7 @@
     "retries": 3,
     "max_consecutive_failures": 2,
     "phase_budget_sec": 600,
-    "eval_workers": 3,
-    "translate_enabled": 1,
-    "translate_workers": 3,
-    "translate_timeout_sec": 60,
-    "translate_retries": 1
+    "eval_workers": 3
   },
   "prompts": {
     "extract": "v1",

@@ -70,6 +70,8 @@ def display_status(cand, long_ev, store):
 def build_site_data(store, cfg, now=None):
     ent_names = {e["id"]: e["name"] for e in (cfg.get("entities") or {}).get("entities", [])}
     ent_tiers = {e["id"]: e.get("tier") or "core" for e in (cfg.get("entities") or {}).get("entities", [])}
+    ent_markets = {e["id"]: e.get("market") or "JP" for e in (cfg.get("entities") or {}).get("entities", [])}
+    ent_sectors = {e["id"]: e.get("sector") for e in (cfg.get("entities") or {}).get("entities", [])}
     queue = {}
     for q in store.list_queue():
         if str(q["reason"] or "").startswith(LEGACY_INFRA_QUEUE_PREFIX):
@@ -98,7 +100,9 @@ def build_site_data(store, cfg, now=None):
                 seen.add(key)
                 ents.append({"entity_id": e["entity_id"], "name": ent_names.get(e["entity_id"], e["entity_id"]),
                              "strength": e["strength"], "product_name": e["product_name"] or None,
-                             "tier": ent_tiers.get(e["entity_id"], "core")})
+                             "tier": ent_tiers.get(e["entity_id"], "core"),
+                             "market": ent_markets.get(e["entity_id"], "JP"),
+                             "sector": ent_sectors.get(e["entity_id"])})
         cands.append({
             "id": cid, "title": c["title"], "source": c["source"], "published": c["published"], "url": c["url"],
             "abstract": c["abstract"] or "", "fields": c["fields"],

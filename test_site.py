@@ -380,6 +380,13 @@ class ExportTests(unittest.TestCase):
         self.assertTrue(data["candidates"])
         self.assertTrue(all(c["source"] != "gnews" for c in data["candidates"]))
 
+    def test_entities_carry_market_and_sector(self):
+        # 国・分野の絞り込み/並び替え用に、関連企業へ market と sector を載せる
+        data = self.build(None, n=1)
+        ents = [e for c in data["candidates"] for e in c["entities"]]
+        self.assertTrue(ents)
+        self.assertTrue(all(e["market"] == "JP" and e["sector"] == "space" for e in ents))
+
     def test_pending_rejected_and_legacy_api_errors(self):
         data = self.build(None)  # LLM未設定 → すべて未評価
         self.assertEqual({c["display_status"] for c in data["candidates"]}, {"pending"})

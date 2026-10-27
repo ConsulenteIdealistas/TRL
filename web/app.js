@@ -17,6 +17,14 @@ const src = s => "badge " + (SRC_CLASS[s] || "");
 const srcName = s => SRC_LABEL[s] || esc(s);
 const stB = s => `<span class="st ${s === "final" ? "" : "st-" + s}">${SL[s] || esc(s)}</span>`;
 const DL = {positive: "ポジティブ", negative: "ネガティブ", mixed: "混在"};
+const ML = {JP: "日本", US: "米国", GB: "英国", CH: "スイス", DE: "ドイツ", DK: "デンマーク", SE: "スウェーデン", IT: "イタリア", CA: "カナダ", AU: "オーストラリア"};
+const MO = ["JP", "US", "GB", "CH", "DE", "DK", "SE", "IT", "CA", "AU"];  // 国・市場別の並び
+const CL = {space: "宇宙", bio: "バイオ", semiconductor: "半導体", ai: "AI"};
+const CO = ["space", "bio", "semiconductor", "ai"];  // 分野別の並び
+const primEnt = p => p.entities.find(e => e.strength === "strong") || p.entities[0] || null;
+const marketOf = p => { const e = primEnt(p); return e ? e.market || "JP" : null; };
+const sectorOf = p => { const e = primEnt(p); return e ? e.sector || null : null; };
+const ord = (v, list) => { const i = list.indexOf(v); return i < 0 ? list.length : i; };
 const dirOf = p => (p.long && p.long.direction && p.long.direction.direction) || null;
 const dirB = p => { const d = dirOf(p); return d ? `<span class="dir dir-${d}">${DL[d]}</span>` : ""; };
 const jst = iso => { try { return new Date(iso).toLocaleString("ja-JP", {timeZone: "Asia/Tokyo", hour12: false}); } catch (e) { return iso; } };
@@ -37,22 +45,44 @@ function haystack(p) {
 }
 function filtered() {
   const q = $("#q").value.trim().toLowerCase(), s = $("#fs").value, t = $("#ft").value, o = $("#fo").value, fd = $("#fd").value;
+  const fm = $("#fm").value, fc = $("#fc").value;
   const r = P.filter(p => (!q || haystack(p).includes(q)) && (s === "all" || p.display_status === s) && inR(lvl(p), t)
-    && (fd === "all" || (fd === "none" ? !dirOf(p) : dirOf(p) === fd)));
-  r.sort((a, b) => o === "status" ? (SO[a.display_status] - SO[b.display_status])
-      || ((ok(lvl(b)) ? lvl(b) : -1) - (ok(lvl(a)) ? lvl(a) : -1))
-      || String(b.published || "").localeCompare(String(a.published || ""))
+    && (fd === "all" || (fd === "none" ? !dirOf(p) : dirOf(p) === fd))
+    && (fm === "all" || p.entities.some(e => (e.market || "JP") === fm))
+    && (fc === "all" || p.entities.some(e => e.sector === fc)));
+  const byStatus = (a, b) => (SO[a.display_status] - SO[b.display_status])
+    || ((ok(lvl(b)) ? lvl(b) : -1) - (ok(lvl(a)) ? lvl(a) : -1))
+    || String(b.published || "").localeCompare(String(a.published || ""));
+  r.sort((a, b) => o === "status" ? byStatus(a, b)
+    : o === "market" ? (ord(marketOf(a), MO) - ord(marketOf(b), MO)) || byStatus(a, b)
+    : o === "sector" ? (ord(sectorOf(a), CO) - ord(sectorOf(b), CO)) || byStatus(a, b)
     : o === "trl" ? (ok(lvl(b)) ? lvl(b) : -1) - (ok(lvl(a)) ? lvl(a) : -1)
     : o === "title" ? a.title.localeCompare(b.title, "ja") : String(b.published || "").localeCompare(String(a.published || "")));
   return r;
 }
+function facetOptions() {
+  // 絞り込みの選択肢は、掲載中の候補に実際にある国・分野だけを順序つきで出す
+  const fill = (sel, values, order, labels) => {
+    const el = $(sel), cur = el.value;
+    const present = order.filter(v => values.has(v)).concat([...values].filter(v => !order.includes(v)));
+    el.innerHTML = '<option value="all">すべて</option>' + present.map(v => `<option value="${esc(v)}">${esc(labels[v] || v)}</option>`).join("");
+    el.value = present.includes(cur) ? cur : "all";
+  };
+  fill("#fm", new Set(P.flatMap(p => p.entities.map(e => e.market || "JP"))), MO, ML);
+  fill("#fc", new Set(P.flatMap(p => p.entities.map(e => e.sector).filter(Boolean))), CO, CL);
+}
 function sc(p, k) { const it = p.long && p.long.items[k]; return it ? it.score : null; }
 function fmtScore(v) { return v == null ? "—" : v; }
 
+function facetText(p) {
+  const m = marketOf(p), c = sectorOf(p);
+  return [m ? ML[m] || m : "", c ? CL[c] || c : ""].filter(Boolean).join("・");
+}
 function card(p) {
   const s = p.id === sel;
   const ents = p.entities.filter(e => e.strength === "strong").length;
-  return `<article class="card ${s ? "sel" : ""}" data-id="${esc(p.id)}"><div class="main"><div style="min-width:0"><div class="top"><span class="${src(p.source)}">${srcName(p.source)}</span><span class="date">${esc(p.published || "")}</span></div><h3 class="title">${esc(p.title)}</h3><p class="abs">${esc(p.abstract)}</p><div class="tags">${(p.fields || []).slice(0, 4).map(t => `<span class="tag">${esc(t)}</span>`).join("")}</div><div class="mi"><span>技術成熟度 <strong>${fmtScore(sc(p, "technology_readiness"))}</strong></span><span>技術的優位性 <strong>${fmtScore(sc(p, "technological_advantage"))}</strong></span><span>関連企業 <strong>${ents ? ents + "社" : "未特定"}</strong></span></div></div><div class="side">${stB(p.display_status)}${dirB(p)}${trl(lvl(p))}</div></div><div class="foot"><span>${p.long && p.long.critical_missing.length ? `必須の不足 ${p.long.critical_missing.length}件` : p.display_status === "pending" ? (p.next_up ? "次回評価予定" : "評価待ち") : ""}</span><a class="tg" href="detail.html?id=${encodeURIComponent(p.id)}">詳細を見る →</a></div></article>`;
+  const facet = facetText(p);
+  return `<article class="card ${s ? "sel" : ""}" data-id="${esc(p.id)}"><div class="main"><div style="min-width:0"><div class="top"><span class="${src(p.source)}">${srcName(p.source)}</span><span class="date">${esc(p.published || "")}</span></div><h3 class="title">${esc(p.title)}</h3><p class="abs">${esc(p.abstract)}</p><div class="tags">${(p.fields || []).slice(0, 4).map(t => `<span class="tag">${esc(t)}</span>`).join("")}</div><div class="mi"><span>技術成熟度 <strong>${fmtScore(sc(p, "technology_readiness"))}</strong></span><span>技術的優位性 <strong>${fmtScore(sc(p, "technological_advantage"))}</strong></span><span>関連企業 <strong>${ents ? ents + "社" : "未特定"}</strong></span>${facet ? `<span>国・分野 <strong>${esc(facet)}</strong></span>` : ""}</div></div><div class="side">${stB(p.display_status)}${dirB(p)}${trl(lvl(p))}</div></div><div class="foot"><span>${p.long && p.long.critical_missing.length ? `必須の不足 ${p.long.critical_missing.length}件` : p.display_status === "pending" ? (p.next_up ? "次回評価予定" : "評価待ち") : ""}</span><a class="tg" href="detail.html?id=${encodeURIComponent(p.id)}">詳細を見る →</a></div></article>`;
 }
 function scoreRow(k, it) {
   const v = it ? it.score : null;
@@ -85,7 +115,7 @@ function detail() {
 <section class="ds"><h4>材料の方向性</h4>${L && L.direction ? `<p>${dirB(p)} ${esc(L.direction.reason || "")}</p><p class="hint">方向性は点数やTRLとは独立に、資料が示す出来事の追い風・逆風を判定したものです。</p>` : `<p class="hint">未判定です（方向を決める出来事が資料に無いか、旧基準の評価です）。</p>`}</section>
 <section class="ds"><h4>不足している観点</h4>${L && L.critical_missing.length ? `<p class="m" style="color:#a96500;font-weight:700">必須項目の不足: ${L.critical_missing.map(k => esc(label(k))).join("、")}</p>` : ""}${pts(missAll, 1)}${q && q.next_sources.length ? `<p class="hint">次に確認する情報源: ${q.next_sources.map(esc).join(" / ")}</p>` : ""}${q && q.reeval_conditions.length ? `<p class="hint">再評価の条件: ${q.reeval_conditions.map(esc).join(" / ")}</p>` : ""}</section>
 ${p.display_status === "error" && LL && LL.errors.length ? `<section class="ds"><h4>処理上の注意</h4>${pts(LL.errors, 1)}</section>` : ""}
-<section class="ds"><h4>関連企業</h4>${p.entities.map(e => `<span class="chip">${esc(e.name)}${e.product_name ? "（" + esc(e.product_name) + "）" : ""} ${e.strength === "strong" ? "" : "・弱"}${e.tier === "watch" ? "・ウォッチ" : ""}</span>`).join("") || '<span class="hint">関連企業は未特定です。</span>'}</section>
+<section class="ds"><h4>関連企業</h4>${p.entities.map(e => `<span class="chip">${esc(e.name)}${e.product_name ? "（" + esc(e.product_name) + "）" : ""}${e.market ? "・" + esc(ML[e.market] || e.market) : ""}${e.sector ? "・" + esc(CL[e.sector] || e.sector) : ""} ${e.strength === "strong" ? "" : "・弱"}${e.tier === "watch" ? "・ウォッチ" : ""}</span>`).join("") || '<span class="hint">関連企業は未特定です。</span>'}</section>
 <section class="ds"><h4>調査メモ</h4><textarea id="note" aria-label="調査メモ" placeholder="仮説、確認したい点、次の調査などを記録...">${esc(getNote(p.id))}</textarea><div class="acts"><button class="btn sec" type="button" id="save">メモを保存</button><a class="btn src" href="${esc(safeUrl(p.url))}" target="_blank" rel="noopener noreferrer">原文サイトを開く ↗</a></div><p id="msg" class="hint" aria-live="polite">メモはこの端末のブラウザにだけ保存されます。</p></section></div>`;
 }
 function render() {
@@ -132,12 +162,12 @@ async function load() {
   if (d.schema_version !== 1) { showError("data.json の形式(schema_version)がこの画面に対応していません。"); return; }
   META = d; P = d.candidates;
   $("#gen").textContent = "更新 " + jst(d.generated_at);
-  warn(d); stats(); render();
+  facetOptions(); warn(d); stats(); render();
 }
 $("#sf").addEventListener("submit", e => { e.preventDefault(); render(); });
 $("#q").addEventListener("input", render);
-["#fs", "#ft", "#fo", "#fd"].forEach(s => $(s).addEventListener("change", render));
-$("#rs").addEventListener("click", () => { $("#q").value = ""; $("#fs").value = "all"; $("#ft").value = "all"; $("#fo").value = "date"; $("#fd").value = "all"; sel = P[0] ? P[0].id : null; render(); });
+["#fs", "#ft", "#fo", "#fd", "#fm", "#fc"].forEach(s => $(s).addEventListener("change", render));
+$("#rs").addEventListener("click", () => { $("#q").value = ""; $("#fs").value = "all"; $("#ft").value = "all"; $("#fo").value = "status"; $("#fd").value = "all"; $("#fm").value = "all"; $("#fc").value = "all"; sel = P[0] ? P[0].id : null; render(); });
 $("#list").addEventListener("click", e => { const c = e.target.closest("[data-id]"); if (c) { sel = c.dataset.id; render(); } });
 $("#det").addEventListener("click", e => {
   if (e.target.closest("#save")) {

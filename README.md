@@ -48,11 +48,12 @@ Gemini 3.8 Flash は従量課金の料金表がある一方、無料枠の有無
 - 画面の状態: 選定可能=final / 要追加調査=必須項目は揃い他が不足 / 保留=必須項目が不足 / 未評価 / エラー / 除外。画面側で点数の再計算・換算・平均はしない。
 - `trl_level`(1〜9またはnull)は `long.v1.md` で別項目として出力させる。`technology_readiness`(0〜100)からは換算しない。
 - arXiv は所属情報を取得しないため、企業との `strong` 一致は成立しない(現時点では対象外として扱う)。
-- 情報源は PubMed / arXiv(論文)に加え、Google News RSS(`gnews`、企業名+ビジネス語クエリ)、ClinicalTrials.gov(`trials`、スポンサー名クエリ。published は最終更新日)、EDINET(`edinet`、証券コードクエリ。開示書類のメタデータ)を利用できる。論文以外の短文ソース(news / disclosure)は `screening.min_abstract_chars_by_info_type` で最低文字数を別に定める。
+- 情報源は PubMed / arXiv(論文)に加え、Google News RSS(`gnews`、企業名+ビジネス語クエリ)、ClinicalTrials.gov(`trials`、スポンサー名クエリ。published は最終更新日)、EDINET(`edinet`、証券コードクエリ。開示書類のメタデータ)、Yahoo Finance(`yahoo`、証券コードクエリ。財務諸表と財務指標)を利用できる。論文以外の短文ソース(news / disclosure)は `screening.min_abstract_chars_by_info_type` で最低文字数を別に定める。
 - ニュースは評価単位にしない。企業に紐付かないニュースは収集段階で捨て、転載・定型ページ・値動きまとめは媒体/タイトルフィルタで落とす。残ったニュースは「関連事業ニュース」として、同一企業(製品リンク経由を含む)の論文・治験・開示を評価するときにプロンプトへ同梱する補助根拠であり、サイトの候補一覧にも表示しない。
 - ニュースプールは報道(`gnews`)と企業発表(`prtimes`、PR TIMES の公式発表を site: 指定で収集)の二系統。同梱時に origin(企業発表/報道)を付け、同じ事実が両方で確認できる場合を信頼度の高い根拠として扱う擦り合わせを行う。
+- 財務根拠プール: 財務数値付きの開示・財務データだけを「関連財務根拠」として同一企業の評価へ同梱する(直近400日・最大2件)。実働ソースは Yahoo Finance(四半期・通期の損益、現預金・有利子負債・流動比率などを四半期ごとに1件の候補として収集)。EDINET もキー設定時は書類取得APIで財務書類から数値を抽出して同じプールに入る。論文・治験の抄録に存在しない売上・利益・現預金などの公表数値が、financial_sustainability / monetization の根拠になる。詳細ページにも表示する。
 - 企業クエリは sources.json には書かず、entities.json の `sector` と `watch`(news_name / prtimes_terms / sponsor / extra_keywords)から起動時に自動生成する(gnews=代表名+セクター別キーワード集合、trials=sponsor がある企業のみ、edinet=ticker がある企業のみ、prtimes=英日表記)。sources.json にはキーワード集合・生成パラメータ(entity_watch)とトピッククエリ(topics)だけを置く。生成結果は `trl.py queries` で確認できる。企業追加は entities.json の1エントリで完結する。
-- EDINET は Secret `EDINET_API_KEY` が必要。未設定のときは取得を自動でスキップする(エラーにしない)。現行はメタデータのみで、XBRL の財務数値抽出は未実装。
+- EDINET は Secret `EDINET_API_KEY` が必要。未設定のときは取得を自動でスキップする(エラーにしない)。財務数値の抽出は type=5 の CSV 形式を優先し、取れなければ type=1 の XBRL 本体を読む。抽出に失敗した書類はメタデータのみで登録される。現在はキーを取得できないため未使用(休眠)で、財務プールの実働は Yahoo Finance が担う。Yahoo Finance は非公式APIでキー・登録は不要。銘柄自体が無い企業(例: QPS研究所)は取得できない。
 - 失敗した情報源はログの `::warning::` とレポートに表示。全情報源が失敗したときだけジョブが失敗。
 - 評価基準を大きく変えたときは `trl.py purge --evaluations` で評価とレビューキューを全削除し、候補を未評価に戻せる(候補・収集物・実行履歴は残る)。ワークフローの手動実行で purge_evaluations=yes を選ぶと、削除→再評価→サイト再出力が一回の実行で完結する。
 
@@ -61,7 +62,7 @@ Gemini 3.8 Flash は従量課金の料金表がある一方、無料枠の有無
 
 **未検証**: 実際のPubMed/arXiv/AI API、GitHub Actions上の実行、`data`ブランチへの保存。
 
-**未実装**: 特許・IR資料の本文解析・市場データ、EDINETのXBRL財務数値抽出、需給分析、TRL9相当からの成長余地探索、過去イベントの事後検証、AI採点の妥当性検証。
+**未実装**: 特許・IR資料の本文解析・市場データ、需給分析、TRL9相当からの成長余地探索、過去イベントの事後検証、AI採点の妥当性検証。
 
 ## CLI
 ```

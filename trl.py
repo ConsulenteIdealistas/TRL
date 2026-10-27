@@ -28,6 +28,10 @@ from trlcore.sources.arxiv import URL, NS, _last_call, parse_feed, arxiv_fetch  
 from trlcore.sources.gnews import parse_feed as gnews_parse_feed, gnews_fetch, prtimes_fetch  # noqa: F401,E402
 from trlcore.sources.trials import parse_studies, trials_fetch  # noqa: F401,E402
 from trlcore.sources.edinet import sec_code, parse_results as edinet_parse_results, edinet_fetch  # noqa: F401,E402
+from trlcore.sources.edinet import parse_facts_csv as edinet_parse_facts_csv, parse_facts_xbrl as edinet_parse_facts_xbrl  # noqa: F401,E402
+from trlcore.sources.edinet import select_financials as edinet_select_financials, format_financials as edinet_format_financials  # noqa: F401,E402
+from trlcore.sources.edinet import fetch_financial_text as edinet_fetch_financial_text, FINANCIAL_MARKER as EDINET_FINANCIAL_MARKER  # noqa: F401,E402
+from trlcore.sources.yahoo import yahoo_fetch, parse_quote_summary as yahoo_parse_quote_summary  # noqa: F401,E402
 from trlcore.scoring import item_keys, validate_items, band_for, compute  # noqa: F401,E402
 from trlcore.entities import _norm_text, ENTITY_MODES, validate_entities, _contains, link_entities, entity_screen  # noqa: F401,E402
 from trlcore.config import __version__, ROOT, CONFIG_FILES, LLM_DEFAULTS, SOURCE_NAMES, validate_config, validate_sources, build_entity_queries, required_files, missing_files, load_config  # noqa: F401,E402

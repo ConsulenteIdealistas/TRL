@@ -5,7 +5,8 @@
   },
   "entity_watch": {
     "lookback_days": {
-      "edinet": 60,
+      "edinet": 120,
+      "yahoo": 400,
       "prtimes": 90,
       "trials": 365
     }

@@ -11,7 +11,10 @@ arxiv = NS(parse_feed=T.parse_feed, fetch=T.arxiv_fetch)
 gnews = NS(parse_feed=T.gnews_parse_feed, fetch=T.gnews_fetch)
 prtimes = NS(fetch=T.prtimes_fetch)
 trials = NS(parse=T.parse_studies, fetch=T.trials_fetch)
-edinet = NS(parse=T.edinet_parse_results, fetch=T.edinet_fetch, sec_code=T.sec_code)
+edinet = NS(parse=T.edinet_parse_results, fetch=T.edinet_fetch, sec_code=T.sec_code,
+            parse_facts_csv=T.edinet_parse_facts_csv, parse_facts_xbrl=T.edinet_parse_facts_xbrl,
+            select_financials=T.edinet_select_financials, format_financials=T.edinet_format_financials)
+yahoo = NS(fetch=T.yahoo_fetch, parse=T.yahoo_parse_quote_summary)
 ev = NS(validate_assessment=T.validate_assessment, validate_extraction=T.validate_extraction, evaluate_one=T.evaluate_one)
 
 import json
@@ -331,6 +334,231 @@ class NewSourceParseTests(unittest.TestCase):
             out = edinet.fetch("9348", 20, 30, AS_OF, http=lambda *a, **k: called.append(a) or b"{}")
         self.assertEqual(out, [])
         self.assertEqual(called, [])
+
+
+def fin_csv_bytes():
+    """EDINET type=5 の CSV 形式 (UTF-16・タブ区切り・全項目クォート) の最小再現。"""
+    header = ["要素ID", "項目名", "コンテキストID", "相対年度", "連結・個別", "期間・時点", "ユニットID", "通貨", "単位", "値"]
+    rows = [
+        ["jpsps:NetSalesSummaryOfBusinessResults", "売上高", "CurrentYearDuration", "当期", "連結", "期間", "JPY", "JPY", "円", "12345000000"],
+        ["jpsps:NetSalesSummaryOfBusinessResults", "売上高", "PriorYearDuration", "前期", "連結", "期間", "JPY", "JPY", "円", "10000000000"],
+        ["jpsps:NetSalesSummaryOfBusinessResults", "売上高", "CurrentYearDuration_NonConsolidatedMember", "当期", "個別", "期間", "JPY", "JPY", "円", "99999000000"],
+        ["jpsps:OperatingIncomeLossSummaryOfBusinessResults", "営業利益", "CurrentYearDuration", "当期", "連結", "期間", "JPY", "JPY", "円", "-500000000"],
+        ["jpsps:CashAndCashEquivalentsSummaryOfBusinessResults", "現金及び現金同等物", "CurrentYearInstant", "当期", "連結", "時点", "JPY", "JPY", "円", "30000000000"],
+        ["jpsps:EquityToAssetRatioSummaryOfBusinessResults", "自己資本比率", "CurrentYearInstant", "当期", "連結", "時点", "pure", "", "", "0.512"],
+    ]
+    lines = ["\t".join(f'"{c}"' for c in header)] + ["\t".join(f'"{c}"' for c in r) for r in rows]
+    return ("\r\n".join(lines) + "\r\n").encode("utf-16")
+
+
+FIN_XML = b"""<?xml version="1.0" encoding="utf-8"?>
+<xbrli:xbrl xmlns:xbrli="http://www.w3.org/2003/xbrl/instance" xmlns:xbrldi="http://xbrl.org/2006/xbrldi"
+  xmlns:jpsps="http://example.jp/jpsps" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<xbrli:context id="CurrentYearDuration"><xbrli:entity><xbrli:identifier scheme="s">E00001</xbrli:identifier></xbrli:entity>
+<xbrli:period><xbrli:startDate>2026-04-01</xbrli:startDate><xbrli:endDate>2027-03-31</xbrli:endDate></xbrli:period></xbrli:context>
+<xbrli:context id="CurrentYearInstant"><xbrli:entity><xbrli:identifier scheme="s">E00001</xbrli:identifier></xbrli:entity>
+<xbrli:period><xbrli:instant>2027-03-31</xbrli:instant></xbrli:period></xbrli:context>
+<xbrli:context id="CurrentYearInstant_NonConsolidatedMember"><xbrli:entity><xbrli:identifier scheme="s">E00001</xbrli:identifier>
+<xbrli:segment><xbrldi:explicitMember dimension="d">jpcrp:NonConsolidatedMember</xbrldi:explicitMember></xbrli:segment></xbrli:entity>
+<xbrli:period><xbrli:instant>2027-03-31</xbrli:instant></xbrli:period></xbrli:context>
+<jpsps:NetSalesSummaryOfBusinessResults contextRef="CurrentYearDuration" unitRef="JPY" decimals="-6">12345000000</jpsps:NetSalesSummaryOfBusinessResults>
+<jpsps:NetAssetsSummaryOfBusinessResults contextRef="CurrentYearInstant" unitRef="JPY" decimals="-6">8000000000</jpsps:NetAssetsSummaryOfBusinessResults>
+<jpsps:NetAssetsSummaryOfBusinessResults contextRef="CurrentYearInstant_NonConsolidatedMember" unitRef="JPY" decimals="-6">9999999999</jpsps:NetAssetsSummaryOfBusinessResults>
+</xbrli:xbrl>"""
+
+
+class EdinetFinancialTests(unittest.TestCase):
+    def test_csv_facts_select_format(self):
+        facts = edinet.parse_facts_csv(fin_csv_bytes())
+        sel = edinet.select_financials(facts)
+        self.assertEqual(sel["売上高"]["当期"], 12345000000.0)  # 個別の大きな値でなく連結を選ぶ
+        self.assertEqual(sel["売上高"]["前期"], 10000000000.0)
+        text = edinet.format_financials(sel)
+        self.assertIn("売上高 12,345百万円(前期 10,000百万円)", text)
+        self.assertIn("営業利益 △500百万円", text)
+        self.assertIn("現金及び現金同等物 30,000百万円", text)
+        self.assertIn("自己資本比率 51.2%", text)
+
+    def test_xbrl_facts_fallback(self):
+        facts = edinet.parse_facts_xbrl(FIN_XML)
+        sel = edinet.select_financials(facts)
+        self.assertEqual(sel["売上高"]["当期"], 12345000000.0)
+        self.assertEqual(sel["純資産"]["当期"], 8000000000.0)  # 非連結メンバーは選ばない
+
+    def test_fetch_enriches_financial_doc(self):
+        import os
+        from unittest import mock
+        from trlcore.sources import edinet as edinet_mod
+        edinet_mod._day_cache.clear()
+        edinet_mod._doc_cache.clear()
+        fin_doc = {"docID": "S100FIN", "edinetCode": "E00001", "secCode": "93480", "filerName": "株式会社ispace",
+                   "docDescription": "第2四半期報告書", "docTypeCode": "140", "xbrlFlag": "1",
+                   "submitDateTime": "2026-10-19 15:00", "periodStart": "2026-04-01",
+                   "periodEnd": "2026-09-30", "withdrawalStatus": "0"}
+
+        def fake_http(url, params=None, headers=None, **kw):
+            if url.endswith("documents.json"):
+                if params.get("date") == "2026-10-19":
+                    return json.dumps({"results": [fin_doc]}).encode()
+                return json.dumps({"results": []}).encode()
+            if "/documents/S100FIN" in url:
+                return fin_csv_bytes()
+            raise AssertionError(url)
+
+        with mock.patch.dict(os.environ, {"EDINET_API_KEY": "test-key"}):
+            out = edinet.fetch("9348", 20, 30, AS_OF, http=fake_http, sleep=lambda *_: None)
+        self.assertEqual(len(out), 1)
+        self.assertIn("財務数値(EDINET XBRL)", out[0]["abstract"])
+        self.assertIn("売上高 12,345百万円", out[0]["abstract"])
+
+    def test_fetch_financial_failure_falls_back_to_metadata(self):
+        import os
+        from unittest import mock
+        from trlcore.sources import edinet as edinet_mod
+        edinet_mod._day_cache.clear()
+        edinet_mod._doc_cache.clear()
+        fin_doc = {"docID": "S100FIN", "edinetCode": "E00001", "secCode": "93480", "filerName": "株式会社ispace",
+                   "docDescription": "第2四半期報告書", "docTypeCode": "140", "xbrlFlag": "1",
+                   "submitDateTime": "2026-10-19 15:00", "periodStart": "2026-04-01",
+                   "periodEnd": "2026-09-30", "withdrawalStatus": "0"}
+
+        def fake_http(url, params=None, headers=None, **kw):
+            if url.endswith("documents.json"):
+                if params.get("date") == "2026-10-19":
+                    return json.dumps({"results": [fin_doc]}).encode()
+                return json.dumps({"results": []}).encode()
+            raise RuntimeError("HTTP 500")
+
+        with mock.patch.dict(os.environ, {"EDINET_API_KEY": "test-key"}):
+            out = edinet.fetch("9348", 20, 30, AS_OF, http=fake_http, sleep=lambda *_: None)
+        self.assertEqual(len(out), 1)
+        self.assertNotIn("財務数値", out[0]["abstract"])
+
+
+YAHOO_SUMMARY = {
+    "quoteSummary": {"result": [{
+        "incomeStatementHistoryQuarterly": {"incomeStatementHistory": [
+            {"endDate": {"raw": 1782777600, "fmt": "2026-06-30"},
+             "totalRevenue": {"raw": 168000000}, "operatingIncome": {"raw": -5500000000},
+             "netIncome": {"raw": -6336000000}}]},
+        "incomeStatementHistory": {"incomeStatementHistory": [
+            {"endDate": {"raw": 1743379200, "fmt": "2025-03-31"},
+             "totalRevenue": {"raw": 1000000000}, "netIncome": {"raw": -9000000000}}]},
+        "balanceSheetHistory": {"balanceSheetStatements": [
+            {"endDate": {"raw": 1743379200, "fmt": "2025-03-31"},
+             "cash": {"raw": 25700000000}, "totalAssets": {"raw": 40000000000},
+             "totalStockholderEquity": {"raw": 10000000000},
+             "shortLongTermDebt": {"raw": 5000000000}, "longTermDebt": {"raw": 24760000000}}]},
+        "cashflowStatementHistoryQuarterly": {"cashflowStatements": [
+            {"endDate": {"raw": 1782777600, "fmt": "2026-06-30"},
+             "totalCashFromOperatingActivities": {"raw": -4000000000}}]},
+        "financialData": {"totalCash": {"raw": 25700000000}, "totalDebt": {"raw": 29760000000},
+                          "currentRatio": {"raw": 3.89}},
+        "quoteType": {"longName": "ispace, Inc.", "shortName": "ispace"},
+    }], "error": None}}
+
+
+class YahooFinancialTests(unittest.TestCase):
+    def setUp(self):
+        from trlcore.sources import yahoo as yahoo_mod
+        yahoo_mod._session["crumb"] = None
+        yahoo_mod._session["opener"] = None
+
+    def test_parse_quote_summary(self):
+        text, period, name = yahoo.parse(YAHOO_SUMMARY)
+        self.assertEqual(period, "2026-06-30")
+        self.assertEqual(name, "ispace, Inc.")
+        self.assertIn("売上高 168百万円", text)
+        self.assertIn("営業利益 △5,500百万円", text)
+        self.assertIn("自己資本比率 25.0%", text)
+        self.assertIn("現預金 25,700百万円", text)
+        self.assertIn("流動比率 3.89", text)
+
+    def test_fetch_builds_disclosure_candidate(self):
+        def fake_http(url, params=None, headers=None, **kw):
+            if "getcrumb" in url:
+                return b"crumb123"
+            if "fc.yahoo.com" in url:
+                raise RuntimeError("404")
+            if "quoteSummary" in url:
+                return json.dumps(YAHOO_SUMMARY).encode()
+            raise AssertionError(url)
+
+        out = yahoo.fetch("9348", 5, 400, AS_OF, http=fake_http, sleep=lambda *_: None)
+        self.assertEqual(len(out), 1)
+        r = out[0]
+        self.assertEqual((r["source"], r["info_type"], r["source_id"]), ("yahoo", "disclosure", "9348-2026-06-30"))
+        self.assertIn("財務数値(Yahoo Finance)", r["abstract"])
+        self.assertEqual(r["affiliations"], ["ispace, Inc."])
+
+    def test_fetch_stale_period_returns_nothing(self):
+        def fake_http(url, params=None, headers=None, **kw):
+            if "getcrumb" in url:
+                return b"crumb123"
+            if "fc.yahoo.com" in url:
+                raise RuntimeError("404")
+            return json.dumps(YAHOO_SUMMARY).encode()
+
+        out = yahoo.fetch("9348", 5, 400, date(2028, 1, 1), http=fake_http, sleep=lambda *_: None)
+        self.assertEqual(out, [])
+
+
+class FinancialPoolTests(unittest.TestCase):
+    """財務根拠プール: EDINET 開示の財務数値を同一企業の評価へ同梱する。"""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.path = Path(self.tmp.name) / "d" / "trl.sqlite"
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def _add(self, store, r):
+        rec, _ = normalize(r, "2026-10-20T00:00:00+00:00")
+        cid, _ = store.upsert_candidate(rec, "r0")
+        store.set_entities(cid, link_entities(rec, CFG.get("entities", {})))
+        store.set_status(cid, "screened")
+        return cid
+
+    def test_related_financials_pool(self):
+        store = Store(self.path)
+        paper = self._add(store, raw(sid="2610.7777", title="Debris removal study",
+                                     affiliations=["Astroscale Holdings Inc."]))
+        fin = {"source": "edinet", "source_id": "S100FIN", "title": "アストロスケール 第2四半期報告書",
+               "abstract": "EDINETに第2四半期報告書を提出した。財務数値(EDINET XBRL): 売上高 1,234百万円、現金及び現金同等物 30,000百万円。",
+               "url": "https://example.org/fin", "published": "2026-10-15",
+               "fields": ["EDINET", "四半期報告書"], "affiliations": ["Astroscale Holdings Inc."],
+               "info_type": "disclosure"}
+        self._add(store, fin)
+        yf = {"source": "yahoo", "source_id": "186A-2026-06-30", "title": "Astroscale Holdings Inc. 財務情報",
+              "abstract": "Astroscale Holdings Inc.(186A)の財務数値(Yahoo Finance): 直近四半期 売上高 1,200百万円。",
+              "url": "https://example.org/yf", "published": "2026-06-30",
+              "fields": ["Yahoo Finance", "財務"], "affiliations": ["Astroscale Holdings Inc."],
+              "info_type": "disclosure"}
+        self._add(store, yf)
+        plain = dict(fin, source_id="S100PLAIN", title="アストロスケール 臨時報告書",
+                     abstract="EDINETに臨時報告書を提出した。")
+        self._add(store, plain)
+        rel = store.related_financials(paper, AS_OF)
+        self.assertEqual(len(rel), 2)  # EDINET と Yahoo の両方が対象。数値マーカーの無い開示は入らない
+        self.assertTrue(all("財務数値(" in r["text"] for r in rel))
+        store.close()
+
+    def test_evaluate_one_includes_financials(self):
+        cand = {"id": "c1", "title": "T", "abstract": "A" * 300, "url": "u", "source": "trials",
+                "published": "2026-10-10", "fields": []}
+        seen = []
+        base = make_llm_fn(long_scores={k: 70 for k in LONG_KEYS})
+
+        def fn(p):
+            seen.append(p)
+            return base(p)
+
+        fins = [{"title": "X 四半期報告書", "published": "2026-10-15", "url": "https://example.org/f",
+                 "text": "財務数値(EDINET XBRL): 売上高 1,234百万円、現金及び現金同等物 30,000百万円。"}]
+        res = ev.evaluate_one(cand, "long", CFG, Mock(fn), AS_OF, financials=fins)
+        self.assertEqual(res["extra"]["related_financials_count"], 1)
+        self.assertTrue(any("関連財務根拠" in p and "30,000百万円" in p for p in seen))
 
 
 class DedupeStoreTests(unittest.TestCase):
@@ -966,32 +1194,32 @@ class EntityQueryGenerationTests(unittest.TestCase):
     },
     {
         "edinet": "186A",
-        "lookback_days": 60,
+        "lookback_days": 120,
         "name": "astroscale-edinet"
     },
     {
         "edinet": "9348",
-        "lookback_days": 60,
+        "lookback_days": 120,
         "name": "ispace-edinet"
     },
     {
         "edinet": "290A",
-        "lookback_days": 60,
+        "lookback_days": 120,
         "name": "synspective-edinet"
     },
     {
         "edinet": "4588",
-        "lookback_days": 60,
+        "lookback_days": 120,
         "name": "oncolys-edinet"
     },
     {
         "edinet": "4978",
-        "lookback_days": 60,
+        "lookback_days": 120,
         "name": "reprocell-edinet"
     },
     {
         "edinet": "4587",
-        "lookback_days": 60,
+        "lookback_days": 120,
         "name": "peptidream-edinet"
     },
     {

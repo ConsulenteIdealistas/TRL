@@ -9,7 +9,7 @@ from .entities import ENTITY_MODES, validate_entities
 
 __version__ = "0.1.0"
 
-SOURCE_NAMES = ("pubmed", "arxiv", "gnews", "prtimes", "trials", "edinet")
+SOURCE_NAMES = ("pubmed", "arxiv", "gnews", "prtimes", "trials", "edinet", "yahoo")
 
 
 ROOT = Path(__file__).resolve().parent.parent  # リポジトリ直下(trlcore/ の1つ上)
@@ -89,7 +89,7 @@ def validate_sources(src):
     """sources.json のスキーマ検証。
     {"defaults": {"max_results": int>0, "lookback_days": int>0},
      "keyword_sets": {sector: [str, ...]},
-     "entity_watch": {"lookback_days": {"gnews"/"prtimes"/"trials"/"edinet": int>0}},
+     "entity_watch": {"lookback_days": {"gnews"/"prtimes"/"trials"/"edinet"/"yahoo": int>0}},
      "topics": [クエリ, ...]}
     企業クエリは entities.json の watch から生成する(build_entity_queries)。
     "queries" は生成後に load_config が付ける実効リストで、あれば同じ形で検証する。"""
@@ -123,16 +123,16 @@ def validate_sources(src):
         _validate_query_list(src["queries"], "queries")
 
 
-WATCH_LOOKBACK_DEFAULTS = {"prtimes": 90, "trials": 365, "edinet": 60}
+WATCH_LOOKBACK_DEFAULTS = {"prtimes": 90, "trials": 365, "edinet": 60, "yahoo": 400}
 
 
 def build_entity_queries(entities, src):
     """entities.json の watch から企業クエリを生成する。
-    生成順は gnews(全社) → trials → edinet → prtimes で、各系統内は entities の並び順。
-    watch の無い企業は監視対象にしない。sponsor が無ければ trials、ticker が無ければ edinet を生成しない。"""
+    生成順は gnews(全社) → trials → edinet → yahoo → prtimes で、各系統内は entities の並び順。
+    watch の無い企業は監視対象にしない。sponsor が無ければ trials、ticker が無ければ edinet/yahoo を生成しない。"""
     ks = src.get("keyword_sets") or {}
     params = (src.get("entity_watch") or {}).get("lookback_days") or {}
-    groups = {"gnews": [], "trials": [], "edinet": [], "prtimes": []}
+    groups = {"gnews": [], "trials": [], "edinet": [], "yahoo": [], "prtimes": []}
     for e in (entities or {}).get("entities", []):
         w = e.get("watch")
         if not isinstance(w, dict):
@@ -152,10 +152,12 @@ def build_entity_queries(entities, src):
         if e.get("ticker"):
             groups["edinet"].append({"name": f"{eid}-edinet", "edinet": e["ticker"],
                                      "lookback_days": params.get("edinet", WATCH_LOOKBACK_DEFAULTS["edinet"])})
+            groups["yahoo"].append({"name": f"{eid}-yahoo", "yahoo": e["ticker"],
+                                    "lookback_days": params.get("yahoo", WATCH_LOOKBACK_DEFAULTS["yahoo"])})
         terms = w.get("prtimes_terms") or [news_name]
         groups["prtimes"].append({"name": f"{eid}-prtimes", "prtimes": "|".join(terms),
                                   "lookback_days": params.get("prtimes", WATCH_LOOKBACK_DEFAULTS["prtimes"])})
-    return groups["gnews"] + groups["trials"] + groups["edinet"] + groups["prtimes"]
+    return groups["gnews"] + groups["trials"] + groups["edinet"] + groups["yahoo"] + groups["prtimes"]
 
 
 CONFIG_FILES = ("scoring.json", "sources.json")

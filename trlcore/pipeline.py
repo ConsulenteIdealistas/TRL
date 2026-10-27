@@ -12,6 +12,7 @@ from .sources.arxiv import arxiv_fetch
 from .sources.gnews import gnews_fetch, prtimes_fetch
 from .sources.trials import trials_fetch
 from .sources.edinet import edinet_fetch
+from .sources.yahoo import yahoo_fetch
 from .entities import entity_screen, link_entities
 from .prompts import load_prompt
 from .llm import llm_settings
@@ -19,7 +20,8 @@ from .evaluate import evaluate_one, input_hash
 
 
 DEFAULT_FETCHERS = {"pubmed": pubmed_fetch, "arxiv": arxiv_fetch, "gnews": gnews_fetch,
-                    "prtimes": prtimes_fetch, "trials": trials_fetch, "edinet": edinet_fetch}
+                    "prtimes": prtimes_fetch, "trials": trials_fetch, "edinet": edinet_fetch,
+                    "yahoo": yahoo_fetch}
 
 
 def new_run_id(now=None):
@@ -202,14 +204,15 @@ def run_pipeline(store, cfg, llm, *, as_of, sources=("pubmed", "arxiv"), kinds=(
         extract_sha = None  # 評価側でエラーになる。キャッシュは使わない
     workers = max(1, st.get("eval_workers", 1))
 
-    def eval_candidate(c, extraction, meta, related, was_cached):
+    def eval_candidate(c, extraction, meta, related, financials, was_cached):
         # ワーカースレッドで動く。Store には触らず LLM 評価だけを行い、結果を返す。
         # 系統(long/event)は抽出を共有するため候補内では従来どおり直列に処理する
         per_kind = []
         entry_cached = was_cached
         for kind in kinds:
             eval_t0 = time.monotonic()
-            res = evaluate_one(c, kind, cfg, llm, as_of, extraction, meta, prompt_dir, related=related)
+            res = evaluate_one(c, kind, cfg, llm, as_of, extraction, meta, prompt_dir,
+                               related=related, financials=financials)
             per_kind.append((kind, res, time.monotonic() - eval_t0, entry_cached))
             if res.get("infra_failure"):
                 break  # この候補の残りの系統は打ち切る (従来どおり)
@@ -233,7 +236,8 @@ def run_pipeline(store, cfg, llm, *, as_of, sources=("pubmed", "arxiv"), kinds=(
             if extract_sha:
                 extraction, meta = store.get_extraction(input_hash(c, as_of), extract_sha, model)
             related = store.related_news(c["id"], as_of) if c.get("info_type") != "news" else None
-            prepared.append((extraction, meta, related, extraction is not None))
+            financials = store.related_financials(c["id"], as_of) if c.get("info_type") != "news" else None
+            prepared.append((extraction, meta, related, financials, extraction is not None))
             for kind in kinds:
                 log(f"[eval:start] {c['id']} {kind}")
         if workers > 1:

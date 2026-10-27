@@ -245,6 +245,26 @@ class Store:
                         "origin": "企業発表" if r["source"] == "prtimes" else "報道"})
         return out
 
+    def related_financials(self, cid, as_of, limit=2, window_days=400):
+        """同一企業に紐付く開示・財務データのうち、財務数値が抽出できたものを返す。
+
+        論文・治験の抄録には財務情報が原理的に含まれないため、公表財務数値を
+        評価時の「関連財務根拠」として同梱する材料。出典 (EDINET / Yahoo Finance) を
+        問わず、数値マーカー「財務数値(」を含む disclosure だけが対象。
+        """
+        start = (as_of - timedelta(days=window_days)).isoformat()
+        rows = self.conn.execute(
+            "SELECT DISTINCT n.title, n.published, n.url, n.abstract FROM candidates n "
+            "JOIN candidate_entities ne ON ne.candidate_id = n.id "
+            "JOIN candidate_entities ce ON ce.entity_id = ne.entity_id "
+            "WHERE ce.candidate_id = ? AND n.id != ? AND n.info_type = 'disclosure' "
+            "AND n.abstract LIKE '%財務数値(%' "
+            "AND n.published IS NOT NULL AND n.published <= ? AND n.published >= ? "
+            "ORDER BY n.published DESC LIMIT ?",
+            (cid, cid, as_of.isoformat(), start, limit)).fetchall()
+        return [{"title": r["title"], "published": r["published"], "url": r["url"],
+                 "text": r["abstract"]} for r in rows]
+
     # --- evaluations ---
     def add_evaluation(self, run_id, cid, ev):
         cur = self.conn.execute(

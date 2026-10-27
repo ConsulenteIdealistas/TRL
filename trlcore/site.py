@@ -92,6 +92,7 @@ def build_site_data(store, cfg, now=None):
             "display_status": display_status(c, long_ev, store),
             "long": long_ev, "event": event_ev, "entities": ents,
             "related_news": store.related_news(cid, pool_as_of) if pool_as_of else [],
+            "related_financials": store.related_financials(cid, pool_as_of) if pool_as_of else [],
             "queue": {k: queue[(cid, k)] for k in ("long", "event") if (cid, k) in queue}})
     run_out = None
     if run:

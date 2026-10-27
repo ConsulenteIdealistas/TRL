@@ -1024,6 +1024,29 @@ class NewsPoolTests(unittest.TestCase):
         self.assertEqual([c["id"] for c in sel], [strong, demo, theory])
         store.close()
 
+    def test_selection_reserves_paper_slots(self):
+        store = Store(self.path)
+
+        def add(r, info_type=None):
+            rec, _ = normalize(r, "2026-10-20T00:00:00+00:00")
+            if info_type:
+                rec["info_type"] = info_type
+            cid, _ = store.upsert_candidate(rec, "r0")
+            store.set_entities(cid, link_entities(rec, CFG.get("entities", {})))
+            store.set_status(cid, "screened")
+            return cid
+        # 治験は実証シグナルで常に上位に来るが、選定6件のうち2件は論文枠になる
+        trials = [add(raw(sid=f"2610.98{i:02d}", title=f"A Phase 2 study of compound {i}",
+                          published="2026-10-19"), info_type="trial") for i in range(6)]
+        papers = [add(raw(sid=f"2610.99{i:02d}", title=f"Peptide discovery research note {i}",
+                          published="2026-10-18")) for i in range(3)]
+        sel = select_for_eval(store, CFG, AS_OF, 6)
+        kinds = ["trial" if c["id"] in trials else "paper" for c in sel]
+        self.assertEqual(len(sel), 6)
+        self.assertEqual(kinds.count("paper"), 2)
+        self.assertTrue(all(p in [c["id"] for c in sel] for p in papers[:2]))
+        store.close()
+
     def test_selection_excludes_disclosure(self):
         store = Store(self.path)
         rec, _ = normalize(raw(sid="2610.9401", affiliations=["Astroscale Holdings Inc."]),
@@ -1418,6 +1441,11 @@ class EntityQueryGenerationTests(unittest.TestCase):
         "name": "peptidream-prtimes",
         "prtimes": "PeptiDream|ペプチドリーム",
         "lookback_days": 90
+    },
+    {
+        "name": "peptidream-pubmed",
+        "pubmed": "PeptiDream[Affiliation]",
+        "lookback_days": 365
     }
 ]
 

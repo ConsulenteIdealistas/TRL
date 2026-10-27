@@ -181,6 +181,33 @@ def select_for_eval(store, cfg, today, limit, retry_failed="no"):
         if key is not None:
             counts[key] = counts.get(key, 0) + 1
         capped.append(c)
+    # 論文枠: 治験は実証シグナルで常に上位に来るため、放置すると選定が治験だけで
+    # 埋まる。非治験 (論文) を一定数だけ確保し、論文が無ければ治験で埋める。
+    slots = sc.get("paper_slots_per_run", 0)
+    if slots and limit > 1:
+        papers = [c for c in capped if c.get("info_type") != "trial"]
+        want = min(slots, len(papers), limit)
+        picked, picked_ids, n_paper, n_trial = [], set(), 0, 0
+        for c in capped:
+            if len(picked) >= limit:
+                break
+            if c.get("info_type") == "trial":
+                if n_trial >= limit - want:
+                    continue
+                n_trial += 1
+            else:
+                if n_paper >= want:
+                    continue
+                n_paper += 1
+            picked.append(c)
+            picked_ids.add(c["id"])
+        for c in capped:  # 枠で確保しきれなかった分は順位順に埋める
+            if len(picked) >= limit:
+                break
+            if c["id"] not in picked_ids:
+                picked.append(c)
+                picked_ids.add(c["id"])
+        return picked
     return capped[:limit]
 
 

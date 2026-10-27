@@ -260,7 +260,8 @@
           "PeptiDream",
           "ペプチドリーム"
         ],
-        "sponsor": "PeptiDream"
+        "sponsor": "PeptiDream",
+        "pubmed": "PeptiDream[Affiliation]"
       },
       "products": [
         {
@@ -388,7 +389,8 @@
           "SanBio",
           "サンバイオ"
         ],
-        "sponsor": "SanBio"
+        "sponsor": "SanBio",
+        "pubmed": "SanBio[Affiliation]"
       },
       "products": [
         {
@@ -420,7 +422,8 @@
           "Healios",
           "ヘリオス"
         ],
-        "sponsor": "Healios"
+        "sponsor": "Healios",
+        "pubmed": "Healios[Affiliation]"
       },
       "products": [
         {

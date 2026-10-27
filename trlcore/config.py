@@ -42,6 +42,9 @@ def validate_config(cfg):
     v = sc.get("screening", {}).get("eval_queue_per_entity", 10)
     if isinstance(v, bool) or not isinstance(v, int) or v < 0:
         raise ConfigError("scoring.json: screening.eval_queue_per_entity must be a non-negative integer")
+    v = sc.get("screening", {}).get("paper_slots_per_run", 0)
+    if isinstance(v, bool) or not isinstance(v, int) or v < 0:
+        raise ConfigError("scoring.json: screening.paper_slots_per_run must be a non-negative integer")
     for k in ("extract", "long", "event"):
         if not isinstance(sc.get("prompts", {}).get(k), str) or not sc["prompts"][k]:
             raise ConfigError(f"scoring.json: prompts.{k} (version string) is required")
@@ -128,7 +131,7 @@ def validate_sources(src):
         _validate_query_list(src["queries"], "queries")
 
 
-WATCH_LOOKBACK_DEFAULTS = {"prtimes": 90, "trials": 365, "edinet": 60, "yahoo": 400}
+WATCH_LOOKBACK_DEFAULTS = {"prtimes": 90, "trials": 365, "edinet": 60, "yahoo": 400, "pubmed": 365}
 
 
 # 市場ごとの Yahoo シンボル接尾辞と Google News ロケール。market 未指定は JP。
@@ -157,7 +160,7 @@ def build_entity_queries(entities, src):
     英語キーワード集合(keyword_sets_en)を使い、yahoo は市場の接尾辞つきシンボルにする。"""
     ks = src.get("keyword_sets") or {}
     params = (src.get("entity_watch") or {}).get("lookback_days") or {}
-    groups = {"gnews": [], "trials": [], "edinet": [], "yahoo": [], "prtimes": []}
+    groups = {"gnews": [], "trials": [], "edinet": [], "yahoo": [], "prtimes": [], "pubmed": []}
     for e in (entities or {}).get("entities", []):
         w = e.get("watch")
         if not isinstance(w, dict):
@@ -195,7 +198,13 @@ def build_entity_queries(entities, src):
             terms = w.get("prtimes_terms") or [news_name]
             groups["prtimes"].append({"name": f"{eid}-prtimes", "prtimes": "|".join(terms),
                                       "lookback_days": params.get("prtimes", WATCH_LOOKBACK_DEFAULTS["prtimes"])})
-    return groups["gnews"] + groups["trials"] + groups["edinet"] + groups["yahoo"] + groups["prtimes"]
+        if w.get("pubmed"):
+            # 企業所属の論文 (著者の所属で検索するので strong リンクになる)。
+            # 論文を出す研究型の企業だけに watch.pubmed を設定する
+            groups["pubmed"].append({"name": f"{eid}-pubmed", "pubmed": w["pubmed"],
+                                     "lookback_days": params.get("pubmed", WATCH_LOOKBACK_DEFAULTS["pubmed"])})
+    return (groups["gnews"] + groups["trials"] + groups["edinet"] + groups["yahoo"]
+            + groups["prtimes"] + groups["pubmed"])
 
 
 CONFIG_FILES = ("scoring.json", "sources.json")

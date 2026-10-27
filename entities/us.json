@@ -125,7 +125,8 @@
           "Casgevy",
           "gene editing",
           "sickle cell"
-        ]
+        ],
+        "pubmed": "CRISPR Therapeutics[Affiliation]"
       }
     },
     {
@@ -147,7 +148,8 @@
           "mRNA",
           "Spikevax",
           "vaccine"
-        ]
+        ],
+        "pubmed": "Moderna[Affiliation]"
       }
     },
     {
@@ -168,7 +170,8 @@
         "extra_keywords": [
           "base editing",
           "BEAM-101"
-        ]
+        ],
+        "pubmed": "Beam Therapeutics[Affiliation]"
       }
     },
     {
@@ -231,7 +234,8 @@
           "clinical data",
           "genomic testing",
           "precision medicine"
-        ]
+        ],
+        "pubmed": "Tempus Labs[Affiliation]"
       }
     },
     {
@@ -253,7 +257,8 @@
           "AI drug discovery",
           "REC-994",
           "phenomics"
-        ]
+        ],
+        "pubmed": "Recursion Pharmaceuticals[Affiliation]"
       }
     },
     {

@@ -71,7 +71,8 @@
     "max_eval_per_run": 6,
     "reeval_after_days": 14,
     "max_retries": 3,
-    "eval_queue_per_entity": 10
+    "eval_queue_per_entity": 10,
+    "paper_slots_per_run": 2
   },
   "llm": {
     "timeout_sec": 120,

@@ -1,803 +1,808 @@
 {
-  "entities": [
+ "entities": [
+  {
+   "id": "astroscale",
+   "name": "Astroscale Holdings Inc.",
+   "aliases": [
+    "Astroscale",
+    "アストロスケール",
+    "アストロスケールホールディングス"
+   ],
+   "ticker": "186A",
+   "exchange": "TSE",
+   "sector": "space",
+   "tier": "core",
+   "watch": {
+    "news_name": "アストロスケール",
+    "prtimes_terms": [
+     "Astroscale",
+     "アストロスケール"
+    ]
+   },
+   "products": [
     {
-      "id": "astroscale",
-      "name": "Astroscale Holdings Inc.",
-      "aliases": [
-        "Astroscale",
-        "アストロスケール",
-        "アストロスケールホールディングス"
-      ],
-      "ticker": "186A",
-      "exchange": "TSE",
-      "sector": "space",
-      "tier": "core",
-      "watch": {
-        "news_name": "アストロスケール",
-        "prtimes_terms": [
-          "Astroscale",
-          "アストロスケール"
-        ]
-      },
-      "products": [
-        {
-          "id": "adras_j",
-          "name": "ADRAS-J",
-          "aliases": [
-            "ADRAS-J",
-            "ADRAS J"
-          ],
-          "type": "space_mission"
-        },
-        {
-          "id": "elsa_d",
-          "name": "ELSA-d",
-          "aliases": [
-            "ELSA-d",
-            "ELSA D"
-          ],
-          "type": "debris_removal_demonstration"
-        },
-        {
-          "id": "elsa_m",
-          "name": "ELSA-M",
-          "aliases": [
-            "ELSA-M",
-            "ELSA M"
-          ],
-          "type": "debris_removal_service"
-        }
-      ]
+     "id": "adras_j",
+     "name": "ADRAS-J",
+     "aliases": [
+      "ADRAS-J",
+      "ADRAS J"
+     ],
+     "type": "space_mission"
     },
     {
-      "id": "ispace",
-      "name": "ispace, inc.",
-      "aliases": [
-        "ispace",
-        "株式会社ispace",
-        "アイスペース"
-      ],
-      "ticker": "9348",
-      "exchange": "TSE",
-      "sector": "space",
-      "tier": "core",
-      "watch": {
-        "news_name": "ispace",
-        "prtimes_terms": [
-          "ispace"
-        ],
-        "extra_keywords": [
-          "月面"
-        ]
-      },
-      "products": [
-        {
-          "id": "hakuto_r",
-          "name": "HAKUTO-R",
-          "aliases": [
-            "HAKUTO-R",
-            "HAKUTO R"
-          ],
-          "type": "lunar_exploration_program"
-        },
-        {
-          "id": "resilience",
-          "name": "RESILIENCE lunar lander",
-          "aliases": [
-            "RESILIENCE lander",
-            "RESILIENCE lunar lander"
-          ],
-          "type": "lunar_lander"
-        },
-        {
-          "id": "tenacious",
-          "name": "TENACIOUS rover",
-          "aliases": [
-            "TENACIOUS rover",
-            "TENACIOUS lunar rover"
-          ],
-          "type": "lunar_rover"
-        }
-      ]
+     "id": "elsa_d",
+     "name": "ELSA-d",
+     "aliases": [
+      "ELSA-d",
+      "ELSA D"
+     ],
+     "type": "debris_removal_demonstration"
     },
     {
-      "id": "synspective",
-      "name": "Synspective Inc.",
-      "aliases": [
-        "Synspective",
-        "株式会社Synspective",
-        "シンスペクティブ"
-      ],
-      "ticker": "290A",
-      "exchange": "TSE",
-      "sector": "space",
-      "tier": "core",
-      "watch": {
-        "news_name": "Synspective",
-        "prtimes_terms": [
-          "Synspective",
-          "シンスペクティブ"
-        ],
-        "extra_keywords": [
-          "衛星"
-        ]
-      },
-      "products": [
-        {
-          "id": "strix",
-          "name": "StriX",
-          "aliases": [
-            "StriX satellite",
-            "StriX SAR satellite",
-            "ストリクス"
-          ],
-          "type": "sar_satellite"
-        },
-        {
-          "id": "sar_data",
-          "name": "SAR data and analytics",
-          "aliases": [
-            "SAR data",
-            "SAR satellite data"
-          ],
-          "type": "data_service"
-        }
-      ]
-    },
-    {
-      "id": "oncolys",
-      "name": "Oncolys BioPharma Inc.",
-      "aliases": [
-        "オンコリスバイオファーマ",
-        "オンコリス"
-      ],
-      "ticker": "4588",
-      "exchange": "TSE",
-      "sector": "bio",
-      "tier": "watch",
-      "watch": {
-        "news_name": "オンコリスバイオファーマ",
-        "prtimes_terms": [
-          "Oncolys",
-          "オンコリス"
-        ],
-        "sponsor": "Oncolys BioPharma"
-      },
-      "products": [
-        {
-          "id": "telomelysin",
-          "name": "Telomelysin",
-          "aliases": [
-            "テロメライシン",
-            "OBP-301",
-            "OBP301"
-          ],
-          "type": "drug_candidate"
-        },
-        {
-          "id": "obp_702",
-          "name": "OBP-702",
-          "aliases": [
-            "OBP702"
-          ],
-          "type": "drug_candidate"
-        }
-      ]
-    },
-    {
-      "id": "reprocell",
-      "name": "REPROCELL Inc.",
-      "aliases": [
-        "REPROCELL",
-        "リプロセル",
-        "株式会社リプロセル"
-      ],
-      "ticker": "4978",
-      "exchange": "TSE",
-      "sector": "bio",
-      "tier": "watch",
-      "watch": {
-        "news_name": "リプロセル",
-        "prtimes_terms": [
-          "REPROCELL",
-          "リプロセル"
-        ],
-        "sponsor": "REPROCELL"
-      },
-      "products": [
-        {
-          "id": "stemchymal",
-          "name": "Stemchymal",
-          "aliases": [
-            "Stemchymal",
-            "ステムカイマル"
-          ],
-          "type": "cell_therapy_candidate"
-        },
-        {
-          "id": "igrp",
-          "name": "iPS-derived neural glial progenitor cells",
-          "aliases": [
-            "iGRP"
-          ],
-          "type": "cell_therapy_candidate"
-        },
-        {
-          "id": "til_therapy",
-          "name": "TIL therapy",
-          "aliases": [
-            "TIL療法",
-            "tumor-infiltrating lymphocyte therapy"
-          ],
-          "type": "cell_therapy"
-        },
-        {
-          "id": "gpc1_cart",
-          "name": "Glypican-1 CAR-T therapy",
-          "aliases": [
-            "GPC1 CAR-T",
-            "Glypican-1 CAR-T"
-          ],
-          "type": "cell_therapy"
-        }
-      ]
-    },
-    {
-      "id": "peptidream",
-      "name": "PeptiDream Inc.",
-      "aliases": [
-        "PeptiDream",
-        "ペプチドリーム",
-        "ペプチドリーム株式会社"
-      ],
-      "ticker": "4587",
-      "exchange": "TSE",
-      "sector": "bio",
-      "tier": "core",
-      "watch": {
-        "news_name": "ペプチドリーム",
-        "prtimes_terms": [
-          "PeptiDream",
-          "ペプチドリーム"
-        ],
-        "sponsor": "PeptiDream",
-        "pubmed": "PeptiDream[Affiliation]"
-      },
-      "products": [
-        {
-          "id": "pdps",
-          "name": "Peptide Discovery Platform System",
-          "aliases": [
-            "PDPS"
-          ],
-          "type": "drug_discovery_platform"
-        },
-        {
-          "id": "pd_32766",
-          "name": "PD-32766",
-          "aliases": [
-            "PD32766"
-          ],
-          "type": "radiopharmaceutical_candidate"
-        },
-        {
-          "id": "pd_29875",
-          "name": "PD-29875",
-          "aliases": [
-            "PD29875"
-          ],
-          "type": "radiopharmaceutical_candidate"
-        },
-        {
-          "id": "mod_b",
-          "name": "MOD-B",
-          "aliases": [
-            "MOD B"
-          ],
-          "type": "drug_candidate"
-        }
-      ]
-    },
-    {
-      "id": "qps",
-      "name": "Institute for Q-shu Pioneers of Space, Inc.",
-      "aliases": [
-        "QPS研究所",
-        "QPS Institute"
-      ],
-      "ticker": "5595",
-      "exchange": "TSE",
-      "sector": "space",
-      "tier": "core",
-      "watch": {
-        "news_name": "QPS研究所",
-        "prtimes_terms": [
-          "QPS研究所"
-        ]
-      },
-      "products": [
-        {
-          "id": "qps_sar",
-          "name": "QPS-SAR",
-          "aliases": [
-            "QPS-SAR"
-          ],
-          "type": "sar_satellite"
-        }
-      ]
-    },
-    {
-      "id": "axelspace",
-      "name": "Axelspace Holdings Inc.",
-      "aliases": [
-        "Axelspace",
-        "アクセルスペース",
-        "アクセルスペースホールディングス"
-      ],
-      "ticker": "402A",
-      "exchange": "TSE",
-      "sector": "space",
-      "tier": "core",
-      "watch": {
-        "news_name": "アクセルスペース",
-        "prtimes_terms": [
-          "Axelspace",
-          "アクセルスペース"
-        ]
-      },
-      "products": [
-        {
-          "id": "grus",
-          "name": "GRUS",
-          "aliases": [
-            "GRUS"
-          ],
-          "type": "earth_observation_satellite"
-        },
-        {
-          "id": "axelglobe",
-          "name": "AxelGlobe",
-          "aliases": [
-            "AxelGlobe"
-          ],
-          "type": "earth_observation_service"
-        },
-        {
-          "id": "axelliner",
-          "name": "AxelLiner",
-          "aliases": [
-            "AxelLiner"
-          ],
-          "type": "satellite_platform"
-        }
-      ]
-    },
-    {
-      "id": "sanbio",
-      "name": "SanBio Co., Ltd.",
-      "aliases": [
-        "SanBio",
-        "サンバイオ"
-      ],
-      "ticker": "4592",
-      "exchange": "TSE",
-      "sector": "bio",
-      "tier": "core",
-      "watch": {
-        "news_name": "サンバイオ",
-        "prtimes_terms": [
-          "SanBio",
-          "サンバイオ"
-        ],
-        "sponsor": "SanBio",
-        "pubmed": "SanBio[Affiliation]"
-      },
-      "products": [
-        {
-          "id": "akuugo",
-          "name": "アクーゴ",
-          "aliases": [
-            "アクーゴ",
-            "AKUUGO",
-            "SB623"
-          ],
-          "type": "regenerative_cell_medicine"
-        }
-      ]
-    },
-    {
-      "id": "healios",
-      "name": "HEALIOS K.K.",
-      "aliases": [
-        "Healios",
-        "ヘリオス"
-      ],
-      "ticker": "4593",
-      "exchange": "TSE",
-      "sector": "bio",
-      "tier": "core",
-      "watch": {
-        "news_name": "ヘリオス",
-        "prtimes_terms": [
-          "Healios",
-          "ヘリオス"
-        ],
-        "sponsor": "Healios",
-        "pubmed": "Healios[Affiliation]"
-      },
-      "products": [
-        {
-          "id": "hlcm051",
-          "name": "HLCM051",
-          "aliases": [
-            "HLCM051"
-          ],
-          "type": "somatic_stem_cell_therapy"
-        }
-      ]
-    },
-    {
-      "id": "stella_pharma",
-      "name": "Stella Pharma Corporation",
-      "aliases": [
-        "Stella Pharma",
-        "ステラファーマ"
-      ],
-      "ticker": "4888",
-      "exchange": "TSE",
-      "sector": "bio",
-      "tier": "core",
-      "watch": {
-        "news_name": "ステラファーマ",
-        "prtimes_terms": [
-          "Stella Pharma",
-          "ステラファーマ"
-        ],
-        "sponsor": "Stella Pharma"
-      },
-      "products": [
-        {
-          "id": "spm011",
-          "name": "ステボロニン",
-          "aliases": [
-            "ステボロニン",
-            "SPM-011",
-            "Steboronine"
-          ],
-          "type": "bnct_drug"
-        }
-      ]
-    },
-    {
-      "id": "kringle",
-      "name": "Kringle Pharma, Inc.",
-      "aliases": [
-        "Kringle Pharma",
-        "クリングルファーマ",
-        "クリングル"
-      ],
-      "ticker": "4884",
-      "exchange": "TSE",
-      "sector": "bio",
-      "tier": "watch",
-      "watch": {
-        "news_name": "クリングルファーマ",
-        "prtimes_terms": [
-          "Kringle",
-          "クリングル"
-        ],
-        "sponsor": "Kringle Pharma"
-      },
-      "products": [
-        {
-          "id": "kp100",
-          "name": "KP-100",
-          "aliases": [
-            "KP-100"
-          ],
-          "type": "hgf_protein_therapy"
-        }
-      ]
-    },
-    {
-      "id": "stemrim",
-      "name": "StemRIM Inc.",
-      "aliases": [
-        "StemRIM",
-        "ステムリム"
-      ],
-      "ticker": "4599",
-      "exchange": "TSE",
-      "sector": "bio",
-      "tier": "watch",
-      "watch": {
-        "news_name": "ステムリム",
-        "prtimes_terms": [
-          "StemRIM",
-          "ステムリム"
-        ],
-        "sponsor": "StemRIM"
-      },
-      "products": [
-        {
-          "id": "redasemtide",
-          "name": "レダセムチド",
-          "aliases": [
-            "レダセムチド",
-            "redasemtide"
-          ],
-          "type": "regenerative_drug"
-        }
-      ]
-    },
-    {
-      "id": "pksha",
-      "name": "PKSHA Technology Inc.",
-      "aliases": [
-        "PKSHA",
-        "パークシャ"
-      ],
-      "ticker": "3993",
-      "exchange": "TSE",
-      "sector": "ai",
-      "tier": "core",
-      "watch": {
-        "news_name": "PKSHA",
-        "prtimes_terms": [
-          "PKSHA"
-        ]
-      },
-      "products": [
-        {
-          "id": "pksha_chatbot",
-          "name": "PKSHA Chatbot",
-          "aliases": [
-            "PKSHA Chatbot"
-          ],
-          "type": "ai_saas"
-        },
-        {
-          "id": "pksha_algorithm",
-          "name": "PKSHA Algorithm",
-          "aliases": [
-            "PKSHA Algorithm"
-          ],
-          "type": "ai_algorithm"
-        }
-      ]
-    },
-    {
-      "id": "fronteo",
-      "name": "FRONTEO, Inc.",
-      "aliases": [
-        "FRONTEO",
-        "フロンテオ"
-      ],
-      "ticker": "2158",
-      "exchange": "TSE",
-      "sector": "ai",
-      "tier": "core",
-      "watch": {
-        "news_name": "FRONTEO",
-        "prtimes_terms": [
-          "FRONTEO",
-          "フロンテオ"
-        ]
-      },
-      "products": [
-        {
-          "id": "kibit",
-          "name": "KIBIT",
-          "aliases": [
-            "KIBIT"
-          ],
-          "type": "ai_platform"
-        }
-      ]
-    },
-    {
-      "id": "exawizards",
-      "name": "ExaWizards Inc.",
-      "aliases": [
-        "ExaWizards",
-        "エクサウィザーズ"
-      ],
-      "ticker": "4259",
-      "exchange": "TSE",
-      "sector": "ai",
-      "tier": "core",
-      "watch": {
-        "news_name": "エクサウィザーズ",
-        "prtimes_terms": [
-          "ExaWizards",
-          "エクサウィザーズ"
-        ]
-      },
-      "products": [
-        {
-          "id": "exabase",
-          "name": "exaBase",
-          "aliases": [
-            "exaBase"
-          ],
-          "type": "ai_platform"
-        }
-      ]
-    },
-    {
-      "id": "heroz",
-      "name": "HEROZ, Inc.",
-      "aliases": [
-        "HEROZ",
-        "ヒーローズ"
-      ],
-      "ticker": "4382",
-      "exchange": "TSE",
-      "sector": "ai",
-      "tier": "core",
-      "watch": {
-        "news_name": "HEROZ",
-        "prtimes_terms": [
-          "HEROZ"
-        ]
-      },
-      "products": [
-        {
-          "id": "kishin",
-          "name": "HEROZ Kishin",
-          "aliases": [
-            "HEROZ Kishin",
-            "Kishin"
-          ],
-          "type": "ai_engine"
-        }
-      ]
-    },
-    {
-      "id": "cyberdyne",
-      "name": "CYBERDYNE, Inc.",
-      "aliases": [
-        "CYBERDYNE",
-        "サイバーダイン"
-      ],
-      "ticker": "7779",
-      "exchange": "TSE",
-      "sector": "ai",
-      "tier": "watch",
-      "watch": {
-        "news_name": "サイバーダイン",
-        "prtimes_terms": [
-          "CYBERDYNE",
-          "サイバーダイン"
-        ]
-      },
-      "products": [
-        {
-          "id": "hal",
-          "name": "HAL",
-          "aliases": [
-            "HAL",
-            "Hybrid Assistive Limb"
-          ],
-          "type": "wearable_robot"
-        }
-      ]
-    },
-    {
-      "id": "lasertec",
-      "name": "Lasertec Corporation",
-      "aliases": [
-        "Lasertec",
-        "レーザーテック"
-      ],
-      "ticker": "6920",
-      "exchange": "TSE",
-      "sector": "semiconductor",
-      "tier": "core",
-      "watch": {
-        "news_name": "レーザーテック",
-        "prtimes_terms": [
-          "Lasertec",
-          "レーザーテック"
-        ]
-      },
-      "products": [
-        {
-          "id": "actis",
-          "name": "ACTIS",
-          "aliases": [
-            "ACTIS"
-          ],
-          "type": "mask_inspection_system"
-        }
-      ]
-    },
-    {
-      "id": "socionext",
-      "name": "Socionext Inc.",
-      "aliases": [
-        "Socionext",
-        "ソシオネクスト"
-      ],
-      "ticker": "6526",
-      "exchange": "TSE",
-      "sector": "semiconductor",
-      "tier": "core",
-      "watch": {
-        "news_name": "ソシオネクスト",
-        "prtimes_terms": [
-          "Socionext",
-          "ソシオネクスト"
-        ]
-      },
-      "products": [
-        {
-          "id": "custom_soc",
-          "name": "カスタムSoC",
-          "aliases": [
-            "カスタムSoC"
-          ],
-          "type": "soc_design"
-        }
-      ]
-    },
-    {
-      "id": "thine",
-      "name": "THine Electronics, Inc.",
-      "aliases": [
-        "THine",
-        "ザインエレクトロニクス",
-        "ザイン"
-      ],
-      "ticker": "6769",
-      "exchange": "TSE",
-      "sector": "semiconductor",
-      "tier": "watch",
-      "watch": {
-        "news_name": "ザインエレクトロニクス",
-        "prtimes_terms": [
-          "ザインエレクトロニクス"
-        ]
-      },
-      "products": [
-        {
-          "id": "vbyone",
-          "name": "V-by-One",
-          "aliases": [
-            "V-by-One"
-          ],
-          "type": "interface_lsi"
-        }
-      ]
-    },
-    {
-      "id": "torex",
-      "name": "Torex Semiconductor Ltd.",
-      "aliases": [
-        "Torex",
-        "トレックス・セミコンダクター",
-        "トレックス"
-      ],
-      "ticker": "6616",
-      "exchange": "TSE",
-      "sector": "semiconductor",
-      "tier": "watch",
-      "watch": {
-        "news_name": "トレックス・セミコンダクター",
-        "prtimes_terms": [
-          "トレックス・セミコンダクター"
-        ]
-      },
-      "products": [
-        {
-          "id": "xcl",
-          "name": "XCLシリーズ",
-          "aliases": [
-            "XCLシリーズ"
-          ],
-          "type": "power_ic"
-        }
-      ]
+     "id": "elsa_m",
+     "name": "ELSA-M",
+     "aliases": [
+      "ELSA-M",
+      "ELSA M"
+     ],
+     "type": "debris_removal_service"
     }
-  ]
+   ]
+  },
+  {
+   "id": "ispace",
+   "name": "ispace, inc.",
+   "aliases": [
+    "ispace",
+    "株式会社ispace",
+    "アイスペース"
+   ],
+   "ticker": "9348",
+   "exchange": "TSE",
+   "sector": "space",
+   "tier": "core",
+   "watch": {
+    "news_name": "ispace",
+    "prtimes_terms": [
+     "ispace"
+    ],
+    "extra_keywords": [
+     "月面"
+    ],
+    "openalex": "I4405267988"
+   },
+   "products": [
+    {
+     "id": "hakuto_r",
+     "name": "HAKUTO-R",
+     "aliases": [
+      "HAKUTO-R",
+      "HAKUTO R"
+     ],
+     "type": "lunar_exploration_program"
+    },
+    {
+     "id": "resilience",
+     "name": "RESILIENCE lunar lander",
+     "aliases": [
+      "RESILIENCE lander",
+      "RESILIENCE lunar lander"
+     ],
+     "type": "lunar_lander"
+    },
+    {
+     "id": "tenacious",
+     "name": "TENACIOUS rover",
+     "aliases": [
+      "TENACIOUS rover",
+      "TENACIOUS lunar rover"
+     ],
+     "type": "lunar_rover"
+    }
+   ]
+  },
+  {
+   "id": "synspective",
+   "name": "Synspective Inc.",
+   "aliases": [
+    "Synspective",
+    "株式会社Synspective",
+    "シンスペクティブ"
+   ],
+   "ticker": "290A",
+   "exchange": "TSE",
+   "sector": "space",
+   "tier": "core",
+   "watch": {
+    "news_name": "Synspective",
+    "prtimes_terms": [
+     "Synspective",
+     "シンスペクティブ"
+    ],
+    "extra_keywords": [
+     "衛星"
+    ]
+   },
+   "products": [
+    {
+     "id": "strix",
+     "name": "StriX",
+     "aliases": [
+      "StriX satellite",
+      "StriX SAR satellite",
+      "ストリクス"
+     ],
+     "type": "sar_satellite"
+    },
+    {
+     "id": "sar_data",
+     "name": "SAR data and analytics",
+     "aliases": [
+      "SAR data",
+      "SAR satellite data"
+     ],
+     "type": "data_service"
+    }
+   ]
+  },
+  {
+   "id": "oncolys",
+   "name": "Oncolys BioPharma Inc.",
+   "aliases": [
+    "オンコリスバイオファーマ",
+    "オンコリス"
+   ],
+   "ticker": "4588",
+   "exchange": "TSE",
+   "sector": "bio",
+   "tier": "watch",
+   "watch": {
+    "news_name": "オンコリスバイオファーマ",
+    "prtimes_terms": [
+     "Oncolys",
+     "オンコリス"
+    ],
+    "sponsor": "Oncolys BioPharma"
+   },
+   "products": [
+    {
+     "id": "telomelysin",
+     "name": "Telomelysin",
+     "aliases": [
+      "テロメライシン",
+      "OBP-301",
+      "OBP301"
+     ],
+     "type": "drug_candidate"
+    },
+    {
+     "id": "obp_702",
+     "name": "OBP-702",
+     "aliases": [
+      "OBP702"
+     ],
+     "type": "drug_candidate"
+    }
+   ]
+  },
+  {
+   "id": "reprocell",
+   "name": "REPROCELL Inc.",
+   "aliases": [
+    "REPROCELL",
+    "リプロセル",
+    "株式会社リプロセル"
+   ],
+   "ticker": "4978",
+   "exchange": "TSE",
+   "sector": "bio",
+   "tier": "watch",
+   "watch": {
+    "news_name": "リプロセル",
+    "prtimes_terms": [
+     "REPROCELL",
+     "リプロセル"
+    ],
+    "sponsor": "REPROCELL"
+   },
+   "products": [
+    {
+     "id": "stemchymal",
+     "name": "Stemchymal",
+     "aliases": [
+      "Stemchymal",
+      "ステムカイマル"
+     ],
+     "type": "cell_therapy_candidate"
+    },
+    {
+     "id": "igrp",
+     "name": "iPS-derived neural glial progenitor cells",
+     "aliases": [
+      "iGRP"
+     ],
+     "type": "cell_therapy_candidate"
+    },
+    {
+     "id": "til_therapy",
+     "name": "TIL therapy",
+     "aliases": [
+      "TIL療法",
+      "tumor-infiltrating lymphocyte therapy"
+     ],
+     "type": "cell_therapy"
+    },
+    {
+     "id": "gpc1_cart",
+     "name": "Glypican-1 CAR-T therapy",
+     "aliases": [
+      "GPC1 CAR-T",
+      "Glypican-1 CAR-T"
+     ],
+     "type": "cell_therapy"
+    }
+   ]
+  },
+  {
+   "id": "peptidream",
+   "name": "PeptiDream Inc.",
+   "aliases": [
+    "PeptiDream",
+    "ペプチドリーム",
+    "ペプチドリーム株式会社"
+   ],
+   "ticker": "4587",
+   "exchange": "TSE",
+   "sector": "bio",
+   "tier": "core",
+   "watch": {
+    "news_name": "ペプチドリーム",
+    "prtimes_terms": [
+     "PeptiDream",
+     "ペプチドリーム"
+    ],
+    "sponsor": "PeptiDream",
+    "pubmed": "PeptiDream[Affiliation]"
+   },
+   "products": [
+    {
+     "id": "pdps",
+     "name": "Peptide Discovery Platform System",
+     "aliases": [
+      "PDPS"
+     ],
+     "type": "drug_discovery_platform"
+    },
+    {
+     "id": "pd_32766",
+     "name": "PD-32766",
+     "aliases": [
+      "PD32766"
+     ],
+     "type": "radiopharmaceutical_candidate"
+    },
+    {
+     "id": "pd_29875",
+     "name": "PD-29875",
+     "aliases": [
+      "PD29875"
+     ],
+     "type": "radiopharmaceutical_candidate"
+    },
+    {
+     "id": "mod_b",
+     "name": "MOD-B",
+     "aliases": [
+      "MOD B"
+     ],
+     "type": "drug_candidate"
+    }
+   ]
+  },
+  {
+   "id": "qps",
+   "name": "Institute for Q-shu Pioneers of Space, Inc.",
+   "aliases": [
+    "QPS研究所",
+    "QPS Institute"
+   ],
+   "ticker": "5595",
+   "exchange": "TSE",
+   "sector": "space",
+   "tier": "core",
+   "watch": {
+    "news_name": "QPS研究所",
+    "prtimes_terms": [
+     "QPS研究所"
+    ]
+   },
+   "products": [
+    {
+     "id": "qps_sar",
+     "name": "QPS-SAR",
+     "aliases": [
+      "QPS-SAR"
+     ],
+     "type": "sar_satellite"
+    }
+   ]
+  },
+  {
+   "id": "axelspace",
+   "name": "Axelspace Holdings Inc.",
+   "aliases": [
+    "Axelspace",
+    "アクセルスペース",
+    "アクセルスペースホールディングス"
+   ],
+   "ticker": "402A",
+   "exchange": "TSE",
+   "sector": "space",
+   "tier": "core",
+   "watch": {
+    "news_name": "アクセルスペース",
+    "prtimes_terms": [
+     "Axelspace",
+     "アクセルスペース"
+    ]
+   },
+   "products": [
+    {
+     "id": "grus",
+     "name": "GRUS",
+     "aliases": [
+      "GRUS"
+     ],
+     "type": "earth_observation_satellite"
+    },
+    {
+     "id": "axelglobe",
+     "name": "AxelGlobe",
+     "aliases": [
+      "AxelGlobe"
+     ],
+     "type": "earth_observation_service"
+    },
+    {
+     "id": "axelliner",
+     "name": "AxelLiner",
+     "aliases": [
+      "AxelLiner"
+     ],
+     "type": "satellite_platform"
+    }
+   ]
+  },
+  {
+   "id": "sanbio",
+   "name": "SanBio Co., Ltd.",
+   "aliases": [
+    "SanBio",
+    "サンバイオ"
+   ],
+   "ticker": "4592",
+   "exchange": "TSE",
+   "sector": "bio",
+   "tier": "core",
+   "watch": {
+    "news_name": "サンバイオ",
+    "prtimes_terms": [
+     "SanBio",
+     "サンバイオ"
+    ],
+    "sponsor": "SanBio",
+    "pubmed": "SanBio[Affiliation]"
+   },
+   "products": [
+    {
+     "id": "akuugo",
+     "name": "アクーゴ",
+     "aliases": [
+      "アクーゴ",
+      "AKUUGO",
+      "SB623"
+     ],
+     "type": "regenerative_cell_medicine"
+    }
+   ]
+  },
+  {
+   "id": "healios",
+   "name": "HEALIOS K.K.",
+   "aliases": [
+    "Healios",
+    "ヘリオス"
+   ],
+   "ticker": "4593",
+   "exchange": "TSE",
+   "sector": "bio",
+   "tier": "core",
+   "watch": {
+    "news_name": "ヘリオス",
+    "prtimes_terms": [
+     "Healios",
+     "ヘリオス"
+    ],
+    "sponsor": "Healios",
+    "pubmed": "Healios[Affiliation]"
+   },
+   "products": [
+    {
+     "id": "hlcm051",
+     "name": "HLCM051",
+     "aliases": [
+      "HLCM051"
+     ],
+     "type": "somatic_stem_cell_therapy"
+    }
+   ]
+  },
+  {
+   "id": "stella_pharma",
+   "name": "Stella Pharma Corporation",
+   "aliases": [
+    "Stella Pharma",
+    "ステラファーマ"
+   ],
+   "ticker": "4888",
+   "exchange": "TSE",
+   "sector": "bio",
+   "tier": "core",
+   "watch": {
+    "news_name": "ステラファーマ",
+    "prtimes_terms": [
+     "Stella Pharma",
+     "ステラファーマ"
+    ],
+    "sponsor": "Stella Pharma"
+   },
+   "products": [
+    {
+     "id": "spm011",
+     "name": "ステボロニン",
+     "aliases": [
+      "ステボロニン",
+      "SPM-011",
+      "Steboronine"
+     ],
+     "type": "bnct_drug"
+    }
+   ]
+  },
+  {
+   "id": "kringle",
+   "name": "Kringle Pharma, Inc.",
+   "aliases": [
+    "Kringle Pharma",
+    "クリングルファーマ",
+    "クリングル"
+   ],
+   "ticker": "4884",
+   "exchange": "TSE",
+   "sector": "bio",
+   "tier": "watch",
+   "watch": {
+    "news_name": "クリングルファーマ",
+    "prtimes_terms": [
+     "Kringle",
+     "クリングル"
+    ],
+    "sponsor": "Kringle Pharma"
+   },
+   "products": [
+    {
+     "id": "kp100",
+     "name": "KP-100",
+     "aliases": [
+      "KP-100"
+     ],
+     "type": "hgf_protein_therapy"
+    }
+   ]
+  },
+  {
+   "id": "stemrim",
+   "name": "StemRIM Inc.",
+   "aliases": [
+    "StemRIM",
+    "ステムリム"
+   ],
+   "ticker": "4599",
+   "exchange": "TSE",
+   "sector": "bio",
+   "tier": "watch",
+   "watch": {
+    "news_name": "ステムリム",
+    "prtimes_terms": [
+     "StemRIM",
+     "ステムリム"
+    ],
+    "sponsor": "StemRIM"
+   },
+   "products": [
+    {
+     "id": "redasemtide",
+     "name": "レダセムチド",
+     "aliases": [
+      "レダセムチド",
+      "redasemtide"
+     ],
+     "type": "regenerative_drug"
+    }
+   ]
+  },
+  {
+   "id": "pksha",
+   "name": "PKSHA Technology Inc.",
+   "aliases": [
+    "PKSHA",
+    "パークシャ"
+   ],
+   "ticker": "3993",
+   "exchange": "TSE",
+   "sector": "ai",
+   "tier": "core",
+   "watch": {
+    "news_name": "PKSHA",
+    "prtimes_terms": [
+     "PKSHA"
+    ]
+   },
+   "products": [
+    {
+     "id": "pksha_chatbot",
+     "name": "PKSHA Chatbot",
+     "aliases": [
+      "PKSHA Chatbot"
+     ],
+     "type": "ai_saas"
+    },
+    {
+     "id": "pksha_algorithm",
+     "name": "PKSHA Algorithm",
+     "aliases": [
+      "PKSHA Algorithm"
+     ],
+     "type": "ai_algorithm"
+    }
+   ]
+  },
+  {
+   "id": "fronteo",
+   "name": "FRONTEO, Inc.",
+   "aliases": [
+    "FRONTEO",
+    "フロンテオ"
+   ],
+   "ticker": "2158",
+   "exchange": "TSE",
+   "sector": "ai",
+   "tier": "core",
+   "watch": {
+    "news_name": "FRONTEO",
+    "prtimes_terms": [
+     "FRONTEO",
+     "フロンテオ"
+    ]
+   },
+   "products": [
+    {
+     "id": "kibit",
+     "name": "KIBIT",
+     "aliases": [
+      "KIBIT"
+     ],
+     "type": "ai_platform"
+    }
+   ]
+  },
+  {
+   "id": "exawizards",
+   "name": "ExaWizards Inc.",
+   "aliases": [
+    "ExaWizards",
+    "エクサウィザーズ"
+   ],
+   "ticker": "4259",
+   "exchange": "TSE",
+   "sector": "ai",
+   "tier": "core",
+   "watch": {
+    "news_name": "エクサウィザーズ",
+    "prtimes_terms": [
+     "ExaWizards",
+     "エクサウィザーズ"
+    ],
+    "openalex": "I4405265315"
+   },
+   "products": [
+    {
+     "id": "exabase",
+     "name": "exaBase",
+     "aliases": [
+      "exaBase"
+     ],
+     "type": "ai_platform"
+    }
+   ]
+  },
+  {
+   "id": "heroz",
+   "name": "HEROZ, Inc.",
+   "aliases": [
+    "HEROZ",
+    "ヒーローズ"
+   ],
+   "ticker": "4382",
+   "exchange": "TSE",
+   "sector": "ai",
+   "tier": "core",
+   "watch": {
+    "news_name": "HEROZ",
+    "prtimes_terms": [
+     "HEROZ"
+    ]
+   },
+   "products": [
+    {
+     "id": "kishin",
+     "name": "HEROZ Kishin",
+     "aliases": [
+      "HEROZ Kishin",
+      "Kishin"
+     ],
+     "type": "ai_engine"
+    }
+   ]
+  },
+  {
+   "id": "cyberdyne",
+   "name": "CYBERDYNE, Inc.",
+   "aliases": [
+    "CYBERDYNE",
+    "サイバーダイン"
+   ],
+   "ticker": "7779",
+   "exchange": "TSE",
+   "sector": "ai",
+   "tier": "watch",
+   "watch": {
+    "news_name": "サイバーダイン",
+    "prtimes_terms": [
+     "CYBERDYNE",
+     "サイバーダイン"
+    ],
+    "openalex": "I4210097331"
+   },
+   "products": [
+    {
+     "id": "hal",
+     "name": "HAL",
+     "aliases": [
+      "HAL",
+      "Hybrid Assistive Limb"
+     ],
+     "type": "wearable_robot"
+    }
+   ]
+  },
+  {
+   "id": "lasertec",
+   "name": "Lasertec Corporation",
+   "aliases": [
+    "Lasertec",
+    "レーザーテック"
+   ],
+   "ticker": "6920",
+   "exchange": "TSE",
+   "sector": "semiconductor",
+   "tier": "core",
+   "watch": {
+    "news_name": "レーザーテック",
+    "prtimes_terms": [
+     "Lasertec",
+     "レーザーテック"
+    ],
+    "openalex": "I4405265050"
+   },
+   "products": [
+    {
+     "id": "actis",
+     "name": "ACTIS",
+     "aliases": [
+      "ACTIS"
+     ],
+     "type": "mask_inspection_system"
+    }
+   ]
+  },
+  {
+   "id": "socionext",
+   "name": "Socionext Inc.",
+   "aliases": [
+    "Socionext",
+    "ソシオネクスト"
+   ],
+   "ticker": "6526",
+   "exchange": "TSE",
+   "sector": "semiconductor",
+   "tier": "core",
+   "watch": {
+    "news_name": "ソシオネクスト",
+    "prtimes_terms": [
+     "Socionext",
+     "ソシオネクスト"
+    ],
+    "openalex": "I2800638042"
+   },
+   "products": [
+    {
+     "id": "custom_soc",
+     "name": "カスタムSoC",
+     "aliases": [
+      "カスタムSoC"
+     ],
+     "type": "soc_design"
+    }
+   ]
+  },
+  {
+   "id": "thine",
+   "name": "THine Electronics, Inc.",
+   "aliases": [
+    "THine",
+    "ザインエレクトロニクス",
+    "ザイン"
+   ],
+   "ticker": "6769",
+   "exchange": "TSE",
+   "sector": "semiconductor",
+   "tier": "watch",
+   "watch": {
+    "news_name": "ザインエレクトロニクス",
+    "prtimes_terms": [
+     "ザインエレクトロニクス"
+    ]
+   },
+   "products": [
+    {
+     "id": "vbyone",
+     "name": "V-by-One",
+     "aliases": [
+      "V-by-One"
+     ],
+     "type": "interface_lsi"
+    }
+   ]
+  },
+  {
+   "id": "torex",
+   "name": "Torex Semiconductor Ltd.",
+   "aliases": [
+    "Torex",
+    "トレックス・セミコンダクター",
+    "トレックス"
+   ],
+   "ticker": "6616",
+   "exchange": "TSE",
+   "sector": "semiconductor",
+   "tier": "watch",
+   "watch": {
+    "news_name": "トレックス・セミコンダクター",
+    "prtimes_terms": [
+     "トレックス・セミコンダクター"
+    ]
+   },
+   "products": [
+    {
+     "id": "xcl",
+     "name": "XCLシリーズ",
+     "aliases": [
+      "XCLシリーズ"
+     ],
+     "type": "power_ic"
+    }
+   ]
+  }
+ ]
 }

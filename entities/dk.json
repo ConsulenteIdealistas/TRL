@@ -1,71 +1,73 @@
 {
-  "entities": [
-    {
-      "id": "genmab",
-      "name": "Genmab A/S",
-      "aliases": [
-        "Genmab",
-        "ジェンマブ"
-      ],
-      "ticker": "GMAB",
-      "exchange": "Nasdaq Copenhagen",
-      "sector": "bio",
-      "market": "DK",
-      "tier": "core",
-      "watch": {
-        "news_name": "Genmab",
-        "sponsor": "Genmab",
-        "extra_keywords": [
-          "DuoBody",
-          "epcoritamab",
-          "Tivdak"
-        ],
-        "pubmed": "Genmab[Affiliation]"
-      }
-    },
-    {
-      "id": "bavarian_nordic",
-      "name": "Bavarian Nordic A/S",
-      "aliases": [
-        "Bavarian Nordic",
-        "ババリアン・ノルディック"
-      ],
-      "ticker": "BAVA",
-      "exchange": "Nasdaq Copenhagen",
-      "sector": "bio",
-      "market": "DK",
-      "tier": "core",
-      "watch": {
-        "news_name": "Bavarian Nordic",
-        "sponsor": "Bavarian Nordic",
-        "extra_keywords": [
-          "JYNNEOS",
-          "Imvanex",
-          "vaccine"
-        ]
-      }
-    },
-    {
-      "id": "zealand_pharma",
-      "name": "Zealand Pharma A/S",
-      "aliases": [
-        "Zealand Pharma",
-        "ジーランド・ファーマ"
-      ],
-      "ticker": "ZEAL",
-      "exchange": "Nasdaq Copenhagen",
-      "sector": "bio",
-      "market": "DK",
-      "tier": "core",
-      "watch": {
-        "news_name": "Zealand Pharma",
-        "sponsor": "Zealand Pharma",
-        "extra_keywords": [
-          "petrelintide",
-          "dapiglutide",
-          "peptide therapeutics"
-        ]
-      }
-    }
-  ]
+ "entities": [
+  {
+   "id": "genmab",
+   "name": "Genmab A/S",
+   "aliases": [
+    "Genmab",
+    "ジェンマブ"
+   ],
+   "ticker": "GMAB",
+   "exchange": "Nasdaq Copenhagen",
+   "sector": "bio",
+   "market": "DK",
+   "tier": "core",
+   "watch": {
+    "news_name": "Genmab",
+    "sponsor": "Genmab",
+    "extra_keywords": [
+     "DuoBody",
+     "epcoritamab",
+     "Tivdak"
+    ],
+    "pubmed": "Genmab[Affiliation]"
+   }
+  },
+  {
+   "id": "bavarian_nordic",
+   "name": "Bavarian Nordic A/S",
+   "aliases": [
+    "Bavarian Nordic",
+    "ババリアン・ノルディック"
+   ],
+   "ticker": "BAVA",
+   "exchange": "Nasdaq Copenhagen",
+   "sector": "bio",
+   "market": "DK",
+   "tier": "core",
+   "watch": {
+    "news_name": "Bavarian Nordic",
+    "sponsor": "Bavarian Nordic",
+    "extra_keywords": [
+     "JYNNEOS",
+     "Imvanex",
+     "vaccine"
+    ],
+    "openalex": "I4210101414"
+   }
+  },
+  {
+   "id": "zealand_pharma",
+   "name": "Zealand Pharma A/S",
+   "aliases": [
+    "Zealand Pharma",
+    "ジーランド・ファーマ"
+   ],
+   "ticker": "ZEAL",
+   "exchange": "Nasdaq Copenhagen",
+   "sector": "bio",
+   "market": "DK",
+   "tier": "core",
+   "watch": {
+    "news_name": "Zealand Pharma",
+    "sponsor": "Zealand Pharma",
+    "extra_keywords": [
+     "petrelintide",
+     "dapiglutide",
+     "peptide therapeutics"
+    ],
+    "openalex": "I4210096064"
+   }
+  }
+ ]
 }

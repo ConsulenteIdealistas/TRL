@@ -1467,6 +1467,11 @@ class EntityQueryGenerationTests(unittest.TestCase):
         "name": "peptidream-pubmed",
         "pubmed": "PeptiDream[Affiliation]",
         "lookback_days": 365
+    },
+    {
+        "name": "ispace-openalex",
+        "openalex": "I4405267988",
+        "lookback_days": 365
     }
 ]
 

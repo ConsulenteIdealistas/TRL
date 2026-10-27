@@ -1,308 +1,309 @@
 {
-  "entities": [
-    {
-      "id": "rocketlab",
-      "name": "Rocket Lab Corporation",
-      "aliases": [
-        "Rocket Lab",
-        "Rocket Lab USA",
-        "ロケットラボ",
-        "ロケット・ラボ"
-      ],
-      "ticker": "RKLB",
-      "exchange": "NASDAQ",
-      "sector": "space",
-      "tier": "core",
-      "market": "US",
-      "watch": {
-        "news_name": "Rocket Lab",
-        "extra_keywords": [
-          "Electron",
-          "Neutron",
-          "launch services"
-        ]
-      }
-    },
-    {
-      "id": "ast_spacemobile",
-      "name": "AST SpaceMobile, Inc.",
-      "aliases": [
-        "AST SpaceMobile",
-        "ASTスペースモバイル"
-      ],
-      "ticker": "ASTS",
-      "exchange": "NASDAQ",
-      "sector": "space",
-      "tier": "core",
-      "market": "US",
-      "watch": {
-        "news_name": "AST SpaceMobile",
-        "extra_keywords": [
-          "BlueBird",
-          "direct-to-cell",
-          "satellite constellation"
-        ]
-      }
-    },
-    {
-      "id": "intuitive_machines",
-      "name": "Intuitive Machines, Inc.",
-      "aliases": [
-        "Intuitive Machines",
-        "インテュイティブ・マシーンズ"
-      ],
-      "ticker": "LUNR",
-      "exchange": "NASDAQ",
-      "sector": "space",
-      "tier": "core",
-      "market": "US",
-      "watch": {
-        "news_name": "Intuitive Machines",
-        "extra_keywords": [
-          "Nova-C",
-          "lunar lander",
-          "CLPS"
-        ]
-      }
-    },
-    {
-      "id": "planet_labs",
-      "name": "Planet Labs PBC",
-      "aliases": [
-        "Planet Labs",
-        "プラネット・ラブズ"
-      ],
-      "ticker": "PL",
-      "exchange": "NYSE",
-      "sector": "space",
-      "tier": "core",
-      "market": "US",
-      "watch": {
-        "news_name": "Planet Labs",
-        "extra_keywords": [
-          "earth observation",
-          "satellite data",
-          "Pelican"
-        ]
-      }
-    },
-    {
-      "id": "redwire",
-      "name": "Redwire Corporation",
-      "aliases": [
-        "Redwire",
-        "レッドワイヤー"
-      ],
-      "ticker": "RDW",
-      "exchange": "NYSE",
-      "sector": "space",
-      "tier": "core",
-      "market": "US",
-      "watch": {
-        "news_name": "Redwire",
-        "extra_keywords": [
-          "space infrastructure",
-          "in-space manufacturing"
-        ]
-      }
-    },
-    {
-      "id": "crispr",
-      "name": "CRISPR Therapeutics AG",
-      "aliases": [
-        "CRISPR Therapeutics",
-        "クリスパー・セラピューティクス"
-      ],
-      "ticker": "CRSP",
-      "exchange": "NASDAQ",
-      "sector": "bio",
-      "tier": "core",
-      "market": "US",
-      "watch": {
-        "news_name": "CRISPR Therapeutics",
-        "sponsor": "CRISPR Therapeutics AG",
-        "extra_keywords": [
-          "Casgevy",
-          "gene editing",
-          "sickle cell"
-        ],
-        "pubmed": "CRISPR Therapeutics[Affiliation]"
-      }
-    },
-    {
-      "id": "moderna",
-      "name": "Moderna, Inc.",
-      "aliases": [
-        "Moderna",
-        "モデルナ"
-      ],
-      "ticker": "MRNA",
-      "exchange": "NASDAQ",
-      "sector": "bio",
-      "tier": "core",
-      "market": "US",
-      "watch": {
-        "news_name": "Moderna",
-        "sponsor": "ModernaTX, Inc.",
-        "extra_keywords": [
-          "mRNA",
-          "Spikevax",
-          "vaccine"
-        ],
-        "pubmed": "Moderna[Affiliation]"
-      }
-    },
-    {
-      "id": "beam",
-      "name": "Beam Therapeutics Inc.",
-      "aliases": [
-        "Beam Therapeutics",
-        "ビーム・セラピューティクス"
-      ],
-      "ticker": "BEAM",
-      "exchange": "NASDAQ",
-      "sector": "bio",
-      "tier": "core",
-      "market": "US",
-      "watch": {
-        "news_name": "Beam Therapeutics",
-        "sponsor": "Beam Therapeutics Inc.",
-        "extra_keywords": [
-          "base editing",
-          "BEAM-101"
-        ],
-        "pubmed": "Beam Therapeutics[Affiliation]"
-      }
-    },
-    {
-      "id": "arm",
-      "name": "Arm Holdings plc",
-      "aliases": [
-        "Arm Holdings",
-        "アームホールディングス"
-      ],
-      "ticker": "ARM",
-      "exchange": "NASDAQ",
-      "sector": "semiconductor",
-      "tier": "core",
-      "market": "US",
-      "watch": {
-        "news_name": "Arm Holdings",
-        "extra_keywords": [
-          "Neoverse",
-          "compute subsystem",
-          "licensing"
-        ]
-      }
-    },
-    {
-      "id": "firefly",
-      "name": "Firefly Aerospace Inc.",
-      "aliases": [
-        "Firefly Aerospace",
-        "ファイアフライ・エアロスペース"
-      ],
-      "ticker": "FLY",
-      "exchange": "NASDAQ",
-      "sector": "space",
-      "tier": "core",
-      "market": "US",
-      "watch": {
-        "news_name": "Firefly Aerospace",
-        "extra_keywords": [
-          "Alpha rocket",
-          "Blue Ghost",
-          "lunar lander"
-        ]
-      }
-    },
-    {
-      "id": "tempus",
-      "name": "Tempus AI, Inc.",
-      "aliases": [
-        "Tempus AI",
-        "テンパスAI"
-      ],
-      "ticker": "TEM",
-      "exchange": "NASDAQ",
-      "sector": "bio",
-      "tier": "core",
-      "market": "US",
-      "watch": {
-        "news_name": "Tempus AI",
-        "extra_keywords": [
-          "clinical data",
-          "genomic testing",
-          "precision medicine"
-        ],
-        "pubmed": "Tempus Labs[Affiliation]"
-      }
-    },
-    {
-      "id": "recursion",
-      "name": "Recursion Pharmaceuticals, Inc.",
-      "aliases": [
-        "Recursion Pharmaceuticals",
-        "リカージョン・ファーマシューティカルズ"
-      ],
-      "ticker": "RXRX",
-      "exchange": "NASDAQ",
-      "sector": "bio",
-      "tier": "core",
-      "market": "US",
-      "watch": {
-        "news_name": "Recursion Pharmaceuticals",
-        "sponsor": "Recursion Pharmaceuticals Inc.",
-        "extra_keywords": [
-          "AI drug discovery",
-          "REC-994",
-          "phenomics"
-        ],
-        "pubmed": "Recursion Pharmaceuticals[Affiliation]"
-      }
-    },
-    {
-      "id": "intellia",
-      "name": "Intellia Therapeutics, Inc.",
-      "aliases": [
-        "Intellia Therapeutics",
-        "インテリア・セラピューティクス"
-      ],
-      "ticker": "NTLA",
-      "exchange": "NASDAQ",
-      "sector": "bio",
-      "tier": "core",
-      "market": "US",
-      "watch": {
-        "news_name": "Intellia Therapeutics",
-        "sponsor": "Intellia Therapeutics",
-        "extra_keywords": [
-          "in vivo gene editing",
-          "NTLA-2001",
-          "CRISPR"
-        ]
-      }
-    },
-    {
-      "id": "sitime",
-      "name": "SiTime Corporation",
-      "aliases": [
-        "SiTime",
-        "サイタイム"
-      ],
-      "ticker": "SITM",
-      "exchange": "NASDAQ",
-      "sector": "semiconductor",
-      "tier": "core",
-      "market": "US",
-      "watch": {
-        "news_name": "SiTime",
-        "extra_keywords": [
-          "MEMS timing",
-          "oscillator",
-          "precision timing"
-        ]
-      }
-    }
-  ]
+ "entities": [
+  {
+   "id": "rocketlab",
+   "name": "Rocket Lab Corporation",
+   "aliases": [
+    "Rocket Lab",
+    "Rocket Lab USA",
+    "ロケットラボ",
+    "ロケット・ラボ"
+   ],
+   "ticker": "RKLB",
+   "exchange": "NASDAQ",
+   "sector": "space",
+   "tier": "core",
+   "market": "US",
+   "watch": {
+    "news_name": "Rocket Lab",
+    "extra_keywords": [
+     "Electron",
+     "Neutron",
+     "launch services"
+    ]
+   }
+  },
+  {
+   "id": "ast_spacemobile",
+   "name": "AST SpaceMobile, Inc.",
+   "aliases": [
+    "AST SpaceMobile",
+    "ASTスペースモバイル"
+   ],
+   "ticker": "ASTS",
+   "exchange": "NASDAQ",
+   "sector": "space",
+   "tier": "core",
+   "market": "US",
+   "watch": {
+    "news_name": "AST SpaceMobile",
+    "extra_keywords": [
+     "BlueBird",
+     "direct-to-cell",
+     "satellite constellation"
+    ]
+   }
+  },
+  {
+   "id": "intuitive_machines",
+   "name": "Intuitive Machines, Inc.",
+   "aliases": [
+    "Intuitive Machines",
+    "インテュイティブ・マシーンズ"
+   ],
+   "ticker": "LUNR",
+   "exchange": "NASDAQ",
+   "sector": "space",
+   "tier": "core",
+   "market": "US",
+   "watch": {
+    "news_name": "Intuitive Machines",
+    "extra_keywords": [
+     "Nova-C",
+     "lunar lander",
+     "CLPS"
+    ]
+   }
+  },
+  {
+   "id": "planet_labs",
+   "name": "Planet Labs PBC",
+   "aliases": [
+    "Planet Labs",
+    "プラネット・ラブズ"
+   ],
+   "ticker": "PL",
+   "exchange": "NYSE",
+   "sector": "space",
+   "tier": "core",
+   "market": "US",
+   "watch": {
+    "news_name": "Planet Labs",
+    "extra_keywords": [
+     "earth observation",
+     "satellite data",
+     "Pelican"
+    ],
+    "openalex": "I4405265495"
+   }
+  },
+  {
+   "id": "redwire",
+   "name": "Redwire Corporation",
+   "aliases": [
+    "Redwire",
+    "レッドワイヤー"
+   ],
+   "ticker": "RDW",
+   "exchange": "NYSE",
+   "sector": "space",
+   "tier": "core",
+   "market": "US",
+   "watch": {
+    "news_name": "Redwire",
+    "extra_keywords": [
+     "space infrastructure",
+     "in-space manufacturing"
+    ]
+   }
+  },
+  {
+   "id": "crispr",
+   "name": "CRISPR Therapeutics AG",
+   "aliases": [
+    "CRISPR Therapeutics",
+    "クリスパー・セラピューティクス"
+   ],
+   "ticker": "CRSP",
+   "exchange": "NASDAQ",
+   "sector": "bio",
+   "tier": "core",
+   "market": "US",
+   "watch": {
+    "news_name": "CRISPR Therapeutics",
+    "sponsor": "CRISPR Therapeutics AG",
+    "extra_keywords": [
+     "Casgevy",
+     "gene editing",
+     "sickle cell"
+    ],
+    "pubmed": "CRISPR Therapeutics[Affiliation]"
+   }
+  },
+  {
+   "id": "moderna",
+   "name": "Moderna, Inc.",
+   "aliases": [
+    "Moderna",
+    "モデルナ"
+   ],
+   "ticker": "MRNA",
+   "exchange": "NASDAQ",
+   "sector": "bio",
+   "tier": "core",
+   "market": "US",
+   "watch": {
+    "news_name": "Moderna",
+    "sponsor": "ModernaTX, Inc.",
+    "extra_keywords": [
+     "mRNA",
+     "Spikevax",
+     "vaccine"
+    ],
+    "pubmed": "Moderna[Affiliation]"
+   }
+  },
+  {
+   "id": "beam",
+   "name": "Beam Therapeutics Inc.",
+   "aliases": [
+    "Beam Therapeutics",
+    "ビーム・セラピューティクス"
+   ],
+   "ticker": "BEAM",
+   "exchange": "NASDAQ",
+   "sector": "bio",
+   "tier": "core",
+   "market": "US",
+   "watch": {
+    "news_name": "Beam Therapeutics",
+    "sponsor": "Beam Therapeutics Inc.",
+    "extra_keywords": [
+     "base editing",
+     "BEAM-101"
+    ],
+    "pubmed": "Beam Therapeutics[Affiliation]"
+   }
+  },
+  {
+   "id": "arm",
+   "name": "Arm Holdings plc",
+   "aliases": [
+    "Arm Holdings",
+    "アームホールディングス"
+   ],
+   "ticker": "ARM",
+   "exchange": "NASDAQ",
+   "sector": "semiconductor",
+   "tier": "core",
+   "market": "US",
+   "watch": {
+    "news_name": "Arm Holdings",
+    "extra_keywords": [
+     "Neoverse",
+     "compute subsystem",
+     "licensing"
+    ]
+   }
+  },
+  {
+   "id": "firefly",
+   "name": "Firefly Aerospace Inc.",
+   "aliases": [
+    "Firefly Aerospace",
+    "ファイアフライ・エアロスペース"
+   ],
+   "ticker": "FLY",
+   "exchange": "NASDAQ",
+   "sector": "space",
+   "tier": "core",
+   "market": "US",
+   "watch": {
+    "news_name": "Firefly Aerospace",
+    "extra_keywords": [
+     "Alpha rocket",
+     "Blue Ghost",
+     "lunar lander"
+    ]
+   }
+  },
+  {
+   "id": "tempus",
+   "name": "Tempus AI, Inc.",
+   "aliases": [
+    "Tempus AI",
+    "テンパスAI"
+   ],
+   "ticker": "TEM",
+   "exchange": "NASDAQ",
+   "sector": "bio",
+   "tier": "core",
+   "market": "US",
+   "watch": {
+    "news_name": "Tempus AI",
+    "extra_keywords": [
+     "clinical data",
+     "genomic testing",
+     "precision medicine"
+    ],
+    "pubmed": "Tempus Labs[Affiliation]"
+   }
+  },
+  {
+   "id": "recursion",
+   "name": "Recursion Pharmaceuticals, Inc.",
+   "aliases": [
+    "Recursion Pharmaceuticals",
+    "リカージョン・ファーマシューティカルズ"
+   ],
+   "ticker": "RXRX",
+   "exchange": "NASDAQ",
+   "sector": "bio",
+   "tier": "core",
+   "market": "US",
+   "watch": {
+    "news_name": "Recursion Pharmaceuticals",
+    "sponsor": "Recursion Pharmaceuticals Inc.",
+    "extra_keywords": [
+     "AI drug discovery",
+     "REC-994",
+     "phenomics"
+    ],
+    "pubmed": "Recursion Pharmaceuticals[Affiliation]"
+   }
+  },
+  {
+   "id": "intellia",
+   "name": "Intellia Therapeutics, Inc.",
+   "aliases": [
+    "Intellia Therapeutics",
+    "インテリア・セラピューティクス"
+   ],
+   "ticker": "NTLA",
+   "exchange": "NASDAQ",
+   "sector": "bio",
+   "tier": "core",
+   "market": "US",
+   "watch": {
+    "news_name": "Intellia Therapeutics",
+    "sponsor": "Intellia Therapeutics",
+    "extra_keywords": [
+     "in vivo gene editing",
+     "NTLA-2001",
+     "CRISPR"
+    ]
+   }
+  },
+  {
+   "id": "sitime",
+   "name": "SiTime Corporation",
+   "aliases": [
+    "SiTime",
+    "サイタイム"
+   ],
+   "ticker": "SITM",
+   "exchange": "NASDAQ",
+   "sector": "semiconductor",
+   "tier": "core",
+   "market": "US",
+   "watch": {
+    "news_name": "SiTime",
+    "extra_keywords": [
+     "MEMS timing",
+     "oscillator",
+     "precision timing"
+    ]
+   }
+  }
+ ]
 }

@@ -1,47 +1,48 @@
 {
-  "entities": [
-    {
-      "id": "bioarctic",
-      "name": "BioArctic AB (publ)",
-      "aliases": [
-        "BioArctic",
-        "バイオアークティック"
-      ],
-      "ticker": "BIOA-B",
-      "exchange": "Nasdaq Stockholm",
-      "sector": "bio",
-      "tier": "core",
-      "market": "SE",
-      "watch": {
-        "news_name": "BioArctic",
-        "sponsor": "BioArctic AB",
-        "extra_keywords": [
-          "lecanemab",
-          "Leqembi",
-          "Alzheimer"
-        ]
-      }
-    },
-    {
-      "id": "aac_clyde",
-      "name": "AAC Clyde Space AB (publ)",
-      "aliases": [
-        "AAC Clyde Space",
-        "AAC Clyde"
-      ],
-      "ticker": "AAC",
-      "exchange": "Nasdaq First North",
-      "sector": "space",
-      "tier": "core",
-      "market": "SE",
-      "watch": {
-        "news_name": "AAC Clyde Space",
-        "extra_keywords": [
-          "small satellites",
-          "CubeSat",
-          "satellite data"
-        ]
-      }
-    }
-  ]
+ "entities": [
+  {
+   "id": "bioarctic",
+   "name": "BioArctic AB (publ)",
+   "aliases": [
+    "BioArctic",
+    "バイオアークティック"
+   ],
+   "ticker": "BIOA-B",
+   "exchange": "Nasdaq Stockholm",
+   "sector": "bio",
+   "tier": "core",
+   "market": "SE",
+   "watch": {
+    "news_name": "BioArctic",
+    "sponsor": "BioArctic AB",
+    "extra_keywords": [
+     "lecanemab",
+     "Leqembi",
+     "Alzheimer"
+    ]
+   }
+  },
+  {
+   "id": "aac_clyde",
+   "name": "AAC Clyde Space AB (publ)",
+   "aliases": [
+    "AAC Clyde Space",
+    "AAC Clyde"
+   ],
+   "ticker": "AAC",
+   "exchange": "Nasdaq First North",
+   "sector": "space",
+   "tier": "core",
+   "market": "SE",
+   "watch": {
+    "news_name": "AAC Clyde Space",
+    "extra_keywords": [
+     "small satellites",
+     "CubeSat",
+     "satellite data"
+    ],
+    "openalex": "I4210165278"
+   }
+  }
+ ]
 }

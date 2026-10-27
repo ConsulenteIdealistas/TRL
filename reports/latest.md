@@ -1,49 +1,49 @@
-# TRL 実行レポート 20261027T004042Z-234b83
+# TRL 実行レポート 20261027T010621Z-4be2f2
 
 ※ スコアは評価尺度であり、株価上昇確率・成功確率・投資利益率ではありません。売買の自動判定にも使えません。
 
-- 基準日: 2026-10-27 / 設定: 2026.10.0 (8b845403cf0a8a65)
-- 状態: ok / 所要: 126.01秒
-- 取得 466 / 新規 33 / 重複 351 / 不正 82
-- スクリーニング通過 33 / 除外 0 / 評価対象 3
-- 評価: 確定 2 / 保留 0 / エラー 1 / LLM未設定でスキップ 0
+- 基準日: 2026-10-27 / 設定: 2026.10.0 (50f0c8f49ecf03e6)
+- 状態: ok / 所要: 231.66秒
+- 取得 498 / 新規 25 / 重複 395 / 不正 78
+- スクリーニング通過 25 / 除外 0 / 評価対象 3
+- 評価: 確定 0 / 保留 3 / エラー 0 / LLM未設定でスキップ 0
 
 ## 情報源ごとの状況
 - [OK] arxiv / solid-state-battery: 取得6 新規0 重複6 不正0
 - [OK] arxiv / quantum-error-correction: 取得20 新規0 重複20 不正0
 - [OK] pubmed / gene-therapy: 取得4 新規0 重複4 不正0
-- [OK] gnews / astroscale-news: 取得20 新規8 重複5 不正7
+- [OK] gnews / astroscale-news: 取得20 新規1 重複12 不正7
 - [OK] gnews / ispace-news: 取得20 新規0 重複20 不正0
-- [OK] gnews / synspective-news: 取得20 新規0 重複12 不正8
+- [OK] gnews / synspective-news: 取得15 新規0 重複15 不正0
 - [OK] gnews / oncolys-news: 取得0 新規0 重複0 不正0
-- [OK] gnews / reprocell-news: 取得20 新規1 重複16 不正3
-- [OK] gnews / heartseed-news: 取得5 新規0 重複3 不正2
-- [OK] gnews / peptidream-news: 取得6 新規0 重複2 不正4
-- [OK] gnews / qps-news: 取得15 新規0 重複7 不正8
+- [OK] gnews / reprocell-news: 取得20 新規0 重複16 不正4
+- [OK] gnews / heartseed-news: 取得4 新規0 重複3 不正1
+- [OK] gnews / peptidream-news: 取得4 新規0 重複1 不正3
+- [OK] gnews / qps-news: 取得9 新規2 重複3 不正4
 - [OK] gnews / axelspace-news: 取得20 新規0 重複15 不正5
 - [OK] gnews / gitai-news: 取得1 新規0 重複0 不正1
-- [OK] gnews / sanbio-news: 取得20 新規1 重複14 不正5
+- [OK] gnews / sanbio-news: 取得20 新規0 重複14 不正6
 - [OK] gnews / healios-news: 取得12 新規0 重複8 不正4
 - [OK] gnews / anges-news: 取得7 新規0 重複4 不正3
 - [OK] gnews / solasia-news: 取得3 新規0 重複2 不正1
-- [OK] gnews / symbio-news: 取得6 新規0 重複6 不正0
+- [OK] gnews / symbio-news: 取得7 新規0 重複7 不正0
 - [OK] gnews / modalis-news: 取得4 新規0 重複3 不正1
 - [OK] gnews / stella_pharma-news: 取得8 新規0 重複6 不正2
 - [OK] gnews / kringle-news: 取得9 新規0 重複8 不正1
-- [OK] gnews / ribomic-news: 取得7 新規0 重複6 不正1
-- [OK] gnews / chiome-news: 取得4 新規0 重複2 不正2
+- [OK] gnews / ribomic-news: 取得11 新規0 重複10 不正1
+- [OK] gnews / chiome-news: 取得3 新規0 重複2 不正1
 - [OK] gnews / chordia-news: 取得13 新規0 重複13 不正0
 - [OK] gnews / stemrim-news: 取得10 新規0 重複10 不正0
-- [OK] gnews / pksha-news: 取得8 新規2 重複6 不正0
-- [OK] gnews / fronteo-news: 取得10 新規5 重複5 不正0
-- [OK] gnews / exawizards-news: 取得20 新規0 重複18 不正2
-- [OK] gnews / heroz-news: 取得20 新規2 重複14 不正4
+- [OK] gnews / pksha-news: 取得20 新規0 重複10 不正10
+- [OK] gnews / fronteo-news: 取得20 新規1 重複19 不正0
+- [OK] gnews / exawizards-news: 取得12 新規0 重複11 不正1
+- [OK] gnews / heroz-news: 取得20 新規0 重複16 不正4
 - [OK] gnews / cyberdyne-news: 取得4 新規0 重複1 不正3
-- [OK] gnews / lasertec-news: 取得13 新規5 重複8 不正0
+- [OK] gnews / lasertec-news: 取得13 新規0 重複13 不正0
 - [OK] gnews / socionext-news: 取得20 新規0 重複10 不正10
 - [OK] gnews / thine-news: 取得8 新規0 重複3 不正5
 - [OK] gnews / torex-news: 取得2 新規0 重複2 不正0
-- [OK] gnews / rapidus-news: 取得20 新規7 重複13 不正0
+- [OK] gnews / rapidus-news: 取得20 新規1 重複19 不正0
 - [OK] trials / oncolys-trials: 取得1 新規0 重複1 不正0
 - [OK] trials / reprocell-trials: 取得1 新規0 重複1 不正0
 - [OK] trials / heartseed-trials: 取得2 新規0 重複2 不正0
@@ -60,6 +60,35 @@
 - [OK] trials / chiome-trials: 取得1 新規0 重複1 不正0
 - [OK] trials / chordia-trials: 取得1 新規0 重複1 不正0
 - [OK] trials / stemrim-trials: 取得0 新規0 重複0 不正0
+- [OK] yahoo / astroscale-yahoo: 取得1 新規1 重複0 不正0
+- [OK] yahoo / ispace-yahoo: 取得1 新規1 重複0 不正0
+- [OK] yahoo / synspective-yahoo: 取得1 新規1 重複0 不正0
+- [OK] yahoo / oncolys-yahoo: 取得1 新規1 重複0 不正0
+- [OK] yahoo / reprocell-yahoo: 取得1 新規1 重複0 不正0
+- [OK] yahoo / peptidream-yahoo: 取得0 新規0 重複0 不正0
+- [OK] yahoo / qps-yahoo: 取得0 新規0 重複0 不正0
+- [OK] yahoo / axelspace-yahoo: 取得0 新規0 重複0 不正0
+- [OK] yahoo / sanbio-yahoo: 取得0 新規0 重複0 不正0
+- [OK] yahoo / healios-yahoo: 取得0 新規0 重複0 不正0
+- [OK] yahoo / anges-yahoo: 取得1 新規1 重複0 不正0
+- [OK] yahoo / solasia-yahoo: 取得1 新規1 重複0 不正0
+- [OK] yahoo / symbio-yahoo: 取得0 新規0 重複0 不正0
+- [OK] yahoo / modalis-yahoo: 取得0 新規0 重複0 不正0
+- [OK] yahoo / stella_pharma-yahoo: 取得1 新規1 重複0 不正0
+- [OK] yahoo / kringle-yahoo: 取得0 新規0 重複0 不正0
+- [OK] yahoo / ribomic-yahoo: 取得1 新規1 重複0 不正0
+- [OK] yahoo / chiome-yahoo: 取得1 新規1 重複0 不正0
+- [OK] yahoo / chordia-yahoo: 取得1 新規1 重複0 不正0
+- [OK] yahoo / stemrim-yahoo: 取得1 新規1 重複0 不正0
+- [OK] yahoo / pksha-yahoo: 取得1 新規1 重複0 不正0
+- [OK] yahoo / fronteo-yahoo: 取得1 新規1 重複0 不正0
+- [OK] yahoo / exawizards-yahoo: 取得1 新規1 重複0 不正0
+- [OK] yahoo / heroz-yahoo: 取得1 新規1 重複0 不正0
+- [OK] yahoo / cyberdyne-yahoo: 取得0 新規0 重複0 不正0
+- [OK] yahoo / lasertec-yahoo: 取得1 新規1 重複0 不正0
+- [OK] yahoo / socionext-yahoo: 取得1 新規1 重複0 不正0
+- [OK] yahoo / thine-yahoo: 取得1 新規1 重複0 不正0
+- [OK] yahoo / torex-yahoo: 取得1 新規1 重複0 不正0
 - [OK] prtimes / astroscale-prtimes: 取得2 新規0 重複2 不正0
 - [OK] prtimes / ispace-prtimes: 取得6 新規0 重複6 不正0
 - [OK] prtimes / synspective-prtimes: 取得5 新規0 重複5 不正0
@@ -82,39 +111,55 @@
 - [OK] prtimes / chiome-prtimes: 取得1 新規0 重複1 不正0
 - [OK] prtimes / chordia-prtimes: 取得1 新規0 重複1 不正0
 - [OK] prtimes / stemrim-prtimes: 取得0 新規0 重複0 不正0
-- [OK] prtimes / pksha-prtimes: 取得1 新規0 重複1 不正0
-- [OK] prtimes / fronteo-prtimes: 取得8 新規0 重複8 不正0
-- [OK] prtimes / exawizards-prtimes: 取得4 新規0 重複4 不正0
+- [OK] prtimes / pksha-prtimes: 取得6 新規0 重複6 不正0
+- [OK] prtimes / fronteo-prtimes: 取得6 新規0 重複6 不正0
+- [OK] prtimes / exawizards-prtimes: 取得9 新規0 重複9 不正0
 - [OK] prtimes / heroz-prtimes: 取得6 新規0 重複6 不正0
 - [OK] prtimes / cyberdyne-prtimes: 取得0 新規0 重複0 不正0
 - [OK] prtimes / lasertec-prtimes: 取得0 新規0 重複0 不正0
 - [OK] prtimes / socionext-prtimes: 取得6 新規0 重複6 不正0
 - [OK] prtimes / thine-prtimes: 取得0 新規0 重複0 不正0
 - [OK] prtimes / torex-prtimes: 取得0 新規0 重複0 不正0
-- [OK] prtimes / rapidus-prtimes: 取得3 新規2 重複1 不正0
+- [OK] prtimes / rapidus-prtimes: 取得3 新規0 重複3 不正0
 
 ## 長期成長評価(確定)
-- **55.0** (moderate_uncertain) An Open-Label, Multicenter, Phase 1a/1b, Dose Escalation/Dose Expansion Clinical Trial of Theranostic Pair PD-32766D, a 64Cu-Labeled Peptide and PD-32766T, an 225Ac-Labeled Peptide Targeting Carbonic Anhydrase IX in Adult Participants With Relapsed or Refractory Clear Cell Renal Cell Carcinoma Who Have Progressed From or Could Not be Administered Due to Medical Unsuitability or Limited Access to All Standard of Care Therapies
-  論文・原資料: https://clinicaltrials.gov/study/NCT07688187
-  - [IR・決算資料 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=%22An+Open-Label%2C+Multicenter%2C+Phase+1a%2F1b%2C+Dose+Escalation%2FDose+Expansion+Clinical+Trial+of+Theranostic+Pair+PD-32766D%2C+a+64Cu-Labeled+Peptide+and+PD-32766T%2C+an+225Ac-Labeled+Peptide+Targeting+Carbonic+Anhydrase+IX+in+Adult+Participants+With+Relapsed+or+Refractory+Clear+Cell+Renal+Cell+Carcinoma+Who+Have+Progressed+From+or+Could+Not+be+Administered+Due+to+Medical+Unsuitability+or+Limited+Access+to+All+Standard+of+Care+Therapies%22+IR)
-  - [特許 [論文タイトル等（企業名未特定）]](https://patents.google.com/?q=An+Open-Label%2C+Multicenter%2C+Phase+1a%2F1b%2C+Dose+Escalation%2FDose+Expansion+Clinical+Trial+of+Theranostic+Pair+PD-32766D%2C+a+64Cu-Labeled+Peptide+and+PD-32766T%2C+an+225Ac-Labeled+Peptide+Targeting+Carbonic+Anhydrase+IX+in+Adult+Participants+With+Relapsed+or+Refractory+Clear+Cell+Renal+Cell+Carcinoma+Who+Have+Progressed+From+or+Could+Not+be+Administered+Due+to+Medical+Unsuitability+or+Limited+Access+to+All+Standard+of+Care+Therapies)
-  - [臨床試験登録 [論文タイトル等（企業名未特定）]](https://clinicaltrials.gov/search?term=An+Open-Label%2C+Multicenter%2C+Phase+1a%2F1b%2C+Dose+Escalation%2FDose+Expansion+Clinical+Trial+of+Theranostic+Pair+PD-32766D%2C+a+64Cu-Labeled+Peptide+and+PD-32766T%2C+an+225Ac-Labeled+Peptide+Targeting+Carbonic+Anhydrase+IX+in+Adult+Participants+With+Relapsed+or+Refractory+Clear+Cell+Renal+Cell+Carcinoma+Who+Have+Progressed+From+or+Could+Not+be+Administered+Due+to+Medical+Unsuitability+or+Limited+Access+to+All+Standard+of+Care+Therapies)
-  - [企業・技術情報 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=An+Open-Label%2C+Multicenter%2C+Phase+1a%2F1b%2C+Dose+Escalation%2FDose+Expansion+Clinical+Trial+of+Theranostic+Pair+PD-32766D%2C+a+64Cu-Labeled+Peptide+and+PD-32766T%2C+an+225Ac-Labeled+Peptide+Targeting+Carbonic+Anhydrase+IX+in+Adult+Participants+With+Relapsed+or+Refractory+Clear+Cell+Renal+Cell+Carcinoma+Who+Have+Progressed+From+or+Could+Not+be+Administered+Due+to+Medical+Unsuitability+or+Limited+Access+to+All+Standard+of+Care+Therapies)
-- **47.8** (moderate_uncertain) MultiStem® Administration for Stroke Treatment and Enhanced Recovery Study (MASTERS-2)
-  論文・原資料: https://clinicaltrials.gov/study/NCT03545607
-  - [IR・決算資料 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=%22MultiStem%C2%AE+Administration+for+Stroke+Treatment+and+Enhanced+Recovery+Study+%28MASTERS-2%29%22+IR)
-  - [特許 [論文タイトル等（企業名未特定）]](https://patents.google.com/?q=MultiStem%C2%AE+Administration+for+Stroke+Treatment+and+Enhanced+Recovery+Study+%28MASTERS-2%29)
-  - [臨床試験登録 [論文タイトル等（企業名未特定）]](https://clinicaltrials.gov/search?term=MultiStem%C2%AE+Administration+for+Stroke+Treatment+and+Enhanced+Recovery+Study+%28MASTERS-2%29)
-  - [企業・技術情報 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=MultiStem%C2%AE+Administration+for+Stroke+Treatment+and+Enhanced+Recovery+Study+%28MASTERS-2%29)
+- 該当なし
 
 ## イベント評価(確定)
 - 該当なし
 
-## レビューキュー（未解消 4件）
-- 情報不足・保留: 3件
+## レビューキュー（未解消 7件）
+- 情報不足・保留: 6件
 - 評価エラー: 1件
 
-### 情報不足・保留（3件）
+### 情報不足・保留（6件）
+- [long] A Phase IIa, Open-label, Multiple Ascending Dose Confirmation Study of the Safety and Tolerability of Intravenous Administration of Brincidofovir in Subjects With Adenovirus Infection or Cytomegalovirus Infection
+  理由: missing_items: monetization,financial_sustainability,moat_durability (critical: monetization)
+  確認先: シンバイオ製薬の直近の決算短信および有価証券報告書, 英国MHRAとの対面会議およびCMA申請に関する公式プレスリリース, 臨床試験の安全性・有効性データの詳細レポート
+  再評価条件: Phase III試験の開始または承認申請の正式な発表, 英国における条件付き早期製造販売承認（CMA）の取得結果の判明, 次回の四半期決算等による財務・収益状況の開示
+  関連情報の検索:
+  - [IR・決算資料 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=%22A+Phase+IIa%2C+Open-label%2C+Multiple+Ascending+Dose+Confirmation+Study+of+the+Safety+and+Tolerability+of+Intravenous+Administration+of+Brincidofovir+in+Subjects+With+Adenovirus+Infection+or+Cytomegalovirus+Infection%22+IR)
+  - [特許 [論文タイトル等（企業名未特定）]](https://patents.google.com/?q=A+Phase+IIa%2C+Open-label%2C+Multiple+Ascending+Dose+Confirmation+Study+of+the+Safety+and+Tolerability+of+Intravenous+Administration+of+Brincidofovir+in+Subjects+With+Adenovirus+Infection+or+Cytomegalovirus+Infection)
+  - [臨床試験登録 [論文タイトル等（企業名未特定）]](https://clinicaltrials.gov/search?term=A+Phase+IIa%2C+Open-label%2C+Multiple+Ascending+Dose+Confirmation+Study+of+the+Safety+and+Tolerability+of+Intravenous+Administration+of+Brincidofovir+in+Subjects+With+Adenovirus+Infection+or+Cytomegalovirus+Infection)
+  - [企業・技術情報 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=A+Phase+IIa%2C+Open-label%2C+Multiple+Ascending+Dose+Confirmation+Study+of+the+Safety+and+Tolerability+of+Intravenous+Administration+of+Brincidofovir+in+Subjects+With+Adenovirus+Infection+or+Cytomegalovirus+Infection)
+- [long] An Additional Phase 3, Multicenter Study of Intrathecal Administration of KP-100IT in Subjects With Acute Spinal Cord Injury
+  理由: missing_items: monetization,financial_sustainability (critical: monetization)
+  確認先: ClinicalTrials.govの進捗更新情報, クリングルファーマ株式会社の最新決算短信および有価証券報告書, Phase 3試験の結果発表に関するプレスリリースや学会発表資料
+  再評価条件: Phase 3臨床試験の患者組み入れ開始および進捗データの公表, 臨床試験の結果に基づく薬事承認申請の実施, 対象企業の財務状況や収益化計画の開示
+  関連情報の検索:
+  - [IR・決算資料 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=%22An+Additional+Phase+3%2C+Multicenter+Study+of+Intrathecal+Administration+of+KP-100IT+in+Subjects+With+Acute+Spinal+Cord+Injury%22+IR)
+  - [特許 [論文タイトル等（企業名未特定）]](https://patents.google.com/?q=An+Additional+Phase+3%2C+Multicenter+Study+of+Intrathecal+Administration+of+KP-100IT+in+Subjects+With+Acute+Spinal+Cord+Injury)
+  - [臨床試験登録 [論文タイトル等（企業名未特定）]](https://clinicaltrials.gov/search?term=An+Additional+Phase+3%2C+Multicenter+Study+of+Intrathecal+Administration+of+KP-100IT+in+Subjects+With+Acute+Spinal+Cord+Injury)
+  - [企業・技術情報 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=An+Additional+Phase+3%2C+Multicenter+Study+of+Intrathecal+Administration+of+KP-100IT+in+Subjects+With+Acute+Spinal+Cord+Injury)
+- [long] A Multicenter, Randomized, Placebo-Controlled, Double-Blind, Parallel-Group Confirmatory Study For Intracordal Administration Of KP-100LI In Patients With Vocal Fold Scar
+  理由: missing_items: monetization,financial_sustainability (critical: monetization)
+  確認先: 臨床試験（Phase 3）の結果公表資料, クリングルファーマの決算短信および有価証券報告書, 医薬品承認申請に関する公式発表
+  再評価条件: Phase 3臨床試験の有効性・安全性結果が公表された場合, 厚生労働省等への製造販売承認申請が行われた場合, 提携先との共同開発や商業化に関する新たな合意が発表された場合
+  関連情報の検索:
+  - [IR・決算資料 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=%22A+Multicenter%2C+Randomized%2C+Placebo-Controlled%2C+Double-Blind%2C+Parallel-Group+Confirmatory+Study+For+Intracordal+Administration+Of+KP-100LI+In+Patients+With+Vocal+Fold+Scar%22+IR)
+  - [特許 [論文タイトル等（企業名未特定）]](https://patents.google.com/?q=A+Multicenter%2C+Randomized%2C+Placebo-Controlled%2C+Double-Blind%2C+Parallel-Group+Confirmatory+Study+For+Intracordal+Administration+Of+KP-100LI+In+Patients+With+Vocal+Fold+Scar)
+  - [臨床試験登録 [論文タイトル等（企業名未特定）]](https://clinicaltrials.gov/search?term=A+Multicenter%2C+Randomized%2C+Placebo-Controlled%2C+Double-Blind%2C+Parallel-Group+Confirmatory+Study+For+Intracordal+Administration+Of+KP-100LI+In+Patients+With+Vocal+Fold+Scar)
+  - [企業・技術情報 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=A+Multicenter%2C+Randomized%2C+Placebo-Controlled%2C+Double-Blind%2C+Parallel-Group+Confirmatory+Study+For+Intracordal+Administration+Of+KP-100LI+In+Patients+With+Vocal+Fold+Scar)
 - [long] A Phase I/II Study of Endocardial Delivery for Myocardial Regeneration Using Human Induced Pluripotent Stem (iPS) Cell-derived Cardiomyocyte Spheroids for Heart Failure Reduced Ejection Fraction
   理由: missing_items: financial_sustainability
   確認先: Heartseed Inc.の有価証券報告書および決算説明会資料, NCT07347197の主要評価項目に関する学会発表・論文・中間解析結果, HS-001 CSに関する特許開示情報およびグローバル開発・導出状況

@@ -384,6 +384,20 @@ class ExportTests(unittest.TestCase):
         data = self.build(None)  # LLM未設定 → すべて未評価
         self.assertEqual({c["display_status"] for c in data["candidates"]}, {"pending"})
 
+    def test_export_limits_pending_to_next_up(self):
+        # 未評価は「次に評価される上位10件」だけを載せ、next_up を付ける (在庫の全件表示はしない)
+        self.build(None, n=1)
+        for i in range(15):
+            rec, _ = T.normalize(raw(sid=f"2610.55{i:02d}", title=f"Queued paper {i}",
+                                     published="2026-10-19"), T.now_iso())
+            cid, _ = self.store.upsert_candidate(rec, "rX")
+            self.store.set_entities(cid, T.link_entities(rec, CFG.get("entities", {})))
+            self.store.set_status(cid, "screened")
+        data = T.build_site_data(self.store, cfg_with(), datetime(2026, 10, 26, tzinfo=timezone.utc))
+        pend = [c for c in data["candidates"] if c["display_status"] == "pending"]
+        self.assertEqual(len(pend), 10)
+        self.assertTrue(all(c["next_up"] for c in pend))
+
     def test_contract_matches_web_schema(self):
         base = make_llm_fn(long_scores={"monetization": None})
         data = self.build(Mock(base))

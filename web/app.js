@@ -3,6 +3,7 @@
    評価値はすべて data.json の値をそのまま表示し、画面側で再計算・換算・平均はしない。 */
 let P = [], META = null, sel = null;
 const SL = {final: "選定可能", review: "要追加調査", hold: "保留", pending: "未評価", error: "エラー", rejected: "除外"};
+const SO = {final: 0, review: 1, hold: 2, pending: 3, error: 4, rejected: 5};  // おすすめ順での状態の優先度
 const IL = {technology_readiness: "技術成熟度", technological_advantage: "技術的優位性", monetization: "収益化能力",
   market_growth: "市場成長性", financial_sustainability: "財務的持続可能性", moat_durability: "競争優位性の持続性"};
 const $ = s => document.querySelector(s);
@@ -38,7 +39,10 @@ function filtered() {
   const q = $("#q").value.trim().toLowerCase(), s = $("#fs").value, t = $("#ft").value, o = $("#fo").value, fd = $("#fd").value;
   const r = P.filter(p => (!q || haystack(p).includes(q)) && (s === "all" || p.display_status === s) && inR(lvl(p), t)
     && (fd === "all" || (fd === "none" ? !dirOf(p) : dirOf(p) === fd)));
-  r.sort((a, b) => o === "trl" ? (ok(lvl(b)) ? lvl(b) : -1) - (ok(lvl(a)) ? lvl(a) : -1)
+  r.sort((a, b) => o === "status" ? (SO[a.display_status] - SO[b.display_status])
+      || ((ok(lvl(b)) ? lvl(b) : -1) - (ok(lvl(a)) ? lvl(a) : -1))
+      || String(b.published || "").localeCompare(String(a.published || ""))
+    : o === "trl" ? (ok(lvl(b)) ? lvl(b) : -1) - (ok(lvl(a)) ? lvl(a) : -1)
     : o === "title" ? a.title.localeCompare(b.title, "ja") : String(b.published || "").localeCompare(String(a.published || "")));
   return r;
 }
@@ -48,7 +52,7 @@ function fmtScore(v) { return v == null ? "—" : v; }
 function card(p) {
   const s = p.id === sel;
   const ents = p.entities.filter(e => e.strength === "strong").length;
-  return `<article class="card ${s ? "sel" : ""}" data-id="${esc(p.id)}"><div class="main"><div style="min-width:0"><div class="top"><span class="${src(p.source)}">${srcName(p.source)}</span><span class="date">${esc(p.published || "")}</span></div><h3 class="title">${esc(p.title)}</h3><p class="abs">${esc(p.abstract)}</p><div class="tags">${(p.fields || []).slice(0, 4).map(t => `<span class="tag">${esc(t)}</span>`).join("")}</div><div class="mi"><span>技術成熟度 <strong>${fmtScore(sc(p, "technology_readiness"))}</strong></span><span>技術的優位性 <strong>${fmtScore(sc(p, "technological_advantage"))}</strong></span><span>関連企業 <strong>${ents ? ents + "社" : "未特定"}</strong></span></div></div><div class="side">${stB(p.display_status)}${dirB(p)}${trl(lvl(p))}</div></div><div class="foot"><span>${p.long && p.long.critical_missing.length ? `必須の不足 ${p.long.critical_missing.length}件` : p.display_status === "pending" ? "評価待ち" : ""}</span><a class="tg" href="detail.html?id=${encodeURIComponent(p.id)}">詳細を見る →</a></div></article>`;
+  return `<article class="card ${s ? "sel" : ""}" data-id="${esc(p.id)}"><div class="main"><div style="min-width:0"><div class="top"><span class="${src(p.source)}">${srcName(p.source)}</span><span class="date">${esc(p.published || "")}</span></div><h3 class="title">${esc(p.title)}</h3><p class="abs">${esc(p.abstract)}</p><div class="tags">${(p.fields || []).slice(0, 4).map(t => `<span class="tag">${esc(t)}</span>`).join("")}</div><div class="mi"><span>技術成熟度 <strong>${fmtScore(sc(p, "technology_readiness"))}</strong></span><span>技術的優位性 <strong>${fmtScore(sc(p, "technological_advantage"))}</strong></span><span>関連企業 <strong>${ents ? ents + "社" : "未特定"}</strong></span></div></div><div class="side">${stB(p.display_status)}${dirB(p)}${trl(lvl(p))}</div></div><div class="foot"><span>${p.long && p.long.critical_missing.length ? `必須の不足 ${p.long.critical_missing.length}件` : p.display_status === "pending" ? (p.next_up ? "次回評価予定" : "評価待ち") : ""}</span><a class="tg" href="detail.html?id=${encodeURIComponent(p.id)}">詳細を見る →</a></div></article>`;
 }
 function scoreRow(k, it) {
   const v = it ? it.score : null;

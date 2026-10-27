@@ -5,9 +5,14 @@ from datetime import datetime, timezone
 from pathlib import Path
 from .config import ROOT
 from .dates import parse_date
+from .pipeline import select_for_eval
 
 
 SITE_SCHEMA_VERSION = 1
+
+# サイトに載せる未評価は「次に評価される上位」だけ。未評価の在庫を全件出すと
+# 評価結果が埋もれてしまうため、書き出し側で絞る (エンジン側の選定と一致させる)
+SITE_PENDING_LIMIT = 10
 
 
 TECH_ITEMS = ("technology_readiness", "technological_advantage")
@@ -73,6 +78,9 @@ def build_site_data(store, cfg, now=None):
             "reason": q["reason"], "next_sources": q["next_sources"] or [], "reeval_conditions": q["reeval_conditions"] or []}
     run = store.conn.execute("SELECT * FROM runs ORDER BY started_at DESC LIMIT 1").fetchone()
     pool_as_of = parse_date(run["as_of"]) if run else None
+    next_ids = set()
+    if pool_as_of is not None:
+        next_ids = {c["id"] for c in select_for_eval(store, cfg, pool_as_of, SITE_PENDING_LIMIT)}
     cands = []
     rows = store.conn.execute("SELECT id FROM candidates ORDER BY published DESC, id").fetchall()
     for (cid,) in rows:
@@ -81,6 +89,8 @@ def build_site_data(store, cfg, now=None):
             continue  # ニュースは評価単位ではなく材料。候補一覧には出さない
         long_ev = _ev_for_site(store.latest_evaluation(cid, "long"), cfg)
         event_ev = _ev_for_site(store.latest_evaluation(cid, "event"), cfg)
+        if long_ev is None and event_ev is None and cid not in next_ids:
+            continue  # 評価済みと、次に評価される上位だけを載せる
         seen, ents = set(), []
         for e in c["entities"]:
             key = (e["entity_id"], e["strength"], e["product_name"])
@@ -93,6 +103,7 @@ def build_site_data(store, cfg, now=None):
             "id": cid, "title": c["title"], "source": c["source"], "published": c["published"], "url": c["url"],
             "abstract": c["abstract"] or "", "fields": c["fields"],
             "display_status": display_status(c, long_ev, store),
+            "next_up": cid in next_ids and long_ev is None and event_ev is None,
             "long": long_ev, "event": event_ev, "entities": ents,
             "related_news": store.related_news(cid, pool_as_of) if pool_as_of else [],
             "related_financials": store.related_financials(cid, pool_as_of) if pool_as_of else [],

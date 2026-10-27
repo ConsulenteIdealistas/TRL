@@ -1439,6 +1439,23 @@ class EntityQueryGenerationTests(unittest.TestCase):
         self.assertEqual(by_name["au1-yahoo"]["yahoo"], "EOS.AX")
         self.assertNotIn("au1-prtimes", by_name)
 
+    def test_generation_rules_italy_sweden(self):
+        src = {"keyword_sets": {"space": ["決算"]},
+               "keyword_sets_it": {"space": ["risultati", "lancio"]},
+               "keyword_sets_sv": {"space": ["resultat", "uppskjutning"]},
+               "entity_watch": {"lookback_days": {}}}
+        ents = {"entities": [
+            {"id": "it1", "sector": "space", "market": "IT", "ticker": "AVIO",
+             "watch": {"news_name": "Avio"}},
+            {"id": "se1", "sector": "space", "market": "SE", "ticker": "AAC",
+             "watch": {"news_name": "AAC Clyde Space"}},
+        ]}
+        by_name = {q["name"]: q for q in T.build_entity_queries(ents, src)}
+        self.assertEqual(by_name["it1-news"]["gnews"]["q"], "Avio (risultati OR lancio)")
+        self.assertEqual(by_name["it1-yahoo"]["yahoo"], "AVIO.MI")
+        self.assertEqual(by_name["se1-news"]["gnews"]["hl"], "sv")
+        self.assertEqual(by_name["se1-yahoo"]["yahoo"], "AAC.ST")
+
     def test_invalid_market_rejected(self):
         ents = {"entities": [{"id": "x", "name": "X Corp", "aliases": ["X Corp Ltd"], "market": "FR"}]}
         with self.assertRaises(ConfigError):

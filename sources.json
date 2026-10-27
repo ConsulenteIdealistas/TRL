@@ -129,6 +129,76 @@
       "Umsatz"
     ]
   },
+  "keyword_sets_it": {
+    "bio": [
+      "risultati",
+      "studio clinico",
+      "approvazione",
+      "partnership",
+      "licenza",
+      "finanziamento",
+      "ricavi"
+    ],
+    "space": [
+      "risultati",
+      "contratto",
+      "ordine",
+      "partnership",
+      "finanziamento",
+      "lancio",
+      "ricavi"
+    ],
+    "ai": [
+      "risultati",
+      "partnership",
+      "finanziamento",
+      "contratto",
+      "ricavi"
+    ],
+    "semiconductor": [
+      "risultati",
+      "ordini",
+      "contratto",
+      "partnership",
+      "finanziamento",
+      "ricavi"
+    ]
+  },
+  "keyword_sets_sv": {
+    "bio": [
+      "resultat",
+      "klinisk studie",
+      "godkännande",
+      "partnerskap",
+      "licensavtal",
+      "finansiering",
+      "intäkter"
+    ],
+    "space": [
+      "resultat",
+      "kontrakt",
+      "order",
+      "partnerskap",
+      "finansiering",
+      "uppskjutning",
+      "intäkter"
+    ],
+    "ai": [
+      "resultat",
+      "partnerskap",
+      "finansiering",
+      "kontrakt",
+      "intäkter"
+    ],
+    "semiconductor": [
+      "resultat",
+      "ordrar",
+      "kontrakt",
+      "partnerskap",
+      "finansiering",
+      "intäkter"
+    ]
+  },
   "topics": [
     {
       "arxiv": "all:\"solid-state battery\"",

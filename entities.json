@@ -1510,6 +1510,67 @@
           "defence"
         ]
       }
+    },
+    {
+      "id": "avio",
+      "name": "Avio S.p.A.",
+      "aliases": [
+        "Avio",
+        "アヴィオ"
+      ],
+      "ticker": "AVIO",
+      "exchange": "BIT",
+      "sector": "space",
+      "market": "IT",
+      "watch": {
+        "news_name": "Avio",
+        "extra_keywords": [
+          "Vega C",
+          "Vega E",
+          "lanciatore"
+        ]
+      }
+    },
+    {
+      "id": "bioarctic",
+      "name": "BioArctic AB (publ)",
+      "aliases": [
+        "BioArctic",
+        "バイオアークティック"
+      ],
+      "ticker": "BIOA-B",
+      "exchange": "Nasdaq Stockholm",
+      "sector": "bio",
+      "market": "SE",
+      "watch": {
+        "news_name": "BioArctic",
+        "sponsor": "BioArctic AB",
+        "extra_keywords": [
+          "lecanemab",
+          "Leqembi",
+          "Alzheimer"
+        ]
+      }
+    },
+    {
+      "id": "aac_clyde",
+      "name": "AAC Clyde Space AB (publ)",
+      "aliases": [
+        "AAC Clyde Space",
+        "AAC Clyde"
+      ],
+      "ticker": "AAC",
+      "exchange": "Nasdaq First North",
+      "sector": "space",
+      "market": "SE",
+      "watch": {
+        "news_name": "AAC Clyde Space",
+        "extra_keywords": [
+          "small satellites",
+          "CubeSat",
+          "satellite data"
+        ]
+      }
     }
   ]
 }

@@ -860,6 +860,231 @@
           "type": "semiconductor_fab"
         }
       ]
+    },
+    {
+      "id": "rocketlab",
+      "name": "Rocket Lab Corporation",
+      "aliases": [
+        "Rocket Lab",
+        "Rocket Lab USA",
+        "ロケットラボ",
+        "ロケット・ラボ"
+      ],
+      "ticker": "RKLB",
+      "exchange": "NASDAQ",
+      "sector": "space",
+      "market": "US",
+      "watch": {
+        "news_name": "Rocket Lab",
+        "extra_keywords": [
+          "Electron",
+          "Neutron",
+          "launch services"
+        ]
+      }
+    },
+    {
+      "id": "ast_spacemobile",
+      "name": "AST SpaceMobile, Inc.",
+      "aliases": [
+        "AST SpaceMobile",
+        "ASTスペースモバイル"
+      ],
+      "ticker": "ASTS",
+      "exchange": "NASDAQ",
+      "sector": "space",
+      "market": "US",
+      "watch": {
+        "news_name": "AST SpaceMobile",
+        "extra_keywords": [
+          "BlueBird",
+          "direct-to-cell",
+          "satellite constellation"
+        ]
+      }
+    },
+    {
+      "id": "intuitive_machines",
+      "name": "Intuitive Machines, Inc.",
+      "aliases": [
+        "Intuitive Machines",
+        "インテュイティブ・マシーンズ"
+      ],
+      "ticker": "LUNR",
+      "exchange": "NASDAQ",
+      "sector": "space",
+      "market": "US",
+      "watch": {
+        "news_name": "Intuitive Machines",
+        "extra_keywords": [
+          "Nova-C",
+          "lunar lander",
+          "CLPS"
+        ]
+      }
+    },
+    {
+      "id": "planet_labs",
+      "name": "Planet Labs PBC",
+      "aliases": [
+        "Planet Labs",
+        "プラネット・ラブズ"
+      ],
+      "ticker": "PL",
+      "exchange": "NYSE",
+      "sector": "space",
+      "market": "US",
+      "watch": {
+        "news_name": "Planet Labs",
+        "extra_keywords": [
+          "earth observation",
+          "satellite data",
+          "Pelican"
+        ]
+      }
+    },
+    {
+      "id": "redwire",
+      "name": "Redwire Corporation",
+      "aliases": [
+        "Redwire",
+        "レッドワイヤー"
+      ],
+      "ticker": "RDW",
+      "exchange": "NYSE",
+      "sector": "space",
+      "market": "US",
+      "watch": {
+        "news_name": "Redwire",
+        "extra_keywords": [
+          "space infrastructure",
+          "in-space manufacturing"
+        ]
+      }
+    },
+    {
+      "id": "crispr",
+      "name": "CRISPR Therapeutics AG",
+      "aliases": [
+        "CRISPR Therapeutics",
+        "クリスパー・セラピューティクス"
+      ],
+      "ticker": "CRSP",
+      "exchange": "NASDAQ",
+      "sector": "bio",
+      "market": "US",
+      "watch": {
+        "news_name": "CRISPR Therapeutics",
+        "sponsor": "CRISPR Therapeutics AG",
+        "extra_keywords": [
+          "Casgevy",
+          "gene editing",
+          "sickle cell"
+        ]
+      }
+    },
+    {
+      "id": "moderna",
+      "name": "Moderna, Inc.",
+      "aliases": [
+        "Moderna",
+        "モデルナ"
+      ],
+      "ticker": "MRNA",
+      "exchange": "NASDAQ",
+      "sector": "bio",
+      "market": "US",
+      "watch": {
+        "news_name": "Moderna",
+        "sponsor": "ModernaTX, Inc.",
+        "extra_keywords": [
+          "mRNA",
+          "Spikevax",
+          "vaccine"
+        ]
+      }
+    },
+    {
+      "id": "beam",
+      "name": "Beam Therapeutics Inc.",
+      "aliases": [
+        "Beam Therapeutics",
+        "ビーム・セラピューティクス"
+      ],
+      "ticker": "BEAM",
+      "exchange": "NASDAQ",
+      "sector": "bio",
+      "market": "US",
+      "watch": {
+        "news_name": "Beam Therapeutics",
+        "sponsor": "Beam Therapeutics Inc.",
+        "extra_keywords": [
+          "base editing",
+          "BEAM-101"
+        ]
+      }
+    },
+    {
+      "id": "oxford_nanopore",
+      "name": "Oxford Nanopore Technologies plc",
+      "aliases": [
+        "Oxford Nanopore Technologies",
+        "Oxford Nanopore",
+        "オックスフォード・ナノポア"
+      ],
+      "ticker": "ONT",
+      "exchange": "LSE",
+      "sector": "bio",
+      "market": "GB",
+      "watch": {
+        "news_name": "Oxford Nanopore",
+        "extra_keywords": [
+          "nanopore sequencing",
+          "MinION"
+        ]
+      }
+    },
+    {
+      "id": "idorsia",
+      "name": "Idorsia Ltd",
+      "aliases": [
+        "Idorsia",
+        "Idorsia Pharmaceuticals",
+        "イドルシア"
+      ],
+      "ticker": "IDIA",
+      "exchange": "SIX",
+      "sector": "bio",
+      "market": "CH",
+      "watch": {
+        "news_name": "Idorsia",
+        "sponsor": "Idorsia Pharmaceuticals Ltd.",
+        "extra_keywords": [
+          "Quviviq",
+          "daridorexant",
+          "aprocitentan"
+        ]
+      }
+    },
+    {
+      "id": "arm",
+      "name": "Arm Holdings plc",
+      "aliases": [
+        "Arm Holdings",
+        "アームホールディングス"
+      ],
+      "ticker": "ARM",
+      "exchange": "NASDAQ",
+      "sector": "semiconductor",
+      "market": "US",
+      "watch": {
+        "news_name": "Arm Holdings",
+        "extra_keywords": [
+          "Neoverse",
+          "compute subsystem",
+          "licensing"
+        ]
+      }
     }
   ]
 }

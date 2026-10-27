@@ -77,7 +77,9 @@ def _validate_query_list(qs, label):
         if q["name"] in names:
             raise ConfigError(f"sources.json: duplicate query name: {q['name']}")
         names.add(q["name"])
-        if not any(isinstance(q.get(s), str) and q[s].strip() for s in SOURCE_NAMES):
+        if not any(isinstance(q.get(s), str) and q[s].strip()
+                   or (s == "gnews" and isinstance(q.get(s), dict) and str(q[s].get("q") or "").strip())
+                   for s in SOURCE_NAMES):
             raise ConfigError(f"sources.json: {label}[{i}] needs a non-empty query string for one of {SOURCE_NAMES}")
         for k in ("max_results", "lookback_days"):
             if k in q and (isinstance(q[k], bool) or not isinstance(q[k], int) or q[k] <= 0):
@@ -126,11 +128,22 @@ def validate_sources(src):
 WATCH_LOOKBACK_DEFAULTS = {"prtimes": 90, "trials": 365, "edinet": 60, "yahoo": 400}
 
 
+# 市場ごとの Yahoo シンボル接尾辞と Google News ロケール。market 未指定は JP。
+YAHOO_SUFFIX = {"JP": ".T", "US": "", "GB": ".L", "CH": ".SW", "DE": ".DE"}
+GNEWS_LOCALE = {"US": {"hl": "en", "gl": "US", "ceid": "US:en"},
+                "GB": {"hl": "en", "gl": "GB", "ceid": "GB:en"},
+                "CH": {"hl": "en", "gl": "CH", "ceid": "CH:en"},
+                "DE": {"hl": "de", "gl": "DE", "ceid": "DE:de"}}
+
+
 def build_entity_queries(entities, src):
     """entities.json の watch から企業クエリを生成する。
     生成順は gnews(全社) → trials → edinet → yahoo → prtimes で、各系統内は entities の並び順。
-    watch の無い企業は監視対象にしない。sponsor が無ければ trials、ticker が無ければ edinet/yahoo を生成しない。"""
+    watch の無い企業は監視対象にしない。sponsor が無ければ trials、ticker が無ければ yahoo を生成しない。
+    market が JP 以外の企業は海外扱い: EDINET と PR TIMES は生成せず、gnews は市場のロケールと
+    英語キーワード集合(keyword_sets_en)を使い、yahoo は市場の接尾辞つきシンボルにする。"""
     ks = src.get("keyword_sets") or {}
+    ks_en = src.get("keyword_sets_en") or {}
     params = (src.get("entity_watch") or {}).get("lookback_days") or {}
     groups = {"gnews": [], "trials": [], "edinet": [], "yahoo": [], "prtimes": []}
     for e in (entities or {}).get("entities", []):
@@ -142,21 +155,32 @@ def build_entity_queries(entities, src):
         if not isinstance(news_name, str) or not news_name.strip():
             raise ConfigError(f"entities.json: {eid}.watch.news_name is required")
         sector = e.get("sector")
-        if sector not in ks:
-            raise ConfigError(f"entities.json: {eid}.sector {sector!r} has no keyword_sets entry in sources.json")
-        words = list(ks[sector]) + list(w.get("extra_keywords") or [])
-        groups["gnews"].append({"name": f"{eid}-news", "gnews": f"{news_name} ({' OR '.join(words)})"})
+        market = e.get("market") or "JP"
+        if market == "JP":
+            if sector not in ks:
+                raise ConfigError(f"entities.json: {eid}.sector {sector!r} has no keyword_sets entry in sources.json")
+            words = list(ks[sector]) + list(w.get("extra_keywords") or [])
+            groups["gnews"].append({"name": f"{eid}-news", "gnews": f"{news_name} ({' OR '.join(words)})"})
+        else:
+            if sector not in ks_en:
+                raise ConfigError(f"entities.json: {eid}.sector {sector!r} has no keyword_sets_en entry in sources.json")
+            words = list(ks_en[sector]) + list(w.get("extra_keywords") or [])
+            q = {"q": f"{news_name} ({' OR '.join(words)})"}
+            q.update(GNEWS_LOCALE[market])
+            groups["gnews"].append({"name": f"{eid}-news", "gnews": q})
         if w.get("sponsor"):
             groups["trials"].append({"name": f"{eid}-trials", "trials": w["sponsor"],
                                      "lookback_days": params.get("trials", WATCH_LOOKBACK_DEFAULTS["trials"])})
         if e.get("ticker"):
-            groups["edinet"].append({"name": f"{eid}-edinet", "edinet": e["ticker"],
-                                     "lookback_days": params.get("edinet", WATCH_LOOKBACK_DEFAULTS["edinet"])})
-            groups["yahoo"].append({"name": f"{eid}-yahoo", "yahoo": e["ticker"],
+            if market == "JP":
+                groups["edinet"].append({"name": f"{eid}-edinet", "edinet": e["ticker"],
+                                         "lookback_days": params.get("edinet", WATCH_LOOKBACK_DEFAULTS["edinet"])})
+            groups["yahoo"].append({"name": f"{eid}-yahoo", "yahoo": e["ticker"] + YAHOO_SUFFIX[market],
                                     "lookback_days": params.get("yahoo", WATCH_LOOKBACK_DEFAULTS["yahoo"])})
-        terms = w.get("prtimes_terms") or [news_name]
-        groups["prtimes"].append({"name": f"{eid}-prtimes", "prtimes": "|".join(terms),
-                                  "lookback_days": params.get("prtimes", WATCH_LOOKBACK_DEFAULTS["prtimes"])})
+        if market == "JP":
+            terms = w.get("prtimes_terms") or [news_name]
+            groups["prtimes"].append({"name": f"{eid}-prtimes", "prtimes": "|".join(terms),
+                                      "lookback_days": params.get("prtimes", WATCH_LOOKBACK_DEFAULTS["prtimes"])})
     return groups["gnews"] + groups["trials"] + groups["edinet"] + groups["yahoo"] + groups["prtimes"]
 
 

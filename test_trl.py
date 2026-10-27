@@ -299,6 +299,20 @@ class NewSourceParseTests(unittest.TestCase):
         out = gnews.fetch("アストロスケール", 20, 30, AS_OF, http=lambda url, params=None, **kw: GNEWS_XML)
         self.assertEqual(len(out), 1)  # 2026-08-01 は lookback 30 日の外
 
+    def test_gnews_fetch_with_locale_dict(self):
+        calls = []
+
+        def fake(url, params=None, **kw):
+            calls.append(params)
+            return GNEWS_XML
+
+        q = {"q": "Rocket Lab (contract OR launch)", "hl": "en", "gl": "US", "ceid": "US:en"}
+        out = gnews.fetch(q, 20, 30, AS_OF, http=fake)
+        self.assertEqual(calls[0]["hl"], "en")
+        self.assertEqual(calls[0]["gl"], "US")
+        self.assertIn("Rocket Lab", calls[0]["q"])
+        self.assertEqual(len(out), 1)
+
     def test_prtimes_fetch_uses_site_filter(self):
         calls = []
 
@@ -482,6 +496,14 @@ class YahooFinancialTests(unittest.TestCase):
         self.assertIn("現預金 25,700百万円", text)
         self.assertIn("流動比率 3.89", text)
 
+    def test_parse_quote_summary_foreign_currency(self):
+        import copy
+        data = copy.deepcopy(YAHOO_SUMMARY)
+        data["quoteSummary"]["result"][0]["price"] = {"currency": "USD"}
+        text, _, _ = yahoo.parse(data)
+        self.assertIn("売上高 168百万米ドル", text)
+        self.assertNotIn("百万円", text)
+
     def test_fetch_builds_disclosure_candidate(self):
         def fake_http(url, params=None, headers=None, **kw):
             if "getcrumb" in url:
@@ -492,7 +514,7 @@ class YahooFinancialTests(unittest.TestCase):
                 return json.dumps(YAHOO_SUMMARY).encode()
             raise AssertionError(url)
 
-        out = yahoo.fetch("9348", 5, 400, AS_OF, http=fake_http, sleep=lambda *_: None)
+        out = yahoo.fetch("9348.T", 5, 400, AS_OF, http=fake_http, sleep=lambda *_: None)
         self.assertEqual(len(out), 1)
         r = out[0]
         self.assertEqual((r["source"], r["info_type"], r["source_id"]), ("yahoo", "disclosure", "9348-2026-06-30"))
@@ -507,7 +529,7 @@ class YahooFinancialTests(unittest.TestCase):
                 raise RuntimeError("404")
             return json.dumps(YAHOO_SUMMARY).encode()
 
-        out = yahoo.fetch("9348", 5, 400, date(2028, 1, 1), http=fake_http, sleep=lambda *_: None)
+        out = yahoo.fetch("9348.T", 5, 400, date(2028, 1, 1), http=fake_http, sleep=lambda *_: None)
         self.assertEqual(out, [])
 
 
@@ -1363,6 +1385,30 @@ class EntityQueryGenerationTests(unittest.TestCase):
         self.assertEqual(by_name["b-prtimes"]["prtimes"], "B|ビー")
         self.assertNotIn("b-edinet", by_name)  # ticker が無い
         self.assertFalse(any(n.startswith("c-") for n in by_name))  # watch が無い企業は生成しない
+
+    def test_generation_rules_foreign_market(self):
+        src = {"keyword_sets": {"space": ["決算"]},
+               "keyword_sets_en": {"space": ["earnings", "contract"]},
+               "entity_watch": {"lookback_days": {}}}
+        ents = {"entities": [
+            {"id": "us1", "sector": "space", "market": "US", "ticker": "ABC",
+             "watch": {"news_name": "ABC Corp", "extra_keywords": ["rocket"]}},
+            {"id": "gb1", "sector": "space", "market": "GB", "ticker": "XYZ",
+             "watch": {"news_name": "XYZ plc"}},
+        ]}
+        by_name = {q["name"]: q for q in T.build_entity_queries(ents, src)}
+        q = by_name["us1-news"]["gnews"]
+        self.assertEqual((q["hl"], q["gl"], q["ceid"]), ("en", "US", "US:en"))
+        self.assertEqual(q["q"], "ABC Corp (earnings OR contract OR rocket)")
+        self.assertEqual(by_name["us1-yahoo"]["yahoo"], "ABC")     # 米は接尾辞なし
+        self.assertEqual(by_name["gb1-yahoo"]["yahoo"], "XYZ.L")   # 英は .L
+        self.assertNotIn("us1-edinet", by_name)   # EDINET は JP のみ
+        self.assertNotIn("us1-prtimes", by_name)  # PR TIMES も JP のみ
+
+    def test_invalid_market_rejected(self):
+        ents = {"entities": [{"id": "x", "name": "X Corp", "aliases": ["X Corp Ltd"], "market": "FR"}]}
+        with self.assertRaises(ConfigError):
+            T.validate_entities(ents)
 
     def test_unknown_sector_rejected(self):
         ents = {"entities": [{"id": "x", "sector": "chem", "watch": {"news_name": "X社"}}]}

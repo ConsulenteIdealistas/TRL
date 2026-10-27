@@ -74,9 +74,16 @@ def parse_feed(xml_bytes, source="gnews"):
 
 
 def _rss_fetch(query, max_results, lookback_days, as_of, http, source):
+    # query は文字列 (JP ロケール) か、{"q", "hl", "gl", "ceid"} の dict (海外市場)。
+    # dict 形式は config.build_entity_queries が market に応じて生成する。
+    if isinstance(query, dict):
+        qtext, loc = query.get("q", ""), query
+    else:
+        qtext, loc = query, {}
     start = as_of - timedelta(days=lookback_days)
-    q = f"{query} after:{start.isoformat()}"
-    xml = http(URL, params={"q": q, "hl": "ja", "gl": "JP", "ceid": "JP:ja"})
+    q = f"{qtext} after:{start.isoformat()}"
+    xml = http(URL, params={"q": q, "hl": loc.get("hl", "ja"), "gl": loc.get("gl", "JP"),
+                            "ceid": loc.get("ceid", "JP:ja")})
     items = [r for r in parse_feed(xml, source=source)
              if r["published"] and start.isoformat() <= r["published"] <= as_of.isoformat()]
     items.sort(key=lambda r: r["published"], reverse=True)

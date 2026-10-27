@@ -12,6 +12,10 @@ def _norm_text(value):
 
 ENTITY_MODES = ("off", "strong", "any")
 
+# 上場市場。未指定は JP とみなす。EDINET / PR TIMES は JP のみ、Yahoo シンボルと
+# Google News のロケールは市場で切り替える (trlcore/config.py の生成規則)。
+MARKETS = ("JP", "US", "GB", "CH", "DE")
+
 
 def validate_entities(data):
     """entities.json の形式・ID・別名の衝突を検証する。"""
@@ -43,6 +47,9 @@ def validate_entities(data):
         sector = entity.get("sector")
         if sector is not None and (not isinstance(sector, str) or not sector.strip()):
             raise ConfigError(f"entities[{i}].sector must be a non-empty string")
+        market = entity.get("market")
+        if market is not None and market not in MARKETS:
+            raise ConfigError(f"entities[{i}].market must be one of {MARKETS}")
         watch = entity.get("watch")
         if watch is not None:
             if not isinstance(watch, dict):

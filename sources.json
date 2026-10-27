@@ -53,6 +53,46 @@
       "量産"
     ]
   },
+  "keyword_sets_en": {
+    "bio": [
+      "earnings",
+      "clinical trial",
+      "FDA",
+      "approval",
+      "partnership",
+      "licensing",
+      "funding",
+      "revenue"
+    ],
+    "space": [
+      "earnings",
+      "contract",
+      "order",
+      "partnership",
+      "funding",
+      "launch",
+      "award",
+      "revenue"
+    ],
+    "ai": [
+      "earnings",
+      "partnership",
+      "funding",
+      "contract",
+      "deployment",
+      "revenue",
+      "launch"
+    ],
+    "semiconductor": [
+      "earnings",
+      "orders",
+      "contract",
+      "partnership",
+      "funding",
+      "fab",
+      "revenue"
+    ]
+  },
   "topics": [
     {
       "arxiv": "all:\"solid-state battery\"",

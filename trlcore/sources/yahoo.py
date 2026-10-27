@@ -1,6 +1,8 @@
 """Yahoo Finance (非公式API) から上場企業の財務数値を取得する。
 
-クエリ文字列は証券コード (例: "9348"、"186A")。quoteSummary の財務諸表モジュール
+クエリ文字列は Yahoo のシンボル (例: "9348.T"、"RKLB"、"ONT.L"、"IDIA.SW")。
+市場ごとの接尾辞は config.build_entity_queries が entities の market から付ける。
+quoteSummary の財務諸表モジュール
 (四半期損益・通期損益・年次貸借対照表・四半期キャッシュフロー) と financialData から、
 売上高・純利益・現預金・総資産・自己資本比率などを抽出して根拠テキスト化する。
 候補は四半期ごとに1件 (source_id = ティッカー-四半期末日) で、評価時の
@@ -28,7 +30,12 @@ CRUMB_URL = "https://query2.finance.yahoo.com/v1/test/getcrumb"
 COOKIE_URL = "https://fc.yahoo.com"
 QUOTE_URL = "https://finance.yahoo.co.jp/quote/{symbol}"
 MODULES = ("incomeStatementHistoryQuarterly,incomeStatementHistory,balanceSheetHistory,"
-           "cashflowStatementHistoryQuarterly,financialData,quoteType")
+           "cashflowStatementHistoryQuarterly,financialData,quoteType,price")
+
+# 財務諸表の報告通貨ごとの金額単位。数値は百万単位で整形するため、通貨を取り違えると
+# 根拠が桁違いになる。price モジュールの currency から決め、無ければ円とみなす。
+MONEY_UNITS = {"JPY": "百万円", "USD": "百万米ドル", "GBP": "百万英ポンド", "GBp": "百万英ポンド",
+               "CHF": "百万スイスフラン", "EUR": "百万ユーロ"}
 FINANCIAL_MARKER = "財務数値(Yahoo Finance)"
 
 # 実在するブラウザの User-Agent 候補。bot 判定の回避のため、セッション (プロセス)
@@ -62,9 +69,9 @@ def _session_ua():
     return s["ua"]
 
 
-def _fmt_money(v):
+def _fmt_money(v, unit="百万円"):
     m = v / 1_000_000
-    return ("△" if m < 0 else "") + f"{abs(m):,.0f}百万円"
+    return ("△" if m < 0 else "") + f"{abs(m):,.0f}{unit}"
 
 
 def _raw(node, *keys):
@@ -87,13 +94,13 @@ def _end_date(stmt):
     return None
 
 
-def _pl_segment(stmt, label_prefix):
+def _pl_segment(stmt, label_prefix, unit="百万円"):
     seg = []
     for label, keys in (("売上高", ("totalRevenue",)), ("営業利益", ("operatingIncome",)),
                         ("純利益", ("netIncome",))):
         v = _raw(stmt, *keys)
         if v is not None:
-            seg.append(f"{label} {_fmt_money(v)}")
+            seg.append(f"{label} {_fmt_money(v, unit)}")
     return f"{label_prefix} " + "、".join(seg) if seg else ""
 
 
@@ -116,15 +123,17 @@ def parse_quote_summary(data):
     fd = r.get("financialData") or {}
     qt = r.get("quoteType") or {}
     name = qt.get("longName") or qt.get("shortName") or ""
+    currency = (r.get("price") or {}).get("currency")
+    unit = MONEY_UNITS.get(currency, "百万円" if not currency else f"百万{currency}")
 
     parts = []
     period = _end_date(isq[0]) if isq else _end_date(isa[0]) if isa else None
     if isq:
-        seg = _pl_segment(isq[0], f"直近四半期({_end_date(isq[0])}まで)")
+        seg = _pl_segment(isq[0], f"直近四半期({_end_date(isq[0])}まで)", unit)
         if seg:
             parts.append(seg)
     if isa:
-        seg = _pl_segment(isa[0], f"通期({_end_date(isa[0])}まで)")
+        seg = _pl_segment(isa[0], f"通期({_end_date(isa[0])}まで)", unit)
         if seg:
             parts.append(seg)
     if bs:
@@ -133,13 +142,13 @@ def parse_quote_summary(data):
         debts = [v for v in (_raw(b, "shortLongTermDebt"), _raw(b, "longTermDebt")) if v is not None]
         seg = []
         if cash is not None:
-            seg.append(f"現金及び現金同等物 {_fmt_money(cash)}")
+            seg.append(f"現金及び現金同等物 {_fmt_money(cash, unit)}")
         if ta is not None:
-            seg.append(f"総資産 {_fmt_money(ta)}")
+            seg.append(f"総資産 {_fmt_money(ta, unit)}")
         if eq is not None:
-            seg.append(f"純資産 {_fmt_money(eq)}")
+            seg.append(f"純資産 {_fmt_money(eq, unit)}")
         if debts:
-            seg.append(f"有利子負債 {_fmt_money(sum(debts))}")
+            seg.append(f"有利子負債 {_fmt_money(sum(debts), unit)}")
         if ta and eq is not None:
             seg.append(f"自己資本比率 {eq / ta * 100:.1f}%")
         if seg:
@@ -147,13 +156,13 @@ def parse_quote_summary(data):
     if cfq:
         v = _raw(cfq[0], "totalCashFromOperatingActivities")
         if v is not None:
-            parts.append(f"直近四半期の営業キャッシュフロー {_fmt_money(v)}")
+            parts.append(f"直近四半期の営業キャッシュフロー {_fmt_money(v, unit)}")
     seg = []
     tc, td, cr = _raw(fd, "totalCash"), _raw(fd, "totalDebt"), _raw(fd, "currentRatio")
     if tc is not None:
-        seg.append(f"現預金 {_fmt_money(tc)}")
+        seg.append(f"現預金 {_fmt_money(tc, unit)}")
     if td is not None:
-        seg.append(f"総有利子負債 {_fmt_money(td)}")
+        seg.append(f"総有利子負債 {_fmt_money(td, unit)}")
     if cr is not None:
         seg.append(f"流動比率 {cr:.2f}")
     if seg:
@@ -181,10 +190,10 @@ def _ensure_crumb(fetch):
 
 
 def yahoo_fetch(query, max_results, lookback_days, as_of, http=None, sleep=time.sleep):
-    ticker = str(query).strip().upper()
-    if not ticker:
+    symbol = str(query).strip().upper()
+    if not symbol:
         return []
-    symbol = ticker + ".T"
+    ticker = symbol.split(".")[0]  # 表示と source_id 用 (接尾辞なしのティッカー)
     s = _sess()
     if http is None:
         if s["opener"] is None:

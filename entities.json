@@ -1207,6 +1207,169 @@
           "Impfstoff"
         ]
       }
+    },
+    {
+      "id": "firefly",
+      "name": "Firefly Aerospace Inc.",
+      "aliases": [
+        "Firefly Aerospace",
+        "ファイアフライ・エアロスペース"
+      ],
+      "ticker": "FLY",
+      "exchange": "NASDAQ",
+      "sector": "space",
+      "market": "US",
+      "watch": {
+        "news_name": "Firefly Aerospace",
+        "extra_keywords": [
+          "Alpha rocket",
+          "Blue Ghost",
+          "lunar lander"
+        ]
+      }
+    },
+    {
+      "id": "tempus",
+      "name": "Tempus AI, Inc.",
+      "aliases": [
+        "Tempus AI",
+        "テンパスAI"
+      ],
+      "ticker": "TEM",
+      "exchange": "NASDAQ",
+      "sector": "bio",
+      "market": "US",
+      "watch": {
+        "news_name": "Tempus AI",
+        "extra_keywords": [
+          "clinical data",
+          "genomic testing",
+          "precision medicine"
+        ]
+      }
+    },
+    {
+      "id": "recursion",
+      "name": "Recursion Pharmaceuticals, Inc.",
+      "aliases": [
+        "Recursion Pharmaceuticals",
+        "リカージョン・ファーマシューティカルズ"
+      ],
+      "ticker": "RXRX",
+      "exchange": "NASDAQ",
+      "sector": "bio",
+      "market": "US",
+      "watch": {
+        "news_name": "Recursion Pharmaceuticals",
+        "sponsor": "Recursion Pharmaceuticals Inc.",
+        "extra_keywords": [
+          "AI drug discovery",
+          "REC-994",
+          "phenomics"
+        ]
+      }
+    },
+    {
+      "id": "intellia",
+      "name": "Intellia Therapeutics, Inc.",
+      "aliases": [
+        "Intellia Therapeutics",
+        "インテリア・セラピューティクス"
+      ],
+      "ticker": "NTLA",
+      "exchange": "NASDAQ",
+      "sector": "bio",
+      "market": "US",
+      "watch": {
+        "news_name": "Intellia Therapeutics",
+        "sponsor": "Intellia Therapeutics",
+        "extra_keywords": [
+          "in vivo gene editing",
+          "NTLA-2001",
+          "CRISPR"
+        ]
+      }
+    },
+    {
+      "id": "lonza",
+      "name": "Lonza Group AG",
+      "aliases": [
+        "Lonza Group",
+        "Lonza",
+        "ロンザ"
+      ],
+      "ticker": "LONN",
+      "exchange": "SIX",
+      "sector": "bio",
+      "market": "CH",
+      "watch": {
+        "news_name": "Lonza",
+        "extra_keywords": [
+          "CDMO",
+          "biologics manufacturing"
+        ]
+      }
+    },
+    {
+      "id": "sartorius",
+      "name": "Sartorius Aktiengesellschaft",
+      "aliases": [
+        "Sartorius",
+        "ザルトリウス"
+      ],
+      "ticker": "SRT",
+      "exchange": "XETRA",
+      "sector": "bio",
+      "market": "DE",
+      "watch": {
+        "news_name": "Sartorius",
+        "extra_keywords": [
+          "Bioprozess",
+          "Laborprodukte",
+          "Umsatz"
+        ]
+      }
+    },
+    {
+      "id": "suss_microtec",
+      "name": "SUSS MicroTec SE",
+      "aliases": [
+        "SUSS MicroTec",
+        "SUSS",
+        "ズース・マイクロテック"
+      ],
+      "ticker": "SMHN",
+      "exchange": "XETRA",
+      "sector": "semiconductor",
+      "market": "DE",
+      "watch": {
+        "news_name": "SUSS MicroTec",
+        "extra_keywords": [
+          "Lithografie",
+          "Bonder",
+          "Halbleiter"
+        ]
+      }
+    },
+    {
+      "id": "sitime",
+      "name": "SiTime Corporation",
+      "aliases": [
+        "SiTime",
+        "サイタイム"
+      ],
+      "ticker": "SITM",
+      "exchange": "NASDAQ",
+      "sector": "semiconductor",
+      "market": "US",
+      "watch": {
+        "news_name": "SiTime",
+        "extra_keywords": [
+          "MEMS timing",
+          "oscillator",
+          "precision timing"
+        ]
+      }
     }
   ]
 }

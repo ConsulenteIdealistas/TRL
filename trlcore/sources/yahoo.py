@@ -6,13 +6,16 @@
 候補は四半期ごとに1件 (source_id = ティッカー-四半期末日) で、評価時の
 「関連財務根拠」プール (Store.related_financials) の材料になる。
 
-キー・登録は不要。cookie + crumb が必要なため、プロセス内でセッションを再利用する。
+キー・登録は不要。cookie + crumb が必要なためセッションを再利用するが、収集は
+複数スレッドで並行に動くためセッションはスレッドごとに持つ (共有すると crumb の
+取り直しが他スレッドの通信を壊し、取得が不安定になる)。
 非公式APIのため仕様変更で壊れる可能性があるが、失敗したら空リストを返すだけで
 他ソースや評価本体には影響しない (プールが空になるだけ)。
 """
 
 import json
 import random
+import threading
 import time
 import urllib.request
 from http.cookiejar import CookieJar
@@ -40,13 +43,23 @@ _UA_POOL = (
     "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
 )
 
-_session = {"opener": None, "crumb": None, "ua": None}
+_local = threading.local()
+
+
+def _sess():
+    """このスレッドのセッション (opener / crumb / UA) を返す。"""
+    s = getattr(_local, "session", None)
+    if s is None:
+        s = {"opener": None, "crumb": None, "ua": None}
+        _local.session = s
+    return s
 
 
 def _session_ua():
-    if not _session["ua"]:
-        _session["ua"] = random.choice(_UA_POOL)
-    return _session["ua"]
+    s = _sess()
+    if not s["ua"]:
+        s["ua"] = random.choice(_UA_POOL)
+    return s["ua"]
 
 
 def _fmt_money(v):
@@ -151,8 +164,9 @@ def parse_quote_summary(data):
 
 
 def _ensure_crumb(fetch):
-    if _session["crumb"]:
-        return _session["crumb"]
+    s = _sess()
+    if s["crumb"]:
+        return s["crumb"]
     headers = {"User-Agent": _session_ua()}
     try:
         fetch(COOKIE_URL, headers=headers)
@@ -162,7 +176,7 @@ def _ensure_crumb(fetch):
     crumb = raw.decode("utf-8", "replace").strip() if isinstance(raw, (bytes, bytearray)) else str(raw).strip()
     if not crumb or "<" in crumb or len(crumb) > 40:
         raise ValueError("crumb の取得に失敗しました")
-    _session["crumb"] = crumb
+    s["crumb"] = crumb
     return crumb
 
 
@@ -171,11 +185,12 @@ def yahoo_fetch(query, max_results, lookback_days, as_of, http=None, sleep=time.
     if not ticker:
         return []
     symbol = ticker + ".T"
+    s = _sess()
     if http is None:
-        if _session["opener"] is None:
-            _session["opener"] = urllib.request.build_opener(
+        if s["opener"] is None:
+            s["opener"] = urllib.request.build_opener(
                 urllib.request.HTTPCookieProcessor(CookieJar()))
-        opener = _session["opener"]
+        opener = s["opener"]
 
         def fetch(url, params=None, headers=None):
             return http_fetch(url, params=params, headers=headers, opener=opener.open)
@@ -193,8 +208,8 @@ def yahoo_fetch(query, max_results, lookback_days, as_of, http=None, sleep=time.
             break
         except Exception:
             # crumb 失効や bot 判定の可能性があるため、次回は crumb と UA を取り直す
-            _session["crumb"] = None
-            _session["ua"] = None
+            s["crumb"] = None
+            s["ua"] = None
             if attempt == 1:
                 return []
     text, period, name = parse_quote_summary(data)

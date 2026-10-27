@@ -461,9 +461,10 @@ YAHOO_SUMMARY = {
 class YahooFinancialTests(unittest.TestCase):
     def setUp(self):
         from trlcore.sources import yahoo as yahoo_mod
-        yahoo_mod._session["crumb"] = None
-        yahoo_mod._session["opener"] = None
-        yahoo_mod._session["ua"] = None
+        s = yahoo_mod._sess()
+        s["crumb"] = None
+        s["opener"] = None
+        s["ua"] = None
 
     def test_session_ua_from_pool_and_stable(self):
         from trlcore.sources import yahoo as yahoo_mod

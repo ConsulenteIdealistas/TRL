@@ -128,9 +128,19 @@ def select_for_eval(store, cfg, today, limit, retry_failed="no"):
 
     statuses = ["screened", "hold", "error"]
 
+    # 評価予算はコア企業に集中させる (案1)。リンク先がコア企業でない候補
+    # (ウォッチ企業のみ、または辞書から外れた企業のみ) は評価しない。
+    # 収集とプールの対象ではあり続ける。企業リンクの無い候補は rank で
+    # 最後尾になるため、コアの材料がある限り予算はコアに回る。
+    core_ids = {e["id"] for e in (cfg.get("entities") or {}).get("entities", [])
+                if (e.get("tier") or "core") == "core"}
+
     for c in store.list_by_status(statuses):
         if c.get("info_type") == "news":
             continue  # ニュースは単体評価せず、同一企業の評価へ関連ニュースとして同梱する
+        linked = {e["entity_id"] for e in c.get("entities", [])}
+        if linked and not (linked & core_ids):
+            continue
         # エラー候補は、再試行が明示的に許可された場合だけ選ぶ
         if c["status"] == "error" and not store.only_infra_errors(c["id"]):
             # (旧版がAPI失敗を error として保存した候補は only_infra_errors で再試行対象に戻す)

@@ -11,6 +11,7 @@
       "ticker": "186A",
       "exchange": "TSE",
       "sector": "space",
+      "tier": "core",
       "watch": {
         "news_name": "アストロスケール",
         "prtimes_terms": [
@@ -59,6 +60,7 @@
       "ticker": "9348",
       "exchange": "TSE",
       "sector": "space",
+      "tier": "core",
       "watch": {
         "news_name": "ispace",
         "prtimes_terms": [
@@ -109,6 +111,7 @@
       "ticker": "290A",
       "exchange": "TSE",
       "sector": "space",
+      "tier": "core",
       "watch": {
         "news_name": "Synspective",
         "prtimes_terms": [
@@ -151,6 +154,7 @@
       "ticker": "4588",
       "exchange": "TSE",
       "sector": "bio",
+      "tier": "watch",
       "watch": {
         "news_name": "オンコリスバイオファーマ",
         "prtimes_terms": [
@@ -191,6 +195,7 @@
       "ticker": "4978",
       "exchange": "TSE",
       "sector": "bio",
+      "tier": "watch",
       "watch": {
         "news_name": "リプロセル",
         "prtimes_terms": [
@@ -246,6 +251,7 @@
         "ハートシード株式会社"
       ],
       "sector": "bio",
+      "tier": "watch",
       "watch": {
         "news_name": "ハートシード",
         "prtimes_terms": [
@@ -276,6 +282,7 @@
       "ticker": "4587",
       "exchange": "TSE",
       "sector": "bio",
+      "tier": "core",
       "watch": {
         "news_name": "ペプチドリーム",
         "prtimes_terms": [
@@ -329,6 +336,7 @@
       "ticker": "5595",
       "exchange": "TSE",
       "sector": "space",
+      "tier": "core",
       "watch": {
         "news_name": "QPS研究所",
         "prtimes_terms": [
@@ -357,6 +365,7 @@
       "ticker": "402A",
       "exchange": "TSE",
       "sector": "space",
+      "tier": "core",
       "watch": {
         "news_name": "アクセルスペース",
         "prtimes_terms": [
@@ -399,6 +408,7 @@
         "GITAI Japan"
       ],
       "sector": "space",
+      "tier": "core",
       "watch": {
         "news_name": "GITAI",
         "prtimes_terms": [
@@ -434,6 +444,7 @@
       "ticker": "4592",
       "exchange": "TSE",
       "sector": "bio",
+      "tier": "core",
       "watch": {
         "news_name": "サンバイオ",
         "prtimes_terms": [
@@ -465,6 +476,7 @@
       "ticker": "4593",
       "exchange": "TSE",
       "sector": "bio",
+      "tier": "core",
       "watch": {
         "news_name": "ヘリオス",
         "prtimes_terms": [
@@ -494,6 +506,7 @@
       "ticker": "4888",
       "exchange": "TSE",
       "sector": "bio",
+      "tier": "core",
       "watch": {
         "news_name": "ステラファーマ",
         "prtimes_terms": [
@@ -526,6 +539,7 @@
       "ticker": "4884",
       "exchange": "TSE",
       "sector": "bio",
+      "tier": "watch",
       "watch": {
         "news_name": "クリングルファーマ",
         "prtimes_terms": [
@@ -555,6 +569,7 @@
       "ticker": "4599",
       "exchange": "TSE",
       "sector": "bio",
+      "tier": "watch",
       "watch": {
         "news_name": "ステムリム",
         "prtimes_terms": [
@@ -585,6 +600,7 @@
       "ticker": "3993",
       "exchange": "TSE",
       "sector": "ai",
+      "tier": "core",
       "watch": {
         "news_name": "PKSHA",
         "prtimes_terms": [
@@ -620,6 +636,7 @@
       "ticker": "2158",
       "exchange": "TSE",
       "sector": "ai",
+      "tier": "core",
       "watch": {
         "news_name": "FRONTEO",
         "prtimes_terms": [
@@ -648,6 +665,7 @@
       "ticker": "4259",
       "exchange": "TSE",
       "sector": "ai",
+      "tier": "core",
       "watch": {
         "news_name": "エクサウィザーズ",
         "prtimes_terms": [
@@ -676,6 +694,7 @@
       "ticker": "4382",
       "exchange": "TSE",
       "sector": "ai",
+      "tier": "core",
       "watch": {
         "news_name": "HEROZ",
         "prtimes_terms": [
@@ -704,6 +723,7 @@
       "ticker": "7779",
       "exchange": "TSE",
       "sector": "ai",
+      "tier": "core",
       "watch": {
         "news_name": "サイバーダイン",
         "prtimes_terms": [
@@ -733,6 +753,7 @@
       "ticker": "6920",
       "exchange": "TSE",
       "sector": "semiconductor",
+      "tier": "core",
       "watch": {
         "news_name": "レーザーテック",
         "prtimes_terms": [
@@ -761,6 +782,7 @@
       "ticker": "6526",
       "exchange": "TSE",
       "sector": "semiconductor",
+      "tier": "core",
       "watch": {
         "news_name": "ソシオネクスト",
         "prtimes_terms": [
@@ -790,6 +812,7 @@
       "ticker": "6769",
       "exchange": "TSE",
       "sector": "semiconductor",
+      "tier": "core",
       "watch": {
         "news_name": "ザインエレクトロニクス",
         "prtimes_terms": [
@@ -818,6 +841,7 @@
       "ticker": "6616",
       "exchange": "TSE",
       "sector": "semiconductor",
+      "tier": "core",
       "watch": {
         "news_name": "トレックス・セミコンダクター",
         "prtimes_terms": [
@@ -843,6 +867,7 @@
         "ラピダス"
       ],
       "sector": "semiconductor",
+      "tier": "core",
       "watch": {
         "news_name": "ラピダス",
         "prtimes_terms": [
@@ -873,6 +898,7 @@
       "ticker": "RKLB",
       "exchange": "NASDAQ",
       "sector": "space",
+      "tier": "core",
       "market": "US",
       "watch": {
         "news_name": "Rocket Lab",
@@ -893,6 +919,7 @@
       "ticker": "ASTS",
       "exchange": "NASDAQ",
       "sector": "space",
+      "tier": "core",
       "market": "US",
       "watch": {
         "news_name": "AST SpaceMobile",
@@ -913,6 +940,7 @@
       "ticker": "LUNR",
       "exchange": "NASDAQ",
       "sector": "space",
+      "tier": "core",
       "market": "US",
       "watch": {
         "news_name": "Intuitive Machines",
@@ -933,6 +961,7 @@
       "ticker": "PL",
       "exchange": "NYSE",
       "sector": "space",
+      "tier": "core",
       "market": "US",
       "watch": {
         "news_name": "Planet Labs",
@@ -953,6 +982,7 @@
       "ticker": "RDW",
       "exchange": "NYSE",
       "sector": "space",
+      "tier": "core",
       "market": "US",
       "watch": {
         "news_name": "Redwire",
@@ -972,6 +1002,7 @@
       "ticker": "CRSP",
       "exchange": "NASDAQ",
       "sector": "bio",
+      "tier": "core",
       "market": "US",
       "watch": {
         "news_name": "CRISPR Therapeutics",
@@ -993,6 +1024,7 @@
       "ticker": "MRNA",
       "exchange": "NASDAQ",
       "sector": "bio",
+      "tier": "core",
       "market": "US",
       "watch": {
         "news_name": "Moderna",
@@ -1014,6 +1046,7 @@
       "ticker": "BEAM",
       "exchange": "NASDAQ",
       "sector": "bio",
+      "tier": "core",
       "market": "US",
       "watch": {
         "news_name": "Beam Therapeutics",
@@ -1035,6 +1068,7 @@
       "ticker": "ONT",
       "exchange": "LSE",
       "sector": "bio",
+      "tier": "core",
       "market": "GB",
       "watch": {
         "news_name": "Oxford Nanopore",
@@ -1055,6 +1089,7 @@
       "ticker": "IDIA",
       "exchange": "SIX",
       "sector": "bio",
+      "tier": "core",
       "market": "CH",
       "watch": {
         "news_name": "Idorsia",
@@ -1076,6 +1111,7 @@
       "ticker": "ARM",
       "exchange": "NASDAQ",
       "sector": "semiconductor",
+      "tier": "core",
       "market": "US",
       "watch": {
         "news_name": "Arm Holdings",
@@ -1096,6 +1132,7 @@
       "ticker": "OHB",
       "exchange": "XETRA",
       "sector": "space",
+      "tier": "core",
       "market": "DE",
       "watch": {
         "news_name": "OHB",
@@ -1116,6 +1153,7 @@
       "ticker": "EVT",
       "exchange": "XETRA",
       "sector": "bio",
+      "tier": "core",
       "market": "DE",
       "watch": {
         "news_name": "Evotec",
@@ -1135,6 +1173,7 @@
       "ticker": "AIXA",
       "exchange": "XETRA",
       "sector": "semiconductor",
+      "tier": "core",
       "market": "DE",
       "watch": {
         "news_name": "Aixtron",
@@ -1156,6 +1195,7 @@
       "ticker": "WAF",
       "exchange": "XETRA",
       "sector": "semiconductor",
+      "tier": "core",
       "market": "DE",
       "watch": {
         "news_name": "Siltronic",
@@ -1176,6 +1216,7 @@
       "ticker": "FYB",
       "exchange": "XETRA",
       "sector": "bio",
+      "tier": "core",
       "market": "DE",
       "watch": {
         "news_name": "Formycon",
@@ -1197,6 +1238,7 @@
       "ticker": "22UA",
       "exchange": "XETRA",
       "sector": "bio",
+      "tier": "core",
       "market": "DE",
       "watch": {
         "news_name": "BioNTech",
@@ -1218,6 +1260,7 @@
       "ticker": "FLY",
       "exchange": "NASDAQ",
       "sector": "space",
+      "tier": "core",
       "market": "US",
       "watch": {
         "news_name": "Firefly Aerospace",
@@ -1238,6 +1281,7 @@
       "ticker": "TEM",
       "exchange": "NASDAQ",
       "sector": "bio",
+      "tier": "core",
       "market": "US",
       "watch": {
         "news_name": "Tempus AI",
@@ -1258,6 +1302,7 @@
       "ticker": "RXRX",
       "exchange": "NASDAQ",
       "sector": "bio",
+      "tier": "core",
       "market": "US",
       "watch": {
         "news_name": "Recursion Pharmaceuticals",
@@ -1279,6 +1324,7 @@
       "ticker": "NTLA",
       "exchange": "NASDAQ",
       "sector": "bio",
+      "tier": "core",
       "market": "US",
       "watch": {
         "news_name": "Intellia Therapeutics",
@@ -1301,6 +1347,7 @@
       "ticker": "LONN",
       "exchange": "SIX",
       "sector": "bio",
+      "tier": "core",
       "market": "CH",
       "watch": {
         "news_name": "Lonza",
@@ -1320,6 +1367,7 @@
       "ticker": "SRT",
       "exchange": "XETRA",
       "sector": "bio",
+      "tier": "core",
       "market": "DE",
       "watch": {
         "news_name": "Sartorius",
@@ -1341,6 +1389,7 @@
       "ticker": "SMHN",
       "exchange": "XETRA",
       "sector": "semiconductor",
+      "tier": "core",
       "market": "DE",
       "watch": {
         "news_name": "SUSS MicroTec",
@@ -1361,6 +1410,7 @@
       "ticker": "SITM",
       "exchange": "NASDAQ",
       "sector": "semiconductor",
+      "tier": "core",
       "market": "US",
       "watch": {
         "news_name": "SiTime",
@@ -1380,6 +1430,7 @@
       "ticker": "MDA",
       "exchange": "TSX",
       "sector": "space",
+      "tier": "core",
       "market": "CA",
       "watch": {
         "news_name": "MDA Space",
@@ -1400,6 +1451,7 @@
       "ticker": "TSAT",
       "exchange": "TSX",
       "sector": "space",
+      "tier": "core",
       "market": "CA",
       "watch": {
         "news_name": "Telesat",
@@ -1419,6 +1471,7 @@
       "ticker": "CVO",
       "exchange": "TSX",
       "sector": "ai",
+      "tier": "core",
       "market": "CA",
       "watch": {
         "news_name": "Coveo",
@@ -1439,6 +1492,7 @@
       "ticker": "CLS",
       "exchange": "TSX",
       "sector": "ai",
+      "tier": "core",
       "market": "CA",
       "watch": {
         "news_name": "Celestica",
@@ -1460,6 +1514,7 @@
       "ticker": "TLX",
       "exchange": "ASX",
       "sector": "bio",
+      "tier": "core",
       "market": "AU",
       "watch": {
         "news_name": "Telix Pharmaceuticals",
@@ -1481,6 +1536,7 @@
       "ticker": "MSB",
       "exchange": "ASX",
       "sector": "bio",
+      "tier": "core",
       "market": "AU",
       "watch": {
         "news_name": "Mesoblast",
@@ -1501,6 +1557,7 @@
       "ticker": "EOS",
       "exchange": "ASX",
       "sector": "space",
+      "tier": "core",
       "market": "AU",
       "watch": {
         "news_name": "Electro Optic Systems",
@@ -1521,6 +1578,7 @@
       "ticker": "AVIO",
       "exchange": "BIT",
       "sector": "space",
+      "tier": "core",
       "market": "IT",
       "watch": {
         "news_name": "Avio",
@@ -1541,6 +1599,7 @@
       "ticker": "BIOA-B",
       "exchange": "Nasdaq Stockholm",
       "sector": "bio",
+      "tier": "core",
       "market": "SE",
       "watch": {
         "news_name": "BioArctic",
@@ -1562,6 +1621,7 @@
       "ticker": "AAC",
       "exchange": "Nasdaq First North",
       "sector": "space",
+      "tier": "core",
       "market": "SE",
       "watch": {
         "news_name": "AAC Clyde Space",

@@ -722,6 +722,16 @@ class PromptTests(unittest.TestCase):
         for anchor in ("材料の方向性", "positive", "negative", "mixed", "点数や TRL とは独立"):
             self.assertIn(anchor, text)
 
+    def test_prompts_contain_score_anchors(self):
+        # 6項目の帯域アンカー (何点に何が要るか) が欠けないこと
+        text = load_prompt("long", CFG["scoring"]["prompts"]["long"])["text"]
+        for anchor in ("[採点アンカー]", "technology_readiness", "ランウェイ", "59 を上限の目安",
+                       "根拠の質が低い側の帯域"):
+            self.assertIn(anchor, text)
+        ev = load_prompt("event", CFG["scoring"]["prompts"]["event"])["text"]
+        for anchor in ("[採点アンカー]", "catalyst_quality", "downside_resilience"):
+            self.assertIn(anchor, ev)
+
     def test_long_prompt_contains_low_band_procedure(self):
         # TRL 1〜3 が null に逃げないための判定手順・原則・具体例が欠けないこと
         text = load_prompt("long", CFG["scoring"]["prompts"]["long"])["text"]
@@ -991,6 +1001,22 @@ class NewsPoolTests(unittest.TestCase):
         weak = add(raw(sid="2610.9203", title="アストロスケール関連の市場分析メモ", published="2026-10-10"))
         sel = select_for_eval(store, CFG, AS_OF, 10)
         self.assertEqual([c["id"] for c in sel], [weak, demo, theory])
+        store.close()
+
+    def test_selection_excludes_watch_only_candidates(self):
+        store = Store(self.path)
+
+        def add(r):
+            rec, _ = normalize(r, "2026-10-20T00:00:00+00:00")
+            cid, _ = store.upsert_candidate(rec, "r0")
+            store.set_entities(cid, link_entities(rec, CFG.get("entities", {})))
+            store.set_status(cid, "screened")
+            return cid
+        # オンコリスはウォッチ層: リンクがあっても評価対象にしない
+        watch = add(raw(sid="2610.9301", title="オンコリスの臨床試験に関する報告", published="2026-10-19"))
+        core = add(raw(sid="2610.9302", title="アストロスケール関連の市場分析メモ", published="2026-10-18"))
+        sel = select_for_eval(store, CFG, AS_OF, 10)
+        self.assertEqual([c["id"] for c in sel], [core])
         store.close()
 
     def test_news_not_selected_but_pooled(self):
@@ -1458,6 +1484,11 @@ class EntityQueryGenerationTests(unittest.TestCase):
 
     def test_invalid_market_rejected(self):
         ents = {"entities": [{"id": "x", "name": "X Corp", "aliases": ["X Corp Ltd"], "market": "FR"}]}
+        with self.assertRaises(ConfigError):
+            T.validate_entities(ents)
+
+    def test_invalid_tier_rejected(self):
+        ents = {"entities": [{"id": "x", "name": "X Corp", "aliases": ["X Corp Ltd"], "tier": "vip"}]}
         with self.assertRaises(ConfigError):
             T.validate_entities(ents)
 

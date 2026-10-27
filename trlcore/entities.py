@@ -16,6 +16,10 @@ ENTITY_MODES = ("off", "strong", "any")
 # Google News のロケールは市場で切り替える (trlcore/config.py の生成規則)。
 MARKETS = ("JP", "US", "GB", "CH", "DE", "CA", "AU", "IT", "SE")
 
+# 監視の層。core は評価予算を使う対象、watch は収集とプール専用 (評価しない)。
+# 評価選定はコア企業のリンクがある候補だけを対象にする (trlcore/pipeline.py)。
+TIERS = ("core", "watch")
+
 
 def validate_entities(data):
     """entities.json の形式・ID・別名の衝突を検証する。"""
@@ -50,6 +54,9 @@ def validate_entities(data):
         market = entity.get("market")
         if market is not None and market not in MARKETS:
             raise ConfigError(f"entities[{i}].market must be one of {MARKETS}")
+        tier = entity.get("tier")
+        if tier is not None and tier not in TIERS:
+            raise ConfigError(f"entities[{i}].tier must be one of {TIERS}")
         watch = entity.get("watch")
         if watch is not None:
             if not isinstance(watch, dict):

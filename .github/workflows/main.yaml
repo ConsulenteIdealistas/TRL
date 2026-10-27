@@ -16,7 +16,7 @@ on:
       max_eval:
         description: "Max candidates to evaluate per run"
         type: string
-        default: "3"
+        default: "6"
       retry_failed:
         description: "Retry previously failed evaluations?"
         type: choice
@@ -78,7 +78,7 @@ jobs:
           # 入力はシェルに直接展開せず環境変数経由で渡す(スクリプトインジェクション対策)
           IN_SOURCES: ${{ inputs.sources || 'pubmed,arxiv,gnews,prtimes,trials,yahoo' }}
           IN_KINDS: ${{ inputs.kinds || 'long' }}
-          IN_MAX_EVAL: ${{ inputs.max_eval || '3' }}
+          IN_MAX_EVAL: ${{ inputs.max_eval || '6' }}
           IN_RETRY: ${{ inputs.retry_failed || 'no' }}
           IN_PURGE: ${{ inputs.purge_evaluations || 'no' }}
         run: |

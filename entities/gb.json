@@ -21,6 +21,91 @@
         ],
         "pubmed": "Oxford Nanopore[Affiliation]"
       }
+    },
+    {
+      "id": "oxford_instruments",
+      "name": "Oxford Instruments plc",
+      "aliases": [
+        "Oxford Instruments",
+        "オックスフォード・インストゥルメンツ"
+      ],
+      "ticker": "OXIG",
+      "exchange": "LSE",
+      "sector": "semiconductor",
+      "tier": "core",
+      "market": "GB",
+      "watch": {
+        "news_name": "Oxford Instruments",
+        "extra_keywords": [
+          "plasma technology",
+          "etching",
+          "deposition"
+        ]
+      }
+    },
+    {
+      "id": "genus",
+      "name": "Genus plc",
+      "aliases": [
+        "Genus",
+        "ジーナス"
+      ],
+      "ticker": "GNS",
+      "exchange": "LSE",
+      "sector": "bio",
+      "tier": "core",
+      "market": "GB",
+      "watch": {
+        "news_name": "Genus plc",
+        "extra_keywords": [
+          "gene editing",
+          "PRRS-resistant",
+          "pig genetics"
+        ],
+        "pubmed": "Genus plc[Affiliation]"
+      }
+    },
+    {
+      "id": "filtronic",
+      "name": "Filtronic plc",
+      "aliases": [
+        "Filtronic",
+        "フィルトロニック"
+      ],
+      "ticker": "FTC",
+      "exchange": "LSE",
+      "sector": "space",
+      "tier": "core",
+      "market": "GB",
+      "watch": {
+        "news_name": "Filtronic",
+        "extra_keywords": [
+          "Starlink",
+          "transceiver",
+          "E-band"
+        ]
+      }
+    },
+    {
+      "id": "qinetiq",
+      "name": "QinetiQ Group plc",
+      "aliases": [
+        "QinetiQ",
+        "キネティック"
+      ],
+      "ticker": "QQ",
+      "exchange": "LSE",
+      "sector": "space",
+      "tier": "core",
+      "market": "GB",
+      "watch": {
+        "news_name": "QinetiQ",
+        "extra_keywords": [
+          "defence technology",
+          "robotics",
+          "hypersonics"
+        ]
+      }
     }
   ]
 }

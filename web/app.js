@@ -23,7 +23,7 @@ const src = s => "badge " + (SRC_CLASS[s] || "");
 const srcName = s => SRC_LABEL[s] || esc(s);
 const stB = s => `<span class="st ${s === "final" ? "" : "st-" + s}">${SL[s] || esc(s)}</span>`;
 const DL = {positive: "ポジティブ", negative: "ネガティブ", mixed: "混在"};
-const ML = {JP: "日本", US: "米国", GB: "英国", CH: "スイス", DE: "ドイツ", DK: "デンマーク", SE: "スウェーデン", IT: "イタリア", CA: "カナダ", AU: "オーストラリア"};
+const ML = {JP: "日本", US: "米国", GB: "英国", CH: "スイス", DE: "ドイツ", DK: "デンマーク", SE: "スウェーデン", IT: "イタリア", CA: "カナダ", AU: "オーストラリア", ES: "スペイン"};
 const MO = ["JP", "US", "GB", "CH", "DE", "DK", "SE", "IT", "CA", "AU"];  // 国・市場別の並び
 const CL = {space: "宇宙", bio: "バイオ", semiconductor: "半導体", ai: "AI"};
 const CO = ["space", "bio", "semiconductor", "ai"];  // 分野別の並び

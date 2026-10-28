@@ -33,7 +33,7 @@ const safeUrl = u => /^https?:\/\//i.test(String(u || "")) ? String(u) : "#";
 const ok = t => Number.isInteger(t) && t >= 1 && t <= 9;
 const SRC_CLASS = {arxiv: "s-arxiv", pubmed: "s-pubmed", gnews: "s-gnews", prtimes: "s-prtimes", trials: "s-trials", edinet: "s-edinet", yahoo: "s-yahoo", openalex: "s-openalex"};
 const SRC_LABEL = {arxiv: "arXiv", pubmed: "PubMed", gnews: "News", prtimes: "PR TIMES", trials: "ClinicalTrials", edinet: "EDINET", yahoo: "Yahoo Finance", openalex: "OpenAlex"};
-const ML = {JP: "日本", US: "米国", GB: "英国", CH: "スイス", DE: "ドイツ", DK: "デンマーク", SE: "スウェーデン", IT: "イタリア", CA: "カナダ", AU: "オーストラリア"};
+const ML = {JP: "日本", US: "米国", GB: "英国", CH: "スイス", DE: "ドイツ", DK: "デンマーク", SE: "スウェーデン", IT: "イタリア", CA: "カナダ", AU: "オーストラリア", ES: "スペイン"};
 const CL = {space: "宇宙", bio: "バイオ", semiconductor: "半導体", ai: "AI"};
 const label = k => IL[k] || k;
 const DL = {positive: "ポジティブ", negative: "ネガティブ", mixed: "混在"};

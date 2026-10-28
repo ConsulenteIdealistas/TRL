@@ -137,7 +137,7 @@ WATCH_LOOKBACK_DEFAULTS = {"prtimes": 90, "trials": 365, "edinet": 60, "yahoo": 
 
 # 市場ごとの Yahoo シンボル接尾辞と Google News ロケール。market 未指定は JP。
 YAHOO_SUFFIX = {"JP": ".T", "US": "", "GB": ".L", "CH": ".SW", "DE": ".DE", "CA": ".TO", "AU": ".AX",
-                "IT": ".MI", "SE": ".ST", "DK": ".CO"}
+                "IT": ".MI", "SE": ".ST", "DK": ".CO", "ES": ".MC"}
 GNEWS_LOCALE = {"US": {"hl": "en", "gl": "US", "ceid": "US:en"},
                 "GB": {"hl": "en", "gl": "GB", "ceid": "GB:en"},
                 "CH": {"hl": "en", "gl": "CH", "ceid": "CH:en"},
@@ -146,7 +146,8 @@ GNEWS_LOCALE = {"US": {"hl": "en", "gl": "US", "ceid": "US:en"},
                 "AU": {"hl": "en", "gl": "AU", "ceid": "AU:en"},
                 "IT": {"hl": "it", "gl": "IT", "ceid": "IT:it"},
                 "SE": {"hl": "sv", "gl": "SE", "ceid": "SE:sv"},
-                "DK": {"hl": "en", "gl": "DK", "ceid": "DK:en"}}
+                "DK": {"hl": "en", "gl": "DK", "ceid": "DK:en"},
+                "ES": {"hl": "en", "gl": "ES", "ceid": "ES:en"}}
 # 市場ごとのキーワード集合の置き場所 (JP は日本語、それ以外は市場言語。未指定の市場は英語)
 # デンマークは Google News のデンマーク語圏の収載が薄いため英語集合を使う (ロケールは DK)
 KEYWORD_SETS_BY_MARKET = {"JP": "keyword_sets", "DE": "keyword_sets_de",
@@ -216,7 +217,7 @@ def build_entity_queries(entities, src):
 CONFIG_FILES = ("scoring.json", "sources.json")
 
 # entities/ ディレクトリ内の市場別ファイルの合体順 (辞書の並び = クエリ生成順を決める)
-ENTITY_FILE_ORDER = ("jp", "us", "gb", "ch", "de", "ca", "au", "it", "se", "dk")
+ENTITY_FILE_ORDER = ("jp", "us", "gb", "ch", "de", "ca", "au", "it", "se", "dk", "es")
 
 
 LLM_DEFAULTS = {"timeout_sec": 120, "retries": 3, "max_consecutive_failures": 2, "phase_budget_sec": 1200,

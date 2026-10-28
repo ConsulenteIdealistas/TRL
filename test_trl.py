@@ -1676,6 +1676,22 @@ class EntityQueryGenerationTests(unittest.TestCase):
         self.assertEqual(by_name["dk1-yahoo"]["yahoo"], "GMAB.CO")
         self.assertEqual(by_name["dk1-trials"]["trials"], "Genmab")
 
+    def test_generation_rules_spain(self):
+        # スペインも英語集合+現地ロケール方式。Yahoo は .MC、通貨はユーロ圏
+        src = {"keyword_sets": {"bio": ["治験"]},
+               "keyword_sets_en": {"bio": ["earnings", "clinical trial"]},
+               "entity_watch": {"lookback_days": {}}}
+        ents = {"entities": [
+            {"id": "es1", "sector": "bio", "market": "ES", "ticker": "PHM",
+             "watch": {"news_name": "PharmaMar", "sponsor": "PharmaMar"}},
+        ]}
+        by_name = {q["name"]: q for q in T.build_entity_queries(ents, src)}
+        q = by_name["es1-news"]["gnews"]
+        self.assertEqual((q["hl"], q["gl"], q["ceid"]), ("en", "ES", "ES:en"))
+        self.assertEqual(q["q"], "PharmaMar (earnings OR clinical trial)")
+        self.assertEqual(by_name["es1-yahoo"]["yahoo"], "PHM.MC")
+        self.assertEqual(by_name["es1-trials"]["trials"], "PharmaMar")
+
     def test_generation_rules_openalex(self):
         src = {"keyword_sets": {"space": ["契約"]},
                "entity_watch": {"lookback_days": {"openalex": 365}}}

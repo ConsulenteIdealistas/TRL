@@ -169,7 +169,9 @@ def translate_display_set(store, cfg, llm, today, log=print, http=http_fetch):
             try:
                 got = fn(items)
             except Exception as e:  # この経路は諦めて次を試す
-                log(f"[translate] {name} での翻訳に失敗: {type(e).__name__}")
+                # ステータスコードまで出す (401=キー違い / 403=プラン・接続先違い / 456=上限)。
+                # キーはヘッダーで送るため、エラー文字列に秘密情報は含まれない
+                log(f"[translate] {name} での翻訳に失敗: {type(e).__name__}: {e}")
                 got = {}
             if len(got) >= len(chunk):
                 provider = name

@@ -824,7 +824,9 @@ class PromptTests(unittest.TestCase):
                        "テープアウト", "PoC", "商用展開と TRL の分離",
                        "意図した性能・安定性", "再現性(規格・歩留まり)", "デザインウィン",
                        "公開ベンチマークのスコア公表だけでは", "熱真空試験に合格",
-                       "実臨床での使用を通じて", "販売数量や売上は"):
+                       "実臨床での使用を通じて", "販売数量や売上は",
+                       "推測で補ってはならない", "投資上の成長余地を推論してはならない",
+                       "TRL 9 の確認事項"):
             self.assertIn(anchor, text)
 
     def test_long_prompt_contains_direction_guidance(self):

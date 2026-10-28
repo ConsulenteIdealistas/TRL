@@ -24,7 +24,7 @@ const srcName = s => SRC_LABEL[s] || esc(s);
 const stB = s => `<span class="st ${s === "final" ? "" : "st-" + s}">${SL[s] || esc(s)}</span>`;
 const DL = {positive: "ポジティブ", negative: "ネガティブ", mixed: "混在"};
 const ML = {JP: "日本", US: "米国", GB: "英国", CH: "スイス", DE: "ドイツ", DK: "デンマーク", SE: "スウェーデン", IT: "イタリア", CA: "カナダ", AU: "オーストラリア", ES: "スペイン", FR: "フランス", NL: "オランダ", FI: "フィンランド", NO: "ノルウェー", BE: "ベルギー"};
-const MO = ["JP", "US", "GB", "CH", "DE", "DK", "SE", "IT", "CA", "AU"];  // 国・市場別の並び
+const MO = ["JP", "US", "GB", "CH", "DE", "DK", "SE", "IT", "CA", "AU", "ES", "FR", "NL", "FI", "NO", "BE"];  // 国・市場別の並び
 const CL = {space: "宇宙", bio: "バイオ", semiconductor: "半導体", ai: "AI"};
 const CO = ["space", "bio", "semiconductor", "ai"];  // 分野別の並び
 const primEnt = p => p.entities.find(e => e.strength === "strong") || p.entities[0] || null;
@@ -63,6 +63,7 @@ function filtered() {
     : o === "market" ? (ord(marketOf(a), MO) - ord(marketOf(b), MO)) || byStatus(a, b)
     : o === "sector" ? (ord(sectorOf(a), CO) - ord(sectorOf(b), CO)) || byStatus(a, b)
     : o === "trl" ? (ok(lvl(b)) ? lvl(b) : -1) - (ok(lvl(a)) ? lvl(a) : -1)
+    : o === "trl_asc" ? (ok(lvl(a)) ? lvl(a) : 99) - (ok(lvl(b)) ? lvl(b) : 99)
     : o === "title" ? a.title.localeCompare(b.title, "ja") : String(b.published || "").localeCompare(String(a.published || "")));
   return r;
 }

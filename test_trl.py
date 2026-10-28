@@ -402,7 +402,7 @@ class NewSourceParseTests(unittest.TestCase):
         def azure_http(url, params=None, headers=None, data=None, **kw):
             return json.dumps([{"translations": [{"text": "訳:" + d["Text"]}]} for d in json.loads(data)])
         self.assertEqual(T.azure_translate(["X"], "k", http=azure_http), ["訳:X"])
-        # 経路の優先順位: DeepL が失敗したら Azure、それも無ければ LLM。出典も記録される
+        # 経路の優先順位: 本命 Azure が失敗したら DeepL、それも無ければ LLM。出典も記録される
         tmp = tempfile.TemporaryDirectory()
         store = T.Store(Path(tmp.name) / "d.sqlite")
         rec, _ = T.normalize(raw(), T.now_iso())
@@ -412,16 +412,16 @@ class NewSourceParseTests(unittest.TestCase):
         store.conn.commit()
 
         def flaky_http(url, params=None, headers=None, data=None, **kw):
-            if "deepl" in url:
-                raise RuntimeError("deepl down")
-            return azure_http(url, params=params, headers=headers, data=data)
+            if "microsofttranslator" in url:
+                raise RuntimeError("azure down")
+            return deepl_http(url, params=params, headers=headers, data=data)
         env = {"DEEPL_API_KEY": "k:fx", "AZURE_TRANSLATOR_KEY": "k2"}
         with um.patch.dict(os.environ, env, clear=False):
             n = T.translate_display_set(store, CFG, None, AS_OF, log=lambda *_: None, http=flaky_http)
         self.assertEqual(n, 1)
         c = store.get_candidate(cid)
         self.assertTrue(c["title_ja"].startswith("訳:"))
-        self.assertEqual(json.loads(c["translation_src"]), {"title": "azure", "abstract": "azure"})
+        self.assertEqual(json.loads(c["translation_src"]), {"title": "deepl", "abstract": "deepl"})
         store.close()
         tmp.cleanup()
 

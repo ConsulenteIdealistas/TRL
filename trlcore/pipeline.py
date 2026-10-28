@@ -339,7 +339,7 @@ def run_pipeline(store, cfg, llm, *, as_of, sources=("pubmed", "arxiv"), kinds=(
         log(f"::warning::[eval] LLM APIの失敗が続くため評価フェーズを打ち切ります ({degraded})。未評価の候補は次回に回します")
     if degraded:
         counts["llm_degraded"] = degraded
-    # 翻訳は DeepL → Azure → LLM の順に試す。LLM が劣化状態の回は LLM 段だけ外す
+    # 翻訳は Azure → DeepL → LLM の順に試す。LLM が劣化状態の回は LLM 段だけ外す
     counts["translated"] = translate_display_set(store, cfg, None if degraded else llm, today, log)
     all_failed = do_collect and counts["sources_ok"] == 0 and counts["sources_failed"] > 0
     store.finish_run(run_id, counts, "failed" if all_failed else "ok", time.monotonic() - t0)

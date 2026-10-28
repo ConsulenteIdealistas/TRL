@@ -2,8 +2,11 @@
 
 サイトに載る候補(評価済み+次に評価される上位)だけを訳して DB に保存する。
 訳は1回作れば再利用されるため、実行ごとの追加コストは新規分だけ。
-経路は DeepL API → Azure Translator → 評価 LLM の順に試し(キーが無い経路は
+経路は Azure Translator → DeepL API → 評価 LLM の順に試し(キーが無い経路は
 飛ばす)、どの経路で訳したかを候補ごとに記録して画面に明記する。
+Azure を本命にするのは無料枠(F0: 月200万字)が毎月リセットされ恒常的に
+使えるため。DeepL の無料枠(合計100万字・一回限り)は温存し、Azure が
+使えない時の切り札として残す。
 翻訳の失敗はその分を原文表示に落とすだけで、実行全体は止めない。
 """
 import json
@@ -129,13 +132,13 @@ def display_ids(store, cfg, today, pending_limit=10):
 def _backends(llm, http):
     """使える翻訳経路を優先順に返す: [(名前, バッチ関数), ...]"""
     chain = []
-    deepl_key = os.environ.get("DEEPL_API_KEY")
-    if deepl_key:
-        chain.append(("deepl", _mt_batch(lambda ts: deepl_translate(ts, deepl_key, http))))
     azure_key = os.environ.get("AZURE_TRANSLATOR_KEY")
     if azure_key:
         region = os.environ.get("AZURE_TRANSLATOR_REGION") or None
         chain.append(("azure", _mt_batch(lambda ts: azure_translate(ts, azure_key, region, http))))
+    deepl_key = os.environ.get("DEEPL_API_KEY")
+    if deepl_key:
+        chain.append(("deepl", _mt_batch(lambda ts: deepl_translate(ts, deepl_key, http))))
     if llm is not None:
         chain.append(("llm", lambda items: translate_batch(llm, items)))
     return chain

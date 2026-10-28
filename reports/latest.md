@@ -1,76 +1,76 @@
-# TRL 実行レポート 20261028T022842Z-b569b0
+# TRL 実行レポート 20261028T025240Z-9ad2af
 
 ※ スコアは評価尺度であり、株価上昇確率・成功確率・投資利益率ではありません。売買の自動判定にも使えません。
 
 - 基準日: 2026-10-28 / 設定: 2026.10.0 (d0b5997ae671e10e)
-- 状態: ok / 所要: 480.9秒
-- 取得 1449 / 新規 20 / 重複 1080 / 不正 349
-- スクリーニング通過 20 / 除外 0 / 評価対象 6
-- 評価: 確定 4 / 保留 2 / エラー 0 / LLM未設定でスキップ 0
+- 状態: ok / 所要: 289.43秒
+- 取得 1491 / 新規 6 / 重複 1120 / 不正 365
+- スクリーニング通過 6 / 除外 0 / 評価対象 6
+- 評価: 確定 6 / 保留 0 / エラー 0 / LLM未設定でスキップ 0
 
 ## 情報源ごとの状況
 - [OK] arxiv / solid-state-battery: 取得7 新規0 重複0 不正7
 - [OK] arxiv / quantum-error-correction: 取得20 新規0 重複0 不正20
 - [OK] pubmed / gene-therapy: 取得4 新規0 重複0 不正4
-- [OK] gnews / astroscale-news: 取得20 新規0 重複11 不正9
-- [OK] gnews / ispace-news: 取得20 新規1 重複19 不正0
+- [OK] gnews / astroscale-news: 取得20 新規0 重複13 不正7
+- [OK] gnews / ispace-news: 取得20 新規0 重複20 不正0
 - [OK] gnews / synspective-news: 取得16 新規0 重複16 不正0
-- [OK] gnews / oncolys-news: 取得12 新規0 重複0 不正12
-- [OK] gnews / reprocell-news: 取得9 新規0 重複9 不正0
+- [OK] gnews / oncolys-news: 取得6 新規0 重複0 不正6
+- [OK] gnews / reprocell-news: 取得8 新規0 重複8 不正0
 - [OK] gnews / peptidream-news: 取得9 新規0 重複2 不正7
-- [OK] gnews / qps-news: 取得10 新規0 重複7 不正3
-- [OK] gnews / axelspace-news: 取得20 新規1 重複15 不正4
-- [OK] gnews / sanbio-news: 取得20 新規0 重複14 不正6
-- [OK] gnews / healios-news: 取得14 新規0 重複9 不正5
-- [OK] gnews / stella_pharma-news: 取得7 新規0 重複5 不正2
-- [OK] gnews / kringle-news: 取得11 新規0 重複9 不正2
-- [OK] gnews / stemrim-news: 取得11 新規0 重複11 不正0
-- [OK] gnews / pksha-news: 取得8 新規1 重複7 不正0
-- [OK] gnews / fronteo-news: 取得20 新規1 重複19 不正0
+- [OK] gnews / qps-news: 取得20 新規0 重複11 不正9
+- [OK] gnews / axelspace-news: 取得20 新規2 重複13 不正5
+- [OK] gnews / sanbio-news: 取得20 新規1 重複12 不正7
+- [OK] gnews / healios-news: 取得15 新規0 重複8 不正7
+- [OK] gnews / stella_pharma-news: 取得8 新規0 重複6 不正2
+- [OK] gnews / kringle-news: 取得12 新規0 重複9 不正3
+- [OK] gnews / stemrim-news: 取得7 新規0 重複7 不正0
+- [OK] gnews / pksha-news: 取得20 新規0 重複8 不正12
+- [OK] gnews / fronteo-news: 取得20 新規0 重複20 不正0
 - [OK] gnews / exawizards-news: 取得20 新規0 重複18 不正2
-- [OK] gnews / heroz-news: 取得20 新規2 重複15 不正3
+- [OK] gnews / heroz-news: 取得20 新規0 重複17 不正3
 - [OK] gnews / cyberdyne-news: 取得5 新規0 重複1 不正4
 - [OK] gnews / lasertec-news: 取得20 新規0 重複8 不正12
 - [OK] gnews / socionext-news: 取得20 新規0 重複7 不正13
 - [OK] gnews / thine-news: 取得6 新規0 重複3 不正3
 - [OK] gnews / torex-news: 取得2 新規0 重複2 不正0
-- [OK] gnews / rocketlab-news: 取得20 新規1 重複19 不正0
-- [OK] gnews / ast_spacemobile-news: 取得20 新規1 重複17 不正2
-- [OK] gnews / intuitive_machines-news: 取得9 新規0 重複4 不正5
-- [OK] gnews / planet_labs-news: 取得20 新規1 重複16 不正3
-- [OK] gnews / redwire-news: 取得7 新規0 重複5 不正2
-- [OK] gnews / crispr-news: 取得20 新規0 重複6 不正14
-- [OK] gnews / moderna-news: 取得20 新規0 重複17 不正3
-- [OK] gnews / beam-news: 取得20 新規0 重複12 不正8
+- [OK] gnews / rocketlab-news: 取得20 新規0 重複20 不正0
+- [OK] gnews / ast_spacemobile-news: 取得20 新規0 重複18 不正2
+- [OK] gnews / intuitive_machines-news: 取得14 新規0 重複5 不正9
+- [OK] gnews / planet_labs-news: 取得20 新規0 重複15 不正5
+- [OK] gnews / redwire-news: 取得20 新規0 重複15 不正5
+- [OK] gnews / crispr-news: 取得10 新規0 重複6 不正4
+- [OK] gnews / moderna-news: 取得20 新規1 重複16 不正3
+- [OK] gnews / beam-news: 取得11 新規0 重複8 不正3
 - [OK] gnews / arm-news: 取得20 新規0 重複9 不正11
 - [OK] gnews / firefly-news: 取得18 新規0 重複11 不正7
-- [OK] gnews / tempus-news: 取得20 新規3 重複8 不正9
-- [OK] gnews / recursion-news: 取得14 新規1 重複9 不正4
-- [OK] gnews / intellia-news: 取得6 新規0 重複3 不正3
-- [OK] gnews / sitime-news: 取得11 新規0 重複11 不正0
-- [OK] gnews / oxford_nanopore-news: 取得14 新規0 重複8 不正6
-- [OK] gnews / idorsia-news: 取得9 新規0 重複8 不正1
-- [OK] gnews / lonza-news: 取得20 新規1 重複10 不正9
-- [OK] gnews / ohb-news: 取得20 新規1 重複18 不正1
-- [OK] gnews / evotec-news: 取得10 新規0 重複10 不正0
+- [OK] gnews / tempus-news: 取得20 新規0 重複10 不正10
+- [OK] gnews / recursion-news: 取得14 新規0 重複9 不正5
+- [OK] gnews / intellia-news: 取得7 新規0 重複4 不正3
+- [OK] gnews / sitime-news: 取得11 新規1 重複10 不正0
+- [OK] gnews / oxford_nanopore-news: 取得10 新規0 重複7 不正3
+- [OK] gnews / idorsia-news: 取得6 新規0 重複6 不正0
+- [OK] gnews / lonza-news: 取得9 新規0 重複6 不正3
+- [OK] gnews / ohb-news: 取得20 新規0 重複19 不正1
+- [OK] gnews / evotec-news: 取得9 新規0 重複9 不正0
 - [OK] gnews / aixtron-news: 取得20 新規0 重複20 不正0
-- [OK] gnews / siltronic-news: 取得20 新規1 重複18 不正1
-- [OK] gnews / formycon-news: 取得9 新規0 重複8 不正1
+- [OK] gnews / siltronic-news: 取得20 新規0 重複19 不正1
+- [OK] gnews / formycon-news: 取得20 新規0 重複20 不正0
 - [OK] gnews / biontech-news: 取得20 新規0 重複20 不正0
-- [OK] gnews / sartorius-news: 取得11 新規1 重複10 不正0
+- [OK] gnews / sartorius-news: 取得11 新規0 重複11 不正0
 - [OK] gnews / suss_microtec-news: 取得20 新規0 重複12 不正8
-- [OK] gnews / mda_space-news: 取得20 新規0 重複16 不正4
+- [OK] gnews / mda_space-news: 取得20 新規0 重複12 不正8
 - [OK] gnews / telesat-news: 取得10 新規0 重複10 不正0
 - [OK] gnews / coveo-news: 取得6 新規0 重複5 不正1
-- [OK] gnews / celestica-news: 取得20 新規1 重複18 不正1
-- [OK] gnews / telix-news: 取得20 新規2 重複17 不正1
-- [OK] gnews / mesoblast-news: 取得13 新規0 重複10 不正3
+- [OK] gnews / celestica-news: 取得13 新規0 重複13 不正0
+- [OK] gnews / telix-news: 取得20 新規0 重複18 不正2
+- [OK] gnews / mesoblast-news: 取得8 新規0 重複6 不正2
 - [OK] gnews / eos-news: 取得20 新規0 重複5 不正15
-- [OK] gnews / avio-news: 取得20 新規0 重複18 不正2
+- [OK] gnews / avio-news: 取得20 新規0 重複15 不正5
 - [OK] gnews / bioarctic-news: 取得0 新規0 重複0 不正0
-- [OK] gnews / aac_clyde-news: 取得4 新規0 重複3 不正1
-- [OK] gnews / genmab-news: 取得13 新規0 重複13 不正0
-- [OK] gnews / bavarian_nordic-news: 取得5 新規0 重複5 不正0
+- [OK] gnews / aac_clyde-news: 取得5 新規0 重複4 不正1
+- [OK] gnews / genmab-news: 取得20 新規1 重複18 不正1
+- [OK] gnews / bavarian_nordic-news: 取得20 新規0 重複14 不正6
 - [OK] gnews / zealand_pharma-news: 取得20 新規0 重複4 不正16
 - [OK] trials / oncolys-trials: 取得0 新規0 重複0 不正0
 - [OK] trials / reprocell-trials: 取得1 新規0 重複0 不正1
@@ -155,7 +155,7 @@
 - [OK] yahoo / bavarian_nordic-yahoo: 取得1 新規0 重複1 不正0
 - [OK] yahoo / zealand_pharma-yahoo: 取得1 新規0 重複1 不正0
 - [OK] prtimes / astroscale-prtimes: 取得2 新規0 重複2 不正0
-- [OK] prtimes / ispace-prtimes: 取得3 新規0 重複3 不正0
+- [OK] prtimes / ispace-prtimes: 取得5 新規0 重複5 不正0
 - [OK] prtimes / synspective-prtimes: 取得5 新規0 重複5 不正0
 - [OK] prtimes / oncolys-prtimes: 取得0 新規0 重複0 不正0
 - [OK] prtimes / reprocell-prtimes: 取得0 新規0 重複0 不正0
@@ -167,8 +167,8 @@
 - [OK] prtimes / stella_pharma-prtimes: 取得0 新規0 重複0 不正0
 - [OK] prtimes / kringle-prtimes: 取得0 新規0 重複0 不正0
 - [OK] prtimes / stemrim-prtimes: 取得0 新規0 重複0 不正0
-- [OK] prtimes / pksha-prtimes: 取得4 新規0 重複4 不正0
-- [OK] prtimes / fronteo-prtimes: 取得9 新規0 重複9 不正0
+- [OK] prtimes / pksha-prtimes: 取得1 新規0 重複1 不正0
+- [OK] prtimes / fronteo-prtimes: 取得12 新規0 重複12 不正0
 - [OK] prtimes / exawizards-prtimes: 取得5 新規0 重複5 不正0
 - [OK] prtimes / heroz-prtimes: 取得5 新規0 重複5 不正0
 - [OK] prtimes / cyberdyne-prtimes: 取得0 新規0 重複0 不正0
@@ -182,10 +182,10 @@
 - [OK] pubmed / crispr-pubmed: 取得7 新規0 重複7 不正0
 - [OK] pubmed / moderna-pubmed: 取得20 新規0 重複20 不正0
 - [OK] pubmed / beam-pubmed: 取得6 新規0 重複6 不正0
-- [失敗] pubmed / tempus-pubmed: 取得0 新規0 重複0 不正0 — HttpError: HTTP 429 for https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi
+- [OK] pubmed / tempus-pubmed: 取得3 新規0 重複0 不正3
 - [OK] pubmed / recursion-pubmed: 取得4 新規0 重複4 不正0
 - [OK] pubmed / oxford_nanopore-pubmed: 取得20 新規0 重複20 不正0
-- [失敗] pubmed / idorsia-pubmed: 取得0 新規0 重複0 不正0 — HttpError: HTTP 429 for https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi
+- [OK] pubmed / idorsia-pubmed: 取得20 新規0 重複20 不正0
 - [OK] pubmed / lonza-pubmed: 取得20 新規0 重複20 不正0
 - [OK] pubmed / biontech-pubmed: 取得20 新規0 重複20 不正0
 - [OK] pubmed / telix-pubmed: 取得6 新規0 重複6 不正0
@@ -206,30 +206,42 @@
 - [OK] openalex / zealand_pharma-openalex: 取得10 新規0 重複10 不正0
 
 ## 長期成長評価(確定)
-- **74.8** (strong) A Prospective, Open-Label, Randomized, Phase 3 Trial of Acasunlimab (GEN1046) in Combination With Pembrolizumab Versus Docetaxel in Subjects With PD-L1 Positive Metastatic Non-Small Cell Lung Cancer After Treatment With a PD-1/PD-L1 Inhibitor and Platinum-Containing Chemotherapy (ABBIL1TY NSCLC-06)
-  論文・原資料: https://clinicaltrials.gov/study/NCT06635824
-  - [IR・決算資料 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=%22A+Prospective%2C+Open-Label%2C+Randomized%2C+Phase+3+Trial+of+Acasunlimab+%28GEN1046%29+in+Combination+With+Pembrolizumab+Versus+Docetaxel+in+Subjects+With+PD-L1+Positive+Metastatic+Non-Small+Cell+Lung+Cancer+After+Treatment+With+a+PD-1%2FPD-L1+Inhibitor+and+Platinum-Containing+Chemotherapy+%28ABBIL1TY+NSCLC-06%29%22+IR)
-  - [特許 [論文タイトル等（企業名未特定）]](https://patents.google.com/?q=A+Prospective%2C+Open-Label%2C+Randomized%2C+Phase+3+Trial+of+Acasunlimab+%28GEN1046%29+in+Combination+With+Pembrolizumab+Versus+Docetaxel+in+Subjects+With+PD-L1+Positive+Metastatic+Non-Small+Cell+Lung+Cancer+After+Treatment+With+a+PD-1%2FPD-L1+Inhibitor+and+Platinum-Containing+Chemotherapy+%28ABBIL1TY+NSCLC-06%29)
-  - [臨床試験登録 [論文タイトル等（企業名未特定）]](https://clinicaltrials.gov/search?term=A+Prospective%2C+Open-Label%2C+Randomized%2C+Phase+3+Trial+of+Acasunlimab+%28GEN1046%29+in+Combination+With+Pembrolizumab+Versus+Docetaxel+in+Subjects+With+PD-L1+Positive+Metastatic+Non-Small+Cell+Lung+Cancer+After+Treatment+With+a+PD-1%2FPD-L1+Inhibitor+and+Platinum-Containing+Chemotherapy+%28ABBIL1TY+NSCLC-06%29)
-  - [企業・技術情報 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=A+Prospective%2C+Open-Label%2C+Randomized%2C+Phase+3+Trial+of+Acasunlimab+%28GEN1046%29+in+Combination+With+Pembrolizumab+Versus+Docetaxel+in+Subjects+With+PD-L1+Positive+Metastatic+Non-Small+Cell+Lung+Cancer+After+Treatment+With+a+PD-1%2FPD-L1+Inhibitor+and+Platinum-Containing+Chemotherapy+%28ABBIL1TY+NSCLC-06%29)
-- **67.2** (strong) Differential impacts of Colorado River shortage operations on agricultural adaptation and groundwater reliance in Central Arizona
-  論文・原資料: https://doi.org/10.1016/j.agwat.2026.110842
-  - [IR・決算資料 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=%22Differential+impacts+of+Colorado+River+shortage+operations+on+agricultural+adaptation+and+groundwater+reliance+in+Central+Arizona%22+IR)
-  - [特許 [論文タイトル等（企業名未特定）]](https://patents.google.com/?q=Differential+impacts+of+Colorado+River+shortage+operations+on+agricultural+adaptation+and+groundwater+reliance+in+Central+Arizona)
-  - [臨床試験登録 [論文タイトル等（企業名未特定）]](https://clinicaltrials.gov/search?term=Differential+impacts+of+Colorado+River+shortage+operations+on+agricultural+adaptation+and+groundwater+reliance+in+Central+Arizona)
-  - [企業・技術情報 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=Differential+impacts+of+Colorado+River+shortage+operations+on+agricultural+adaptation+and+groundwater+reliance+in+Central+Arizona)
-- **59.0** (moderate_uncertain) A Phase 1b/2, Open-Label, Safety and Efficacy Study of Epcoritamab (GEN3013; DuoBody®-CD3xCD20) in Relapsed/Refractory Chronic Lymphocytic Leukemia and Richter's Syndrome
-  論文・原資料: https://clinicaltrials.gov/study/NCT04623541
-  - [IR・決算資料 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=%22A+Phase+1b%2F2%2C+Open-Label%2C+Safety+and+Efficacy+Study+of+Epcoritamab+%28GEN3013%3B+DuoBody%C2%AE-CD3xCD20%29+in+Relapsed%2FRefractory+Chronic+Lymphocytic+Leukemia+and+Richter%27s+Syndrome%22+IR)
-  - [特許 [論文タイトル等（企業名未特定）]](https://patents.google.com/?q=A+Phase+1b%2F2%2C+Open-Label%2C+Safety+and+Efficacy+Study+of+Epcoritamab+%28GEN3013%3B+DuoBody%C2%AE-CD3xCD20%29+in+Relapsed%2FRefractory+Chronic+Lymphocytic+Leukemia+and+Richter%27s+Syndrome)
-  - [臨床試験登録 [論文タイトル等（企業名未特定）]](https://clinicaltrials.gov/search?term=A+Phase+1b%2F2%2C+Open-Label%2C+Safety+and+Efficacy+Study+of+Epcoritamab+%28GEN3013%3B+DuoBody%C2%AE-CD3xCD20%29+in+Relapsed%2FRefractory+Chronic+Lymphocytic+Leukemia+and+Richter%27s+Syndrome)
-  - [企業・技術情報 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=A+Phase+1b%2F2%2C+Open-Label%2C+Safety+and+Efficacy+Study+of+Epcoritamab+%28GEN3013%3B+DuoBody%C2%AE-CD3xCD20%29+in+Relapsed%2FRefractory+Chronic+Lymphocytic+Leukemia+and+Richter%27s+Syndrome)
-- **51.9** (moderate_uncertain) First-In-Human, Open-Label Trial to Evaluate the Safety, Pharmacokinetics, and Preliminary Efficacy of GEN1119 in Participants With Solid Tumors
-  論文・原資料: https://clinicaltrials.gov/study/NCT07695831
-  - [IR・決算資料 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=%22First-In-Human%2C+Open-Label+Trial+to+Evaluate+the+Safety%2C+Pharmacokinetics%2C+and+Preliminary+Efficacy+of+GEN1119+in+Participants+With+Solid+Tumors%22+IR)
-  - [特許 [論文タイトル等（企業名未特定）]](https://patents.google.com/?q=First-In-Human%2C+Open-Label+Trial+to+Evaluate+the+Safety%2C+Pharmacokinetics%2C+and+Preliminary+Efficacy+of+GEN1119+in+Participants+With+Solid+Tumors)
-  - [臨床試験登録 [論文タイトル等（企業名未特定）]](https://clinicaltrials.gov/search?term=First-In-Human%2C+Open-Label+Trial+to+Evaluate+the+Safety%2C+Pharmacokinetics%2C+and+Preliminary+Efficacy+of+GEN1119+in+Participants+With+Solid+Tumors)
-  - [企業・技術情報 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=First-In-Human%2C+Open-Label+Trial+to+Evaluate+the+Safety%2C+Pharmacokinetics%2C+and+Preliminary+Efficacy+of+GEN1119+in+Participants+With+Solid+Tumors)
+- **74.8** (strong) Next-Generation Glutamine Synthetase Expression Vector for Therapeutic Protein Manufacturing Using CHO Cells.
+  論文・原資料: https://pubmed.ncbi.nlm.nih.gov/42834783
+  - [IR・決算資料 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=%22Next-Generation+Glutamine+Synthetase+Expression+Vector+for+Therapeutic+Protein+Manufacturing+Using+CHO+Cells.%22+IR)
+  - [特許 [論文タイトル等（企業名未特定）]](https://patents.google.com/?q=Next-Generation+Glutamine+Synthetase+Expression+Vector+for+Therapeutic+Protein+Manufacturing+Using+CHO+Cells.)
+  - [臨床試験登録 [論文タイトル等（企業名未特定）]](https://clinicaltrials.gov/search?term=Next-Generation+Glutamine+Synthetase+Expression+Vector+for+Therapeutic+Protein+Manufacturing+Using+CHO+Cells.)
+  - [企業・技術情報 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=Next-Generation+Glutamine+Synthetase+Expression+Vector+for+Therapeutic+Protein+Manufacturing+Using+CHO+Cells.)
+- **66.8** (strong) A Randomized, Open-label, Phase 3 Trial of Petosemtamab in Combination With mFOLFOX6 or FOLFIRI Versus Cetuximab in Combination With mFOLFOX6 or FOLFIRI as First-line Treatment for Participants With RAS and BRAF Wild-type, Unresectable or Metastatic, Left-sided Colorectal Cancer
+  論文・原資料: https://clinicaltrials.gov/study/NCT07702032
+  - [IR・決算資料 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=%22A+Randomized%2C+Open-label%2C+Phase+3+Trial+of+Petosemtamab+in+Combination+With+mFOLFOX6+or+FOLFIRI+Versus+Cetuximab+in+Combination+With+mFOLFOX6+or+FOLFIRI+as+First-line+Treatment+for+Participants+With+RAS+and+BRAF+Wild-type%2C+Unresectable+or+Metastatic%2C+Left-sided+Colorectal+Cancer%22+IR)
+  - [特許 [論文タイトル等（企業名未特定）]](https://patents.google.com/?q=A+Randomized%2C+Open-label%2C+Phase+3+Trial+of+Petosemtamab+in+Combination+With+mFOLFOX6+or+FOLFIRI+Versus+Cetuximab+in+Combination+With+mFOLFOX6+or+FOLFIRI+as+First-line+Treatment+for+Participants+With+RAS+and+BRAF+Wild-type%2C+Unresectable+or+Metastatic%2C+Left-sided+Colorectal+Cancer)
+  - [臨床試験登録 [論文タイトル等（企業名未特定）]](https://clinicaltrials.gov/search?term=A+Randomized%2C+Open-label%2C+Phase+3+Trial+of+Petosemtamab+in+Combination+With+mFOLFOX6+or+FOLFIRI+Versus+Cetuximab+in+Combination+With+mFOLFOX6+or+FOLFIRI+as+First-line+Treatment+for+Participants+With+RAS+and+BRAF+Wild-type%2C+Unresectable+or+Metastatic%2C+Left-sided+Colorectal+Cancer)
+  - [企業・技術情報 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=A+Randomized%2C+Open-label%2C+Phase+3+Trial+of+Petosemtamab+in+Combination+With+mFOLFOX6+or+FOLFIRI+Versus+Cetuximab+in+Combination+With+mFOLFOX6+or+FOLFIRI+as+First-line+Treatment+for+Participants+With+RAS+and+BRAF+Wild-type%2C+Unresectable+or+Metastatic%2C+Left-sided+Colorectal+Cancer)
+- **64.5** (strong) A Phase 3 Randomized, Open-label Study of Rinatabart Sesutecan (Rina-S) Versus Treatment of Investigator's Choice (IC) in Patients With Platinum Resistant Ovarian Cancer
+  論文・原資料: https://clinicaltrials.gov/study/NCT07604766
+  - [IR・決算資料 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=%22A+Phase+3+Randomized%2C+Open-label+Study+of+Rinatabart+Sesutecan+%28Rina-S%29+Versus+Treatment+of+Investigator%27s+Choice+%28IC%29+in+Patients+With+Platinum+Resistant+Ovarian+Cancer%22+IR)
+  - [特許 [論文タイトル等（企業名未特定）]](https://patents.google.com/?q=A+Phase+3+Randomized%2C+Open-label+Study+of+Rinatabart+Sesutecan+%28Rina-S%29+Versus+Treatment+of+Investigator%27s+Choice+%28IC%29+in+Patients+With+Platinum+Resistant+Ovarian+Cancer)
+  - [臨床試験登録 [論文タイトル等（企業名未特定）]](https://clinicaltrials.gov/search?term=A+Phase+3+Randomized%2C+Open-label+Study+of+Rinatabart+Sesutecan+%28Rina-S%29+Versus+Treatment+of+Investigator%27s+Choice+%28IC%29+in+Patients+With+Platinum+Resistant+Ovarian+Cancer)
+  - [企業・技術情報 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=A+Phase+3+Randomized%2C+Open-label+Study+of+Rinatabart+Sesutecan+%28Rina-S%29+Versus+Treatment+of+Investigator%27s+Choice+%28IC%29+in+Patients+With+Platinum+Resistant+Ovarian+Cancer)
+- **64.0** (strong) Safety and Preliminary Efficacy of Epcoritamab (GEN3013; DuoBody®-CD3×CD20) in Japanese Subjects With Relapsed or Refractory B-Cell Non-Hodgkin Lymphoma - A Phase 1/2, Open-Label, Dose-Escalation Trial With Expansion Cohorts
+  論文・原資料: https://clinicaltrials.gov/study/NCT04542824
+  - [IR・決算資料 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=%22Safety+and+Preliminary+Efficacy+of+Epcoritamab+%28GEN3013%3B+DuoBody%C2%AE-CD3%C3%97CD20%29+in+Japanese+Subjects+With+Relapsed+or+Refractory+B-Cell+Non-Hodgkin+Lymphoma+-+A+Phase+1%2F2%2C+Open-Label%2C+Dose-Escalation+Trial+With+Expansion+Cohorts%22+IR)
+  - [特許 [論文タイトル等（企業名未特定）]](https://patents.google.com/?q=Safety+and+Preliminary+Efficacy+of+Epcoritamab+%28GEN3013%3B+DuoBody%C2%AE-CD3%C3%97CD20%29+in+Japanese+Subjects+With+Relapsed+or+Refractory+B-Cell+Non-Hodgkin+Lymphoma+-+A+Phase+1%2F2%2C+Open-Label%2C+Dose-Escalation+Trial+With+Expansion+Cohorts)
+  - [臨床試験登録 [論文タイトル等（企業名未特定）]](https://clinicaltrials.gov/search?term=Safety+and+Preliminary+Efficacy+of+Epcoritamab+%28GEN3013%3B+DuoBody%C2%AE-CD3%C3%97CD20%29+in+Japanese+Subjects+With+Relapsed+or+Refractory+B-Cell+Non-Hodgkin+Lymphoma+-+A+Phase+1%2F2%2C+Open-Label%2C+Dose-Escalation+Trial+With+Expansion+Cohorts)
+  - [企業・技術情報 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=Safety+and+Preliminary+Efficacy+of+Epcoritamab+%28GEN3013%3B+DuoBody%C2%AE-CD3%C3%97CD20%29+in+Japanese+Subjects+With+Relapsed+or+Refractory+B-Cell+Non-Hodgkin+Lymphoma+-+A+Phase+1%2F2%2C+Open-Label%2C+Dose-Escalation+Trial+With+Expansion+Cohorts)
+- **64.0** (strong) A Phase 1/2, Open-label Safety Trial of GEN3013 in Patients With Relapsed, Progressive or Refractory B-Cell Lymphoma
+  論文・原資料: https://clinicaltrials.gov/study/NCT03625037
+  - [IR・決算資料 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=%22A+Phase+1%2F2%2C+Open-label+Safety+Trial+of+GEN3013+in+Patients+With+Relapsed%2C+Progressive+or+Refractory+B-Cell+Lymphoma%22+IR)
+  - [特許 [論文タイトル等（企業名未特定）]](https://patents.google.com/?q=A+Phase+1%2F2%2C+Open-label+Safety+Trial+of+GEN3013+in+Patients+With+Relapsed%2C+Progressive+or+Refractory+B-Cell+Lymphoma)
+  - [臨床試験登録 [論文タイトル等（企業名未特定）]](https://clinicaltrials.gov/search?term=A+Phase+1%2F2%2C+Open-label+Safety+Trial+of+GEN3013+in+Patients+With+Relapsed%2C+Progressive+or+Refractory+B-Cell+Lymphoma)
+  - [企業・技術情報 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=A+Phase+1%2F2%2C+Open-label+Safety+Trial+of+GEN3013+in+Patients+With+Relapsed%2C+Progressive+or+Refractory+B-Cell+Lymphoma)
+- **51.9** (moderate_uncertain) Clearance and retention of leachables in ultrafiltration and diafiltration applications
+  論文・原資料: https://doi.org/10.1016/j.ijpharm.2026.127521
+  - [IR・決算資料 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=%22Clearance+and+retention+of+leachables+in+ultrafiltration+and+diafiltration+applications%22+IR)
+  - [特許 [論文タイトル等（企業名未特定）]](https://patents.google.com/?q=Clearance+and+retention+of+leachables+in+ultrafiltration+and+diafiltration+applications)
+  - [臨床試験登録 [論文タイトル等（企業名未特定）]](https://clinicaltrials.gov/search?term=Clearance+and+retention+of+leachables+in+ultrafiltration+and+diafiltration+applications)
+  - [企業・技術情報 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=Clearance+and+retention+of+leachables+in+ultrafiltration+and+diafiltration+applications)
 
 ## イベント評価(確定)
 - 該当なし

@@ -449,6 +449,18 @@ class ExportTests(unittest.TestCase):
         self.assertNotIn("schema.json", names)
         self.assertEqual(json.loads((out / "data.json").read_text(encoding="utf-8"))["schema_version"], 3)
 
+    def test_search_suggest_is_touch_friendly(self):
+        # スマホでサジェストが効くための配線: タップは pointerdown、候補は入力欄の直下、
+        # 入力欄は iOS が拡大しない 16px。どれか欠けると実機でタップがずれる/候補が離れる。
+        html = (T.ROOT / "web" / "index.html").read_text(encoding="utf-8")
+        js = (T.ROOT / "web" / "app.js").read_text(encoding="utf-8")
+        css = (T.ROOT / "web" / "style.css").read_text(encoding="utf-8")
+        self.assertIn('class="qin"', html)
+        self.assertIn('addEventListener("pointerdown"', js)
+        self.assertIn("compositionend", js)
+        self.assertIn(".qin{position:relative", css)
+        self.assertIn("font-size:16px", css)
+
     def test_pre_stage_final_flows_to_site(self):
         def fn(p):
             if "根拠抽出」担当" in p:

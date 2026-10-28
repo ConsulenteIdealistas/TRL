@@ -216,7 +216,10 @@ function pickSug(i) {
   $("#q").value = it.v; hideSug(); render(); $("#q").focus();
 }
 $("#q").addEventListener("input", showSug);
-sugBox.addEventListener("mousedown", e => { const b = e.target.closest("[data-i]"); if (b) { e.preventDefault(); pickSug(+b.dataset.i); } });
+$("#q").addEventListener("compositionend", showSug);  // 日本語入力の変換確定後にも候補を出し直す
+// タップは pointerdown で受ける: mousedown だとスマホでは入力欄の blur とキーボードの
+// 閉動作によるレイアウト移動が先に起き、候補へのタップがずれてしまうため。
+sugBox.addEventListener("pointerdown", e => { const b = e.target.closest("[data-i]"); if (b) { e.preventDefault(); pickSug(+b.dataset.i); } });
 $("#q").addEventListener("keydown", e => {
   if (sugBox.hidden || !sugItems.length) return;
   if (e.key === "ArrowDown" || e.key === "ArrowUp") {

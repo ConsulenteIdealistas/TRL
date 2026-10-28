@@ -118,7 +118,7 @@ def has_demo_signal(c):
     return any(t in text for t in DEMO_SIGNAL_TERMS)
 
 
-def select_for_eval(store, cfg, today, limit, retry_failed="no"):
+def select_for_eval(store, cfg, today, limit, retry_failed="no", only_new=False):
     sc = cfg["scoring"]["screening"]
     rows = []
 
@@ -141,6 +141,8 @@ def select_for_eval(store, cfg, today, limit, retry_failed="no"):
     for c in store.list_by_status(statuses):
         if c.get("info_type") in ("news", "disclosure"):
             continue  # ニュースと開示(財務スナップショット)は単体評価せず、プールとして同梱する
+        if only_new and (c["status"] != "screened" or c["last_eval_at"]):
+            continue  # 未評価のみモード: 一度でも評価された候補(hold/error含む)は対象外
         linked = {e["entity_id"] for e in c.get("entities", [])}
         if not linked or not (linked & core_ids):
             continue
@@ -225,13 +227,14 @@ def _queue_reason(res):
 
 
 def run_pipeline(store, cfg, llm, *, as_of, sources=("pubmed", "arxiv"), kinds=("long",), max_eval=None,
-                 retry_failed=False, do_collect=True, fetchers=None, today=None, log=print, prompt_dir=None):
+                 retry_failed=False, do_collect=True, fetchers=None, today=None, log=print, prompt_dir=None,
+                 only_new=False):
     t0 = time.monotonic()
     today = today or datetime.now(timezone.utc).date()
     run_id = new_run_id()
     store.start_run(run_id, cfg["config_version"], cfg["config_hash"], as_of.isoformat(),
                 {"sources": list(sources), "kinds": list(kinds), "max_eval": max_eval,
-                 "retry_failed": retry_failed, "collect": do_collect,
+                 "retry_failed": retry_failed, "collect": do_collect, "only_new": only_new,
                  "llm": getattr(llm, "name", "none")})
     counts = {k: 0 for k in ("fetched", "new", "duplicates", "invalid", "sources_ok", "sources_failed", "screened",
                              "rejected", "selected", "final", "hold", "error", "skipped_no_llm", "llm_infra_failed")}
@@ -244,7 +247,7 @@ def run_pipeline(store, cfg, llm, *, as_of, sources=("pubmed", "arxiv"), kinds=(
         counts["rejected" if reason else "screened"] += 1
     limit = max_eval if max_eval is not None else cfg["scoring"]["screening"]["max_eval_per_run"]
     selected = select_for_eval(
-    store, cfg, today, limit, retry_failed=retry_failed
+    store, cfg, today, limit, retry_failed=retry_failed, only_new=only_new
 )
     counts["selected"] = len(selected)
     if selected and llm is None:

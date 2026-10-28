@@ -1246,6 +1246,25 @@ class NewsPoolTests(unittest.TestCase):
         self.assertIn(fresh, sel_ids)
         store.close()
 
+    def test_selection_only_new_mode(self):
+        store = Store(self.path)
+
+        def add(sid, status, eval_at=None):
+            rec, _ = normalize(raw(sid=sid), "2026-10-20T00:00:00+00:00")
+            cid, _ = store.upsert_candidate(rec, "r0")
+            store.set_entities(cid, link_entities(rec, CFG.get("entities", {})))
+            store.set_status(cid, status, eval_at=eval_at)
+            return cid
+
+        fresh = add("2610.9601", "screened")  # 一度も評価されていない
+        old_hold = add("2610.9602", "hold", eval_at="2026-09-01T00:00:00+00:00")  # 間隔経過済みで通常は再評価対象
+        both = [c["id"] for c in select_for_eval(store, CFG, AS_OF, 10)]
+        self.assertIn(fresh, both)
+        self.assertIn(old_hold, both)
+        only = [c["id"] for c in select_for_eval(store, CFG, AS_OF, 10, only_new=True)]
+        self.assertEqual(only, [fresh])
+        store.close()
+
     def test_selection_caps_per_entity(self):
         store = Store(self.path)
 

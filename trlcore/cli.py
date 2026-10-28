@@ -41,6 +41,8 @@ def main(argv=None):
     r.add_argument("--llm", default=os.environ.get("TRL_LLM_PROVIDER") or "none")
     r.add_argument("--model")
     r.add_argument("--skip-collect", action="store_true")
+    r.add_argument("--only-new", action="store_true",
+                   help="Evaluate only never-evaluated candidates (skip re-evaluations)")
     q = sub.add_parser("queue")
     q.add_argument("--data-dir", default="data")
     ex = sub.add_parser("export")
@@ -130,6 +132,7 @@ def main(argv=None):
     max_eval=a.max_eval,
     retry_failed=a.retry_failed,
     do_collect=not a.skip_collect,
+    only_new=a.only_new,
 )
 
     text = build_report(store, res["run_id"])

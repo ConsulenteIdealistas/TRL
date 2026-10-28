@@ -460,6 +460,11 @@ class ExportTests(unittest.TestCase):
         self.assertIn("compositionend", js)
         self.assertIn(".qin{position:relative", css)
         self.assertIn("font-size:16px", css)
+        # 候補リストがヒーローの下端で切り取られないこと (overflow:hidden があると
+        # 絶対配置の候補がヒーローの箱の外側で見えなくなる)
+        import re
+        hero = re.search(r"\.hero\{([^}]*)\}", css).group(1)
+        self.assertNotIn("overflow:hidden", hero)
 
     def test_pre_stage_final_flows_to_site(self):
         def fn(p):

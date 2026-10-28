@@ -1,117 +1,117 @@
-# TRL 実行レポート 20261028T150854Z-b6ea35
+# TRL 実行レポート 20261028T152949Z-e3a223
 
 ※ スコアは評価尺度であり、株価上昇確率・成功確率・投資利益率ではありません。売買の自動判定にも使えません。
 
 - 基準日: 2026-10-28 / 設定: 2026.10.0 (0e43ffcf41e694c9)
-- 状態: ok / 所要: 409.42秒
-- 取得 2264 / 新規 21 / 重複 1708 / 不正 535
-- スクリーニング通過 21 / 除外 0 / 評価対象 6
-- 評価: 確定 5 / 保留 1 / エラー 0 / LLM未設定でスキップ 0
+- 状態: ok / 所要: 408.97秒
+- 取得 2264 / 新規 6 / 重複 1715 / 不正 543
+- スクリーニング通過 6 / 除外 0 / 評価対象 6
+- 評価: 確定 5 / 保留 0 / エラー 1 / LLM未設定でスキップ 0
 
 ## 情報源ごとの状況
 - [OK] arxiv / solid-state-battery: 取得7 新規0 重複0 不正7
 - [OK] arxiv / quantum-error-correction: 取得20 新規0 重複0 不正20
 - [OK] pubmed / gene-therapy: 取得4 新規0 重複0 不正4
-- [OK] gnews / astroscale-news: 取得20 新規0 重複4 不正16
+- [OK] gnews / astroscale-news: 取得20 新規0 重複13 不正7
 - [OK] gnews / ispace-news: 取得20 新規0 重複20 不正0
-- [OK] gnews / synspective-news: 取得17 新規0 重複17 不正0
-- [OK] gnews / oncolys-news: 取得10 新規0 重複2 不正8
+- [OK] gnews / synspective-news: 取得20 新規0 重複13 不正7
+- [OK] gnews / oncolys-news: 取得9 新規0 重複2 不正7
 - [OK] gnews / reprocell-news: 取得8 新規0 重複8 不正0
 - [OK] gnews / peptidream-news: 取得10 新規0 重複2 不正8
 - [OK] gnews / qps-news: 取得11 新規0 重複7 不正4
-- [OK] gnews / axelspace-news: 取得20 新規2 重複13 不正5
-- [OK] gnews / sanbio-news: 取得20 新規0 重複19 不正1
+- [OK] gnews / axelspace-news: 取得20 新規0 重複14 不正6
+- [OK] gnews / sanbio-news: 取得20 新規0 重複13 不正7
 - [OK] gnews / healios-news: 取得12 新規0 重複8 不正4
-- [OK] gnews / stella_pharma-news: 取得8 新規0 重複6 不正2
-- [OK] gnews / kringle-news: 取得12 新規0 重複9 不正3
-- [OK] gnews / stemrim-news: 取得11 新規0 重複11 不正0
-- [OK] gnews / pksha-news: 取得8 新規0 重複8 不正0
-- [OK] gnews / fronteo-news: 取得13 新規0 重複13 不正0
-- [OK] gnews / exawizards-news: 取得12 新規0 重複11 不正1
+- [OK] gnews / stella_pharma-news: 取得16 新規0 重複9 不正7
+- [OK] gnews / kringle-news: 取得9 新規0 重複7 不正2
+- [OK] gnews / stemrim-news: 取得7 新規0 重複7 不正0
+- [OK] gnews / pksha-news: 取得20 新規0 重複8 不正12
+- [OK] gnews / fronteo-news: 取得20 新規0 重複20 不正0
+- [OK] gnews / exawizards-news: 取得20 新規1 重複18 不正1
 - [OK] gnews / heroz-news: 取得20 新規0 重複17 不正3
 - [OK] gnews / cyberdyne-news: 取得5 新規0 重複1 不正4
-- [OK] gnews / lasertec-news: 取得20 新規0 重複7 不正13
+- [OK] gnews / lasertec-news: 取得13 新規0 重複13 不正0
 - [OK] gnews / socionext-news: 取得11 新規0 重複9 不正2
-- [OK] gnews / thine-news: 取得5 新規0 重複3 不正2
+- [OK] gnews / thine-news: 取得6 新規0 重複3 不正3
 - [OK] gnews / torex-news: 取得2 新規0 重複1 不正1
 - [OK] gnews / rocketlab-news: 取得20 新規0 重複20 不正0
-- [OK] gnews / ast_spacemobile-news: 取得20 新規0 重複17 不正3
-- [OK] gnews / intuitive_machines-news: 取得9 新規0 重複4 不正5
+- [OK] gnews / ast_spacemobile-news: 取得20 新規0 重複19 不正1
+- [OK] gnews / intuitive_machines-news: 取得14 新規0 重複5 不正9
 - [OK] gnews / planet_labs-news: 取得20 新規0 重複14 不正6
-- [OK] gnews / redwire-news: 取得20 新規0 重複14 不正6
+- [OK] gnews / redwire-news: 取得6 新規0 重複4 不正2
 - [OK] gnews / crispr-news: 取得11 新規0 重複6 不正5
-- [OK] gnews / moderna-news: 取得20 新規0 重複17 不正3
-- [OK] gnews / beam-news: 取得13 新規0 重複10 不正3
-- [OK] gnews / arm-news: 取得20 新規0 重複11 不正9
+- [OK] gnews / moderna-news: 取得20 新規0 重複16 不正4
+- [OK] gnews / beam-news: 取得20 新規0 重複13 不正7
+- [OK] gnews / arm-news: 取得20 新規0 重複12 不正8
 - [OK] gnews / firefly-news: 取得18 新規0 重複11 不正7
 - [OK] gnews / tempus-news: 取得20 新規0 重複11 不正9
-- [OK] gnews / recursion-news: 取得12 新規0 重複10 不正2
-- [OK] gnews / intellia-news: 取得7 新規0 重複4 不正3
+- [OK] gnews / recursion-news: 取得11 新規0 重複9 不正2
+- [OK] gnews / intellia-news: 取得6 新規0 重複3 不正3
 - [OK] gnews / sitime-news: 取得11 新規0 重複11 不正0
-- [OK] gnews / blacksky-news: 取得20 新規9 重複11 不正0
-- [OK] gnews / kratos-news: 取得20 新規0 重複17 不正3
+- [OK] gnews / blacksky-news: 取得20 新規0 重複20 不正0
+- [OK] gnews / kratos-news: 取得12 新規0 重複11 不正1
 - [OK] gnews / ambarella-news: 取得20 新規0 重複9 不正11
-- [OK] gnews / schrodinger-news: 取得12 新規1 重複8 不正3
+- [OK] gnews / schrodinger-news: 取得8 新規0 重複5 不正3
 - [OK] gnews / bigbear_ai-news: 取得20 新規1 重複17 不正2
-- [OK] gnews / oxford_nanopore-news: 取得10 新規0 重複6 不正4
-- [OK] gnews / oxford_instruments-news: 取得20 新規0 重複11 不正9
-- [OK] gnews / genus-news: 取得3 新規0 重複3 不正0
-- [OK] gnews / filtronic-news: 取得20 新規0 重複19 不正1
-- [OK] gnews / qinetiq-news: 取得20 新規0 重複10 不正10
-- [OK] gnews / oxford_biomedica-news: 取得10 新規0 重複6 不正4
-- [OK] gnews / iqe-news: 取得20 新規0 重複15 不正5
-- [OK] gnews / idorsia-news: 取得10 新規0 重複7 不正3
-- [OK] gnews / lonza-news: 取得20 新規1 重複8 不正11
+- [OK] gnews / oxford_nanopore-news: 取得10 新規0 重複7 不正3
+- [OK] gnews / oxford_instruments-news: 取得20 新規0 重複10 不正10
+- [OK] gnews / genus-news: 取得2 新規0 重複2 不正0
+- [OK] gnews / filtronic-news: 取得20 新規0 重複17 不正3
+- [OK] gnews / qinetiq-news: 取得10 新規0 重複6 不正4
+- [OK] gnews / oxford_biomedica-news: 取得10 新規0 重複5 不正5
+- [OK] gnews / iqe-news: 取得19 新規0 重複15 不正4
+- [OK] gnews / idorsia-news: 取得4 新規0 重複4 不正0
+- [OK] gnews / lonza-news: 取得9 新規0 重複6 不正3
 - [OK] gnews / comet-news: 取得5 新規0 重複2 不正3
-- [OK] gnews / ohb-news: 取得20 新規0 重複20 不正0
-- [OK] gnews / evotec-news: 取得9 新規0 重複9 不正0
+- [OK] gnews / ohb-news: 取得20 新規0 重複19 不正1
+- [OK] gnews / evotec-news: 取得10 新規0 重複10 不正0
 - [OK] gnews / aixtron-news: 取得20 新規0 重複20 不正0
 - [OK] gnews / siltronic-news: 取得20 新規0 重複19 不正1
 - [OK] gnews / formycon-news: 取得8 新規0 重複7 不正1
 - [OK] gnews / biontech-news: 取得20 新規0 重複20 不正0
-- [OK] gnews / sartorius-news: 取得12 新規0 重複12 不正0
+- [OK] gnews / sartorius-news: 取得20 新規0 重複20 不正0
 - [OK] gnews / suss_microtec-news: 取得20 新規0 重複11 不正9
-- [OK] gnews / mda_space-news: 取得20 新規0 重複16 不正4
-- [OK] gnews / telesat-news: 取得11 新規0 重複11 不正0
+- [OK] gnews / mda_space-news: 取得20 新規0 重複14 不正6
+- [OK] gnews / telesat-news: 取得10 新規0 重複10 不正0
 - [OK] gnews / coveo-news: 取得5 新規0 重複4 不正1
-- [OK] gnews / celestica-news: 取得13 新規1 重複12 不正0
+- [OK] gnews / celestica-news: 取得13 新規0 重複13 不正0
 - [OK] gnews / telix-news: 取得20 新規0 重複18 不正2
-- [OK] gnews / mesoblast-news: 取得10 新規0 重複8 不正2
-- [OK] gnews / eos-news: 取得20 新規0 重複12 不正8
+- [OK] gnews / mesoblast-news: 取得13 新規0 重複10 不正3
+- [OK] gnews / eos-news: 取得20 新規0 重複7 不正13
 - [OK] gnews / neuren-news: 取得14 新規0 重複10 不正4
 - [OK] gnews / weebit_nano-news: 取得19 新規0 重複19 不正0
-- [OK] gnews / brainchip-news: 取得20 新規1 重複17 不正2
+- [OK] gnews / brainchip-news: 取得20 新規0 重複18 不正2
 - [OK] gnews / avio-news: 取得20 新規0 重複18 不正2
 - [OK] gnews / diasorin-news: 取得4 新規0 重複4 不正0
 - [OK] gnews / technoprobe-news: 取得2 新規0 重複2 不正0
 - [OK] gnews / bioarctic-news: 取得4 新規0 重複1 不正3
 - [OK] gnews / aac_clyde-news: 取得10 新規0 重複4 不正6
 - [OK] gnews / camurus-news: 取得1 新規0 重複1 不正0
-- [OK] gnews / genmab-news: 取得20 新規0 重複20 不正0
-- [OK] gnews / bavarian_nordic-news: 取得20 新規0 重複16 不正4
-- [OK] gnews / zealand_pharma-news: 取得20 新規1 重複4 不正15
+- [OK] gnews / genmab-news: 取得20 新規1 重複19 不正0
+- [OK] gnews / bavarian_nordic-news: 取得6 新規0 重複6 不正0
+- [OK] gnews / zealand_pharma-news: 取得20 新規0 重複10 不正10
 - [OK] gnews / pharmamar-news: 取得10 新規0 重複8 不正2
 - [OK] gnews / almirall-news: 取得7 新規0 重複4 不正3
 - [OK] gnews / oryzon-news: 取得4 新規0 重複4 不正0
 - [OK] gnews / indra-news: 取得20 新規0 重複9 不正11
-- [OK] gnews / grifols-news: 取得9 新規1 重複8 不正0
-- [OK] gnews / soitec-news: 取得8 新規1 重複5 不正2
+- [OK] gnews / grifols-news: 取得9 新規0 重複9 不正0
+- [OK] gnews / soitec-news: 取得9 新規0 重複7 不正2
 - [OK] gnews / ipsen-news: 取得7 新規0 重複6 不正1
-- [OK] gnews / innate_pharma-news: 取得7 新規0 重複7 不正0
-- [OK] gnews / valneva-news: 取得9 新規0 重複8 不正1
-- [OK] gnews / eutelsat-news: 取得20 新規2 重複14 不正4
+- [OK] gnews / innate_pharma-news: 取得20 新規0 重複8 不正12
+- [OK] gnews / valneva-news: 取得14 新規0 重複12 不正2
+- [OK] gnews / eutelsat-news: 取得20 新規0 重複16 不正4
 - [OK] gnews / abivax-news: 取得10 新規0 重複7 不正3
 - [OK] gnews / genfit-news: 取得6 新規0 重複4 不正2
 - [OK] gnews / asm_international-news: 取得8 新規0 重複6 不正2
 - [OK] gnews / be_semiconductor-news: 取得20 新規0 重複16 不正4
 - [OK] gnews / pharming-news: 取得16 新規0 重複15 不正1
-- [OK] gnews / orion-news: 取得20 新規0 重複18 不正2
+- [OK] gnews / orion-news: 取得20 新規1 重複18 不正1
 - [OK] gnews / herantis-news: 取得2 新規0 重複0 不正2
 - [OK] gnews / faron-news: 取得10 新規0 重複6 不正4
-- [OK] gnews / nordic_semiconductor-news: 取得18 新規0 重複10 不正8
-- [OK] gnews / kongsberg-news: 取得20 新規0 重複14 不正6
+- [OK] gnews / nordic_semiconductor-news: 取得20 新規0 重複8 不正12
+- [OK] gnews / kongsberg-news: 取得20 新規1 重複13 不正6
 - [OK] gnews / photocure-news: 取得3 新規0 重複3 不正0
-- [OK] gnews / ucb-news: 取得20 新規0 重複16 不正4
+- [OK] gnews / ucb-news: 取得20 新規1 重複16 不正3
 - [OK] trials / oncolys-trials: 取得0 新規0 重複0 不正0
 - [OK] trials / reprocell-trials: 取得1 新規0 重複0 不正1
 - [OK] trials / peptidream-trials: 取得1 新規0 重複1 不正0
@@ -153,8 +153,8 @@
 - [OK] trials / faron-trials: 取得4 新規0 重複1 不正3
 - [OK] trials / photocure-trials: 取得1 新規0 重複1 不正0
 - [OK] trials / ucb-trials: 取得11 新規0 重複3 不正8
-- [OK] yahoo / astroscale-yahoo: 取得0 新規0 重複0 不正0
-- [OK] yahoo / ispace-yahoo: 取得0 新規0 重複0 不正0
+- [OK] yahoo / astroscale-yahoo: 取得1 新規0 重複1 不正0
+- [OK] yahoo / ispace-yahoo: 取得1 新規0 重複1 不正0
 - [OK] yahoo / synspective-yahoo: 取得1 新規0 重複1 不正0
 - [OK] yahoo / oncolys-yahoo: 取得1 新規0 重複1 不正0
 - [OK] yahoo / reprocell-yahoo: 取得1 新規0 重複1 不正0
@@ -266,10 +266,10 @@
 - [OK] prtimes / stella_pharma-prtimes: 取得0 新規0 重複0 不正0
 - [OK] prtimes / kringle-prtimes: 取得0 新規0 重複0 不正0
 - [OK] prtimes / stemrim-prtimes: 取得0 新規0 重複0 不正0
-- [OK] prtimes / pksha-prtimes: 取得1 新規0 重複1 不正0
-- [OK] prtimes / fronteo-prtimes: 取得8 新規0 重複8 不正0
-- [OK] prtimes / exawizards-prtimes: 取得4 新規0 重複4 不正0
-- [OK] prtimes / heroz-prtimes: 取得5 新規0 重複5 不正0
+- [OK] prtimes / pksha-prtimes: 取得4 新規0 重複4 不正0
+- [OK] prtimes / fronteo-prtimes: 取得12 新規0 重複12 不正0
+- [OK] prtimes / exawizards-prtimes: 取得8 新規0 重複8 不正0
+- [OK] prtimes / heroz-prtimes: 取得6 新規0 重複6 不正0
 - [OK] prtimes / cyberdyne-prtimes: 取得0 新規0 重複0 不正0
 - [OK] prtimes / lasertec-prtimes: 取得0 新規0 重複0 不正0
 - [OK] prtimes / socionext-prtimes: 取得6 新規0 重複6 不正0
@@ -279,7 +279,7 @@
 - [OK] pubmed / sanbio-pubmed: 取得0 新規0 重複0 不正0
 - [OK] pubmed / healios-pubmed: 取得5 新規0 重複5 不正0
 - [OK] pubmed / crispr-pubmed: 取得7 新規0 重複7 不正0
-- [OK] pubmed / moderna-pubmed: 取得20 新規0 重複20 不正0
+- [失敗] pubmed / moderna-pubmed: 取得0 新規0 重複0 不正0 — HttpError: HTTP 429 for https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi
 - [OK] pubmed / beam-pubmed: 取得6 新規0 重複6 不正0
 - [OK] pubmed / tempus-pubmed: 取得3 新規0 重複0 不正3
 - [OK] pubmed / recursion-pubmed: 取得4 新規0 重複4 不正0
@@ -287,10 +287,10 @@
 - [OK] pubmed / genus-pubmed: 取得12 新規0 重複12 不正0
 - [OK] pubmed / idorsia-pubmed: 取得20 新規0 重複20 不正0
 - [OK] pubmed / lonza-pubmed: 取得20 新規0 重複20 不正0
-- [失敗] pubmed / biontech-pubmed: 取得0 新規0 重複0 不正0 — HttpError: HTTP 429 for https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi
+- [OK] pubmed / biontech-pubmed: 取得20 新規0 重複20 不正0
 - [OK] pubmed / telix-pubmed: 取得6 新規0 重複6 不正0
 - [OK] pubmed / genmab-pubmed: 取得20 新規0 重複20 不正0
-- [OK] pubmed / pharmamar-pubmed: 取得11 新規0 重複11 不正0
+- [失敗] pubmed / pharmamar-pubmed: 取得0 新規0 重複0 不正0 — HttpError: HTTP 429 for https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi
 - [OK] pubmed / almirall-pubmed: 取得20 新規0 重複20 不正0
 - [OK] pubmed / oryzon-pubmed: 取得0 新規0 重複0 不正0
 - [失敗] pubmed / ipsen-pubmed: 取得0 新規0 重複0 不正0 — HttpError: HTTP 429 for https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi
@@ -318,43 +318,43 @@
 - [OK] openalex / zealand_pharma-openalex: 取得10 新規0 重複10 不正0
 
 ## 長期成長評価(確定)
-- **82.0** (very_strong) Registry to Document Treatment Effectiveness, Safety, Including Prospective Long-term Outcomes in Participants With Progressive Familial Intrahepatic Cholestasis (PFIC) Who Take Odevixibat (Bylvay)
-  論文・原資料: https://clinicaltrials.gov/study/NCT07185919
-  - [IR・決算資料 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=%22Registry+to+Document+Treatment+Effectiveness%2C+Safety%2C+Including+Prospective+Long-term+Outcomes+in+Participants+With+Progressive+Familial+Intrahepatic+Cholestasis+%28PFIC%29+Who+Take+Odevixibat+%28Bylvay%29%22+IR)
-  - [特許 [論文タイトル等（企業名未特定）]](https://patents.google.com/?q=Registry+to+Document+Treatment+Effectiveness%2C+Safety%2C+Including+Prospective+Long-term+Outcomes+in+Participants+With+Progressive+Familial+Intrahepatic+Cholestasis+%28PFIC%29+Who+Take+Odevixibat+%28Bylvay%29)
-  - [臨床試験登録 [論文タイトル等（企業名未特定）]](https://clinicaltrials.gov/search?term=Registry+to+Document+Treatment+Effectiveness%2C+Safety%2C+Including+Prospective+Long-term+Outcomes+in+Participants+With+Progressive+Familial+Intrahepatic+Cholestasis+%28PFIC%29+Who+Take+Odevixibat+%28Bylvay%29)
-  - [企業・技術情報 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=Registry+to+Document+Treatment+Effectiveness%2C+Safety%2C+Including+Prospective+Long-term+Outcomes+in+Participants+With+Progressive+Familial+Intrahepatic+Cholestasis+%28PFIC%29+Who+Take+Odevixibat+%28Bylvay%29)
-- **78.0** (strong) Prospective Non-interventional, Phase IV Multicentre Study to Assess the Effectiveness, Safety and Tolerability of Elafibranor 80 mg/Day in Participants With Primary Biliary Cholangitis Receiving Treatment in a Real-world Setting.
-  論文・原資料: https://clinicaltrials.gov/study/NCT06447168
-  - [IR・決算資料 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=%22Prospective+Non-interventional%2C+Phase+IV+Multicentre+Study+to+Assess+the+Effectiveness%2C+Safety+and+Tolerability+of+Elafibranor+80+mg%2FDay+in+Participants+With+Primary+Biliary+Cholangitis+Receiving+Treatment+in+a+Real-world+Setting.%22+IR)
-  - [特許 [論文タイトル等（企業名未特定）]](https://patents.google.com/?q=Prospective+Non-interventional%2C+Phase+IV+Multicentre+Study+to+Assess+the+Effectiveness%2C+Safety+and+Tolerability+of+Elafibranor+80+mg%2FDay+in+Participants+With+Primary+Biliary+Cholangitis+Receiving+Treatment+in+a+Real-world+Setting.)
-  - [臨床試験登録 [論文タイトル等（企業名未特定）]](https://clinicaltrials.gov/search?term=Prospective+Non-interventional%2C+Phase+IV+Multicentre+Study+to+Assess+the+Effectiveness%2C+Safety+and+Tolerability+of+Elafibranor+80+mg%2FDay+in+Participants+With+Primary+Biliary+Cholangitis+Receiving+Treatment+in+a+Real-world+Setting.)
-  - [企業・技術情報 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=Prospective+Non-interventional%2C+Phase+IV+Multicentre+Study+to+Assess+the+Effectiveness%2C+Safety+and+Tolerability+of+Elafibranor+80+mg%2FDay+in+Participants+With+Primary+Biliary+Cholangitis+Receiving+Treatment+in+a+Real-world+Setting.)
-- **73.5** (strong) A Phase III, Multicentre, Randomised, Double-Blind, Placebo-Controlled Study to Evaluate the Efficacy and Safety of Elafibranor in Adult Participants With Primary Sclerosing Cholangitis
-  論文・原資料: https://clinicaltrials.gov/study/NCT07387549
-  - [IR・決算資料 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=%22A+Phase+III%2C+Multicentre%2C+Randomised%2C+Double-Blind%2C+Placebo-Controlled+Study+to+Evaluate+the+Efficacy+and+Safety+of+Elafibranor+in+Adult+Participants+With+Primary+Sclerosing+Cholangitis%22+IR)
-  - [特許 [論文タイトル等（企業名未特定）]](https://patents.google.com/?q=A+Phase+III%2C+Multicentre%2C+Randomised%2C+Double-Blind%2C+Placebo-Controlled+Study+to+Evaluate+the+Efficacy+and+Safety+of+Elafibranor+in+Adult+Participants+With+Primary+Sclerosing+Cholangitis)
-  - [臨床試験登録 [論文タイトル等（企業名未特定）]](https://clinicaltrials.gov/search?term=A+Phase+III%2C+Multicentre%2C+Randomised%2C+Double-Blind%2C+Placebo-Controlled+Study+to+Evaluate+the+Efficacy+and+Safety+of+Elafibranor+in+Adult+Participants+With+Primary+Sclerosing+Cholangitis)
-  - [企業・技術情報 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=A+Phase+III%2C+Multicentre%2C+Randomised%2C+Double-Blind%2C+Placebo-Controlled+Study+to+Evaluate+the+Efficacy+and+Safety+of+Elafibranor+in+Adult+Participants+With+Primary+Sclerosing+Cholangitis)
-- **57.5** (moderate_uncertain) A Randomized, Multicenter, Open-label, Phase III Study of Lurbinectedin Single-Agent or Lurbinectedin in Combination With Irinotecan Versus Investigator's Choice (Topotecan or Irinotecan) in Relapsed Small Cell Lung Cancer Patients (LAGOON Trial)
-  論文・原資料: https://clinicaltrials.gov/study/NCT05153239
-  - [IR・決算資料 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=%22A+Randomized%2C+Multicenter%2C+Open-label%2C+Phase+III+Study+of+Lurbinectedin+Single-Agent+or+Lurbinectedin+in+Combination+With+Irinotecan+Versus+Investigator%27s+Choice+%28Topotecan+or+Irinotecan%29+in+Relapsed+Small+Cell+Lung+Cancer+Patients+%28LAGOON+Trial%29%22+IR)
-  - [特許 [論文タイトル等（企業名未特定）]](https://patents.google.com/?q=A+Randomized%2C+Multicenter%2C+Open-label%2C+Phase+III+Study+of+Lurbinectedin+Single-Agent+or+Lurbinectedin+in+Combination+With+Irinotecan+Versus+Investigator%27s+Choice+%28Topotecan+or+Irinotecan%29+in+Relapsed+Small+Cell+Lung+Cancer+Patients+%28LAGOON+Trial%29)
-  - [臨床試験登録 [論文タイトル等（企業名未特定）]](https://clinicaltrials.gov/search?term=A+Randomized%2C+Multicenter%2C+Open-label%2C+Phase+III+Study+of+Lurbinectedin+Single-Agent+or+Lurbinectedin+in+Combination+With+Irinotecan+Versus+Investigator%27s+Choice+%28Topotecan+or+Irinotecan%29+in+Relapsed+Small+Cell+Lung+Cancer+Patients+%28LAGOON+Trial%29)
-  - [企業・技術情報 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=A+Randomized%2C+Multicenter%2C+Open-label%2C+Phase+III+Study+of+Lurbinectedin+Single-Agent+or+Lurbinectedin+in+Combination+With+Irinotecan+Versus+Investigator%27s+Choice+%28Topotecan+or+Irinotecan%29+in+Relapsed+Small+Cell+Lung+Cancer+Patients+%28LAGOON+Trial%29)
-- **54.9** (moderate_uncertain) Bead‐Based Enrichment Methods for Unbiased Secretome Profiling Enable Unprecedented Protein Coverage in an Immune Cell Model
-  論文・原資料: https://doi.org/10.1002/pmic.70190
-  - [IR・決算資料 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=%22Bead%E2%80%90Based+Enrichment+Methods+for+Unbiased+Secretome+Profiling+Enable+Unprecedented+Protein+Coverage+in+an+Immune+Cell+Model%22+IR)
-  - [特許 [論文タイトル等（企業名未特定）]](https://patents.google.com/?q=Bead%E2%80%90Based+Enrichment+Methods+for+Unbiased+Secretome+Profiling+Enable+Unprecedented+Protein+Coverage+in+an+Immune+Cell+Model)
-  - [臨床試験登録 [論文タイトル等（企業名未特定）]](https://clinicaltrials.gov/search?term=Bead%E2%80%90Based+Enrichment+Methods+for+Unbiased+Secretome+Profiling+Enable+Unprecedented+Protein+Coverage+in+an+Immune+Cell+Model)
-  - [企業・技術情報 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=Bead%E2%80%90Based+Enrichment+Methods+for+Unbiased+Secretome+Profiling+Enable+Unprecedented+Protein+Coverage+in+an+Immune+Cell+Model)
+- **82.2** (very_strong) Summary of Research: Health-Related Quality-of-Life Profile and Clinical Outcomes in First-Line Advanced Renal Cell Carcinoma: A Modeling Analysis Based on the CheckMate 9ER Study.
+  論文・原資料: https://pubmed.ncbi.nlm.nih.gov/42848188
+  - [IR・決算資料 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=%22Summary+of+Research%3A+Health-Related+Quality-of-Life+Profile+and+Clinical+Outcomes+in+First-Line+Advanced+Renal+Cell+Carcinoma%3A+A+Modeling+Analysis+Based+on+the+CheckMate+9ER+Study.%22+IR)
+  - [特許 [論文タイトル等（企業名未特定）]](https://patents.google.com/?q=Summary+of+Research%3A+Health-Related+Quality-of-Life+Profile+and+Clinical+Outcomes+in+First-Line+Advanced+Renal+Cell+Carcinoma%3A+A+Modeling+Analysis+Based+on+the+CheckMate+9ER+Study.)
+  - [臨床試験登録 [論文タイトル等（企業名未特定）]](https://clinicaltrials.gov/search?term=Summary+of+Research%3A+Health-Related+Quality-of-Life+Profile+and+Clinical+Outcomes+in+First-Line+Advanced+Renal+Cell+Carcinoma%3A+A+Modeling+Analysis+Based+on+the+CheckMate+9ER+Study.)
+  - [企業・技術情報 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=Summary+of+Research%3A+Health-Related+Quality-of-Life+Profile+and+Clinical+Outcomes+in+First-Line+Advanced+Renal+Cell+Carcinoma%3A+A+Modeling+Analysis+Based+on+the+CheckMate+9ER+Study.)
+- **76.0** (strong) Summary of Research: Two-Stage Estimation of Overall Survival in the Phase 3 CheckMate 9ER Trial, Adjusting for the Impact of Subsequent Therapy.
+  論文・原資料: https://pubmed.ncbi.nlm.nih.gov/42848187
+  - [IR・決算資料 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=%22Summary+of+Research%3A+Two-Stage+Estimation+of+Overall+Survival+in+the+Phase+3+CheckMate+9ER+Trial%2C+Adjusting+for+the+Impact+of+Subsequent+Therapy.%22+IR)
+  - [特許 [論文タイトル等（企業名未特定）]](https://patents.google.com/?q=Summary+of+Research%3A+Two-Stage+Estimation+of+Overall+Survival+in+the+Phase+3+CheckMate+9ER+Trial%2C+Adjusting+for+the+Impact+of+Subsequent+Therapy.)
+  - [臨床試験登録 [論文タイトル等（企業名未特定）]](https://clinicaltrials.gov/search?term=Summary+of+Research%3A+Two-Stage+Estimation+of+Overall+Survival+in+the+Phase+3+CheckMate+9ER+Trial%2C+Adjusting+for+the+Impact+of+Subsequent+Therapy.)
+  - [企業・技術情報 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=Summary+of+Research%3A+Two-Stage+Estimation+of+Overall+Survival+in+the+Phase+3+CheckMate+9ER+Trial%2C+Adjusting+for+the+Impact+of+Subsequent+Therapy.)
+- **71.8** (strong) A Phase III, Multisite, Randomized, Double-Blind Trial of BNT327 in Combination With Chemotherapy Versus Placebo With Chemotherapy in Patients With Previously Untreated Locally Recurrent Inoperable or Metastatic TNBC Determined Ineligible for PD(L)1 Therapy Based on PD-L1 Negative Disease
+  論文・原資料: https://clinicaltrials.gov/study/NCT07173751
+  - [IR・決算資料 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=%22A+Phase+III%2C+Multisite%2C+Randomized%2C+Double-Blind+Trial+of+BNT327+in+Combination+With+Chemotherapy+Versus+Placebo+With+Chemotherapy+in+Patients+With+Previously+Untreated+Locally+Recurrent+Inoperable+or+Metastatic+TNBC+Determined+Ineligible+for+PD%28L%291+Therapy+Based+on+PD-L1+Negative+Disease%22+IR)
+  - [特許 [論文タイトル等（企業名未特定）]](https://patents.google.com/?q=A+Phase+III%2C+Multisite%2C+Randomized%2C+Double-Blind+Trial+of+BNT327+in+Combination+With+Chemotherapy+Versus+Placebo+With+Chemotherapy+in+Patients+With+Previously+Untreated+Locally+Recurrent+Inoperable+or+Metastatic+TNBC+Determined+Ineligible+for+PD%28L%291+Therapy+Based+on+PD-L1+Negative+Disease)
+  - [臨床試験登録 [論文タイトル等（企業名未特定）]](https://clinicaltrials.gov/search?term=A+Phase+III%2C+Multisite%2C+Randomized%2C+Double-Blind+Trial+of+BNT327+in+Combination+With+Chemotherapy+Versus+Placebo+With+Chemotherapy+in+Patients+With+Previously+Untreated+Locally+Recurrent+Inoperable+or+Metastatic+TNBC+Determined+Ineligible+for+PD%28L%291+Therapy+Based+on+PD-L1+Negative+Disease)
+  - [企業・技術情報 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=A+Phase+III%2C+Multisite%2C+Randomized%2C+Double-Blind+Trial+of+BNT327+in+Combination+With+Chemotherapy+Versus+Placebo+With+Chemotherapy+in+Patients+With+Previously+Untreated+Locally+Recurrent+Inoperable+or+Metastatic+TNBC+Determined+Ineligible+for+PD%28L%291+Therapy+Based+on+PD-L1+Negative+Disease)
+- **47.0** (moderate_uncertain) First-in-human, Open-label, Multi-site, Phase I/IIa, Dose Escalation Trial With Expansion Cohorts to Evaluate Safety and Preliminary Efficacy of BNT329 in Participants With Advanced Solid Tumors Known to Express CA19-9
+  論文・原資料: https://clinicaltrials.gov/study/NCT07186842
+  - [IR・決算資料 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=%22First-in-human%2C+Open-label%2C+Multi-site%2C+Phase+I%2FIIa%2C+Dose+Escalation+Trial+With+Expansion+Cohorts+to+Evaluate+Safety+and+Preliminary+Efficacy+of+BNT329+in+Participants+With+Advanced+Solid+Tumors+Known+to+Express+CA19-9%22+IR)
+  - [特許 [論文タイトル等（企業名未特定）]](https://patents.google.com/?q=First-in-human%2C+Open-label%2C+Multi-site%2C+Phase+I%2FIIa%2C+Dose+Escalation+Trial+With+Expansion+Cohorts+to+Evaluate+Safety+and+Preliminary+Efficacy+of+BNT329+in+Participants+With+Advanced+Solid+Tumors+Known+to+Express+CA19-9)
+  - [臨床試験登録 [論文タイトル等（企業名未特定）]](https://clinicaltrials.gov/search?term=First-in-human%2C+Open-label%2C+Multi-site%2C+Phase+I%2FIIa%2C+Dose+Escalation+Trial+With+Expansion+Cohorts+to+Evaluate+Safety+and+Preliminary+Efficacy+of+BNT329+in+Participants+With+Advanced+Solid+Tumors+Known+to+Express+CA19-9)
+  - [企業・技術情報 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=First-in-human%2C+Open-label%2C+Multi-site%2C+Phase+I%2FIIa%2C+Dose+Escalation+Trial+With+Expansion+Cohorts+to+Evaluate+Safety+and+Preliminary+Efficacy+of+BNT329+in+Participants+With+Advanced+Solid+Tumors+Known+to+Express+CA19-9)
+- **47.0** (moderate_uncertain) A Randomized, Placebo-controlled, Phase I/II Clinical Trial to Evaluate the Safety, Immunogenicity, and Impact on Virological Control of the Investigational RNA-based Vaccine BNT168 in Adults Living With or Without HIV
+  論文・原資料: https://clinicaltrials.gov/study/NCT07698600
+  - [IR・決算資料 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=%22A+Randomized%2C+Placebo-controlled%2C+Phase+I%2FII+Clinical+Trial+to+Evaluate+the+Safety%2C+Immunogenicity%2C+and+Impact+on+Virological+Control+of+the+Investigational+RNA-based+Vaccine+BNT168+in+Adults+Living+With+or+Without+HIV%22+IR)
+  - [特許 [論文タイトル等（企業名未特定）]](https://patents.google.com/?q=A+Randomized%2C+Placebo-controlled%2C+Phase+I%2FII+Clinical+Trial+to+Evaluate+the+Safety%2C+Immunogenicity%2C+and+Impact+on+Virological+Control+of+the+Investigational+RNA-based+Vaccine+BNT168+in+Adults+Living+With+or+Without+HIV)
+  - [臨床試験登録 [論文タイトル等（企業名未特定）]](https://clinicaltrials.gov/search?term=A+Randomized%2C+Placebo-controlled%2C+Phase+I%2FII+Clinical+Trial+to+Evaluate+the+Safety%2C+Immunogenicity%2C+and+Impact+on+Virological+Control+of+the+Investigational+RNA-based+Vaccine+BNT168+in+Adults+Living+With+or+Without+HIV)
+  - [企業・技術情報 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=A+Randomized%2C+Placebo-controlled%2C+Phase+I%2FII+Clinical+Trial+to+Evaluate+the+Safety%2C+Immunogenicity%2C+and+Impact+on+Virological+Control+of+the+Investigational+RNA-based+Vaccine+BNT168+in+Adults+Living+With+or+Without+HIV)
 
 ## イベント評価(確定)
 - 該当なし
 
-## レビューキュー（未解消 3件）
+## レビューキュー（未解消 4件）
 - 情報不足・保留: 3件
-- 評価エラー: 0件
+- 評価エラー: 1件
 
 ### 情報不足・保留（3件）
 - [long] Development, implementation, and evaluation of a mentorship program within hematology/oncology pharmacy association (HOPA) - a professional oncology pharmacy organization.
@@ -385,8 +385,15 @@
   - [臨床試験登録 [論文タイトル等（企業名未特定）]](https://clinicaltrials.gov/search?term=HiSQOL-mini%3A+Development+and+Validation+of+a+Shortened+Version+of+the+Hidradenitis+Suppurativa+Quality+of+Life+%28HiSQOL%29+Instrument.)
   - [企業・技術情報 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=HiSQOL-mini%3A+Development+and+Validation+of+a+Shortened+Version+of+the+Hidradenitis+Suppurativa+Quality+of+Life+%28HiSQOL%29+Instrument.)
 
-### 評価エラー（0件）
-- 該当なし
+### 評価エラー（1件）
+- [long] A Phase 3 Open-label Extension Study to Investigate the Long-term Safety and Efficacy of Orally Administered NNZ-2591 in Pediatric Participants With Phelan-McDermid Syndrome
+  理由: evaluation_error: LLMError: invalid JSON: Expecting ',' delimiter
+  最終評価日時: 2026-10-28T15:33:49+00:00
+  関連情報の検索:
+  - [IR・決算資料 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=%22A+Phase+3+Open-label+Extension+Study+to+Investigate+the+Long-term+Safety+and+Efficacy+of+Orally+Administered+NNZ-2591+in+Pediatric+Participants+With+Phelan-McDermid+Syndrome%22+IR)
+  - [特許 [論文タイトル等（企業名未特定）]](https://patents.google.com/?q=A+Phase+3+Open-label+Extension+Study+to+Investigate+the+Long-term+Safety+and+Efficacy+of+Orally+Administered+NNZ-2591+in+Pediatric+Participants+With+Phelan-McDermid+Syndrome)
+  - [臨床試験登録 [論文タイトル等（企業名未特定）]](https://clinicaltrials.gov/search?term=A+Phase+3+Open-label+Extension+Study+to+Investigate+the+Long-term+Safety+and+Efficacy+of+Orally+Administered+NNZ-2591+in+Pediatric+Participants+With+Phelan-McDermid+Syndrome)
+  - [企業・技術情報 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=A+Phase+3+Open-label+Extension+Study+to+Investigate+the+Long-term+Safety+and+Efficacy+of+Orally+Administered+NNZ-2591+in+Pediatric+Participants+With+Phelan-McDermid+Syndrome)
 
 ## 制約
 - IR・特許・臨床試験登録は検索リンクのみ生成し、検索結果の自動取得は行いません。

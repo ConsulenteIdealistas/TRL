@@ -200,6 +200,7 @@ function sugMatch(list, q) {
 }
 function hideSug() { sugBox.hidden = true; sugItems = []; sugIdx = -1; }
 function showSug() {
+  clearTimeout(sugHideTimer);
   const q = $("#q").value.trim().toLowerCase();
   if (q.length < 2 || !P.length) { hideSug(); return; }
   const ix = sugIndex();
@@ -216,11 +217,18 @@ function pickSug(i) {
   $("#q").value = it.v; hideSug(); render(); $("#q").focus();
 }
 $("#q").addEventListener("input", showSug);
-$("#q").addEventListener("compositionend", showSug);  // 日本語入力の変換確定後にも候補を出し直す
+// 日本語入力: 変換中は composing を立て、確定した後に少し遅らせて候補を出し直す。
+// 確定の前後で blur 側のタイマーが候補を消してしまうことがあるため、
+// showSug 側でタイマーを解除し、フォーカスが戻ったら候補も戻す。
+let composing = false, sugHideTimer = null;
+$("#q").addEventListener("compositionstart", () => { composing = true; });
+$("#q").addEventListener("compositionend", () => { composing = false; setTimeout(showSug, 30); });
+$("#q").addEventListener("focus", () => { clearTimeout(sugHideTimer); showSug(); });
 // タップは pointerdown で受ける: mousedown だとスマホでは入力欄の blur とキーボードの
 // 閉動作によるレイアウト移動が先に起き、候補へのタップがずれてしまうため。
 sugBox.addEventListener("pointerdown", e => { const b = e.target.closest("[data-i]"); if (b) { e.preventDefault(); pickSug(+b.dataset.i); } });
 $("#q").addEventListener("keydown", e => {
+  if (composing || e.isComposing) return;  // 変換中のキー操作は IME に任せる
   if (sugBox.hidden || !sugItems.length) return;
   if (e.key === "ArrowDown" || e.key === "ArrowUp") {
     e.preventDefault();
@@ -229,7 +237,7 @@ $("#q").addEventListener("keydown", e => {
   } else if (e.key === "Enter" && sugIdx >= 0) { e.preventDefault(); pickSug(sugIdx); }
   else if (e.key === "Escape") hideSug();
 });
-$("#q").addEventListener("blur", () => setTimeout(hideSug, 120));
+$("#q").addEventListener("blur", () => { sugHideTimer = setTimeout(hideSug, 120); });
 $("#sf").addEventListener("submit", hideSug);
 ["#fs", "#ft", "#fo", "#fd", "#fm", "#fc"].forEach(s => $(s).addEventListener("change", render));
 $("#fl").addEventListener("change", () => { LANG = $("#fl").value; try { localStorage.setItem("trl-lang", LANG); } catch (e) { /* 保存できなくても切替は効く */ } render(); });

@@ -458,6 +458,10 @@ class ExportTests(unittest.TestCase):
         self.assertIn('class="qin"', html)
         self.assertIn('addEventListener("pointerdown"', js)
         self.assertIn("compositionend", js)
+        # 変換を確定しても候補が消えたままにならないこと (確定後に再表示、blur の消去タイマーは解除可能に)
+        self.assertIn("compositionstart", js)
+        self.assertIn("sugHideTimer", js)
+        self.assertIn('addEventListener("focus"', js)
         self.assertIn(".qin{position:relative", css)
         self.assertIn("font-size:16px", css)
         # 候補リストがヒーローの下端で切り取られないこと (overflow:hidden があると

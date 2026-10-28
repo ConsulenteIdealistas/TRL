@@ -41,6 +41,8 @@ def parse_studies(data):
         phases = design.get("phases") or []
         if phases:
             meta.append("Phase: " + ", ".join(phases))
+        if study.get("hasResults"):
+            meta.append("Results: Posted")
         if sponsor:
             meta.append(f"Sponsor: {sponsor}")
         abstract = " ".join(p.strip() for p in parts if p and p.strip())

@@ -21,6 +21,20 @@ TECH_ITEMS = ("technology_readiness", "technological_advantage")
 LEGACY_INFRA_QUEUE_PREFIX = "evaluation_error: HttpError"
 
 
+def _split_missing(texts):
+    """missing_info を通常の不足と「結果待ち：」に分ける(接頭辞は表示用に外す)。"""
+    miss, wait = [], []
+    for x in texts or []:
+        s = str(x)
+        if s.startswith("結果待ち："):
+            wait.append(s[len("結果待ち："):].strip())
+        elif s.startswith("結果待ち:"):
+            wait.append(s[len("結果待ち:"):].strip())
+        else:
+            miss.append(s)
+    return miss, wait
+
+
 def _ev_for_site(ev, cfg):
     if not ev:
         return None
@@ -29,12 +43,19 @@ def _ev_for_site(ev, cfg):
     required = (cfg["scoring"].get(ev["kind"]) or {}).get("required", [])
     out_items = {}
     for k, v in items.items():
+        miss, wait = _split_missing(v.get("missing_info"))
         out_items[k] = {
             "score": v.get("score"), "reason": v.get("reason", ""),
             "evidence": [{"ref": e.get("ref", ""), "summary": e.get("summary", ""), "kind": e.get("kind", "")}
                          for e in (v.get("evidence") or []) if isinstance(e, dict)],
             "counter_evidence": [str(x) for x in (v.get("counter_evidence") or [])],
-            "missing_info": [str(x) for x in (v.get("missing_info") or [])]}
+            "missing_info": miss, "awaiting_info": wait}
+    trl = extra.get("trl_level")
+    if isinstance(trl, dict) and trl.get("missing_info"):
+        trl = dict(trl)
+        _m, _w = _split_missing(trl.get("missing_info"))
+        trl["missing_info"] = _m
+        trl["awaiting_info"] = _w
     return {
         "status": ev["status"], "total": ev["total"], "band": ev["band"], "as_of": ev["as_of"],
         "evaluated_at": ev["evaluated_at"], "items": out_items,
@@ -42,7 +63,7 @@ def _ev_for_site(ev, cfg):
                              if k in out_items and out_items[k]["score"] is None
                              and not (extra.get("business_stage") == "pre_stage" and k not in TECH_ITEMS)],
         "errors": json.loads(ev["errors_json"] or "[]") if ev["status"] == "error" else [],
-        "trl_level": extra.get("trl_level"),
+        "trl_level": trl,
         "direction": extra.get("direction"),
         "axes": extra.get("axes"),
         "business_stage": extra.get("business_stage"),

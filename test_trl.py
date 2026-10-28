@@ -438,6 +438,12 @@ class NewSourceParseTests(unittest.TestCase):
         self.assertIn("Status: RECRUITING", r["abstract"])
         self.assertEqual(r["affiliations"], ["PeptiDream Inc."])
 
+    def test_trials_results_posted(self):
+        data = json.loads(json.dumps(TRIALS_DATA))
+        data["studies"][0]["hasResults"] = True
+        r = trials.parse(data)[0]
+        self.assertIn("Results: Posted", r["abstract"])
+
     def test_edinet_sec_code_and_parse(self):
         self.assertEqual(edinet.sec_code("9348"), "93480")
         self.assertEqual(edinet.sec_code("186A"), "186A0")
@@ -751,6 +757,25 @@ class DirectionTests(unittest.TestCase):
         self.assertEqual(cand["long"]["direction"], {"direction": "mixed", "reason": "進展と悪材料が混在"})
         store.close()
 
+    def test_site_splits_awaiting_from_missing(self):
+        from trlcore.site import _ev_for_site, _split_missing
+        self.assertEqual(_split_missing(["結果待ち：第II相の最終結果", "価格の根拠", "結果待ち: 承認審査"]),
+                         (["価格の根拠"], ["第II相の最終結果", "承認審査"]))
+        ev = {"kind": "long", "status": "hold", "total": None, "band": None,
+              "as_of": "2026-10-20", "evaluated_at": "2026-10-20T00:00:00+00:00",
+              "items_json": json.dumps({"monetization": {"score": None, "reason": "",
+                  "evidence": [], "counter_evidence": [],
+                  "missing_info": ["価格設定の根拠", "結果待ち：第II相試験の最終結果"]}}),
+              "extra_json": json.dumps({"trl_level": {"level": None, "reason": "",
+                  "missing_info": ["結果待ち：主要評価項目の達成状況", "対象技術の特定"]}}),
+              "errors_json": "[]"}
+        out = _ev_for_site(ev, CFG)
+        item = out["items"]["monetization"]
+        self.assertEqual(item["missing_info"], ["価格設定の根拠"])
+        self.assertEqual(item["awaiting_info"], ["第II相試験の最終結果"])
+        self.assertEqual(out["trl_level"]["missing_info"], ["対象技術の特定"])
+        self.assertEqual(out["trl_level"]["awaiting_info"], ["主要評価項目の達成状況"])
+
 
 class DedupeStoreTests(unittest.TestCase):
     def setUp(self):
@@ -765,6 +790,29 @@ class DedupeStoreTests(unittest.TestCase):
     def up(self, **kw):
         rec, _ = normalize(raw(**kw), "t")
         return self.store.upsert_candidate(rec)
+
+    def test_trials_upsert_updates_abstract_on_change(self):
+        rec1, _ = normalize(trials.parse(TRIALS_DATA)[0], "2026-10-20T00:00:00+00:00")
+        cid, is_new = self.store.upsert_candidate(rec1, "r0")
+        self.assertTrue(is_new)
+        data = json.loads(json.dumps(TRIALS_DATA))
+        data["studies"][0]["hasResults"] = True
+        data["studies"][0]["protocolSection"]["statusModule"]["overallStatus"] = "COMPLETED"
+        rec2, _ = normalize(trials.parse(data)[0], "2026-10-21T00:00:00+00:00")
+        cid2, is_new2 = self.store.upsert_candidate(rec2, "r1")
+        self.assertEqual((cid2, is_new2), (cid, False))
+        cur = self.store.get_candidate(cid)
+        self.assertIn("Results: Posted", cur["abstract"])
+        self.assertIn("Status: COMPLETED", cur["abstract"])
+        self.assertTrue(cur["material_updated_at"])
+
+    def test_non_trials_upsert_keeps_abstract(self):
+        cid, _ = self.up(sid="2610.7777")
+        rec2, _ = normalize(raw(sid="2610.7777", abstract="書き換えた要旨です。 " * 5), "t2")
+        self.store.upsert_candidate(rec2)
+        cur = self.store.get_candidate(cid)
+        self.assertNotIn("書き換えた要旨", cur["abstract"])
+        self.assertFalse(cur["material_updated_at"])
 
     def test_same_id_not_duplicated(self):
         a, n1 = self.up()
@@ -843,6 +891,13 @@ class PromptTests(unittest.TestCase):
         ev = load_prompt("event", CFG["scoring"]["prompts"]["event"])["text"]
         for anchor in ("[採点アンカー]", "catalyst_quality", "downside_resilience"):
             self.assertIn(anchor, ev)
+
+    def test_long_prompt_missing_info_policy(self):
+        # 原理的に資料に無い情報を不足として数えない方針と、結果待ちの分離規約
+        text = load_prompt("long", CFG["scoring"]["prompts"]["long"])["text"]
+        for anchor in ("[不足の扱い]", "原理的に含まれない種類の情報", "代理指標",
+                       "結果待ち：", "将来予測が無いことだけを理由に null にしない"):
+            self.assertIn(anchor, text)
 
     def test_long_prompt_contains_low_band_procedure(self):
         # TRL 1〜3 が null に逃げないための判定手順・原則・具体例が欠けないこと
@@ -1168,6 +1223,27 @@ class NewsPoolTests(unittest.TestCase):
         store.set_status(cid, "screened")
         sel = select_for_eval(store, CFG, AS_OF, 10)
         self.assertEqual(sel, [])
+        store.close()
+
+    def test_selection_hold_gate_and_material_update_bypass(self):
+        store = Store(self.path)
+
+        def add_hold(sid, updated=None):
+            rec, _ = normalize(raw(sid=sid), "2026-10-20T00:00:00+00:00")
+            cid, _ = store.upsert_candidate(rec, "r0")
+            store.set_entities(cid, link_entities(rec, CFG.get("entities", {})))
+            store.set_status(cid, "hold", eval_at="2026-10-17T00:00:00+00:00")  # 3日前 (間隔は14日)
+            if updated:
+                store.conn.execute("UPDATE candidates SET material_updated_at=? WHERE id=?",
+                                   (updated, cid))
+                store.conn.commit()
+            return cid
+
+        stale = add_hold("2610.9501")
+        fresh = add_hold("2610.9502", updated="2026-10-19T00:00:00+00:00")  # 評価後に材料が更新
+        sel_ids = [c["id"] for c in select_for_eval(store, CFG, AS_OF, 10)]
+        self.assertNotIn(stale, sel_ids)
+        self.assertIn(fresh, sel_ids)
         store.close()
 
     def test_selection_caps_per_entity(self):

@@ -152,11 +152,15 @@ def select_for_eval(store, cfg, today, limit, retry_failed="no"):
             if not force_retry and c["retry_count"] >= sc["max_retries"]:
                 continue
 
-        # 保留候補は、再評価間隔が経過するまで選ばない
+        # 保留候補は、再評価間隔が経過するまで選ばない。
+        # ただし材料が前回評価より後に更新された候補(治験の結果公表など)は、
+        # 間隔を待たずに優先して再評価する(結果待ちの解消を拾うため)。
         if c["status"] == "hold":
             last = parse_date((c["last_eval_at"] or "")[:10])
             if last and (today - last).days < sc["reeval_after_days"]:
-                continue
+                upd = parse_date((c.get("material_updated_at") or "")[:10])
+                if not (upd and upd > last):
+                    continue
 
         rows.append(c)
 

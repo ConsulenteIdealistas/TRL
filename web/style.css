@@ -98,6 +98,7 @@ textarea{width:100%;min-height:90px;resize:vertical;padding:10px;border:1px soli
 .sc .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--green),var(--cyan))}
 .sc p{margin:0;color:var(--sub);font-size:11px;line-height:1.7}
 .sc p.m{color:#a96500}
+.sc p.w2{color:#33608c}
 .note{padding:9px 11px;border-radius:10px;color:var(--sub);background:var(--field);border:1px solid var(--line);font-size:11px;line-height:1.8}
 @media(prefers-color-scheme:dark){:root:not([data-theme="light"]) .warn{color:#f5c76a;background:#3a2c0d;border-color:#6b5116}}
 

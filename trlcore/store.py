@@ -78,7 +78,7 @@ class Store:
         if "extra_json" not in cols:
             self.conn.execute("ALTER TABLE evaluations ADD COLUMN extra_json TEXT")
         ccols = {r[1] for r in self.conn.execute("PRAGMA table_info(candidates)")}
-        for col in ("title_ja", "abstract_ja", "translation_src"):
+        for col in ("title_ja", "abstract_ja", "translation_src", "material_updated_at"):
             if col not in ccols:
                 self.conn.execute(f"ALTER TABLE candidates ADD COLUMN {col} TEXT")
         self.conn.commit()
@@ -120,6 +120,11 @@ class Store:
                 c.execute("UPDATE candidates SET abstract=? WHERE id=?", (rec["abstract"], existing))
             if not cur["doi"] and rec.get("doi"):
                 c.execute("UPDATE candidates SET doi=? WHERE id=?", (rec["doi"], existing))
+            # 治験登録はレジストリ側で内容が更新される(結果公表・ステータス変更)。
+            # 要旨が変わったら取り込み、材料更新の印を付ける(優先再評価の対象になる)。
+            if rec.get("source") == "trials" and rec.get("abstract") and cur["abstract"] != rec["abstract"]:
+                c.execute("UPDATE candidates SET title=?, abstract=?, published=?, material_updated_at=? WHERE id=?",
+                          (rec["title"], rec["abstract"], rec.get("published"), now_iso(), existing))
             c.commit()
             return existing, False
         cid = "c_" + hashlib.sha1(rec["keys"][0].encode()).hexdigest()[:12]

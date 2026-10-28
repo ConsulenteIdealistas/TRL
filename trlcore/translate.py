@@ -2,11 +2,12 @@
 
 サイトに載る候補(評価済み+次に評価される上位)だけを訳して DB に保存する。
 訳は1回作れば再利用されるため、実行ごとの追加コストは新規分だけ。
-経路は Azure Translator → DeepL API → 評価 LLM の順に試し(キーが無い経路は
-飛ばす)、どの経路で訳したかを候補ごとに記録して画面に明記する。
+経路は Azure Translator → DeepL API → Google Cloud Translation の順に
+試し(キーが無い経路は飛ばす)、どの経路で訳したかを候補ごとに記録して
+画面に明記する。翻訳は専用 API だけで行い、評価用 LLM には任せない。
 Azure を本命にするのは無料枠(F0: 月200万字)が毎月リセットされ恒常的に
-使えるため。DeepL の無料枠(合計100万字・一回限り)は温存し、Azure が
-使えない時の切り札として残す。
+使えるため。DeepL の無料枠(合計100万字・一回限り)は温存し、Google の
+無料枠(月50万字)が最終段を受け持つ。
 翻訳の失敗はその分を原文表示に落とすだけで、実行全体は止めない。
 """
 import json
@@ -84,39 +85,25 @@ def _mt_batch(fn):
     return run
 
 
-# --- 評価 LLM(最終段) -------------------------------------------------------
+# --- Google Cloud Translation(最終段) ---------------------------------------
 
-def _parse_batch(text):
-    m = re.search(r"\[.*\]", text or "", re.S)
-    if not m:
-        return {}
-    try:
-        arr = json.loads(m.group(0))
-    except ValueError:
-        return {}
-    out = {}
-    for d in arr if isinstance(arr, list) else []:
-        if not isinstance(d, dict) or not isinstance(d.get("i"), int):
-            continue
-        title = str(d.get("title_ja") or "").strip()
-        abstract = str(d.get("abstract_ja") or "").strip()
-        if title or abstract:
-            out[d["i"]] = (title or None, abstract or None)
+def google_translate(texts, key, http=http_fetch):
+    """texts -> 同じ並びの訳文リスト。失敗時は例外。
+
+    APIキーは URL に付けず X-Goog-Api-Key ヘッダーで送る(URL に付けると
+    エラー時の URL が実行ログに残り、キーが漏れるおそれがあるため)。
+    """
+    import html as _html
+    body = json.dumps({"q": list(texts), "target": "ja", "format": "text"}).encode()
+    raw = http("https://translation.googleapis.com/language/translate/v2",
+               headers={"X-Goog-Api-Key": key, "Content-Type": "application/json"},
+               data=body)
+    d = json.loads(raw)
+    out = [_html.unescape(str(t.get("translatedText") or ""))
+           for t in d.get("data", {}).get("translations", [])]
+    if len(out) != len(texts):
+        raise ValueError("Google: response length mismatch")
     return out
-
-
-def translate_batch(llm, items):
-    """items: [(title, abstract), ...] -> {index: (title_ja, abstract_ja)}"""
-    lines = [
-        "あなたは科学技術・産業分野の翻訳担当です。次の各資料のタイトルと抄録を、"
-        "正確で自然な日本語に翻訳してください。固有名詞・数値・単位はそのまま保持し、"
-        "訳せない専門用語は原語のまま残してください。説明や前置きは書かず、"
-        '次の形式の JSON 配列だけを出力してください。\n'
-        '[{"i": 0, "title_ja": "タイトルの翻訳", "abstract_ja": "抄録の翻訳"}, ...]\n'
-    ]
-    for i, (title, abstract) in enumerate(items):
-        lines.append(f"\n--- 資料 {i} ---\nタイトル: {title or ''}\n抄録: {abstract or ''}")
-    return _parse_batch(llm.complete("\n".join(lines)))
 
 
 # --- 表示対象の翻訳 ----------------------------------------------------------
@@ -129,7 +116,7 @@ def display_ids(store, cfg, today, pending_limit=10):
     return ids
 
 
-def _backends(llm, http):
+def _backends(http):
     """使える翻訳経路を優先順に返す: [(名前, バッチ関数), ...]"""
     chain = []
     azure_key = os.environ.get("AZURE_TRANSLATOR_KEY")
@@ -139,14 +126,15 @@ def _backends(llm, http):
     deepl_key = os.environ.get("DEEPL_API_KEY")
     if deepl_key:
         chain.append(("deepl", _mt_batch(lambda ts: deepl_translate(ts, deepl_key, http))))
-    if llm is not None:
-        chain.append(("llm", lambda items: translate_batch(llm, items)))
+    google_key = os.environ.get("GOOGLE_TRANSLATE_API_KEY")
+    if google_key:
+        chain.append(("google", _mt_batch(lambda ts: google_translate(ts, google_key, http))))
     return chain
 
 
-def translate_display_set(store, cfg, llm, today, log=print, http=http_fetch):
+def translate_display_set(store, cfg, today, log=print, http=http_fetch):
     """表示対象のうち未訳のものを訳して保存する。-> 訳した件数。"""
-    chain = _backends(llm, http)
+    chain = _backends(http)
     if not chain:
         return 0
     todo = []

@@ -26,7 +26,7 @@ let LANG = "ja";
 try { LANG = localStorage.getItem("trl-lang") || "ja"; } catch (e) { /* 既定のまま */ }
 const dispT = p => LANG === "ja" && p.title_ja ? p.title_ja : p.title;
 const dispA = p => LANG === "ja" && p.abstract_ja ? p.abstract_ja : p.abstract || "";
-const TR_SRC = {deepl: "DeepL", azure: "Azure", llm: "LLM"};
+const TR_SRC = {deepl: "DeepL", azure: "Azure", google: "Google", llm: "LLM"};
 const srcOf = p => { const s = p.translation_src || {}; const used = [...new Set([p.title_ja ? s.title : null, p.abstract_ja ? s.abstract : null].filter(Boolean))]; return used.map(v => TR_SRC[v] || v).join(" / "); };
 const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
 const safeUrl = u => /^https?:\/\//i.test(String(u || "")) ? String(u) : "#";

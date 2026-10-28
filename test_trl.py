@@ -356,33 +356,39 @@ class NewSourceParseTests(unittest.TestCase):
         self.assertTrue(T.needs_translation("High-throughput actinic mask inspection for EUV lithography"))
         self.assertFalse(T.needs_translation("月面探査ローバーの熱制御の設計と実装"))
         self.assertFalse(T.needs_translation("AI"))
-        llm = T.Mock(lambda p: '```json\n[{"i": 0, "title_ja": "邦題", "abstract_ja": "邦文抄録"}]\n```')
-        self.assertEqual(T.translate_batch(llm, [("Title", "Abstract")]), {0: ("邦題", "邦文抄録")})
-        bad = T.Mock(lambda p: "not json")
-        self.assertEqual(T.translate_batch(bad, [("Title", "Abstract")]), {})
+        # Google: キーはヘッダーで送り、応答の HTML エスケープは戻す
+        seen = {}
+        def g_http(url, params=None, headers=None, data=None, **kw):
+            seen["headers"] = headers or {}
+            qs = json.loads(data)["q"]
+            return json.dumps({"data": {"translations": [{"translatedText": "訳&amp;:" + q} for q in qs]}})
+        out = T.google_translate(["Title"], "gkey", http=g_http)
+        self.assertEqual(out, ["訳&:Title"])
+        self.assertEqual(seen["headers"].get("X-Goog-Api-Key"), "gkey")
 
     def test_translate_display_set(self):
-        import tempfile
-        from pathlib import Path as _P
+        # 最終段の Google で訳し、出典に google が記録される
+        import os
+        from unittest import mock as um
         tmp = tempfile.TemporaryDirectory()
-        store = T.Store(_P(tmp.name) / "d.sqlite")
+        store = T.Store(Path(tmp.name) / "d.sqlite")
         rec, _ = T.normalize(raw(), T.now_iso())
         cid, _ = store.upsert_candidate(rec, "rX")
         store.conn.execute(
             "INSERT INTO evaluations(run_id, candidate_id, kind, status) VALUES('rX', ?, 'long', 'ok')", (cid,))
         store.conn.commit()
 
-        def fn(p):
-            if "翻訳担当" in p:
-                return json.dumps([{"i": 0, "title_ja": "邦題タイトル", "abstract_ja": "邦文の抄録です"}])
-            raise AssertionError("unknown prompt")
-        n = T.translate_display_set(store, CFG, T.Mock(fn), AS_OF, log=lambda *_: None)
-        self.assertEqual(n, 1)
-        c = store.get_candidate(cid)
-        self.assertEqual(c["title_ja"], "邦題タイトル")
-        self.assertEqual(json.loads(c["translation_src"]), {"title": "llm", "abstract": "llm"})
-        # 2回目は未訳が無いので 0 件 (LLM は呼ばれない)
-        self.assertEqual(T.translate_display_set(store, CFG, T.Mock(fn), AS_OF, log=lambda *_: None), 0)
+        def g_http(url, params=None, headers=None, data=None, **kw):
+            qs = json.loads(data)["q"]
+            return json.dumps({"data": {"translations": [{"translatedText": "訳:" + q} for q in qs]}})
+        with um.patch.dict(os.environ, {"GOOGLE_TRANSLATE_API_KEY": "gk"}, clear=False):
+            n = T.translate_display_set(store, CFG, AS_OF, log=lambda *_: None, http=g_http)
+            self.assertEqual(n, 1)
+            c = store.get_candidate(cid)
+            self.assertTrue(c["title_ja"].startswith("訳:"))
+            self.assertEqual(json.loads(c["translation_src"]), {"title": "google", "abstract": "google"})
+            # 2回目は未訳が無いので 0 件
+            self.assertEqual(T.translate_display_set(store, CFG, AS_OF, log=lambda *_: None, http=g_http), 0)
         store.close()
         tmp.cleanup()
 
@@ -417,7 +423,7 @@ class NewSourceParseTests(unittest.TestCase):
             return deepl_http(url, params=params, headers=headers, data=data)
         env = {"DEEPL_API_KEY": "k:fx", "AZURE_TRANSLATOR_KEY": "k2"}
         with um.patch.dict(os.environ, env, clear=False):
-            n = T.translate_display_set(store, CFG, None, AS_OF, log=lambda *_: None, http=flaky_http)
+            n = T.translate_display_set(store, CFG, AS_OF, log=lambda *_: None, http=flaky_http)
         self.assertEqual(n, 1)
         c = store.get_candidate(cid)
         self.assertTrue(c["title_ja"].startswith("訳:"))

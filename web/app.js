@@ -6,7 +6,7 @@ let LANG = "ja";
 try { LANG = localStorage.getItem("trl-lang") || "ja"; } catch (e) { /* 保存不可なら既定のまま */ }
 const dispT = p => LANG === "ja" && p.title_ja ? p.title_ja : p.title;
 const dispA = p => LANG === "ja" && p.abstract_ja ? p.abstract_ja : p.abstract || "";
-const TR_SRC = {deepl: "DeepL", azure: "Azure", llm: "LLM"};
+const TR_SRC = {deepl: "DeepL", azure: "Azure", google: "Google", llm: "LLM"};
 const srcOf = p => { const s = p.translation_src || {}; const used = [...new Set([p.title_ja ? s.title : null, p.abstract_ja ? s.abstract : null].filter(Boolean))]; return used.map(v => TR_SRC[v] || v).join(" / "); };
 const SL = {final: "選定可能", review: "要追加調査", hold: "保留", pending: "未評価", error: "エラー", rejected: "除外"};
 const SO = {final: 0, review: 1, hold: 2, pending: 3, error: 4, rejected: 5};  // おすすめ順での状態の優先度

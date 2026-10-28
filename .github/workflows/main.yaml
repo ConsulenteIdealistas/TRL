@@ -79,6 +79,7 @@ jobs:
           DEEPL_API_KEY: ${{ secrets.DEEPL_API_KEY }}
           AZURE_TRANSLATOR_KEY: ${{ secrets.AZURE_TRANSLATOR_KEY }}
           AZURE_TRANSLATOR_REGION: ${{ vars.AZURE_TRANSLATOR_REGION }}
+          GOOGLE_TRANSLATE_API_KEY: ${{ secrets.GOOGLE_TRANSLATE_API_KEY }}
           # 入力はシェルに直接展開せず環境変数経由で渡す(スクリプトインジェクション対策)
           IN_SOURCES: ${{ inputs.sources || 'pubmed,arxiv,gnews,prtimes,trials,yahoo,openalex' }}
           IN_KINDS: ${{ inputs.kinds || 'long' }}

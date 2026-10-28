@@ -27,6 +27,11 @@ on:
         type: choice
         options: ["no", "yes"]
         default: "no"
+      only_new:
+        description: "Evaluate only never-evaluated candidates?"
+        type: choice
+        options: ["no", "yes"]
+        default: "no"
   schedule:
     - cron: "30 21 * * 1"   # Mondays 21:30 UTC (Tuesday 06:30 JST)
 
@@ -86,15 +91,19 @@ jobs:
           IN_MAX_EVAL: ${{ inputs.max_eval || '6' }}
           IN_RETRY: ${{ inputs.retry_failed || 'no' }}
           IN_PURGE: ${{ inputs.purge_evaluations || 'no' }}
+          IN_ONLY_NEW: ${{ inputs.only_new || 'no' }}
         run: |
           if [ "$IN_PURGE" = "yes" ]; then
             python trl.py purge --data-dir _data --evaluations
           fi
+          ONLY_NEW_FLAG=""
+          if [ "$IN_ONLY_NEW" = "yes" ]; then ONLY_NEW_FLAG="--only-new"; fi
           python trl.py run --data-dir _data \
             --sources "$IN_SOURCES" \
             --kinds "$IN_KINDS" \
             --max-eval "$IN_MAX_EVAL" \
-            --retry-failed "$IN_RETRY"
+            --retry-failed "$IN_RETRY" \
+            $ONLY_NEW_FLAG
       - name: Export site (data.json + web)
         if: always() && hashFiles('_data/trl.sqlite') != ''
         run: python trl.py export --data-dir _data --out _site

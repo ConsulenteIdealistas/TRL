@@ -45,6 +45,28 @@
         ],
         "pubmed": "Lonza[Affiliation]"
       }
+    },
+    {
+      "id": "comet",
+      "name": "Comet Holding AG",
+      "aliases": [
+        "Comet Group",
+        "Comet",
+        "コメット"
+      ],
+      "ticker": "COTN",
+      "exchange": "SIX",
+      "sector": "semiconductor",
+      "tier": "core",
+      "market": "CH",
+      "watch": {
+        "news_name": "Comet Group",
+        "extra_keywords": [
+          "RF power",
+          "X-ray inspection",
+          "plasma control"
+        ]
+      }
     }
   ]
 }

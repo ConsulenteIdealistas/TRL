@@ -43,6 +43,28 @@
     ],
     "openalex": "I4210165278"
    }
+  },
+  {
+   "id": "camurus",
+   "name": "Camurus AB",
+   "aliases": [
+    "Camurus",
+    "カムラス"
+   ],
+   "ticker": "CAMX",
+   "exchange": "Nasdaq Stockholm",
+   "sector": "bio",
+   "tier": "core",
+   "market": "SE",
+   "watch": {
+    "news_name": "Camurus",
+    "sponsor": "Camurus",
+    "extra_keywords": [
+     "FluidCrystal",
+     "Buvidal",
+     "CAM2029"
+    ]
+   }
   }
  ]
 }

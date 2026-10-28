@@ -106,6 +106,48 @@
           "hypersonics"
         ]
       }
+    },
+    {
+      "id": "oxford_biomedica",
+      "name": "Oxford BioMedica plc",
+      "aliases": [
+        "Oxford BioMedica",
+        "オックスフォード・バイオメディカ"
+      ],
+      "ticker": "OXB",
+      "exchange": "LSE",
+      "sector": "bio",
+      "tier": "core",
+      "market": "GB",
+      "watch": {
+        "news_name": "Oxford BioMedica",
+        "sponsor": "Oxford BioMedica",
+        "extra_keywords": [
+          "lentiviral vector",
+          "cell and gene therapy"
+        ]
+      }
+    },
+    {
+      "id": "iqe",
+      "name": "IQE plc",
+      "aliases": [
+        "IQE",
+        "アイキューイー"
+      ],
+      "ticker": "IQE",
+      "exchange": "LSE",
+      "sector": "semiconductor",
+      "tier": "watch",
+      "market": "GB",
+      "watch": {
+        "news_name": "IQE plc",
+        "extra_keywords": [
+          "epiwafer",
+          "compound semiconductor",
+          "MBE"
+        ]
+      }
     }
   ]
 }

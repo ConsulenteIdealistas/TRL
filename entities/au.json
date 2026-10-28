@@ -65,6 +65,71 @@
           "defence"
         ]
       }
+    },
+    {
+      "id": "neuren",
+      "name": "Neuren Pharmaceuticals Limited",
+      "aliases": [
+        "Neuren",
+        "ニューレン"
+      ],
+      "ticker": "NEU",
+      "exchange": "ASX",
+      "sector": "bio",
+      "tier": "core",
+      "market": "AU",
+      "watch": {
+        "news_name": "Neuren Pharmaceuticals",
+        "sponsor": "Neuren Pharmaceuticals",
+        "extra_keywords": [
+          "NNZ-2591",
+          "trofinetide",
+          "DAYBUE"
+        ]
+      }
+    },
+    {
+      "id": "weebit_nano",
+      "name": "Weebit Nano Limited",
+      "aliases": [
+        "Weebit Nano",
+        "ウィービット・ナノ"
+      ],
+      "ticker": "WBT",
+      "exchange": "ASX",
+      "sector": "semiconductor",
+      "tier": "core",
+      "market": "AU",
+      "watch": {
+        "news_name": "Weebit Nano",
+        "extra_keywords": [
+          "ReRAM",
+          "resistive RAM",
+          "embedded memory"
+        ]
+      }
+    },
+    {
+      "id": "brainchip",
+      "name": "BrainChip Holdings Ltd",
+      "aliases": [
+        "BrainChip",
+        "Brainchip",
+        "ブレインチップ"
+      ],
+      "ticker": "BRN",
+      "exchange": "ASX",
+      "sector": "ai",
+      "tier": "watch",
+      "market": "AU",
+      "watch": {
+        "news_name": "BrainChip",
+        "extra_keywords": [
+          "Akida",
+          "neuromorphic",
+          "edge AI"
+        ]
+      }
     }
   ]
 }

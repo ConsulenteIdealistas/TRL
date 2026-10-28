@@ -304,6 +304,113 @@
      "precision timing"
     ]
    }
+  },
+  {
+   "id": "blacksky",
+   "name": "BlackSky Technology Inc.",
+   "aliases": [
+    "BlackSky",
+    "ブラックスカイ"
+   ],
+   "ticker": "BKSY",
+   "exchange": "NYSE",
+   "sector": "space",
+   "tier": "core",
+   "market": "US",
+   "watch": {
+    "news_name": "BlackSky",
+    "extra_keywords": [
+     "Gen-3",
+     "earth observation",
+     "constellation"
+    ]
+   }
+  },
+  {
+   "id": "kratos",
+   "name": "Kratos Defense & Security Solutions, Inc.",
+   "aliases": [
+    "Kratos Defense",
+    "Kratos",
+    "クラトス"
+   ],
+   "ticker": "KTOS",
+   "exchange": "NASDAQ",
+   "sector": "space",
+   "tier": "core",
+   "market": "US",
+   "watch": {
+    "news_name": "Kratos Defense",
+    "extra_keywords": [
+     "unmanned",
+     "satellite communications",
+     "hypersonics"
+    ]
+   }
+  },
+  {
+   "id": "ambarella",
+   "name": "Ambarella, Inc.",
+   "aliases": [
+    "Ambarella",
+    "アンバレラ"
+   ],
+   "ticker": "AMBA",
+   "exchange": "NASDAQ",
+   "sector": "semiconductor",
+   "tier": "core",
+   "market": "US",
+   "watch": {
+    "news_name": "Ambarella",
+    "extra_keywords": [
+     "CV3",
+     "edge AI",
+     "computer vision"
+    ]
+   }
+  },
+  {
+   "id": "schrodinger",
+   "name": "Schrödinger, Inc.",
+   "aliases": [
+    "Schrödinger",
+    "Schrodinger",
+    "シュレーディンガー"
+   ],
+   "ticker": "SDGR",
+   "exchange": "NASDAQ",
+   "sector": "ai",
+   "tier": "core",
+   "market": "US",
+   "watch": {
+    "news_name": "Schrodinger",
+    "extra_keywords": [
+     "drug discovery platform",
+     "physics-based",
+     "LiveDesign"
+    ]
+   }
+  },
+  {
+   "id": "bigbear_ai",
+   "name": "BigBear.ai Holdings, Inc.",
+   "aliases": [
+    "BigBear.ai",
+    "BigBear",
+    "ビッグベア"
+   ],
+   "ticker": "BBAI",
+   "exchange": "NYSE",
+   "sector": "ai",
+   "tier": "watch",
+   "market": "US",
+   "watch": {
+    "news_name": "BigBear.ai",
+    "extra_keywords": [
+     "defense AI",
+     "decision intelligence"
+    ]
+   }
   }
  ]
 }

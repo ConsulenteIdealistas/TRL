@@ -20,6 +20,48 @@
           "lanciatore"
         ]
       }
+    },
+    {
+      "id": "diasorin",
+      "name": "DiaSorin S.p.A.",
+      "aliases": [
+        "DiaSorin",
+        "ディアソリン"
+      ],
+      "ticker": "DIA",
+      "exchange": "Borsa Italiana",
+      "sector": "bio",
+      "tier": "core",
+      "market": "IT",
+      "watch": {
+        "news_name": "DiaSorin",
+        "sponsor": "DiaSorin",
+        "extra_keywords": [
+          "LIAISON",
+          "immunoassay",
+          "molecular diagnostics"
+        ]
+      }
+    },
+    {
+      "id": "technoprobe",
+      "name": "Technoprobe S.p.A.",
+      "aliases": [
+        "Technoprobe",
+        "テクノプローブ"
+      ],
+      "ticker": "TPRO",
+      "exchange": "Borsa Italiana",
+      "sector": "semiconductor",
+      "tier": "core",
+      "market": "IT",
+      "watch": {
+        "news_name": "Technoprobe",
+        "extra_keywords": [
+          "probe cards",
+          "semiconductor testing"
+        ]
+      }
     }
   ]
 }

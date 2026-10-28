@@ -10,7 +10,7 @@
    "ticker": "BIOA-B",
    "exchange": "Nasdaq Stockholm",
    "sector": "bio",
-   "tier": "core",
+   "tier": "watch",
    "market": "SE",
    "watch": {
     "news_name": "BioArctic",
@@ -32,7 +32,7 @@
    "ticker": "AAC",
    "exchange": "Nasdaq First North",
    "sector": "space",
-   "tier": "core",
+   "tier": "watch",
    "market": "SE",
    "watch": {
     "news_name": "AAC Clyde Space",

@@ -35,7 +35,7 @@
       "ticker": "LONN",
       "exchange": "SIX",
       "sector": "bio",
-      "tier": "core",
+      "tier": "watch",
       "market": "CH",
       "watch": {
         "news_name": "Lonza",

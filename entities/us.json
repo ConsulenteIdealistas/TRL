@@ -185,7 +185,7 @@
    "ticker": "ARM",
    "exchange": "NASDAQ",
    "sector": "semiconductor",
-   "tier": "core",
+   "tier": "watch",
    "market": "US",
    "watch": {
     "news_name": "Arm Holdings",

@@ -76,7 +76,7 @@
    "ticker": "WAF",
    "exchange": "XETRA",
    "sector": "semiconductor",
-   "tier": "core",
+   "tier": "watch",
    "market": "DE",
    "watch": {
     "news_name": "Siltronic",
@@ -97,7 +97,7 @@
    "ticker": "FYB",
    "exchange": "XETRA",
    "sector": "bio",
-   "tier": "core",
+   "tier": "watch",
    "market": "DE",
    "watch": {
     "news_name": "Formycon",
@@ -142,7 +142,7 @@
    "ticker": "SRT",
    "exchange": "XETRA",
    "sector": "bio",
-   "tier": "core",
+   "tier": "watch",
    "market": "DE",
    "watch": {
     "news_name": "Sartorius",

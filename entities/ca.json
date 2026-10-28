@@ -30,7 +30,7 @@
       "ticker": "TSAT",
       "exchange": "TSX",
       "sector": "space",
-      "tier": "core",
+      "tier": "watch",
       "market": "CA",
       "watch": {
         "news_name": "Telesat",
@@ -50,7 +50,7 @@
       "ticker": "CVO",
       "exchange": "TSX",
       "sector": "ai",
-      "tier": "core",
+      "tier": "watch",
       "market": "CA",
       "watch": {
         "news_name": "Coveo",
@@ -71,7 +71,7 @@
       "ticker": "CLS",
       "exchange": "TSX",
       "sector": "ai",
-      "tier": "core",
+      "tier": "watch",
       "market": "CA",
       "watch": {
         "news_name": "Celestica",

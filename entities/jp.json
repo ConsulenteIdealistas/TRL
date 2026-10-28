@@ -383,7 +383,7 @@
    "ticker": "4592",
    "exchange": "TSE",
    "sector": "bio",
-   "tier": "core",
+   "tier": "watch",
    "watch": {
     "news_name": "サンバイオ",
     "prtimes_terms": [
@@ -416,7 +416,7 @@
    "ticker": "4593",
    "exchange": "TSE",
    "sector": "bio",
-   "tier": "core",
+   "tier": "watch",
    "watch": {
     "news_name": "ヘリオス",
     "prtimes_terms": [
@@ -447,7 +447,7 @@
    "ticker": "4888",
    "exchange": "TSE",
    "sector": "bio",
-   "tier": "core",
+   "tier": "watch",
    "watch": {
     "news_name": "ステラファーマ",
     "prtimes_terms": [

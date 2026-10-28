@@ -174,6 +174,58 @@ async function load() {
 }
 $("#sf").addEventListener("submit", e => { e.preventDefault(); render(); });
 $("#q").addEventListener("input", render);
+
+// 検索サジェスト: 企業名・キーワード・タイトルから補完候補を出す (2文字から)
+const sugBox = $("#sug");
+let sugItems = [], sugIdx = -1;
+function sugIndex() {
+  const comp = new Set(), kw = new Set(), ttl = [];
+  for (const p of P) {
+    for (const e of p.entities || []) if (e.name) comp.add(e.name);
+    for (const f of p.fields || []) kw.add(f);
+    if (p.title) ttl.push(p.title);
+    if (p.title_ja) ttl.push(p.title_ja);
+  }
+  return { comp: [...comp], kw: [...kw], ttl: [...new Set(ttl)] };
+}
+function sugMatch(list, q) {
+  const starts = [], incl = [];
+  for (const v of list) {
+    const lv = v.toLowerCase();
+    if (lv.startsWith(q)) starts.push(v); else if (lv.includes(q)) incl.push(v);
+  }
+  return starts.concat(incl);
+}
+function hideSug() { sugBox.hidden = true; sugItems = []; sugIdx = -1; }
+function showSug() {
+  const q = $("#q").value.trim().toLowerCase();
+  if (q.length < 2 || !P.length) { hideSug(); return; }
+  const ix = sugIndex();
+  const groups = [["企業", sugMatch(ix.comp, q)], ["キーワード", sugMatch(ix.kw, q)], ["タイトル", sugMatch(ix.ttl, q)]];
+  sugItems = [];
+  for (const [t, vs] of groups) for (const v of vs) { if (sugItems.length < 8) sugItems.push({ t, v }); }
+  if (!sugItems.length) { hideSug(); return; }
+  sugIdx = -1;
+  sugBox.innerHTML = sugItems.map((it, i) => `<button type="button" class="sug-i" data-i="${i}"><span class="sug-t">${esc(it.t)}</span><span class="sug-x">${esc(it.v)}</span></button>`).join("");
+  sugBox.hidden = false;
+}
+function pickSug(i) {
+  const it = sugItems[i]; if (!it) return;
+  $("#q").value = it.v; hideSug(); render(); $("#q").focus();
+}
+$("#q").addEventListener("input", showSug);
+sugBox.addEventListener("mousedown", e => { const b = e.target.closest("[data-i]"); if (b) { e.preventDefault(); pickSug(+b.dataset.i); } });
+$("#q").addEventListener("keydown", e => {
+  if (sugBox.hidden || !sugItems.length) return;
+  if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+    e.preventDefault();
+    sugIdx = (sugIdx + (e.key === "ArrowDown" ? 1 : sugItems.length - 1)) % sugItems.length;
+    sugBox.querySelectorAll(".sug-i").forEach((el, i) => el.classList.toggle("on", i === sugIdx));
+  } else if (e.key === "Enter" && sugIdx >= 0) { e.preventDefault(); pickSug(sugIdx); }
+  else if (e.key === "Escape") hideSug();
+});
+$("#q").addEventListener("blur", () => setTimeout(hideSug, 120));
+$("#sf").addEventListener("submit", hideSug);
 ["#fs", "#ft", "#fo", "#fd", "#fm", "#fc"].forEach(s => $(s).addEventListener("change", render));
 $("#fl").addEventListener("change", () => { LANG = $("#fl").value; try { localStorage.setItem("trl-lang", LANG); } catch (e) { /* 保存できなくても切替は効く */ } render(); });
 $("#rs").addEventListener("click", () => { $("#q").value = ""; $("#fs").value = "all"; $("#ft").value = "all"; $("#fo").value = "status"; $("#fd").value = "all"; $("#fm").value = "all"; $("#fc").value = "all"; sel = P[0] ? P[0].id : null; render(); });

@@ -76,6 +76,9 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           NCBI_API_KEY: ${{ secrets.NCBI_API_KEY }}
           OPENALEX_API_KEY: ${{ secrets.OPENALEX_API_KEY }}
+          DEEPL_API_KEY: ${{ secrets.DEEPL_API_KEY }}
+          AZURE_TRANSLATOR_KEY: ${{ secrets.AZURE_TRANSLATOR_KEY }}
+          AZURE_TRANSLATOR_REGION: ${{ vars.AZURE_TRANSLATOR_REGION }}
           # 入力はシェルに直接展開せず環境変数経由で渡す(スクリプトインジェクション対策)
           IN_SOURCES: ${{ inputs.sources || 'pubmed,arxiv,gnews,prtimes,trials,yahoo,openalex' }}
           IN_KINDS: ${{ inputs.kinds || 'long' }}

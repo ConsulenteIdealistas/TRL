@@ -1692,6 +1692,25 @@ class EntityQueryGenerationTests(unittest.TestCase):
         self.assertEqual(by_name["es1-yahoo"]["yahoo"], "PHM.MC")
         self.assertEqual(by_name["es1-trials"]["trials"], "PharmaMar")
 
+    def test_generation_rules_france_norway(self):
+        # フランス/ノルウェーも英語集合+現地ロケール。Yahoo 接尾辞は .PA / .OL
+        src = {"keyword_sets": {"semiconductor": ["治験"]},
+               "keyword_sets_en": {"semiconductor": ["earnings", "wafer"]},
+               "entity_watch": {"lookback_days": {}}}
+        ents = {"entities": [
+            {"id": "fr1", "sector": "semiconductor", "market": "FR", "ticker": "SOI",
+             "watch": {"news_name": "Soitec"}},
+            {"id": "no1", "sector": "semiconductor", "market": "NO", "ticker": "NOD",
+             "watch": {"news_name": "Nordic Semiconductor"}},
+        ]}
+        by_name = {q["name"]: q for q in T.build_entity_queries(ents, src)}
+        q = by_name["fr1-news"]["gnews"]
+        self.assertEqual((q["hl"], q["gl"], q["ceid"]), ("en", "FR", "FR:en"))
+        self.assertEqual(by_name["fr1-yahoo"]["yahoo"], "SOI.PA")
+        self.assertEqual(by_name["no1-yahoo"]["yahoo"], "NOD.OL")
+        self.assertEqual(by_name["no1-news"]["gnews"]["q"],
+                         "Nordic Semiconductor (earnings OR wafer)")
+
     def test_generation_rules_openalex(self):
         src = {"keyword_sets": {"space": ["契約"]},
                "entity_watch": {"lookback_days": {"openalex": 365}}}
@@ -1707,7 +1726,7 @@ class EntityQueryGenerationTests(unittest.TestCase):
         self.assertNotIn("sp2-openalex", by_name)
 
     def test_invalid_market_rejected(self):
-        ents = {"entities": [{"id": "x", "name": "X Corp", "aliases": ["X Corp Ltd"], "market": "FR"}]}
+        ents = {"entities": [{"id": "x", "name": "X Corp", "aliases": ["X Corp Ltd"], "market": "CN"}]}
         with self.assertRaises(ConfigError):
             T.validate_entities(ents)
 

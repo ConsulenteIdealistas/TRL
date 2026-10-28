@@ -1,12 +1,12 @@
-# TRL 実行レポート 20261028T135319Z-d247e3
+# TRL 実行レポート 20261028T140950Z-a27c04
 
 ※ スコアは評価尺度であり、株価上昇確率・成功確率・投資利益率ではありません。売買の自動判定にも使えません。
 
 - 基準日: 2026-10-28 / 設定: 2026.10.0 (0e43ffcf41e694c9)
-- 状態: ok / 所要: 516.08秒
-- 取得 2312 / 新規 56 / 重複 1697 / 不正 559
-- スクリーニング通過 56 / 除外 0 / 評価対象 6
-- 評価: 確定 4 / 保留 2 / エラー 0 / LLM未設定でスキップ 0
+- 状態: ok / 所要: 406.28秒
+- 取得 2343 / 新規 18 / 重複 1745 / 不正 580
+- スクリーニング通過 18 / 除外 0 / 評価対象 6
+- 評価: 確定 3 / 保留 1 / エラー 2 / LLM未設定でスキップ 0
 
 ## 情報源ごとの状況
 - [OK] arxiv / solid-state-battery: 取得7 新規0 重複0 不正7
@@ -14,103 +14,103 @@
 - [OK] pubmed / gene-therapy: 取得4 新規0 重複0 不正4
 - [OK] gnews / astroscale-news: 取得20 新規0 重複4 不正16
 - [OK] gnews / ispace-news: 取得20 新規0 重複20 不正0
-- [OK] gnews / synspective-news: 取得17 新規0 重複17 不正0
+- [OK] gnews / synspective-news: 取得20 新規1 重複12 不正7
 - [OK] gnews / oncolys-news: 取得20 新規0 重複2 不正18
-- [OK] gnews / reprocell-news: 取得8 新規0 重複8 不正0
+- [OK] gnews / reprocell-news: 取得20 新規0 重複18 不正2
 - [OK] gnews / peptidream-news: 取得9 新規0 重複2 不正7
 - [OK] gnews / qps-news: 取得20 新規0 重複11 不正9
 - [OK] gnews / axelspace-news: 取得20 新規0 重複14 不正6
 - [OK] gnews / sanbio-news: 取得20 新規0 重複19 不正1
-- [OK] gnews / healios-news: 取得12 新規0 重複8 不正4
+- [OK] gnews / healios-news: 取得17 新規0 重複9 不正8
 - [OK] gnews / stella_pharma-news: 取得7 新規0 重複5 不正2
 - [OK] gnews / kringle-news: 取得12 新規0 重複9 不正3
-- [OK] gnews / stemrim-news: 取得7 新規0 重複7 不正0
-- [OK] gnews / pksha-news: 取得20 新規0 重複8 不正12
-- [OK] gnews / fronteo-news: 取得13 新規0 重複13 不正0
-- [OK] gnews / exawizards-news: 取得13 新規0 重複12 不正1
+- [OK] gnews / stemrim-news: 取得11 新規0 重複11 不正0
+- [OK] gnews / pksha-news: 取得20 新規0 重複9 不正11
+- [OK] gnews / fronteo-news: 取得20 新規1 重複19 不正0
+- [OK] gnews / exawizards-news: 取得20 新規0 重複19 不正1
 - [OK] gnews / heroz-news: 取得20 新規0 重複17 不正3
 - [OK] gnews / cyberdyne-news: 取得5 新規0 重複1 不正4
-- [OK] gnews / lasertec-news: 取得13 新規0 重複13 不正0
+- [OK] gnews / lasertec-news: 取得20 新規0 重複7 不正13
 - [OK] gnews / socionext-news: 取得12 新規0 重複10 不正2
-- [OK] gnews / thine-news: 取得5 新規0 重複3 不正2
-- [OK] gnews / torex-news: 取得2 新規0 重複1 不正1
+- [OK] gnews / thine-news: 取得6 新規0 重複3 不正3
+- [OK] gnews / torex-news: 取得3 新規0 重複2 不正1
 - [OK] gnews / rocketlab-news: 取得20 新規0 重複20 不正0
 - [OK] gnews / ast_spacemobile-news: 取得20 新規0 重複19 不正1
 - [OK] gnews / intuitive_machines-news: 取得14 新規0 重複5 不正9
 - [OK] gnews / planet_labs-news: 取得20 新規0 重複16 不正4
-- [OK] gnews / redwire-news: 取得6 新規0 重複4 不正2
+- [OK] gnews / redwire-news: 取得20 新規0 重複14 不正6
 - [OK] gnews / crispr-news: 取得11 新規0 重複7 不正4
-- [OK] gnews / moderna-news: 取得20 新規0 重複16 不正4
+- [OK] gnews / moderna-news: 取得20 新規1 重複16 不正3
 - [OK] gnews / beam-news: 取得13 新規0 重複10 不正3
-- [OK] gnews / arm-news: 取得20 新規0 重複11 不正9
+- [OK] gnews / arm-news: 取得20 新規0 重複10 不正10
 - [OK] gnews / firefly-news: 取得18 新規0 重複11 不正7
-- [OK] gnews / tempus-news: 取得20 新規0 重複11 不正9
-- [OK] gnews / recursion-news: 取得13 新規0 重複9 不正4
+- [OK] gnews / tempus-news: 取得17 新規0 重複10 不正7
+- [OK] gnews / recursion-news: 取得11 新規0 重複9 不正2
 - [OK] gnews / intellia-news: 取得6 新規0 重複3 不正3
-- [OK] gnews / sitime-news: 取得11 新規0 重複11 不正0
+- [OK] gnews / sitime-news: 取得12 新規1 重複11 不正0
 - [OK] gnews / blacksky-news: 取得11 新規0 重複11 不正0
-- [OK] gnews / kratos-news: 取得12 新規6 重複5 不正1
+- [OK] gnews / kratos-news: 取得20 新規0 重複16 不正4
 - [OK] gnews / ambarella-news: 取得20 新規0 重複9 不正11
-- [OK] gnews / schrodinger-news: 取得12 新規1 重複8 不正3
-- [OK] gnews / bigbear_ai-news: 取得20 新規3 重複15 不正2
-- [OK] gnews / oxford_nanopore-news: 取得10 新規0 重複6 不正4
-- [OK] gnews / oxford_instruments-news: 取得20 新規2 重複8 不正10
+- [OK] gnews / schrodinger-news: 取得13 新規2 重複8 不正3
+- [OK] gnews / bigbear_ai-news: 取得20 新規0 重複18 不正2
+- [OK] gnews / oxford_nanopore-news: 取得15 新規0 重複9 不正6
+- [OK] gnews / oxford_instruments-news: 取得20 新規0 重複11 不正9
 - [OK] gnews / genus-news: 取得3 新規0 重複3 不正0
-- [OK] gnews / filtronic-news: 取得20 新規0 重複19 不正1
-- [OK] gnews / qinetiq-news: 取得10 新規2 重複4 不正4
+- [OK] gnews / filtronic-news: 取得20 新規1 重複16 不正3
+- [OK] gnews / qinetiq-news: 取得20 新規0 重複10 不正10
 - [OK] gnews / oxford_biomedica-news: 取得10 新規0 重複6 不正4
 - [OK] gnews / iqe-news: 取得20 新規0 重複15 不正5
-- [OK] gnews / idorsia-news: 取得4 新規0 重複4 不正0
-- [OK] gnews / lonza-news: 取得20 新規0 重複11 不正9
+- [OK] gnews / idorsia-news: 取得5 新規0 重複4 不正1
+- [OK] gnews / lonza-news: 取得9 新規0 重複6 不正3
 - [OK] gnews / comet-news: 取得5 新規0 重複2 不正3
 - [OK] gnews / ohb-news: 取得20 新規0 重複19 不正1
 - [OK] gnews / evotec-news: 取得9 新規0 重複9 不正0
 - [OK] gnews / aixtron-news: 取得20 新規0 重複20 不正0
 - [OK] gnews / siltronic-news: 取得20 新規0 重複19 不正1
-- [OK] gnews / formycon-news: 取得9 新規0 重複8 不正1
+- [OK] gnews / formycon-news: 取得20 新規1 重複18 不正1
 - [OK] gnews / biontech-news: 取得20 新規0 重複20 不正0
 - [OK] gnews / sartorius-news: 取得12 新規0 重複12 不正0
-- [OK] gnews / suss_microtec-news: 取得20 新規0 重複10 不正10
+- [OK] gnews / suss_microtec-news: 取得20 新規0 重複11 不正9
 - [OK] gnews / mda_space-news: 取得20 新規0 重複14 不正6
 - [OK] gnews / telesat-news: 取得10 新規0 重複10 不正0
-- [OK] gnews / coveo-news: 取得5 新規0 重複4 不正1
-- [OK] gnews / celestica-news: 取得12 新規0 重複12 不正0
+- [OK] gnews / coveo-news: 取得6 新規0 重複5 不正1
+- [OK] gnews / celestica-news: 取得20 新規0 重複19 不正1
 - [OK] gnews / telix-news: 取得20 新規0 重複19 不正1
-- [OK] gnews / mesoblast-news: 取得13 新規0 重複10 不正3
+- [OK] gnews / mesoblast-news: 取得9 新規0 重複7 不正2
 - [OK] gnews / eos-news: 取得20 新規0 重複6 不正14
 - [OK] gnews / neuren-news: 取得14 新規0 重複10 不正4
 - [OK] gnews / weebit_nano-news: 取得19 新規0 重複19 不正0
-- [OK] gnews / brainchip-news: 取得20 新規5 重複13 不正2
-- [OK] gnews / avio-news: 取得20 新規0 重複18 不正2
+- [OK] gnews / brainchip-news: 取得20 新規1 重複17 不正2
+- [OK] gnews / avio-news: 取得20 新規1 重複14 不正5
 - [OK] gnews / diasorin-news: 取得4 新規0 重複4 不正0
 - [OK] gnews / technoprobe-news: 取得2 新規0 重複2 不正0
 - [OK] gnews / bioarctic-news: 取得4 新規0 重複1 不正3
 - [OK] gnews / aac_clyde-news: 取得10 新規0 重複4 不正6
 - [OK] gnews / camurus-news: 取得1 新規0 重複1 不正0
-- [OK] gnews / genmab-news: 取得20 新規1 重複19 不正0
+- [OK] gnews / genmab-news: 取得19 新規1 重複18 不正0
 - [OK] gnews / bavarian_nordic-news: 取得6 新規0 重複6 不正0
-- [OK] gnews / zealand_pharma-news: 取得20 新規0 重複5 不正15
+- [OK] gnews / zealand_pharma-news: 取得20 新規0 重複10 不正10
 - [OK] gnews / pharmamar-news: 取得10 新規0 重複8 不正2
-- [OK] gnews / almirall-news: 取得8 新規1 重複4 不正3
+- [OK] gnews / almirall-news: 取得8 新規0 重複5 不正3
 - [OK] gnews / oryzon-news: 取得4 新規0 重複4 不正0
-- [OK] gnews / indra-news: 取得20 新規0 重複9 不正11
-- [OK] gnews / grifols-news: 取得20 新規1 重複17 不正2
-- [OK] gnews / soitec-news: 取得8 新規0 重複7 不正1
-- [OK] gnews / ipsen-news: 取得20 新規9 重複4 不正7
+- [OK] gnews / indra-news: 取得20 新規1 重複10 不正9
+- [OK] gnews / grifols-news: 取得9 新規2 重複7 不正0
+- [OK] gnews / soitec-news: 取得9 新規0 重複7 不正2
+- [OK] gnews / ipsen-news: 取得8 新規0 重複7 不正1
 - [OK] gnews / innate_pharma-news: 取得20 新規0 重複9 不正11
 - [OK] gnews / valneva-news: 取得14 新規0 重複12 不正2
-- [OK] gnews / eutelsat-news: 取得20 新規6 重複10 不正4
+- [OK] gnews / eutelsat-news: 取得20 新規1 重複15 不正4
 - [OK] gnews / abivax-news: 取得10 新規0 重複7 不正3
 - [OK] gnews / genfit-news: 取得6 新規0 重複4 不正2
 - [OK] gnews / asm_international-news: 取得8 新規0 重複6 不正2
-- [OK] gnews / be_semiconductor-news: 取得20 新規10 重複6 不正4
-- [OK] gnews / pharming-news: 取得16 新規0 重複15 不正1
-- [OK] gnews / orion-news: 取得20 新規3 重複15 不正2
+- [OK] gnews / be_semiconductor-news: 取得20 新規0 重複16 不正4
+- [OK] gnews / pharming-news: 取得15 新規0 重複14 不正1
+- [OK] gnews / orion-news: 取得20 新規2 重複16 不正2
 - [OK] gnews / herantis-news: 取得2 新規0 重複0 不正2
-- [OK] gnews / faron-news: 取得9 新規0 重複7 不正2
-- [OK] gnews / nordic_semiconductor-news: 取得19 新規0 重複10 不正9
-- [OK] gnews / kongsberg-news: 取得20 新規4 重複10 不正6
-- [OK] gnews / photocure-news: 取得1 新規1 重複0 不正0
+- [OK] gnews / faron-news: 取得9 新規0 重複6 不正3
+- [OK] gnews / nordic_semiconductor-news: 取得18 新規0 重複10 不正8
+- [OK] gnews / kongsberg-news: 取得20 新規0 重複14 不正6
+- [OK] gnews / photocure-news: 取得2 新規1 重複1 不正0
 - [OK] gnews / ucb-news: 取得20 新規0 重複17 不正3
 - [OK] trials / oncolys-trials: 取得0 新規0 重複0 不正0
 - [OK] trials / reprocell-trials: 取得1 新規0 重複0 不正1
@@ -153,7 +153,7 @@
 - [OK] trials / faron-trials: 取得4 新規0 重複1 不正3
 - [OK] trials / photocure-trials: 取得1 新規0 重複1 不正0
 - [OK] trials / ucb-trials: 取得11 新規0 重複3 不正8
-- [OK] yahoo / astroscale-yahoo: 取得1 新規0 重複1 不正0
+- [OK] yahoo / astroscale-yahoo: 取得0 新規0 重複0 不正0
 - [OK] yahoo / ispace-yahoo: 取得1 新規0 重複1 不正0
 - [OK] yahoo / synspective-yahoo: 取得0 新規0 重複0 不正0
 - [OK] yahoo / oncolys-yahoo: 取得1 新規0 重複1 不正0
@@ -161,7 +161,7 @@
 - [OK] yahoo / peptidream-yahoo: 取得1 新規0 重複1 不正0
 - [OK] yahoo / qps-yahoo: 取得0 新規0 重複0 不正0
 - [OK] yahoo / axelspace-yahoo: 取得1 新規0 重複1 不正0
-- [OK] yahoo / sanbio-yahoo: 取得1 新規0 重複1 不正0
+- [OK] yahoo / sanbio-yahoo: 取得0 新規0 重複0 不正0
 - [OK] yahoo / healios-yahoo: 取得1 新規0 重複1 不正0
 - [OK] yahoo / stella_pharma-yahoo: 取得1 新規0 重複1 不正0
 - [OK] yahoo / kringle-yahoo: 取得1 新規0 重複1 不正0
@@ -196,7 +196,7 @@
 - [OK] yahoo / bigbear_ai-yahoo: 取得1 新規0 重複1 不正0
 - [OK] yahoo / oxford_nanopore-yahoo: 取得1 新規0 重複1 不正0
 - [OK] yahoo / oxford_instruments-yahoo: 取得1 新規0 重複1 不正0
-- [OK] yahoo / genus-yahoo: 取得1 新規1 重複0 不正0
+- [OK] yahoo / genus-yahoo: 取得0 新規0 重複0 不正0
 - [OK] yahoo / filtronic-yahoo: 取得1 新規0 重複1 不正0
 - [OK] yahoo / qinetiq-yahoo: 取得1 新規0 重複1 不正0
 - [OK] yahoo / oxford_biomedica-yahoo: 取得0 新規0 重複0 不正0
@@ -236,7 +236,7 @@
 - [OK] yahoo / oryzon-yahoo: 取得1 新規0 重複1 不正0
 - [OK] yahoo / indra-yahoo: 取得1 新規0 重複1 不正0
 - [OK] yahoo / grifols-yahoo: 取得1 新規0 重複1 不正0
-- [OK] yahoo / soitec-yahoo: 取得0 新規0 重複0 不正0
+- [OK] yahoo / soitec-yahoo: 取得1 新規0 重複1 不正0
 - [OK] yahoo / ipsen-yahoo: 取得1 新規0 重複1 不正0
 - [OK] yahoo / innate_pharma-yahoo: 取得0 新規0 重複0 不正0
 - [OK] yahoo / valneva-yahoo: 取得1 新規0 重複1 不正0
@@ -254,7 +254,7 @@
 - [OK] yahoo / photocure-yahoo: 取得1 新規0 重複1 不正0
 - [OK] yahoo / ucb-yahoo: 取得0 新規0 重複0 不正0
 - [OK] prtimes / astroscale-prtimes: 取得2 新規0 重複2 不正0
-- [OK] prtimes / ispace-prtimes: 取得5 新規0 重複5 不正0
+- [OK] prtimes / ispace-prtimes: 取得3 新規0 重複3 不正0
 - [OK] prtimes / synspective-prtimes: 取得5 新規0 重複5 不正0
 - [OK] prtimes / oncolys-prtimes: 取得0 新規0 重複0 不正0
 - [OK] prtimes / reprocell-prtimes: 取得0 新規0 重複0 不正0
@@ -267,9 +267,9 @@
 - [OK] prtimes / kringle-prtimes: 取得0 新規0 重複0 不正0
 - [OK] prtimes / stemrim-prtimes: 取得0 新規0 重複0 不正0
 - [OK] prtimes / pksha-prtimes: 取得1 新規0 重複1 不正0
-- [OK] prtimes / fronteo-prtimes: 取得8 新規0 重複8 不正0
+- [OK] prtimes / fronteo-prtimes: 取得12 新規0 重複12 不正0
 - [OK] prtimes / exawizards-prtimes: 取得4 新規0 重複4 不正0
-- [OK] prtimes / heroz-prtimes: 取得6 新規0 重複6 不正0
+- [OK] prtimes / heroz-prtimes: 取得5 新規0 重複5 不正0
 - [OK] prtimes / cyberdyne-prtimes: 取得0 新規0 重複0 不正0
 - [OK] prtimes / lasertec-prtimes: 取得0 新規0 重複0 不正0
 - [OK] prtimes / socionext-prtimes: 取得6 新規0 重複6 不正0
@@ -277,7 +277,7 @@
 - [OK] prtimes / torex-prtimes: 取得0 新規0 重複0 不正0
 - [OK] pubmed / peptidream-pubmed: 取得1 新規0 重複1 不正0
 - [OK] pubmed / sanbio-pubmed: 取得0 新規0 重複0 不正0
-- [OK] pubmed / healios-pubmed: 取得5 新規0 重複5 不正0
+- [失敗] pubmed / healios-pubmed: 取得0 新規0 重複0 不正0 — HttpError: HTTP 400 for https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi
 - [OK] pubmed / crispr-pubmed: 取得7 新規0 重複7 不正0
 - [OK] pubmed / moderna-pubmed: 取得20 新規0 重複20 不正0
 - [OK] pubmed / beam-pubmed: 取得6 新規0 重複6 不正0
@@ -288,15 +288,15 @@
 - [OK] pubmed / idorsia-pubmed: 取得20 新規0 重複20 不正0
 - [OK] pubmed / lonza-pubmed: 取得20 新規0 重複20 不正0
 - [OK] pubmed / biontech-pubmed: 取得20 新規0 重複20 不正0
-- [OK] pubmed / telix-pubmed: 取得6 新規0 重複6 不正0
+- [失敗] pubmed / telix-pubmed: 取得0 新規0 重複0 不正0 — HttpError: HTTP 429 for https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi
 - [OK] pubmed / genmab-pubmed: 取得20 新規0 重複20 不正0
 - [OK] pubmed / pharmamar-pubmed: 取得11 新規0 重複11 不正0
-- [OK] pubmed / almirall-pubmed: 取得20 新規0 重複20 不正0
+- [失敗] pubmed / almirall-pubmed: 取得0 新規0 重複0 不正0 — HttpError: HTTP 429 for https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi
 - [OK] pubmed / oryzon-pubmed: 取得0 新規0 重複0 不正0
 - [OK] pubmed / ipsen-pubmed: 取得20 新規0 重複19 不正1
 - [OK] pubmed / innate_pharma-pubmed: 取得11 新規0 重複11 不正0
 - [OK] pubmed / valneva-pubmed: 取得20 新規0 重複20 不正0
-- [失敗] pubmed / abivax-pubmed: 取得0 新規0 重複0 不正0 — HttpError: HTTP 429 for https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi
+- [失敗] pubmed / abivax-pubmed: 取得0 新規0 重複0 不正0 — HttpError: HTTP 429 for https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi
 - [OK] pubmed / genfit-pubmed: 取得4 新規0 重複4 不正0
 - [OK] pubmed / orion-pubmed: 取得20 新規0 重複20 不正0
 - [OK] pubmed / herantis-pubmed: 取得1 新規0 重複1 不正0
@@ -318,39 +318,42 @@
 - [OK] openalex / zealand_pharma-openalex: 取得10 新規0 重複10 不正0
 
 ## 長期成長評価(確定)
-- **79.1** (strong) An Open Label Study to Evaluate the Long-term Safety and Efficacy of Odevixibat (A4250) in Patients With Alagille Syndrome (ASSERT-EXT)
-  論文・原資料: https://clinicaltrials.gov/study/NCT05035030
-  - [IR・決算資料 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=%22An+Open+Label+Study+to+Evaluate+the+Long-term+Safety+and+Efficacy+of+Odevixibat+%28A4250%29+in+Patients+With+Alagille+Syndrome+%28ASSERT-EXT%29%22+IR)
-  - [特許 [論文タイトル等（企業名未特定）]](https://patents.google.com/?q=An+Open+Label+Study+to+Evaluate+the+Long-term+Safety+and+Efficacy+of+Odevixibat+%28A4250%29+in+Patients+With+Alagille+Syndrome+%28ASSERT-EXT%29)
-  - [臨床試験登録 [論文タイトル等（企業名未特定）]](https://clinicaltrials.gov/search?term=An+Open+Label+Study+to+Evaluate+the+Long-term+Safety+and+Efficacy+of+Odevixibat+%28A4250%29+in+Patients+With+Alagille+Syndrome+%28ASSERT-EXT%29)
-  - [企業・技術情報 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=An+Open+Label+Study+to+Evaluate+the+Long-term+Safety+and+Efficacy+of+Odevixibat+%28A4250%29+in+Patients+With+Alagille+Syndrome+%28ASSERT-EXT%29)
-- **77.0** (strong) Analysis of the Effect of Odevixibat (A4250) Versus External Controls on Clinical Outcomes in Patients With PFIC (Odevixibat Versus External Control [OvEC]-PFIC)
-  論文・原資料: https://clinicaltrials.gov/study/NCT07497724
-  - [IR・決算資料 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=%22Analysis+of+the+Effect+of+Odevixibat+%28A4250%29+Versus+External+Controls+on+Clinical+Outcomes+in+Patients+With+PFIC+%28Odevixibat+Versus+External+Control+%5BOvEC%5D-PFIC%29%22+IR)
-  - [特許 [論文タイトル等（企業名未特定）]](https://patents.google.com/?q=Analysis+of+the+Effect+of+Odevixibat+%28A4250%29+Versus+External+Controls+on+Clinical+Outcomes+in+Patients+With+PFIC+%28Odevixibat+Versus+External+Control+%5BOvEC%5D-PFIC%29)
-  - [臨床試験登録 [論文タイトル等（企業名未特定）]](https://clinicaltrials.gov/search?term=Analysis+of+the+Effect+of+Odevixibat+%28A4250%29+Versus+External+Controls+on+Clinical+Outcomes+in+Patients+With+PFIC+%28Odevixibat+Versus+External+Control+%5BOvEC%5D-PFIC%29)
-  - [企業・技術情報 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=Analysis+of+the+Effect+of+Odevixibat+%28A4250%29+Versus+External+Controls+on+Clinical+Outcomes+in+Patients+With+PFIC+%28Odevixibat+Versus+External+Control+%5BOvEC%5D-PFIC%29)
-- **73.5** (strong) A Phase III, Open-label, Single Arm Study to Investigate the Efficacy and Safety of Elafibranor 80 mg in Adult Japanese Participants With Primary Biliary Cholangitis (PBC)
-  論文・原資料: https://clinicaltrials.gov/study/NCT06730061
-  - [IR・決算資料 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=%22A+Phase+III%2C+Open-label%2C+Single+Arm+Study+to+Investigate+the+Efficacy+and+Safety+of+Elafibranor+80+mg+in+Adult+Japanese+Participants+With+Primary+Biliary+Cholangitis+%28PBC%29%22+IR)
-  - [特許 [論文タイトル等（企業名未特定）]](https://patents.google.com/?q=A+Phase+III%2C+Open-label%2C+Single+Arm+Study+to+Investigate+the+Efficacy+and+Safety+of+Elafibranor+80+mg+in+Adult+Japanese+Participants+With+Primary+Biliary+Cholangitis+%28PBC%29)
-  - [臨床試験登録 [論文タイトル等（企業名未特定）]](https://clinicaltrials.gov/search?term=A+Phase+III%2C+Open-label%2C+Single+Arm+Study+to+Investigate+the+Efficacy+and+Safety+of+Elafibranor+80+mg+in+Adult+Japanese+Participants+With+Primary+Biliary+Cholangitis+%28PBC%29)
-  - [企業・技術情報 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=A+Phase+III%2C+Open-label%2C+Single+Arm+Study+to+Investigate+the+Efficacy+and+Safety+of+Elafibranor+80+mg+in+Adult+Japanese+Participants+With+Primary+Biliary+Cholangitis+%28PBC%29)
-- **69.8** (strong) A Phase III Randomised, Parallel-Group, Double-Blind, Placebo-Controlled, Two-Arm Study to Evaluate the Efficacy and Safety of Elafibranor 80 mg on Long-Term Clinical Outcomes in Adult Participants With Primary Biliary Cholangitis (PBC)
-  論文・原資料: https://clinicaltrials.gov/study/NCT06016842
-  - [IR・決算資料 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=%22A+Phase+III+Randomised%2C+Parallel-Group%2C+Double-Blind%2C+Placebo-Controlled%2C+Two-Arm+Study+to+Evaluate+the+Efficacy+and+Safety+of+Elafibranor+80+mg+on+Long-Term+Clinical+Outcomes+in+Adult+Participants+With+Primary+Biliary+Cholangitis+%28PBC%29%22+IR)
-  - [特許 [論文タイトル等（企業名未特定）]](https://patents.google.com/?q=A+Phase+III+Randomised%2C+Parallel-Group%2C+Double-Blind%2C+Placebo-Controlled%2C+Two-Arm+Study+to+Evaluate+the+Efficacy+and+Safety+of+Elafibranor+80+mg+on+Long-Term+Clinical+Outcomes+in+Adult+Participants+With+Primary+Biliary+Cholangitis+%28PBC%29)
-  - [臨床試験登録 [論文タイトル等（企業名未特定）]](https://clinicaltrials.gov/search?term=A+Phase+III+Randomised%2C+Parallel-Group%2C+Double-Blind%2C+Placebo-Controlled%2C+Two-Arm+Study+to+Evaluate+the+Efficacy+and+Safety+of+Elafibranor+80+mg+on+Long-Term+Clinical+Outcomes+in+Adult+Participants+With+Primary+Biliary+Cholangitis+%28PBC%29)
-  - [企業・技術情報 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=A+Phase+III+Randomised%2C+Parallel-Group%2C+Double-Blind%2C+Placebo-Controlled%2C+Two-Arm+Study+to+Evaluate+the+Efficacy+and+Safety+of+Elafibranor+80+mg+on+Long-Term+Clinical+Outcomes+in+Adult+Participants+With+Primary+Biliary+Cholangitis+%28PBC%29)
+- **77.8** (strong) Prospective Registry-Based Study Evaluating the Effectiveness and Safety of Odevixibat in Participants With Alagille Syndrome (ALGS)
+  論文・原資料: https://clinicaltrials.gov/study/NCT06850038
+  - [IR・決算資料 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=%22Prospective+Registry-Based+Study+Evaluating+the+Effectiveness+and+Safety+of+Odevixibat+in+Participants+With+Alagille+Syndrome+%28ALGS%29%22+IR)
+  - [特許 [論文タイトル等（企業名未特定）]](https://patents.google.com/?q=Prospective+Registry-Based+Study+Evaluating+the+Effectiveness+and+Safety+of+Odevixibat+in+Participants+With+Alagille+Syndrome+%28ALGS%29)
+  - [臨床試験登録 [論文タイトル等（企業名未特定）]](https://clinicaltrials.gov/search?term=Prospective+Registry-Based+Study+Evaluating+the+Effectiveness+and+Safety+of+Odevixibat+in+Participants+With+Alagille+Syndrome+%28ALGS%29)
+  - [企業・技術情報 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=Prospective+Registry-Based+Study+Evaluating+the+Effectiveness+and+Safety+of+Odevixibat+in+Participants+With+Alagille+Syndrome+%28ALGS%29)
+- **75.5** (strong) An International Observational Registry Study to Further Describe Long-term Safety and Effectiveness of Palovarotene in Patients With Fibrodysplasia Ossificans Progressiva (FOP)
+  論文・原資料: https://clinicaltrials.gov/study/NCT06089616
+  - [IR・決算資料 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=%22An+International+Observational+Registry+Study+to+Further+Describe+Long-term+Safety+and+Effectiveness+of+Palovarotene+in+Patients+With+Fibrodysplasia+Ossificans+Progressiva+%28FOP%29%22+IR)
+  - [特許 [論文タイトル等（企業名未特定）]](https://patents.google.com/?q=An+International+Observational+Registry+Study+to+Further+Describe+Long-term+Safety+and+Effectiveness+of+Palovarotene+in+Patients+With+Fibrodysplasia+Ossificans+Progressiva+%28FOP%29)
+  - [臨床試験登録 [論文タイトル等（企業名未特定）]](https://clinicaltrials.gov/search?term=An+International+Observational+Registry+Study+to+Further+Describe+Long-term+Safety+and+Effectiveness+of+Palovarotene+in+Patients+With+Fibrodysplasia+Ossificans+Progressiva+%28FOP%29)
+  - [企業・技術情報 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=An+International+Observational+Registry+Study+to+Further+Describe+Long-term+Safety+and+Effectiveness+of+Palovarotene+in+Patients+With+Fibrodysplasia+Ossificans+Progressiva+%28FOP%29)
+- **27.5** (weak) A brain immune phenotype independent of Alzheimer’s Disease associates with amyloid susceptibility and systemic inflammation
+  論文・原資料: https://doi.org/10.64898/2026.10.21.760450
+  - [IR・決算資料 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=%22A+brain+immune+phenotype+independent+of+Alzheimer%E2%80%99s+Disease+associates+with+amyloid+susceptibility+and+systemic+inflammation%22+IR)
+  - [特許 [論文タイトル等（企業名未特定）]](https://patents.google.com/?q=A+brain+immune+phenotype+independent+of+Alzheimer%E2%80%99s+Disease+associates+with+amyloid+susceptibility+and+systemic+inflammation)
+  - [臨床試験登録 [論文タイトル等（企業名未特定）]](https://clinicaltrials.gov/search?term=A+brain+immune+phenotype+independent+of+Alzheimer%E2%80%99s+Disease+associates+with+amyloid+susceptibility+and+systemic+inflammation)
+  - [企業・技術情報 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=A+brain+immune+phenotype+independent+of+Alzheimer%E2%80%99s+Disease+associates+with+amyloid+susceptibility+and+systemic+inflammation)
 
 ## イベント評価(確定)
 - 該当なし
 
-## レビューキュー（未解消 2件）
-- 情報不足・保留: 2件
-- 評価エラー: 0件
+## レビューキュー（未解消 5件）
+- 情報不足・保留: 3件
+- 評価エラー: 2件
 
-### 情報不足・保留（2件）
+### 情報不足・保留（3件）
+- [long] Development, implementation, and evaluation of a mentorship program within hematology/oncology pharmacy association (HOPA) - a professional oncology pharmacy organization.
+  理由: missing_items: technology_readiness,technological_advantage,moat_durability (critical: technology_readiness)
+  確認先: Genmab社の最新の年次報告書および四半期決算報告書, 臨床試験の進捗に関する公式プレスリリース
+  再評価条件: 主要パイプラインの治験結果に大幅な変更が生じた場合, 財務状況や収益性に著しい変動が観測された場合
+  関連情報の検索:
+  - [IR・決算資料 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=%22Development%2C+implementation%2C+and+evaluation+of+a+mentorship+program+within+hematology%2Foncology+pharmacy+association+%28HOPA%29+-+a+professional+oncology+pharmacy+organization.%22+IR)
+  - [特許 [論文タイトル等（企業名未特定）]](https://patents.google.com/?q=Development%2C+implementation%2C+and+evaluation+of+a+mentorship+program+within+hematology%2Foncology+pharmacy+association+%28HOPA%29+-+a+professional+oncology+pharmacy+organization.)
+  - [臨床試験登録 [論文タイトル等（企業名未特定）]](https://clinicaltrials.gov/search?term=Development%2C+implementation%2C+and+evaluation+of+a+mentorship+program+within+hematology%2Foncology+pharmacy+association+%28HOPA%29+-+a+professional+oncology+pharmacy+organization.)
+  - [企業・技術情報 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=Development%2C+implementation%2C+and+evaluation+of+a+mentorship+program+within+hematology%2Foncology+pharmacy+association+%28HOPA%29+-+a+professional+oncology+pharmacy+organization.)
 - [long] Translating Innovation to Clinic: End-to-End Bioprocess Development and cGMP Manufacturing of N332-GT5 HIV Vaccine Candidate for First-In-Human Trials (HVTN144).
   理由: missing_items: monetization (critical: monetization)
   確認先: HVTN144臨床試験の安全性および有効性に関する中間・最終結果の公表, Moderna社の最新の四半期決算報告およびパイプライン進捗開示資料
@@ -370,8 +373,23 @@
   - [臨床試験登録 [論文タイトル等（企業名未特定）]](https://clinicaltrials.gov/search?term=HiSQOL-mini%3A+Development+and+Validation+of+a+Shortened+Version+of+the+Hidradenitis+Suppurativa+Quality+of+Life+%28HiSQOL%29+Instrument.)
   - [企業・技術情報 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=HiSQOL-mini%3A+Development+and+Validation+of+a+Shortened+Version+of+the+Hidradenitis+Suppurativa+Quality+of+Life+%28HiSQOL%29+Instrument.)
 
-### 評価エラー（0件）
-- 該当なし
+### 評価エラー（2件）
+- [long] An Open-label Extension Study to Evaluate Long-term Efficacy and Safety of Odevixibat (A4250) in Children With Biliary Atresia (BOLD-EXT)
+  理由: evaluation_error: LLMError: invalid JSON: Expecting ',' delimiter
+  最終評価日時: 2026-10-28T14:13:45+00:00
+  関連情報の検索:
+  - [IR・決算資料 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=%22An+Open-label+Extension+Study+to+Evaluate+Long-term+Efficacy+and+Safety+of+Odevixibat+%28A4250%29+in+Children+With+Biliary+Atresia+%28BOLD-EXT%29%22+IR)
+  - [特許 [論文タイトル等（企業名未特定）]](https://patents.google.com/?q=An+Open-label+Extension+Study+to+Evaluate+Long-term+Efficacy+and+Safety+of+Odevixibat+%28A4250%29+in+Children+With+Biliary+Atresia+%28BOLD-EXT%29)
+  - [臨床試験登録 [論文タイトル等（企業名未特定）]](https://clinicaltrials.gov/search?term=An+Open-label+Extension+Study+to+Evaluate+Long-term+Efficacy+and+Safety+of+Odevixibat+%28A4250%29+in+Children+With+Biliary+Atresia+%28BOLD-EXT%29)
+  - [企業・技術情報 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=An+Open-label+Extension+Study+to+Evaluate+Long-term+Efficacy+and+Safety+of+Odevixibat+%28A4250%29+in+Children+With+Biliary+Atresia+%28BOLD-EXT%29)
+- [long] Odevixibat Pregnancy and Lactation Surveillance Program: A Post-marketing, Long-term, Observational, Descriptive Study to Assess the Risk of Pregnancy and Maternal Complications and Adverse Effects on the Developing Fetus, Neonate, and Infant Among Individuals Exposed to Odevixibat During Pregnancy and/or Lactation
+  理由: evaluation_error: LLMError: invalid JSON: Expecting property name enclosed in double quotes
+  最終評価日時: 2026-10-28T14:13:45+00:00
+  関連情報の検索:
+  - [IR・決算資料 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=%22Odevixibat+Pregnancy+and+Lactation+Surveillance+Program%3A+A+Post-marketing%2C+Long-term%2C+Observational%2C+Descriptive+Study+to+Assess+the+Risk+of+Pregnancy+and+Maternal+Complications+and+Adverse+Effects+on+the+Developing+Fetus%2C+Neonate%2C+and+Infant+Among+Individuals+Exposed+to+Odevixibat+During+Pregnancy+and%2For+Lactation%22+IR)
+  - [特許 [論文タイトル等（企業名未特定）]](https://patents.google.com/?q=Odevixibat+Pregnancy+and+Lactation+Surveillance+Program%3A+A+Post-marketing%2C+Long-term%2C+Observational%2C+Descriptive+Study+to+Assess+the+Risk+of+Pregnancy+and+Maternal+Complications+and+Adverse+Effects+on+the+Developing+Fetus%2C+Neonate%2C+and+Infant+Among+Individuals+Exposed+to+Odevixibat+During+Pregnancy+and%2For+Lactation)
+  - [臨床試験登録 [論文タイトル等（企業名未特定）]](https://clinicaltrials.gov/search?term=Odevixibat+Pregnancy+and+Lactation+Surveillance+Program%3A+A+Post-marketing%2C+Long-term%2C+Observational%2C+Descriptive+Study+to+Assess+the+Risk+of+Pregnancy+and+Maternal+Complications+and+Adverse+Effects+on+the+Developing+Fetus%2C+Neonate%2C+and+Infant+Among+Individuals+Exposed+to+Odevixibat+During+Pregnancy+and%2For+Lactation)
+  - [企業・技術情報 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=Odevixibat+Pregnancy+and+Lactation+Surveillance+Program%3A+A+Post-marketing%2C+Long-term%2C+Observational%2C+Descriptive+Study+to+Assess+the+Risk+of+Pregnancy+and+Maternal+Complications+and+Adverse+Effects+on+the+Developing+Fetus%2C+Neonate%2C+and+Infant+Among+Individuals+Exposed+to+Odevixibat+During+Pregnancy+and%2For+Lactation)
 
 ## 制約
 - IR・特許・臨床試験登録は検索リンクのみ生成し、検索結果の自動取得は行いません。

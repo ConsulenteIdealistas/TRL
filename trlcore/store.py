@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS candidates(
   doi TEXT, published TEXT, retrieved_at TEXT, fields_json TEXT, info_type TEXT,
   status TEXT NOT NULL DEFAULT 'new', screen_reason TEXT, last_eval_at TEXT,
   retry_count INTEGER NOT NULL DEFAULT 0, first_seen_run TEXT,
-  title_ja TEXT, abstract_ja TEXT);
+  title_ja TEXT, abstract_ja TEXT, translation_src TEXT);
 CREATE TABLE IF NOT EXISTS identifiers(key TEXT PRIMARY KEY, candidate_id TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS evaluations(
   id INTEGER PRIMARY KEY AUTOINCREMENT, run_id TEXT, candidate_id TEXT, kind TEXT, as_of TEXT,
@@ -78,9 +78,24 @@ class Store:
         if "extra_json" not in cols:
             self.conn.execute("ALTER TABLE evaluations ADD COLUMN extra_json TEXT")
         ccols = {r[1] for r in self.conn.execute("PRAGMA table_info(candidates)")}
-        for col in ("title_ja", "abstract_ja"):
+        for col in ("title_ja", "abstract_ja", "translation_src"):
             if col not in ccols:
                 self.conn.execute(f"ALTER TABLE candidates ADD COLUMN {col} TEXT")
+        self.conn.commit()
+
+    def set_translation(self, cid, title_ja, abstract_ja, title_by=None, abstract_by=None):
+        """訳文と、その出典(どの経路で訳したか)を保存する。出典は項目別に記録する。"""
+        row = self.conn.execute("SELECT translation_src FROM candidates WHERE id=?", (cid,)).fetchone()
+        try:
+            src = json.loads(row[0]) if row and row[0] else {}
+        except ValueError:
+            src = {}
+        if title_by:
+            src["title"] = title_by
+        if abstract_by:
+            src["abstract"] = abstract_by
+        self.conn.execute("UPDATE candidates SET title_ja=?, abstract_ja=?, translation_src=? WHERE id=?",
+                          (title_ja, abstract_ja, _j(src) if src else None, cid))
         self.conn.commit()
 
     def close(self):

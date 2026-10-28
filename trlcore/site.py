@@ -8,7 +8,7 @@ from .dates import parse_date
 from .pipeline import select_for_eval
 
 
-SITE_SCHEMA_VERSION = 2
+SITE_SCHEMA_VERSION = 3
 
 # サイトに載せる未評価は「次に評価される上位」だけ。未評価の在庫を全件出すと
 # 評価結果が埋もれてしまうため、書き出し側で絞る (エンジン側の選定と一致させる)
@@ -67,6 +67,18 @@ def display_status(cand, long_ev, store):
     return "pending"
 
 
+def _translation_src(c):
+    """DB の translation_src (JSON文字列) を dict で返す。壊れていれば None。"""
+    raw = c.get("translation_src")
+    if not raw:
+        return None
+    try:
+        d = json.loads(raw)
+    except ValueError:
+        return None
+    return d if isinstance(d, dict) and d else None
+
+
 def build_site_data(store, cfg, now=None):
     ent_names = {e["id"]: e["name"] for e in (cfg.get("entities") or {}).get("entities", [])}
     ent_tiers = {e["id"]: e.get("tier") or "core" for e in (cfg.get("entities") or {}).get("entities", [])}
@@ -106,6 +118,8 @@ def build_site_data(store, cfg, now=None):
         cands.append({
             "id": cid, "title": c["title"], "source": c["source"], "published": c["published"], "url": c["url"],
             "abstract": c["abstract"] or "", "fields": c["fields"],
+            "title_ja": c.get("title_ja") or None, "abstract_ja": c.get("abstract_ja") or None,
+            "translation_src": _translation_src(c),
             "display_status": display_status(c, long_ev, store),
             "next_up": cid in next_ids and long_ev is None and event_ev is None,
             "long": long_ev, "event": event_ev, "entities": ents,

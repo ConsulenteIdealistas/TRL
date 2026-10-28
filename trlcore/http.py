@@ -10,7 +10,7 @@ import urllib.request
 from .errors import HttpError
 
 
-SECRET_ENV = ("ANTHROPIC_API_KEY", "GEMINI_API_KEY", "NCBI_API_KEY", "EDINET_API_KEY", "OPENALEX_API_KEY", "GITHUB_TOKEN", "GH_TOKEN", "TOKEN")
+SECRET_ENV = ("ANTHROPIC_API_KEY", "GEMINI_API_KEY", "NCBI_API_KEY", "EDINET_API_KEY", "OPENALEX_API_KEY", "DEEPL_API_KEY", "AZURE_TRANSLATOR_KEY", "GITHUB_TOKEN", "GH_TOKEN", "TOKEN")
 
 
 _PARAM_RE = re.compile(r"(?i)(api[_-]?key|key|token)=([^&\s]+)")

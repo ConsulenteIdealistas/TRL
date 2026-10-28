@@ -9,7 +9,7 @@
 <body>
 <header class="topbar"><a class="brand" href="index.html"><span class="mark">T</span><span>TRL<span class="light"> Explorer</span></span></a><div class="meta"><span class="dot"></span>Research Intelligence</div></header>
 <main class="ws">
-<p style="margin:0 0 12px"><a class="tg" href="index.html">← 一覧に戻る</a></p>
+<p style="margin:0 0 12px"><a class="tg" href="index.html">← 一覧に戻る</a> <button id="lt" class="btn quiet" type="button" style="float:right"></button></p>
 <section class="panel"><div id="det"><div class="ph"><i>⌕</i><h3>読み込み中…</h3></div></div></section>
 <footer class="ft"><span>TRL Explorer</span><span>技術成熟度と事業化評価は独立した評価軸です。スコアは評価尺度であり、株価上昇確率・成功確率・投資利益率ではありません。</span></footer>
 </main>
@@ -22,8 +22,12 @@ const IL = {technology_readiness: "技術成熟度", technological_advantage: "�
   catalyst_quality: "触媒の質", expectation_gap: "期待ギャップ", not_priced_in: "未織り込み度",
   timing_feasibility: "タイミングの実現性", supply_demand: "需給", downside_resilience: "下値耐性"};
 const $ = s => document.querySelector(s);
-const dispT = p => p.title;
-const dispA = p => p.abstract || "";
+let LANG = "ja";
+try { LANG = localStorage.getItem("trl-lang") || "ja"; } catch (e) { /* 既定のまま */ }
+const dispT = p => LANG === "ja" && p.title_ja ? p.title_ja : p.title;
+const dispA = p => LANG === "ja" && p.abstract_ja ? p.abstract_ja : p.abstract || "";
+const TR_SRC = {deepl: "DeepL", azure: "Azure", llm: "LLM"};
+const srcOf = p => { const s = p.translation_src || {}; const used = [...new Set([p.title_ja ? s.title : null, p.abstract_ja ? s.abstract : null].filter(Boolean))]; return used.map(v => TR_SRC[v] || v).join(" / "); };
 const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
 const safeUrl = u => /^https?:\/\//i.test(String(u || "")) ? String(u) : "#";
 const ok = t => Number.isInteger(t) && t >= 1 && t <= 9;
@@ -70,6 +74,9 @@ async function load() {
     return;
   }
   document.title = dispT(p) + " — TRL Explorer";
+  const lt = $("#lt");
+  lt.textContent = LANG === "ja" ? "原文で表示" : "日本語訳で表示";
+  lt.onclick = () => { LANG = LANG === "ja" ? "orig" : "ja"; try { localStorage.setItem("trl-lang", LANG); } catch (e) { /* 保存できなくても切替は効く */ } load(); };
   const G = d.config.item_groups;
   const LL = p.long && p.long.status !== "error" ? p.long : null;
   const EV = p.event && p.event.status !== "error" ? p.event : null;
@@ -82,7 +89,7 @@ async function load() {
   const news = (p.related_news || []).map(n => `<li><span class="org ${n.origin === "企業発表" ? "org-p" : ""}">${esc(n.origin || "報道")}</span><span class="date">${esc(n.published || "")}</span><a href="${esc(safeUrl(n.url))}" target="_blank" rel="noopener noreferrer">${esc(n.title)}</a>${n.media ? `<span class="date">${esc(n.media)}</span>` : ""}</li>`).join("");
   const fins = (p.related_financials || []).map(f => `<li><span class="date">${esc(f.published || "")}</span><a href="${esc(safeUrl(f.url))}" target="_blank" rel="noopener noreferrer">${esc(f.title)}</a><p style="margin:4px 0 0">${esc(f.text || "")}</p></li>`).join("");
   $("#det").innerHTML = `<div class="dc"><header class="dh"><div class="top"><span class="badge ${SRC_CLASS[p.source] || ""}">${esc(SRC_LABEL[p.source] || p.source)}</span><span class="st ${p.display_status === "final" ? "" : "st-" + p.display_status}">${esc(SL[p.display_status] || p.display_status)}</span>${dirB(p.long)}</div><h3>${esc(dispT(p))}</h3><div class="mi"><span>公開日 ${esc(p.published || "—")}</span>${LL ? `<span>評価日 ${esc(jst(LL.evaluated_at))}</span>` : ""}</div></header>
-<section class="ds"><h4>研究概要</h4><p>${esc(dispA(p)) || "（要旨なし）"}</p>${(p.fields || []).length ? `<div class="tags" style="margin-top:8px">${p.fields.map(t => `<span class="tag">${esc(t)}</span>`).join("")}</div>` : ""}</section>
+<section class="ds"><h4>研究概要</h4><p>${esc(dispA(p)) || "（要旨なし）"}</p>${LANG === "ja" && srcOf(p) ? `<p class="hint">日本語訳: ${esc(srcOf(p))}</p>` : ""}${(p.fields || []).length ? `<div class="tags" style="margin-top:8px">${p.fields.map(t => `<span class="tag">${esc(t)}</span>`).join("")}</div>` : ""}</section>
 <section class="ds"><h4>技術成熟度（TRL）</h4>${trl(lvl)}${tr && tr.reason ? `<p>${esc(tr.reason)}</p>` : ""}${tr && tr.level == null && tr.missing_info.length ? `<p class="hint">不足: ${tr.missing_info.map(esc).join(" / ")}</p>` : ""}<p class="hint">TRLは資料から根拠付きで判断できた場合のみ表示します。技術成熟度スコアからの換算はしません。</p></section>
 <section class="ds"><h4>技術評価</h4>${LL ? G.technology.map(k => scoreRow(k, LL.items[k])).join("") : `<p class="hint">未評価です。</p>`}</section>
 <section class="ds"><h4>事業評価</h4>${LL && LL.business_stage === "pre_stage" ? `<p class="note">この技術は前商業段階(TRL 3以下)のため、事業項目は「段階未達」として不足とは区別しています。点が付いている項目はそのまま表示します。</p>` : ""}${LL ? G.business.map(k => scoreRow(k, LL.items[k])).join("") : `<p class="hint">未評価です。</p>`}${LL && !strong.length ? `<p class="note">関連企業が特定できていないため、企業固有の項目は算出されません。総合点は6項目すべてが揃うまで確定せず、重みの再配分もしません。</p>` : ""}</section>

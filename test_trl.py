@@ -352,14 +352,78 @@ class NewSourceParseTests(unittest.TestCase):
         # フィルタのフィールド名は複数形 institutions(単数形はAPIが拒否する)
         self.assertIn("authorships.institutions.id:I999", seen.get("filter", ""))
 
-    def test_translate_keys_removed(self):
-        # 翻訳機能は削除済み。旧 llm.translate_* キーは未知キーとして弾かれる
-        for k in ("translate_enabled", "translate_workers", "translate_timeout_sec", "translate_retries"):
-            self.assertNotIn(k, CFG["scoring"]["llm"])
-            ng = copy.deepcopy(CFG)
-            ng["scoring"]["llm"][k] = 1
-            with self.assertRaises(ConfigError):
-                validate_config(ng)
+    def test_translation(self):
+        self.assertTrue(T.needs_translation("High-throughput actinic mask inspection for EUV lithography"))
+        self.assertFalse(T.needs_translation("月面探査ローバーの熱制御の設計と実装"))
+        self.assertFalse(T.needs_translation("AI"))
+        llm = T.Mock(lambda p: '```json\n[{"i": 0, "title_ja": "邦題", "abstract_ja": "邦文抄録"}]\n```')
+        self.assertEqual(T.translate_batch(llm, [("Title", "Abstract")]), {0: ("邦題", "邦文抄録")})
+        bad = T.Mock(lambda p: "not json")
+        self.assertEqual(T.translate_batch(bad, [("Title", "Abstract")]), {})
+
+    def test_translate_display_set(self):
+        import tempfile
+        from pathlib import Path as _P
+        tmp = tempfile.TemporaryDirectory()
+        store = T.Store(_P(tmp.name) / "d.sqlite")
+        rec, _ = T.normalize(raw(), T.now_iso())
+        cid, _ = store.upsert_candidate(rec, "rX")
+        store.conn.execute(
+            "INSERT INTO evaluations(run_id, candidate_id, kind, status) VALUES('rX', ?, 'long', 'ok')", (cid,))
+        store.conn.commit()
+
+        def fn(p):
+            if "翻訳担当" in p:
+                return json.dumps([{"i": 0, "title_ja": "邦題タイトル", "abstract_ja": "邦文の抄録です"}])
+            raise AssertionError("unknown prompt")
+        n = T.translate_display_set(store, CFG, T.Mock(fn), AS_OF, log=lambda *_: None)
+        self.assertEqual(n, 1)
+        c = store.get_candidate(cid)
+        self.assertEqual(c["title_ja"], "邦題タイトル")
+        self.assertEqual(json.loads(c["translation_src"]), {"title": "llm", "abstract": "llm"})
+        # 2回目は未訳が無いので 0 件 (LLM は呼ばれない)
+        self.assertEqual(T.translate_display_set(store, CFG, T.Mock(fn), AS_OF, log=lambda *_: None), 0)
+        store.close()
+        tmp.cleanup()
+
+    def test_mt_providers_and_fallback(self):
+        import os
+        from unittest import mock as um
+        # DeepL: 無料キーは api-free ホスト、応答は入力と同じ並びで返る
+        seen = {}
+        def deepl_http(url, params=None, headers=None, data=None, **kw):
+            seen["url"] = url
+            texts = json.loads(data)["text"]
+            return json.dumps({"translations": [{"text": "訳:" + t} for t in texts]})
+        out = T.deepl_translate(["Title A", "Abstract A"], "key:fx", http=deepl_http)
+        self.assertEqual(out, ["訳:Title A", "訳:Abstract A"])
+        self.assertIn("api-free.deepl.com", seen["url"])
+        # Azure: 配列形式の応答を展開する
+        def azure_http(url, params=None, headers=None, data=None, **kw):
+            return json.dumps([{"translations": [{"text": "訳:" + d["Text"]}]} for d in json.loads(data)])
+        self.assertEqual(T.azure_translate(["X"], "k", http=azure_http), ["訳:X"])
+        # 経路の優先順位: DeepL が失敗したら Azure、それも無ければ LLM。出典も記録される
+        tmp = tempfile.TemporaryDirectory()
+        store = T.Store(Path(tmp.name) / "d.sqlite")
+        rec, _ = T.normalize(raw(), T.now_iso())
+        cid, _ = store.upsert_candidate(rec, "rX")
+        store.conn.execute(
+            "INSERT INTO evaluations(run_id, candidate_id, kind, status) VALUES('rX', ?, 'long', 'ok')", (cid,))
+        store.conn.commit()
+
+        def flaky_http(url, params=None, headers=None, data=None, **kw):
+            if "deepl" in url:
+                raise RuntimeError("deepl down")
+            return azure_http(url, params=params, headers=headers, data=data)
+        env = {"DEEPL_API_KEY": "k:fx", "AZURE_TRANSLATOR_KEY": "k2"}
+        with um.patch.dict(os.environ, env, clear=False):
+            n = T.translate_display_set(store, CFG, None, AS_OF, log=lambda *_: None, http=flaky_http)
+        self.assertEqual(n, 1)
+        c = store.get_candidate(cid)
+        self.assertTrue(c["title_ja"].startswith("訳:"))
+        self.assertEqual(json.loads(c["translation_src"]), {"title": "azure", "abstract": "azure"})
+        store.close()
+        tmp.cleanup()
 
     def test_trials(self):
         r = trials.parse(TRIALS_DATA)[0]

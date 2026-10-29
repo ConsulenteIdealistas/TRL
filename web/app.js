@@ -243,9 +243,9 @@ $("#q").addEventListener("keydown", e => {
 });
 $("#q").addEventListener("blur", () => { sugHideTimer = setTimeout(hideSug, 120); });
 $("#sf").addEventListener("submit", hideSug);
-["#fs", "#ft", "#fo", "#fd", "#fm", "#fc"].forEach(s => $(s).addEventListener("change", render));
+["#fs", "#ft", "#fo", "#fd", "#fm", "#fc", "#fg"].forEach(s => $(s).addEventListener("change", render));
 $("#fl").addEventListener("change", () => { LANG = $("#fl").value; try { localStorage.setItem("trl-lang", LANG); } catch (e) { /* 保存できなくても切替は効く */ } render(); });
-$("#rs").addEventListener("click", () => { $("#q").value = ""; $("#fs").value = "all"; $("#ft").value = "all"; $("#fo").value = "status"; $("#fd").value = "all"; $("#fm").value = "all"; $("#fc").value = "all"; sel = P[0] ? P[0].id : null; render(); });
+$("#rs").addEventListener("click", () => { $("#q").value = ""; $("#fs").value = "all"; $("#ft").value = "all"; $("#fo").value = "status"; $("#fd").value = "all"; $("#fm").value = "all"; $("#fc").value = "all"; $("#fg").value = "all"; sel = P[0] ? P[0].id : null; render(); });
 $("#list").addEventListener("click", e => { const c = e.target.closest("[data-id]"); if (c) { sel = c.dataset.id; render(); } });
 $("#det").addEventListener("click", e => {
   if (e.target.closest("#save")) {

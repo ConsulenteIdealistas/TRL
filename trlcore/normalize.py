@@ -41,11 +41,11 @@ def normalize(raw, retrieved_at):
     if raw.get("arxiv_id"):
         keys.append("arxiv:" + str(raw["arxiv_id"]).strip().lower())
     url = norm_url(raw.get("url"))
-    if raw.get("source") == "yahoo" and raw.get("source_id"):
-        # Yahoo の URL は銘柄ページ(四半期で不変)。キーにすると四半期レコードが
-        # 初回分へ統合され、新しい財務数値が永久に取り込まれないため、
-        # レコード単位の source_id(ticker-period)を安定IDとして使う。
-        keys.append("srcid:yahoo:" + str(raw["source_id"]).strip())
+    if raw.get("source") in ("yahoo", "edgar") and raw.get("source_id"):
+        # Yahoo の URL は銘柄ページ、EDGAR の URL は企業ページで、どちらも四半期で不変。
+        # URL をキーにすると四半期レコードが初回分へ統合され、新しい財務数値が永久に
+        # 取り込まれないため、レコード単位の source_id(ticker-period)を安定IDとして使う。
+        keys.append(f"srcid:{raw['source']}:" + str(raw["source_id"]).strip())
     elif url:
         keys.append("url:" + url)
     if not keys:

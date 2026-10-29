@@ -653,9 +653,25 @@ class YahooFinancialTests(unittest.TestCase):
         out = yahoo.fetch("9348.T", 5, 400, AS_OF, http=fake_http, sleep=lambda *_: None)
         self.assertEqual(len(out), 1)
         r = out[0]
-        self.assertEqual((r["source"], r["info_type"], r["source_id"]), ("yahoo", "disclosure", "9348-2026-06-30"))
+        self.assertEqual((r["source"], r["info_type"], r["source_id"]), ("yahoo", "disclosure", "9348.T-2026-06-30"))
         self.assertIn("財務数値(Yahoo Finance)", r["abstract"])
         self.assertEqual(r["affiliations"], ["ispace, Inc."])
+
+    def test_fetch_source_id_distinguishes_same_ticker_markets(self):
+        # NANO.TO (Nano One) と NANO.PA (Nanobiotix) のように市場違いの同名ティッカーで
+        # source_id が衝突すると、一方の財務レコードが他方へ統合されて消える
+        def fake_http(url, params=None, headers=None, **kw):
+            if "getcrumb" in url:
+                return b"crumb123"
+            if "fc.yahoo.com" in url:
+                raise RuntimeError("404")
+            return json.dumps(YAHOO_SUMMARY).encode()
+
+        a = yahoo.fetch("NANO.TO", 5, 400, AS_OF, http=fake_http, sleep=lambda *_: None)
+        b = yahoo.fetch("NANO.PA", 5, 400, AS_OF, http=fake_http, sleep=lambda *_: None)
+        self.assertEqual(a[0]["source_id"], "NANO.TO-2026-06-30")
+        self.assertEqual(b[0]["source_id"], "NANO.PA-2026-06-30")
+        self.assertNotEqual(a[0]["source_id"], b[0]["source_id"])
 
     def test_fetch_stale_period_returns_nothing(self):
         def fake_http(url, params=None, headers=None, **kw):
@@ -1301,6 +1317,42 @@ class NewsPoolTests(unittest.TestCase):
 
         stale = add_hold("2610.9501")
         fresh = add_hold("2610.9502", updated="2026-10-19T00:00:00+00:00")  # 評価後に材料が更新
+        sel_ids = [c["id"] for c in select_for_eval(store, CFG, AS_OF, 10)]
+        self.assertNotIn(stale, sel_ids)
+        self.assertIn(fresh, sel_ids)
+        store.close()
+
+    def test_purge_resets_evaluated_candidates(self):
+        # final 到達候補のステータスは 'evaluated'。purge のリセット対象に含めないと
+        # 評価だけ消えて候補が二度と再評価されないまま取り残される
+        store = Store(self.path)
+        rec, _ = normalize(raw(sid="2610.9601"), "2026-10-20T00:00:00+00:00")
+        cid, _ = store.upsert_candidate(rec, "r0")
+        store.set_status(cid, "evaluated", eval_at="2026-10-20T00:00:00+00:00")
+        counts = store.purge_evaluations()
+        self.assertEqual(counts["candidates_reset"], 1)
+        got = store.get_candidate(cid)
+        self.assertEqual(got["status"], "screened")
+        self.assertIsNone(got["last_eval_at"])
+        store.close()
+
+    def test_selection_evaluated_gate_and_material_update_bypass(self):
+        # final (evaluated) も hold と同じ再評価ゲート (14日) と材料更新バイパスの対象
+        store = Store(self.path)
+
+        def add_ev(sid, updated=None):
+            rec, _ = normalize(raw(sid=sid), "2026-10-20T00:00:00+00:00")
+            cid, _ = store.upsert_candidate(rec, "r0")
+            store.set_entities(cid, link_entities(rec, CFG.get("entities", {})))
+            store.set_status(cid, "evaluated", eval_at="2026-10-17T00:00:00+00:00")
+            if updated:
+                store.conn.execute("UPDATE candidates SET material_updated_at=? WHERE id=?",
+                                   (updated, cid))
+                store.conn.commit()
+            return cid
+
+        stale = add_ev("2610.9503")
+        fresh = add_ev("2610.9504", updated="2026-10-19T00:00:00+00:00")
         sel_ids = [c["id"] for c in select_for_eval(store, CFG, AS_OF, 10)]
         self.assertNotIn(stale, sel_ids)
         self.assertIn(fresh, sel_ids)
@@ -1984,6 +2036,26 @@ class AuditFixTests(unittest.TestCase):
             self.assertTrue(n1 and n2)
             self.assertNotEqual(c1, c2)
             self.assertIn("200", store.get_candidate(c2)["abstract"])
+            store.close()
+
+    def test_edgar_quarters_are_distinct_candidates(self):
+        # EDGAR の URL は企業ページ (四半期で不変)。Yahoo と同じく source_id をキーに
+        # しないと、新しい四半期の財務が初回分へ統合されて永久に取り込まれない
+        kw = dict(url="https://www.sec.gov/edgar/browse/?CIK=1819994", info_type="disclosure")
+        q1 = raw(source="edgar", sid="RKLB-2026-06-30", title="RKLB 財務情報(2026-06-30 四半期)",
+                 published="2026-06-30", abstract="RKLBの財務数値(SEC EDGAR): 売上高 100", **kw)
+        q2 = raw(source="edgar", sid="RKLB-2026-09-30", title="RKLB 財務情報(2026-09-30 四半期)",
+                 published="2026-09-30", abstract="RKLBの財務数値(SEC EDGAR): 売上高 200", **kw)
+        r1, _ = normalize(q1, "2026-10-29T00:00:00+00:00")
+        r2, _ = normalize(q2, "2026-10-29T00:00:00+00:00")
+        self.assertEqual(r1["keys"][0], "srcid:edgar:RKLB-2026-06-30")
+        self.assertNotEqual(r1["keys"][0], r2["keys"][0])
+        with tempfile.TemporaryDirectory() as td:
+            store = T.Store(Path(td) / "d.sqlite")
+            c1, n1 = store.upsert_candidate(r1, "run1")
+            c2, n2 = store.upsert_candidate(r2, "run1")
+            self.assertTrue(n1 and n2)
+            self.assertNotEqual(c1, c2)
             store.close()
 
 

@@ -239,7 +239,9 @@ def yahoo_fetch(query, max_results, lookback_days, as_of, http=None, sleep=time.
         return []  # 古すぎる/未来の決算期はプール材料にしない
     sleep(0.3)
     return [{
-        "source": "yahoo", "source_id": f"{ticker}-{period}",
+        # source_id は市場接尾辞つきシンボルにする (接尾辞なしだと NANO.TO と NANO.PA の
+        # ように市場違いの同名ティッカーで重複排除キーが衝突し、片方の財務が消える)
+        "source": "yahoo", "source_id": f"{symbol}-{period}",
         "title": f"{name or ticker} 財務情報({period} 四半期)",
         "abstract": f"{name or ticker}({ticker})の{FINANCIAL_MARKER}: {text}",
         "url": QUOTE_URL.format(symbol=symbol),

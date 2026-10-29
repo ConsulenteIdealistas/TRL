@@ -250,7 +250,7 @@ class Store:
         c.execute("DELETE FROM evaluations")
         c.execute("DELETE FROM review_queue")
         cur = c.execute("UPDATE candidates SET status='screened', last_eval_at=NULL, retry_count=0 "
-                        "WHERE status IN ('hold','error','final')")
+                        "WHERE status IN ('hold','error','final','evaluated')")
         c.commit()
         return {"evaluations": n_eval, "queue": n_queue, "candidates_reset": cur.rowcount}
 

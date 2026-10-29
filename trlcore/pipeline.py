@@ -131,7 +131,7 @@ def select_for_eval(store, cfg, today, limit, retry_failed="no", only_new=False)
         or force_retry
     )
 
-    statuses = ["screened", "hold", "error"]
+    statuses = ["screened", "hold", "error", "evaluated"]
 
     # 評価予算はコア企業に集中させる (案1)。リンク先がコア企業でない候補
     # (ウォッチ企業のみ、または辞書から外れた企業のみ) は評価しない。
@@ -156,10 +156,10 @@ def select_for_eval(store, cfg, today, limit, retry_failed="no", only_new=False)
             if not force_retry and c["retry_count"] >= sc["max_retries"]:
                 continue
 
-        # 保留候補は、再評価間隔が経過するまで選ばない。
+        # 保留・評価済み(final)候補は、再評価間隔が経過するまで選ばない。
         # ただし材料が前回評価より後に更新された候補(治験の結果公表など)は、
         # 間隔を待たずに優先して再評価する(結果待ちの解消を拾うため)。
-        if c["status"] == "hold":
+        if c["status"] in ("hold", "evaluated"):
             last = parse_date((c["last_eval_at"] or "")[:10])
             if last and (today - last).days < sc["reeval_after_days"]:
                 upd = parse_date((c.get("material_updated_at") or "")[:10])

@@ -60,7 +60,7 @@ Python 標準ライブラリのみで動作し、運用はスマホのブラウ�
 - `pubmed`: `watch.pubmed` がある企業のみ所属検索。その他の論文はトピッククエリ（`sources.json` の `topics`、3件）で収集
 - `openalex`: 機関IDがある企業のみ
 
-市場別ルール: EDINET・PR TIMES は JP のみ。財務数値の金額単位は報告通貨で表示します。
+市場別ルール: EDINET・PR TIMES は JP のみ、EDGAR は US のみ。財務数値の金額単位は報告通貨で表示します。
 
 ## 情報源と役割
 
@@ -74,8 +74,9 @@ Python 標準ライブラリのみで動作し、運用はスマホのブラウ�
 | `prtimes` | PR TIMES の企業発表（JP のみ） | **プール専用** |
 | `yahoo` | Yahoo Finance の財務（四半期ごとに1件） | **プール専用** |
 | `edinet` | EDINET 開示・財務数値（JP のみ） | **プール専用** |
+| `edgar` | SEC EDGAR の財務数値（XBRL、US のみ） | **プール専用** |
 
-ソース別の取得期間（lookback）: trials 180日 / yahoo 400日 / prtimes 90日 / pubmed・openalex 365日 / edinet 120日。その他は既定30日・最大20件。
+ソース別の取得期間（lookback）: trials 180日 / yahoo・edgar 400日 / prtimes 90日 / pubmed・openalex 365日 / edinet 120日。その他は既定30日・最大20件。
 
 ### 収集と候補管理
 
@@ -89,7 +90,7 @@ Python 標準ライブラリのみで動作し、運用はスマホのブラウ�
 ニュースと財務は単体では評価せず、同一企業の論文・治験を評価するときに根拠としてプロンプトへ同梱します。
 
 - **関連事業ニュース**: 同一企業（製品リンク経由を含む）の直近90日・最大8件。出典の種別（origin=企業発表 `prtimes` / 報道 `gnews`）を付け、両方で確認できる事実は信頼度を高く、企業発表のみの事実は割り引くようプロンプトで指示します。
-- **関連財務根拠**: 財務数値を含む開示のみ、直近400日・最大2件。論文・治験の抄録に存在しない売上・利益・現預金などの公表数値が `financial_sustainability` / `monetization` の根拠になります。実働ソースは Yahoo Finance と EDINET です。
+- **関連財務根拠**: 財務数値を含む開示のみ、直近400日・最大2件。論文・治験の抄録に存在しない売上・利益・現預金などの公表数値が `financial_sustainability` / `monetization` の根拠になります。実働ソースは Yahoo Finance・EDINET・SEC EDGAR です。
 - Google News の記事 URL は直接開けない仕様のため、サイトでは記事タイトルをタイトル検索リンクに、媒体名を媒体サイトへのリンクにして表示します。
 
 ## 評価仕様
@@ -223,6 +224,7 @@ long 評価では、点数・TRL とは独立に「その資料が示す出来�
 | DEEPL_API_KEY | Secret | 翻訳・第2段 |
 | GOOGLE_TRANSLATE_API_KEY | Secret | 翻訳・第3段 |
 | EDINET_API_KEY | Secret | EDINET（設定済み・運用中） |
+| TRL_EDGAR_CONTACT | Variable | SEC EDGAR の User-Agent に使う連絡先メール（任意。未設定でも SEC の例示形式で動作する） |
 
 ### セットアップ（初回のみ）
 
@@ -274,6 +276,7 @@ test_trl.py / test_entities.py / test_site.py   テスト
 
 - **EDINET は運用中**: JP 企業の開示を取得し、財務書類（有報・四半期・半期とその訂正）からは各社直近2件まで数値を抽出して財務プールに入れます（type=5 の CSV を優先し、取れなければ type=1 の XBRL）。キー未設定の環境では取得を自動でスキップし、エラーにしません。
 - **Yahoo Finance は非公式 API**（キー・登録は不要）。bot 判定を避けるため User-Agent はセッションごとに実在ブラウザの候補から選びます。銘柄自体が無い企業（例: QPS研究所）は取得できません。取得失敗はログに残りますが、その企業の財務プールは空になります。
+- **SEC EDGAR は公式 API**（キー・登録は不要、US 上場のみ）。company facts（XBRL）から売上・利益・現預金・短期有価証券などを抽出し、Yahoo と同じ財務プールに入れます。2026-10-29 の実測では US 94社中87社で取得でき、残り（上場直後で未提出・IFRS の集計概念が無い等）は Yahoo 側でカバーします。SEC の fair access 方針に従い User-Agent に運用者名と連絡先を含め、リクエストを間引きします。
 - **arXiv は所属情報を取得しない**ため、企業との strong 一致は成立しません（現時点では対象外として扱います）。
 - **OpenAlex は機関ID登録済みの14社のみ**が対象です。機関レコードが無い企業は PubMed/arXiv 側で拾います。
 - **event 評価の限界**: 材料に株価・出来高が無いため、織り込み度の判定ができず final は出にくい状態です。本格化には株価履歴の材料追加が必要です。

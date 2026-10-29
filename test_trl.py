@@ -1987,5 +1987,70 @@ class AuditFixTests(unittest.TestCase):
             store.close()
 
 
+class EdgarTests(unittest.TestCase):
+    FACTS = {"entityName": "Test Corp", "facts": {"us-gaap": {
+        "RevenueFromContractWithCustomerExcludingAssessedTax": {"units": {"USD": [
+            {"start": "2026-04-01", "end": "2026-06-30", "val": 234_000_000, "form": "10-Q", "filed": "2026-08-01"},
+            {"start": "2025-01-01", "end": "2025-12-31", "val": 602_000_000, "form": "10-K", "filed": "2026-03-01"}]}},
+        "NetIncomeLoss": {"units": {"USD": [
+            {"start": "2026-04-01", "end": "2026-06-30", "val": -49_000_000, "form": "10-Q", "filed": "2026-08-01"},
+            {"start": "2025-01-01", "end": "2025-12-31", "val": -198_000_000, "form": "10-K", "filed": "2026-03-01"}]}},
+        "CashAndCashEquivalentsAtCarryingValue": {"units": {"USD": [
+            {"end": "2026-06-30", "val": 500_000_000, "form": "10-Q", "filed": "2026-08-01"}]}},
+        "Assets": {"units": {"USD": [
+            {"end": "2026-06-30", "val": 1_000_000_000, "form": "10-Q", "filed": "2026-08-01"}]}},
+        "StockholdersEquity": {"units": {"USD": [
+            {"end": "2026-06-30", "val": 800_000_000, "form": "10-Q", "filed": "2026-08-01"}]}},
+    }}}
+
+    def test_parse_facts(self):
+        from trlcore.sources import edgar
+        text, period, kind = edgar.parse_company_facts(self.FACTS, date(2026, 10, 29))
+        self.assertEqual((period, kind), ("2026-06-30", "四半期"))
+        self.assertIn("売上高 234百万米ドル", text)
+        self.assertIn("純利益 △49百万米ドル", text)
+        self.assertIn("自己資本比率 80.0%", text)
+
+    def test_fetch_record_shape(self):
+        from trlcore.sources import edgar
+        tickers = json.dumps({"0": {"cik_str": 123, "ticker": "TEST", "title": "Test Corp"}}).encode()
+        facts = json.dumps(self.FACTS).encode()
+
+        def http(url, params=None, headers=None):
+            return tickers if "company_tickers" in url else facts
+        edgar._tickers_cache = None
+        try:
+            recs = edgar.edgar_fetch("TEST", 20, 400, date(2026, 10, 29), http=http)
+        finally:
+            edgar._tickers_cache = None
+        self.assertEqual(len(recs), 1)
+        self.assertEqual(recs[0]["source"], "edgar")
+        self.assertEqual(recs[0]["source_id"], "TEST-2026-06-30")
+        self.assertIn("財務数値(SEC EDGAR)", recs[0]["abstract"])
+        self.assertEqual(recs[0]["info_type"], "disclosure")
+
+    def test_fetch_unknown_ticker_and_stale(self):
+        from trlcore.sources import edgar
+        tickers = json.dumps({"0": {"cik_str": 123, "ticker": "OLD", "title": "Old Corp"}}).encode()
+        stale = {"entityName": "Old Corp", "facts": {"us-gaap": {
+            "NetIncomeLoss": {"units": {"USD": [
+                {"start": "2023-04-01", "end": "2023-06-30", "val": 1, "form": "10-Q", "filed": "2023-08-01"}]}}}}}
+
+        def http(url, params=None, headers=None):
+            return tickers if "company_tickers" in url else json.dumps(stale).encode()
+        edgar._tickers_cache = None
+        try:
+            self.assertEqual(edgar.edgar_fetch("MISSING", 20, 400, date(2026, 10, 29), http=http), [])
+            self.assertEqual(edgar.edgar_fetch("OLD", 20, 400, date(2026, 10, 29), http=http), [])
+        finally:
+            edgar._tickers_cache = None
+
+    def test_queries_generated_for_us_only(self):
+        cfg = T.load_config()
+        edgar_qs = [q for q in cfg["sources"]["queries"] if q.get("edgar")]
+        self.assertEqual(len(edgar_qs), 94)
+        self.assertTrue(all(q["name"].endswith("-edgar") for q in edgar_qs))
+
+
 if __name__ == "__main__":
     unittest.main()

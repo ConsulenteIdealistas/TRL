@@ -49,7 +49,7 @@ h2{margin:0;font-size:19px;letter-spacing:-.4px}
 .top,.tags,.mi{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
 .badge,.tag{display:inline-flex;padding:4px 8px;border-radius:7px;font-size:10px;font-weight:800}
 .s-arxiv{color:#a52c50;background:#ffedf2}.s-pubmed{color:#165bb9;background:#eaf2ff}
-.s-gnews{color:#8a5a00;background:#fff4d6}.s-trials{color:#0d6e5f;background:#e0f5f1}.s-edinet{color:#5b3a9e;background:#efe9fb}.s-yahoo{color:#6001d2;background:#f0e6fd}.s-openalex{color:#8c4a03;background:#fdeeda}.s-prtimes{color:#205a8a;background:#e3f0fa}
+.s-gnews{color:#8a5a00;background:#fff4d6}.s-trials{color:#0d6e5f;background:#e0f5f1}.s-edinet{color:#5b3a9e;background:#efe9fb}.s-yahoo{color:#6001d2;background:#f0e6fd}.s-openalex{color:#8c4a03;background:#fdeeda}.s-prtimes{color:#205a8a;background:#e3f0fa}.s-edgar{color:#7a1f3d;background:#fbe9f1}
 .date{color:var(--muted);font-size:11px}
 .title{margin:8px 0 0;font-size:16px;font-weight:800;line-height:1.5;overflow-wrap:anywhere}
 .abs{display:-webkit-box;overflow:hidden;margin:8px 0 10px;color:var(--sub);font-size:12px;line-height:1.8;-webkit-box-orient:vertical;-webkit-line-clamp:3}

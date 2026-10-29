@@ -31,8 +31,8 @@ const srcOf = p => { const s = p.translation_src || {}; const used = [...new Set
 const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
 const safeUrl = u => /^https?:\/\//i.test(String(u || "")) ? String(u) : "#";
 const ok = t => Number.isInteger(t) && t >= 1 && t <= 9;
-const SRC_CLASS = {arxiv: "s-arxiv", pubmed: "s-pubmed", gnews: "s-gnews", prtimes: "s-prtimes", trials: "s-trials", edinet: "s-edinet", yahoo: "s-yahoo", openalex: "s-openalex"};
-const SRC_LABEL = {arxiv: "arXiv", pubmed: "PubMed", gnews: "News", prtimes: "PR TIMES", trials: "ClinicalTrials", edinet: "EDINET", yahoo: "Yahoo Finance", openalex: "OpenAlex"};
+const SRC_CLASS = {arxiv: "s-arxiv", pubmed: "s-pubmed", gnews: "s-gnews", prtimes: "s-prtimes", trials: "s-trials", edinet: "s-edinet", yahoo: "s-yahoo", openalex: "s-openalex", edgar: "s-edgar"};
+const SRC_LABEL = {arxiv: "arXiv", pubmed: "PubMed", gnews: "News", prtimes: "PR TIMES", trials: "ClinicalTrials", edinet: "EDINET", yahoo: "Yahoo Finance", openalex: "OpenAlex", edgar: "SEC EDGAR"};
 const ML = {JP: "日本", US: "米国", GB: "英国", CH: "スイス", DE: "ドイツ", DK: "デンマーク", SE: "スウェーデン", IT: "イタリア", CA: "カナダ", AU: "オーストラリア", ES: "スペイン", FR: "フランス", NL: "オランダ", FI: "フィンランド", NO: "ノルウェー", BE: "ベルギー"};
 const CL = {space: "宇宙", bio: "バイオ", semiconductor: "半導体", ai: "AI", robotics: "ロボティクス", energy: "エネルギー・蓄電池", quantum: "量子技術"};
 const TL = {photonics: "フォトニクス", medtech: "医療機器"};

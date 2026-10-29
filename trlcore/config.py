@@ -9,7 +9,7 @@ from .entities import ENTITY_MODES, validate_entities
 
 __version__ = "0.1.0"
 
-SOURCE_NAMES = ("pubmed", "arxiv", "gnews", "prtimes", "trials", "edinet", "yahoo", "openalex")
+SOURCE_NAMES = ("pubmed", "arxiv", "gnews", "prtimes", "trials", "edinet", "yahoo", "openalex", "edgar")
 
 
 ROOT = Path(__file__).resolve().parent.parent  # リポジトリ直下(trlcore/ の1つ上)
@@ -132,7 +132,7 @@ def validate_sources(src):
 
 
 WATCH_LOOKBACK_DEFAULTS = {"prtimes": 90, "trials": 365, "edinet": 60, "yahoo": 400, "pubmed": 365,
-                           "openalex": 365}
+                           "openalex": 365, "edgar": 400}
 
 
 # 市場ごとの Yahoo シンボル接尾辞と Google News ロケール。market 未指定は JP。
@@ -169,7 +169,7 @@ def build_entity_queries(entities, src):
     ks = src.get("keyword_sets") or {}
     params = (src.get("entity_watch") or {}).get("lookback_days") or {}
     groups = {"gnews": [], "trials": [], "edinet": [], "yahoo": [], "prtimes": [], "pubmed": [],
-              "openalex": []}
+              "openalex": [], "edgar": []}
     for e in (entities or {}).get("entities", []):
         w = e.get("watch")
         if not isinstance(w, dict):
@@ -203,6 +203,9 @@ def build_entity_queries(entities, src):
                                          "lookback_days": params.get("edinet", WATCH_LOOKBACK_DEFAULTS["edinet"])})
             groups["yahoo"].append({"name": f"{eid}-yahoo", "yahoo": e["ticker"] + YAHOO_SUFFIX[market],
                                     "lookback_days": params.get("yahoo", WATCH_LOOKBACK_DEFAULTS["yahoo"])})
+            if market == "US":
+                groups["edgar"].append({"name": f"{eid}-edgar", "edgar": e["ticker"],
+                                        "lookback_days": params.get("edgar", WATCH_LOOKBACK_DEFAULTS["edgar"])})
         if market == "JP":
             terms = w.get("prtimes_terms") or [news_name]
             groups["prtimes"].append({"name": f"{eid}-prtimes", "prtimes": "|".join(terms),
@@ -217,7 +220,7 @@ def build_entity_queries(entities, src):
             groups["openalex"].append({"name": f"{eid}-openalex", "openalex": w["openalex"],
                                        "lookback_days": params.get("openalex", WATCH_LOOKBACK_DEFAULTS["openalex"])})
     return (groups["gnews"] + groups["trials"] + groups["edinet"] + groups["yahoo"]
-            + groups["prtimes"] + groups["pubmed"] + groups["openalex"])
+            + groups["prtimes"] + groups["pubmed"] + groups["openalex"] + groups["edgar"])
 
 
 CONFIG_FILES = ("scoring.json", "sources.json")

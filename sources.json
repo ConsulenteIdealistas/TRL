@@ -7,6 +7,7 @@
     "lookback_days": {
       "edinet": 120,
       "yahoo": 400,
+      "edgar": 400,
       "prtimes": 90,
       "trials": 180,
       "pubmed": 365,

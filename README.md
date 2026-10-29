@@ -55,7 +55,7 @@ Python 標準ライブラリのみで動作し、運用はスマホのブラウ�
 - `prtimes`: 英日表記の引用符付き企業名（**JP のみ**）
 - `trials`: `sponsor` がある企業のみ
 - `yahoo`: `ticker` + 市場別接尾辞（GB=.L / FR=.PA / DE=.DE / CH=.SW / SE=.ST / DK=.CO / ES=.MC / NL=.AS / FI=.HE / NO=.OL / BE=.BR / IT=.MI / CA=.TO / AU=.AX、US・JP はなし）
-- `edinet`: 証券コード（**JP のみ**、現在は休眠）
+- `edinet`: 証券コード（**JP のみ**）
 - `pubmed`: `watch.pubmed` がある企業のみ所属検索。その他の論文はトピッククエリ（`sources.json` の `topics`、3件）で収集
 - `openalex`: 機関IDがある企業のみ
 
@@ -72,7 +72,7 @@ Python 標準ライブラリのみで動作し、運用はスマホのブラウ�
 | `gnews` | Google News RSS（企業名＋ビジネス語） | **プール専用**（評価対象にしない） |
 | `prtimes` | PR TIMES の企業発表（JP のみ） | **プール専用** |
 | `yahoo` | Yahoo Finance の財務（四半期ごとに1件） | **プール専用** |
-| `edinet` | EDINET 開示（JP のみ） | 休眠（キー未取得のため無効。コードは同梱） |
+| `edinet` | EDINET 開示・財務数値（JP のみ） | **プール専用** |
 
 ソース別の取得期間（lookback）: trials 180日 / yahoo 400日 / prtimes 90日 / pubmed・openalex 365日 / edinet 120日。その他は既定30日・最大20件。
 
@@ -88,7 +88,7 @@ Python 標準ライブラリのみで動作し、運用はスマホのブラウ�
 ニュースと財務は単体では評価せず、同一企業の論文・治験を評価するときに根拠としてプロンプトへ同梱します。
 
 - **関連事業ニュース**: 同一企業（製品リンク経由を含む）の直近90日・最大8件。出典の種別（origin=企業発表 `prtimes` / 報道 `gnews`）を付け、両方で確認できる事実は信頼度を高く、企業発表のみの事実は割り引くようプロンプトで指示します。
-- **関連財務根拠**: 財務数値を含む開示のみ、直近400日・最大2件。論文・治験の抄録に存在しない売上・利益・現預金などの公表数値が `financial_sustainability` / `monetization` の根拠になります。実働ソースは Yahoo Finance です。
+- **関連財務根拠**: 財務数値を含む開示のみ、直近400日・最大2件。論文・治験の抄録に存在しない売上・利益・現預金などの公表数値が `financial_sustainability` / `monetization` の根拠になります。実働ソースは Yahoo Finance と EDINET です。
 - Google News の記事 URL は直接開けない仕様のため、サイトでは記事タイトルをタイトル検索リンクに、媒体名を媒体サイトへのリンクにして表示します。
 
 ## 評価仕様
@@ -219,7 +219,7 @@ long 評価では、点数・TRL とは独立に「その資料が示す出来�
 | AZURE_TRANSLATOR_REGION | Variable | 例: `japanwest` |
 | DEEPL_API_KEY | Secret | 翻訳・第2段 |
 | GOOGLE_TRANSLATE_API_KEY | Secret | 翻訳・第3段 |
-| EDINET_API_KEY | Secret | 休眠中（未設定。設定しても sources へ追加するまで無効） |
+| EDINET_API_KEY | Secret | EDINET（設定済み・運用中） |
 
 ### セットアップ（初回のみ）
 
@@ -269,7 +269,7 @@ test_trl.py / test_entities.py / test_site.py   テスト
 
 ## 既知の制約・設計判断
 
-- **EDINET は休眠**: キーを取得できないため無効化しています（未設定のときは取得を自動でスキップし、エラーにしません）。財務数値の抽出は type=5 の CSV を優先し、取れなければ type=1 の XBRL を読む実装が同梱されています。財務プールの実働は Yahoo Finance です。
+- **EDINET は運用中**: JP 企業の開示を取得し、財務書類（有報・四半期・半期とその訂正）からは各社直近2件まで数値を抽出して財務プールに入れます（type=5 の CSV を優先し、取れなければ type=1 の XBRL）。キー未設定の環境では取得を自動でスキップし、エラーにしません。
 - **Yahoo Finance は非公式 API**（キー・登録は不要）。bot 判定を避けるため User-Agent はセッションごとに実在ブラウザの候補から選びます。銘柄自体が無い企業（例: QPS研究所）は取得できません。取得失敗はログに残りますが、その企業の財務プールは空になります。
 - **arXiv は所属情報を取得しない**ため、企業との strong 一致は成立しません（現時点では対象外として扱います）。
 - **OpenAlex は機関ID登録済みの14社のみ**が対象です。機関レコードが無い企業は PubMed/arXiv 側で拾います。

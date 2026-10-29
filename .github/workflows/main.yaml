@@ -6,8 +6,8 @@ on:
       sources:
         description: "Sources"
         type: choice
-        options: ["pubmed,arxiv,gnews,prtimes,trials,yahoo,openalex,edinet", "pubmed,arxiv,gnews,prtimes,trials", "pubmed,arxiv", "pubmed", "arxiv"]
-        default: "pubmed,arxiv,gnews,prtimes,trials,yahoo,openalex,edinet"
+        options: ["pubmed,arxiv,gnews,prtimes,trials,yahoo,openalex,edinet,edgar", "pubmed,arxiv,gnews,prtimes,trials", "pubmed,arxiv", "pubmed", "arxiv"]
+        default: "pubmed,arxiv,gnews,prtimes,trials,yahoo,openalex,edinet,edgar"
       kinds:
         description: "Evaluation kinds"
         type: choice
@@ -87,7 +87,7 @@ jobs:
           AZURE_TRANSLATOR_REGION: ${{ vars.AZURE_TRANSLATOR_REGION }}
           GOOGLE_TRANSLATE_API_KEY: ${{ secrets.GOOGLE_TRANSLATE_API_KEY }}
           # 入力はシェルに直接展開せず環境変数経由で渡す(スクリプトインジェクション対策)
-          IN_SOURCES: ${{ inputs.sources || 'pubmed,arxiv,gnews,prtimes,trials,yahoo,openalex,edinet' }}
+          IN_SOURCES: ${{ inputs.sources || 'pubmed,arxiv,gnews,prtimes,trials,yahoo,openalex,edinet,edgar' }}
           IN_KINDS: ${{ inputs.kinds || 'long' }}
           IN_MAX_EVAL: ${{ github.event_name == 'schedule' && '12' || inputs.max_eval || '6' }}
           IN_RETRY: ${{ inputs.retry_failed || 'no' }}

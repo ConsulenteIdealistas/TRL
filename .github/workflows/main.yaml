@@ -82,6 +82,7 @@ jobs:
           NCBI_API_KEY: ${{ secrets.NCBI_API_KEY }}
           OPENALEX_API_KEY: ${{ secrets.OPENALEX_API_KEY }}
           EDINET_API_KEY: ${{ secrets.EDINET_API_KEY }}
+          TRL_EDGAR_CONTACT: ${{ vars.TRL_EDGAR_CONTACT }}
           DEEPL_API_KEY: ${{ secrets.DEEPL_API_KEY }}
           AZURE_TRANSLATOR_KEY: ${{ secrets.AZURE_TRANSLATOR_KEY }}
           AZURE_TRANSLATOR_REGION: ${{ vars.AZURE_TRANSLATOR_REGION }}

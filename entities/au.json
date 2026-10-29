@@ -218,6 +218,27 @@
           "AI lifecycle"
         ]
       }
+    },
+    {
+      "id": "novonix",
+      "name": "Novonix Limited",
+      "aliases": [
+        "Novonix",
+        "ノボニックス"
+      ],
+      "ticker": "NVX",
+      "exchange": "ASX",
+      "sector": "energy",
+      "tier": "watch",
+      "market": "AU",
+      "watch": {
+        "news_name": "Novonix Limited",
+        "extra_keywords": [
+          "graphite anode",
+          "Riverside",
+          "synthetic graphite"
+        ]
+      }
     }
   ]
 }

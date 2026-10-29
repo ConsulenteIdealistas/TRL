@@ -684,6 +684,10 @@
      ],
      "type": "wearable_robot"
     }
+   ],
+   "tags": [
+    "robotics",
+    "medtech"
    ]
   },
   {
@@ -803,6 +807,503 @@
      "type": "power_ic"
     }
    ]
+  },
+  {
+   "id": "harmonic_drive",
+   "name": "Harmonic Drive Systems, Inc.",
+   "aliases": [
+    "Harmonic Drive Systems",
+    "ハーモニック・ドライブ・システムズ",
+    "ハーモニックドライブ"
+   ],
+   "ticker": "6324",
+   "exchange": "TSE",
+   "sector": "robotics",
+   "tier": "core",
+   "watch": {
+    "news_name": "ハーモニック・ドライブ・システムズ",
+    "prtimes_terms": [
+     "Harmonic Drive Systems",
+     "ハーモニック・ドライブ・システムズ"
+    ],
+    "extra_keywords": [
+     "波動歯車",
+     "減速機",
+     "アクチュエータ"
+    ]
+   }
+  },
+  {
+   "id": "nabtesco",
+   "name": "Nabtesco Corporation",
+   "aliases": [
+    "Nabtesco",
+    "ナブテスコ"
+   ],
+   "ticker": "6268",
+   "exchange": "TSE",
+   "sector": "robotics",
+   "tier": "core",
+   "watch": {
+    "news_name": "ナブテスコ",
+    "prtimes_terms": [
+     "Nabtesco",
+     "ナブテスコ"
+    ],
+    "extra_keywords": [
+     "精密減速機",
+     "RV減速機"
+    ]
+   }
+  },
+  {
+   "id": "ckd",
+   "name": "CKD Corporation",
+   "aliases": [
+    "CKD",
+    "シーケーディ",
+    "CKD株式会社"
+   ],
+   "ticker": "6407",
+   "exchange": "TSE",
+   "sector": "robotics",
+   "tier": "core",
+   "tags": [
+    "semiconductor"
+   ],
+   "watch": {
+    "news_name": "CKD",
+    "prtimes_terms": [
+     "CKD",
+     "シーケーディ"
+    ],
+    "extra_keywords": [
+     "空気圧機器",
+     "電動アクチュエータ"
+    ]
+   }
+  },
+  {
+   "id": "sanyo_denki",
+   "name": "SANYO DENKI CO., LTD.",
+   "aliases": [
+    "Sanyo Denki",
+    "山洋電気"
+   ],
+   "ticker": "6516",
+   "exchange": "TSE",
+   "sector": "robotics",
+   "tier": "core",
+   "watch": {
+    "news_name": "山洋電気",
+    "prtimes_terms": [
+     "SANYO DENKI",
+     "山洋電気"
+    ],
+    "extra_keywords": [
+     "サーボモータ",
+     "SANMOTION",
+     "冷却ファン"
+    ]
+   }
+  },
+  {
+   "id": "nippon_thompson",
+   "name": "Nippon Thompson Co., Ltd.",
+   "aliases": [
+    "Nippon Thompson",
+    "日本トムソン",
+    "IKO"
+   ],
+   "ticker": "6480",
+   "exchange": "TSE",
+   "sector": "robotics",
+   "tier": "core",
+   "tags": [
+    "semiconductor"
+   ],
+   "watch": {
+    "news_name": "日本トムソン",
+    "prtimes_terms": [
+     "日本トムソン",
+     "Nippon Thompson"
+    ],
+    "extra_keywords": [
+     "直動案内機器",
+     "リニアガイド",
+     "IKO"
+    ]
+   }
+  },
+  {
+   "id": "hirata",
+   "name": "HIRATA Corporation",
+   "aliases": [
+    "Hirata",
+    "平田機工"
+   ],
+   "ticker": "6258",
+   "exchange": "TSE",
+   "sector": "robotics",
+   "tier": "core",
+   "tags": [
+    "semiconductor"
+   ],
+   "watch": {
+    "news_name": "平田機工",
+    "prtimes_terms": [
+     "HIRATA",
+     "平田機工"
+    ],
+    "extra_keywords": [
+     "生産システム",
+     "搬送ロボット"
+    ]
+   }
+  },
+  {
+   "id": "optex_group",
+   "name": "OPTEX GROUP Company, Limited",
+   "aliases": [
+    "Optex Group",
+    "オプテックスグループ",
+    "オプテックス"
+   ],
+   "ticker": "6914",
+   "exchange": "TSE",
+   "sector": "robotics",
+   "tier": "core",
+   "watch": {
+    "news_name": "オプテックスグループ",
+    "prtimes_terms": [
+     "オプテックス",
+     "OPTEX"
+    ],
+    "extra_keywords": [
+     "FAセンサ",
+     "シーシーエス",
+     "検査照明"
+    ]
+   }
+  },
+  {
+   "id": "toyo_kanetsu",
+   "name": "TOYO KANETSU K.K.",
+   "aliases": [
+    "Toyo Kanetsu",
+    "トーヨーカネツ"
+   ],
+   "ticker": "6369",
+   "exchange": "TSE",
+   "sector": "robotics",
+   "tier": "core",
+   "watch": {
+    "news_name": "トーヨーカネツ",
+    "prtimes_terms": [
+     "トーヨーカネツ",
+     "TOYO KANETSU"
+    ],
+    "extra_keywords": [
+     "自動倉庫",
+     "物流システム",
+     "仕分け"
+    ]
+   }
+  },
+  {
+   "id": "kuroda_precision",
+   "name": "KURODA PRECISION INDUSTRIES LTD.",
+   "aliases": [
+    "Kuroda Precision",
+    "黒田精工"
+   ],
+   "ticker": "7726",
+   "exchange": "TSE",
+   "sector": "robotics",
+   "tier": "watch",
+   "watch": {
+    "news_name": "黒田精工",
+    "prtimes_terms": [
+     "黒田精工"
+    ],
+    "extra_keywords": [
+     "ボールねじ",
+     "アクチュエータ"
+    ]
+   }
+  },
+  {
+   "id": "nachi_fujikoshi",
+   "name": "Nachi-Fujikoshi Corp.",
+   "aliases": [
+    "Nachi-Fujikoshi",
+    "不二越",
+    "NACHI"
+   ],
+   "ticker": "6474",
+   "exchange": "TSE",
+   "sector": "robotics",
+   "tier": "watch",
+   "watch": {
+    "news_name": "不二越",
+    "prtimes_terms": [
+     "不二越",
+     "NACHI"
+    ],
+    "extra_keywords": [
+     "産業用ロボット",
+     "軸受"
+    ]
+   }
+  },
+  {
+   "id": "daihen",
+   "name": "DAIHEN Corporation",
+   "aliases": [
+    "Daihen",
+    "ダイヘン"
+   ],
+   "ticker": "6622",
+   "exchange": "TSE",
+   "sector": "robotics",
+   "tier": "watch",
+   "watch": {
+    "news_name": "ダイヘン",
+    "prtimes_terms": [
+     "ダイヘン",
+     "DAIHEN"
+    ],
+    "extra_keywords": [
+     "溶接ロボット",
+     "アーク溶接"
+    ]
+   }
+  },
+  {
+   "id": "tsubakimoto",
+   "name": "Tsubakimoto Chain Co.",
+   "aliases": [
+    "Tsubakimoto Chain",
+    "椿本チエイン",
+    "ツバキ"
+   ],
+   "ticker": "6371",
+   "exchange": "TSE",
+   "sector": "robotics",
+   "tier": "watch",
+   "watch": {
+    "news_name": "椿本チエイン",
+    "prtimes_terms": [
+     "椿本チエイン"
+    ],
+    "extra_keywords": [
+     "マテハン",
+     "減速機",
+     "チェーン"
+    ]
+   }
+  },
+  {
+   "id": "maxell",
+   "name": "Maxell, Ltd.",
+   "aliases": [
+    "Maxell",
+    "マクセル"
+   ],
+   "ticker": "6810",
+   "exchange": "TSE",
+   "sector": "energy",
+   "tier": "watch",
+   "watch": {
+    "news_name": "マクセル",
+    "prtimes_terms": [
+     "マクセル",
+     "Maxell"
+    ],
+    "extra_keywords": [
+     "全固体電池",
+     "PSB"
+    ]
+   }
+  },
+  {
+   "id": "ohara",
+   "name": "OHARA INC.",
+   "aliases": [
+    "Ohara",
+    "オハラ"
+   ],
+   "ticker": "5218",
+   "exchange": "TSE",
+   "sector": "energy",
+   "tier": "watch",
+   "watch": {
+    "news_name": "オハラ",
+    "prtimes_terms": [
+     "オハラ",
+     "OHARA"
+    ],
+    "extra_keywords": [
+     "LICGC",
+     "固体電解質",
+     "光学ガラス"
+    ]
+   }
+  },
+  {
+   "id": "santec",
+   "name": "santec Holdings Corporation",
+   "aliases": [
+    "santec",
+    "サンテック"
+   ],
+   "ticker": "6777",
+   "exchange": "TSE",
+   "sector": "semiconductor",
+   "tier": "core",
+   "tags": [
+    "photonics"
+   ],
+   "watch": {
+    "news_name": "santec",
+    "prtimes_terms": [
+     "santec",
+     "サンテック"
+    ],
+    "extra_keywords": [
+     "光測定器",
+     "波長可変レーザー",
+     "光部品"
+    ]
+   }
+  },
+  {
+   "id": "seikoh_giken",
+   "name": "SEIKOH GIKEN CO., LTD.",
+   "aliases": [
+    "Seikoh Giken",
+    "精工技研"
+   ],
+   "ticker": "6834",
+   "exchange": "TSE",
+   "sector": "semiconductor",
+   "tier": "core",
+   "tags": [
+    "photonics"
+   ],
+   "watch": {
+    "news_name": "精工技研",
+    "prtimes_terms": [
+     "精工技研"
+    ],
+    "extra_keywords": [
+     "光コネクタ",
+     "フェルール"
+    ]
+   }
+  },
+  {
+   "id": "asahi_intecc",
+   "name": "ASAHI INTECC CO., LTD.",
+   "aliases": [
+    "Asahi Intecc",
+    "朝日インテック"
+   ],
+   "ticker": "7747",
+   "exchange": "TSE",
+   "sector": "bio",
+   "tier": "core",
+   "tags": [
+    "medtech"
+   ],
+   "watch": {
+    "news_name": "朝日インテック",
+    "prtimes_terms": [
+     "朝日インテック"
+    ],
+    "extra_keywords": [
+     "ガイドワイヤー",
+     "カテーテル"
+    ],
+    "sponsor": "Asahi Intecc"
+   }
+  },
+  {
+   "id": "japan_lifeline",
+   "name": "Japan Lifeline Co., Ltd.",
+   "aliases": [
+    "Japan Lifeline",
+    "日本ライフライン"
+   ],
+   "ticker": "7575",
+   "exchange": "TSE",
+   "sector": "bio",
+   "tier": "core",
+   "tags": [
+    "medtech"
+   ],
+   "watch": {
+    "news_name": "日本ライフライン",
+    "prtimes_terms": [
+     "日本ライフライン"
+    ],
+    "extra_keywords": [
+     "EPカテーテル",
+     "人工弁"
+    ],
+    "sponsor": "Japan Lifeline"
+   }
+  },
+  {
+   "id": "jms",
+   "name": "JMS Co., Ltd.",
+   "aliases": [
+    "JMS",
+    "ジェイ・エム・エス"
+   ],
+   "ticker": "7702",
+   "exchange": "TSE",
+   "sector": "bio",
+   "tier": "watch",
+   "tags": [
+    "medtech"
+   ],
+   "watch": {
+    "news_name": "ジェイ・エム・エス",
+    "prtimes_terms": [
+     "JMS",
+     "ジェイ・エム・エス"
+    ],
+    "extra_keywords": [
+     "血液透析装置",
+     "輸液ポンプ"
+    ]
+   }
+  },
+  {
+   "id": "mizuho_medy",
+   "name": "MIZUHO MEDY CO., LTD.",
+   "aliases": [
+    "Mizuho Medy",
+    "ミズホメディー"
+   ],
+   "ticker": "4595",
+   "exchange": "TSE",
+   "sector": "bio",
+   "tier": "watch",
+   "tags": [
+    "medtech"
+   ],
+   "watch": {
+    "news_name": "ミズホメディー",
+    "prtimes_terms": [
+     "ミズホメディー"
+    ],
+    "extra_keywords": [
+     "POCT",
+     "遺伝子検査"
+    ]
+   }
   }
  ]
 }

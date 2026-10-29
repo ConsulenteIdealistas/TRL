@@ -218,6 +218,51 @@
      "GenAI"
     ]
    }
+  },
+  {
+   "id": "basler",
+   "name": "Basler AG",
+   "aliases": [
+    "Basler",
+    "バスラー"
+   ],
+   "ticker": "BSL",
+   "exchange": "Xetra",
+   "sector": "robotics",
+   "tier": "core",
+   "market": "DE",
+   "watch": {
+    "news_name": "Basler AG",
+    "extra_keywords": [
+     "machine vision cameras",
+     "pylon",
+     "line scan"
+    ]
+   }
+  },
+  {
+   "id": "lpkf",
+   "name": "LPKF Laser & Electronics SE",
+   "aliases": [
+    "LPKF",
+    "エルピーケーエフ"
+   ],
+   "ticker": "LPK",
+   "exchange": "Xetra",
+   "sector": "semiconductor",
+   "tier": "watch",
+   "market": "DE",
+   "tags": [
+    "photonics"
+   ],
+   "watch": {
+    "news_name": "LPKF Laser & Electronics SE",
+    "extra_keywords": [
+     "LIDE",
+     "laser systems",
+     "glass processing"
+    ]
+   }
   }
  ]
 }

@@ -20,7 +20,10 @@
           "MinION"
         ],
         "pubmed": "Oxford Nanopore[Affiliation]"
-      }
+      },
+      "tags": [
+        "medtech"
+      ]
     },
     {
       "id": "oxford_instruments",
@@ -147,7 +150,10 @@
           "compound semiconductor",
           "MBE"
         ]
-      }
+      },
+      "tags": [
+        "photonics"
+      ]
     },
     {
       "id": "puretech",
@@ -276,6 +282,93 @@
           "DMS",
           "computer vision"
         ]
+      }
+    },
+    {
+      "id": "renishaw",
+      "name": "Renishaw plc",
+      "aliases": [
+        "Renishaw",
+        "レニショー"
+      ],
+      "ticker": "RSW",
+      "exchange": "LSE",
+      "sector": "robotics",
+      "tier": "core",
+      "market": "GB",
+      "watch": {
+        "news_name": "Renishaw plc",
+        "extra_keywords": [
+          "encoders",
+          "machine tool probes",
+          "metrology"
+        ]
+      }
+    },
+    {
+      "id": "ilika",
+      "name": "Ilika plc",
+      "aliases": [
+        "Ilika",
+        "イリカ"
+      ],
+      "ticker": "IKA",
+      "exchange": "LSE",
+      "sector": "energy",
+      "tier": "watch",
+      "market": "GB",
+      "watch": {
+        "news_name": "Ilika plc",
+        "extra_keywords": [
+          "Stereax",
+          "Goliath",
+          "solid-state battery"
+        ]
+      }
+    },
+    {
+      "id": "invinity",
+      "name": "Invinity Energy Systems plc",
+      "aliases": [
+        "Invinity",
+        "インビニティ"
+      ],
+      "ticker": "IES",
+      "exchange": "LSE",
+      "sector": "energy",
+      "tier": "watch",
+      "market": "GB",
+      "watch": {
+        "news_name": "Invinity Energy Systems plc",
+        "extra_keywords": [
+          "vanadium flow battery",
+          "Endurium"
+        ]
+      }
+    },
+    {
+      "id": "creo_medical",
+      "name": "Creo Medical Group plc",
+      "aliases": [
+        "Creo Medical",
+        "クレオメディカル"
+      ],
+      "ticker": "CREO",
+      "exchange": "LSE",
+      "sector": "bio",
+      "tier": "watch",
+      "market": "GB",
+      "tags": [
+        "medtech"
+      ],
+      "watch": {
+        "news_name": "Creo Medical Group plc",
+        "extra_keywords": [
+          "Speedboat",
+          "CROMA",
+          "endoscopy"
+        ],
+        "sponsor": "Creo Medical"
       }
     }
   ]

@@ -53,6 +53,36 @@
       "業績",
       "採択",
       "量産"
+    ],
+    "robotics": [
+      "決算",
+      "受注",
+      "契約",
+      "提携",
+      "資金調達",
+      "業績",
+      "採択",
+      "量産",
+      "導入"
+    ],
+    "energy": [
+      "決算",
+      "契約",
+      "提携",
+      "資金調達",
+      "業績",
+      "量産",
+      "認定",
+      "供給"
+    ],
+    "quantum": [
+      "決算",
+      "契約",
+      "提携",
+      "資金調達",
+      "業績",
+      "採択",
+      "実証"
     ]
   },
   "keyword_sets_en": {
@@ -93,6 +123,32 @@
       "funding",
       "fab",
       "revenue"
+    ],
+    "robotics": [
+      "earnings",
+      "orders",
+      "contract",
+      "partnership",
+      "funding",
+      "production",
+      "deployment"
+    ],
+    "energy": [
+      "earnings",
+      "contract",
+      "partnership",
+      "funding",
+      "production",
+      "certification",
+      "supply"
+    ],
+    "quantum": [
+      "earnings",
+      "contract",
+      "partnership",
+      "funding",
+      "demonstration",
+      "revenue"
     ]
   },
   "keyword_sets_de": {
@@ -125,6 +181,31 @@
     "semiconductor": [
       "Ergebnisse",
       "Aufträge",
+      "Vertrag",
+      "Partnerschaft",
+      "Finanzierung",
+      "Umsatz"
+    ],
+    "robotics": [
+      "Ergebnisse",
+      "Aufträge",
+      "Vertrag",
+      "Partnerschaft",
+      "Finanzierung",
+      "Produktion",
+      "Umsatz"
+    ],
+    "energy": [
+      "Ergebnisse",
+      "Vertrag",
+      "Partnerschaft",
+      "Finanzierung",
+      "Produktion",
+      "Umsatz",
+      "Zertifizierung"
+    ],
+    "quantum": [
+      "Ergebnisse",
       "Vertrag",
       "Partnerschaft",
       "Finanzierung",
@@ -164,6 +245,31 @@
       "partnership",
       "finanziamento",
       "ricavi"
+    ],
+    "robotics": [
+      "risultati",
+      "ordini",
+      "contratto",
+      "partnership",
+      "finanziamento",
+      "produzione",
+      "ricavi"
+    ],
+    "energy": [
+      "risultati",
+      "contratto",
+      "partnership",
+      "finanziamento",
+      "produzione",
+      "ricavi",
+      "certificazione"
+    ],
+    "quantum": [
+      "risultati",
+      "contratto",
+      "partnership",
+      "finanziamento",
+      "ricavi"
     ]
   },
   "keyword_sets_sv": {
@@ -196,6 +302,31 @@
       "resultat",
       "ordrar",
       "kontrakt",
+      "partnerskap",
+      "finansiering",
+      "intäkter"
+    ],
+    "robotics": [
+      "resultat",
+      "order",
+      "avtal",
+      "partnerskap",
+      "finansiering",
+      "produktion",
+      "intäkter"
+    ],
+    "energy": [
+      "resultat",
+      "avtal",
+      "partnerskap",
+      "finansiering",
+      "produktion",
+      "intäkter",
+      "certifiering"
+    ],
+    "quantum": [
+      "resultat",
+      "avtal",
       "partnerskap",
       "finansiering",
       "intäkter"

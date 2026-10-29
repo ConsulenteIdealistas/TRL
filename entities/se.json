@@ -110,6 +110,53 @@
      "angiotensin II type 2 receptor"
     ]
    }
+  },
+  {
+   "id": "sivers",
+   "name": "Sivers Semiconductors AB",
+   "aliases": [
+    "Sivers",
+    "Sivers Semiconductors"
+   ],
+   "ticker": "SIVE",
+   "exchange": "Nasdaq Stockholm",
+   "sector": "semiconductor",
+   "tier": "core",
+   "market": "SE",
+   "tags": [
+    "photonics"
+   ],
+   "watch": {
+    "news_name": "Sivers Semiconductors AB",
+    "extra_keywords": [
+     "CW lasers",
+     "silicon photonics",
+     "beamforming"
+    ]
+   }
+  },
+  {
+   "id": "surgical_science",
+   "name": "Surgical Science Sweden AB",
+   "aliases": [
+    "Surgical Science",
+    "サージカルサイエンス"
+   ],
+   "ticker": "SUS",
+   "exchange": "Nasdaq Stockholm",
+   "sector": "bio",
+   "tier": "watch",
+   "market": "SE",
+   "tags": [
+    "medtech"
+   ],
+   "watch": {
+    "news_name": "Surgical Science Sweden AB",
+    "extra_keywords": [
+     "surgical simulation",
+     "training"
+    ]
+   }
   }
  ]
 }

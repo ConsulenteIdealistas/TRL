@@ -34,7 +34,9 @@ const ok = t => Number.isInteger(t) && t >= 1 && t <= 9;
 const SRC_CLASS = {arxiv: "s-arxiv", pubmed: "s-pubmed", gnews: "s-gnews", prtimes: "s-prtimes", trials: "s-trials", edinet: "s-edinet", yahoo: "s-yahoo", openalex: "s-openalex"};
 const SRC_LABEL = {arxiv: "arXiv", pubmed: "PubMed", gnews: "News", prtimes: "PR TIMES", trials: "ClinicalTrials", edinet: "EDINET", yahoo: "Yahoo Finance", openalex: "OpenAlex"};
 const ML = {JP: "日本", US: "米国", GB: "英国", CH: "スイス", DE: "ドイツ", DK: "デンマーク", SE: "スウェーデン", IT: "イタリア", CA: "カナダ", AU: "オーストラリア", ES: "スペイン", FR: "フランス", NL: "オランダ", FI: "フィンランド", NO: "ノルウェー", BE: "ベルギー"};
-const CL = {space: "宇宙", bio: "バイオ", semiconductor: "半導体", ai: "AI"};
+const CL = {space: "宇宙", bio: "バイオ", semiconductor: "半導体", ai: "AI", robotics: "ロボティクス", energy: "エネルギー・蓄電池", quantum: "量子技術"};
+const TL = {photonics: "フォトニクス", medtech: "医療機器"};
+const tagLabel = t => CL[t] || TL[t] || t;
 const label = k => IL[k] || k;
 const DL = {positive: "ポジティブ", negative: "ネガティブ", mixed: "混在"};
 const dirB = ev => { const d = ev && ev.direction; return d && d.direction ? `<span class="dir dir-${d.direction}">${DL[d.direction]}</span>` : ""; };
@@ -102,7 +104,7 @@ ${EV ? `<section class="ds"><h4>イベント評価</h4>${Object.keys(EV.items).m
 ${p.display_status === "error" && p.long && p.long.errors.length ? `<section class="ds"><h4>処理上の注意</h4>${pts(p.long.errors, 1)}</section>` : ""}
 <section class="ds"><h4>関連事業ニュース（評価に同梱した根拠プール）</h4>${news ? `<ul class="news">${news}</ul>` : `<p class="hint">同梱されたニュースはありません。</p>`}${(p.related_news || []).some(n => n.via_google_news) ? `<p class="hint">Google News 経由の記事リンクは直接開けないため、タイトルをクリックするとタイトル検索で元記事を開きます。媒体名は媒体のサイトへのリンクです。</p>` : ""}</section>
 <section class="ds"><h4>関連財務根拠（開示資料の財務数値）</h4>${fins ? `<ul class="news">${fins}</ul>` : `<p class="hint">同梱された財務根拠はありません。</p>`}</section>
-<section class="ds"><h4>関連企業</h4>${p.entities.map(e => `<span class="chip">${esc(e.name)}${e.product_name ? "（" + esc(e.product_name) + "）" : ""}${e.market ? "・" + esc(ML[e.market] || e.market) : ""}${e.sector ? "・" + esc(CL[e.sector] || e.sector) : ""} ${e.strength === "strong" ? "" : "・弱"}${e.tier === "watch" ? "・ウォッチ" : ""}</span>`).join("") || '<span class="hint">関連企業は未特定です。</span>'}</section>
+<section class="ds"><h4>関連企業</h4>${p.entities.map(e => `<span class="chip">${esc(e.name)}${e.product_name ? "（" + esc(e.product_name) + "）" : ""}${e.market ? "・" + esc(ML[e.market] || e.market) : ""}${e.sector ? "・" + esc(CL[e.sector] || e.sector) : ""}${(e.tags || []).length ? "・" + e.tags.map(t => esc(tagLabel(t))).join("・") : ""} ${e.strength === "strong" ? "" : "・弱"}${e.tier === "watch" ? "・ウォッチ" : ""}</span>`).join("") || '<span class="hint">関連企業は未特定です。</span>'}</section>
 <section class="ds"><h4>調査メモ</h4><textarea id="note" aria-label="調査メモ" placeholder="仮説、確認したい点、次の調査などを記録...">${esc(getNote(p.id))}</textarea><div class="acts"><button class="btn sec" type="button" id="save">メモを保存</button><a class="btn src" href="${esc(safeUrl(p.url))}" target="_blank" rel="noopener noreferrer">原文サイトを開く ↗</a></div><p id="msg" class="hint" aria-live="polite">メモはこの端末のブラウザにだけ保存されます。</p></section></div>`;
   $("#save").addEventListener("click", () => {
     const saved = setNote(p.id, $("#note").value);

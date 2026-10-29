@@ -135,6 +135,48 @@
         ],
         "pubmed": "Newron Pharmaceuticals[Affiliation]"
       }
+    },
+    {
+      "id": "kardex",
+      "name": "Kardex Holding AG",
+      "aliases": [
+        "Kardex",
+        "カーデックス"
+      ],
+      "ticker": "KARN",
+      "exchange": "SIX",
+      "sector": "robotics",
+      "tier": "core",
+      "market": "CH",
+      "watch": {
+        "news_name": "Kardex Holding AG",
+        "extra_keywords": [
+          "vertical lift",
+          "shuttle",
+          "intralogistics"
+        ]
+      }
+    },
+    {
+      "id": "interroll",
+      "name": "Interroll Holding AG",
+      "aliases": [
+        "Interroll",
+        "インターロール"
+      ],
+      "ticker": "INRN",
+      "exchange": "SIX",
+      "sector": "robotics",
+      "tier": "core",
+      "market": "CH",
+      "watch": {
+        "news_name": "Interroll Holding AG",
+        "extra_keywords": [
+          "conveyor rollers",
+          "drum motors",
+          "sorters"
+        ]
+      }
     }
   ]
 }

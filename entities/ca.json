@@ -170,6 +170,47 @@
           "healthcare data platform"
         ]
       }
+    },
+    {
+      "id": "ats_corporation",
+      "name": "ATS Corporation",
+      "aliases": [
+        "ATS Corporation",
+        "ATS"
+      ],
+      "ticker": "ATS",
+      "exchange": "TSX",
+      "sector": "robotics",
+      "tier": "core",
+      "market": "CA",
+      "watch": {
+        "news_name": "ATS Corporation",
+        "extra_keywords": [
+          "automation systems",
+          "assembly lines"
+        ]
+      }
+    },
+    {
+      "id": "nano_one",
+      "name": "Nano One Materials Corp.",
+      "aliases": [
+        "Nano One",
+        "ナノワン"
+      ],
+      "ticker": "NANO",
+      "exchange": "TSX",
+      "sector": "energy",
+      "tier": "watch",
+      "market": "CA",
+      "watch": {
+        "news_name": "Nano One Materials Corp.",
+        "extra_keywords": [
+          "One-Pot",
+          "cathode",
+          "LFP"
+        ]
+      }
     }
   ]
 }

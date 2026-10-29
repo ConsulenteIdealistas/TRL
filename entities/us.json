@@ -722,6 +722,608 @@
      "predictive analytics"
     ]
    }
+  },
+  {
+   "id": "cognex",
+   "name": "Cognex Corporation",
+   "aliases": [
+    "Cognex",
+    "コグネックス"
+   ],
+   "ticker": "CGNX",
+   "exchange": "NASDAQ",
+   "sector": "robotics",
+   "tier": "core",
+   "market": "US",
+   "watch": {
+    "news_name": "Cognex Corporation",
+    "extra_keywords": [
+     "machine vision",
+     "In-Sight",
+     "barcode readers"
+    ]
+   }
+  },
+  {
+   "id": "quantumscape",
+   "name": "QuantumScape Corporation",
+   "aliases": [
+    "QuantumScape",
+    "クオンタムスケープ"
+   ],
+   "ticker": "QS",
+   "exchange": "NYSE",
+   "sector": "energy",
+   "tier": "core",
+   "market": "US",
+   "watch": {
+    "news_name": "QuantumScape Corporation",
+    "extra_keywords": [
+     "solid-state battery",
+     "QSE-5",
+     "lithium-metal"
+    ]
+   }
+  },
+  {
+   "id": "solid_power",
+   "name": "Solid Power, Inc.",
+   "aliases": [
+    "Solid Power",
+    "ソリッドパワー"
+   ],
+   "ticker": "SLDP",
+   "exchange": "NASDAQ",
+   "sector": "energy",
+   "tier": "core",
+   "market": "US",
+   "watch": {
+    "news_name": "Solid Power, Inc.",
+    "extra_keywords": [
+     "solid electrolyte",
+     "sulfide",
+     "MOBIUS"
+    ]
+   }
+  },
+  {
+   "id": "enovix",
+   "name": "Enovix Corporation",
+   "aliases": [
+    "Enovix",
+    "エノビクス"
+   ],
+   "ticker": "ENVX",
+   "exchange": "NASDAQ",
+   "sector": "energy",
+   "tier": "core",
+   "market": "US",
+   "watch": {
+    "news_name": "Enovix Corporation",
+    "extra_keywords": [
+     "silicon anode",
+     "3D cell",
+     "Fab2"
+    ]
+   }
+  },
+  {
+   "id": "amprius",
+   "name": "Amprius Technologies, Inc.",
+   "aliases": [
+    "Amprius",
+    "アンプリウス"
+   ],
+   "ticker": "AMPX",
+   "exchange": "NYSE",
+   "sector": "energy",
+   "tier": "core",
+   "market": "US",
+   "watch": {
+    "news_name": "Amprius Technologies, Inc.",
+    "extra_keywords": [
+     "silicon nanowire",
+     "SiCore",
+     "SiMaxx"
+    ]
+   }
+  },
+  {
+   "id": "eos_energy",
+   "name": "Eos Energy Enterprises, Inc.",
+   "aliases": [
+    "Eos Energy",
+    "イオスエナジー"
+   ],
+   "ticker": "EOSE",
+   "exchange": "NASDAQ",
+   "sector": "energy",
+   "tier": "core",
+   "market": "US",
+   "watch": {
+    "news_name": "Eos Energy Enterprises, Inc.",
+    "extra_keywords": [
+     "zinc battery",
+     "Znyth",
+     "long duration storage"
+    ]
+   }
+  },
+  {
+   "id": "ses_ai",
+   "name": "SES AI Corporation",
+   "aliases": [
+    "SES AI",
+    "エスイーエス"
+   ],
+   "ticker": "SES",
+   "exchange": "NYSE",
+   "sector": "energy",
+   "tier": "watch",
+   "market": "US",
+   "watch": {
+    "news_name": "SES AI Corporation",
+    "extra_keywords": [
+     "lithium-metal",
+     "Li-Metal",
+     "UZ Energy"
+    ]
+   }
+  },
+  {
+   "id": "fluence",
+   "name": "Fluence Energy, Inc.",
+   "aliases": [
+    "Fluence",
+    "フルエンス"
+   ],
+   "ticker": "FLNC",
+   "exchange": "NASDAQ",
+   "sector": "energy",
+   "tier": "watch",
+   "market": "US",
+   "watch": {
+    "news_name": "Fluence Energy, Inc.",
+    "extra_keywords": [
+     "Gridstack",
+     "energy storage",
+     "backlog"
+    ]
+   }
+  },
+  {
+   "id": "iqm",
+   "name": "IQM Quantum Computers Oyj",
+   "aliases": [
+    "IQM",
+    "IQM Quantum Computers"
+   ],
+   "ticker": "IQMX",
+   "exchange": "NASDAQ",
+   "sector": "quantum",
+   "tier": "core",
+   "market": "US",
+   "watch": {
+    "news_name": "IQM Quantum Computers Oyj",
+    "extra_keywords": [
+     "superconducting",
+     "quantum computer",
+     "on-premise"
+    ]
+   }
+  },
+  {
+   "id": "infleqtion",
+   "name": "Infleqtion, Inc.",
+   "aliases": [
+    "Infleqtion",
+    "インフレクション"
+   ],
+   "ticker": "INFQ",
+   "exchange": "NYSE",
+   "sector": "quantum",
+   "tier": "core",
+   "market": "US",
+   "watch": {
+    "news_name": "Infleqtion, Inc.",
+    "extra_keywords": [
+     "neutral atom",
+     "Sqale",
+     "quantum sensing"
+    ]
+   }
+  },
+  {
+   "id": "rigetti",
+   "name": "Rigetti Computing, Inc.",
+   "aliases": [
+    "Rigetti",
+    "リゲッティ"
+   ],
+   "ticker": "RGTI",
+   "exchange": "NASDAQ",
+   "sector": "quantum",
+   "tier": "core",
+   "market": "US",
+   "watch": {
+    "news_name": "Rigetti Computing, Inc.",
+    "extra_keywords": [
+     "superconducting",
+     "Cepheus",
+     "quantum cloud"
+    ]
+   }
+  },
+  {
+   "id": "dwave",
+   "name": "D-Wave Quantum Inc.",
+   "aliases": [
+    "D-Wave",
+    "ディーウェイブ"
+   ],
+   "ticker": "QBTS",
+   "exchange": "NASDAQ",
+   "sector": "quantum",
+   "tier": "core",
+   "market": "US",
+   "watch": {
+    "news_name": "D-Wave Quantum Inc.",
+    "extra_keywords": [
+     "quantum annealing",
+     "Advantage2",
+     "gate-model"
+    ]
+   }
+  },
+  {
+   "id": "quantinuum",
+   "name": "Quantinuum Inc.",
+   "aliases": [
+    "Quantinuum",
+    "クオンティニュアム"
+   ],
+   "ticker": "QNT",
+   "exchange": "NASDAQ",
+   "sector": "quantum",
+   "tier": "watch",
+   "market": "US",
+   "watch": {
+    "news_name": "Quantinuum Inc.",
+    "extra_keywords": [
+     "ion trap",
+     "Helios",
+     "logical qubits"
+    ]
+   }
+  },
+  {
+   "id": "ionq",
+   "name": "IonQ, Inc.",
+   "aliases": [
+    "IonQ",
+    "アイオンキュー"
+   ],
+   "ticker": "IONQ",
+   "exchange": "NYSE",
+   "sector": "quantum",
+   "tier": "watch",
+   "market": "US",
+   "watch": {
+    "news_name": "IonQ, Inc.",
+    "extra_keywords": [
+     "ion trap",
+     "Forte",
+     "Tempo"
+    ]
+   }
+  },
+  {
+   "id": "quantum_computing_inc",
+   "name": "Quantum Computing Inc.",
+   "aliases": [
+    "Quantum Computing Inc",
+    "QCi"
+   ],
+   "ticker": "QUBT",
+   "exchange": "NASDAQ",
+   "sector": "quantum",
+   "tier": "watch",
+   "market": "US",
+   "watch": {
+    "news_name": "Quantum Computing Inc.",
+    "extra_keywords": [
+     "photonics",
+     "TFLN",
+     "Dirac"
+    ]
+   }
+  },
+  {
+   "id": "arqit",
+   "name": "Arqit Quantum Inc.",
+   "aliases": [
+    "Arqit",
+    "アーキット"
+   ],
+   "ticker": "ARQQ",
+   "exchange": "NASDAQ",
+   "sector": "quantum",
+   "tier": "watch",
+   "market": "US",
+   "watch": {
+    "news_name": "Arqit Quantum Inc.",
+    "extra_keywords": [
+     "quantum-safe",
+     "symmetric key agreement"
+    ]
+   }
+  },
+  {
+   "id": "applied_optoelectronics",
+   "name": "Applied Optoelectronics, Inc.",
+   "aliases": [
+    "Applied Optoelectronics",
+    "AOI"
+   ],
+   "ticker": "AAOI",
+   "exchange": "NASDAQ",
+   "sector": "semiconductor",
+   "tier": "core",
+   "market": "US",
+   "tags": [
+    "photonics"
+   ],
+   "watch": {
+    "news_name": "Applied Optoelectronics, Inc.",
+    "extra_keywords": [
+     "optical transceiver",
+     "800G",
+     "1.6T",
+     "datacenter"
+    ]
+   }
+  },
+  {
+   "id": "poet",
+   "name": "POET Technologies Inc.",
+   "aliases": [
+    "POET Technologies",
+    "ポエット"
+   ],
+   "ticker": "POET",
+   "exchange": "NASDAQ",
+   "sector": "semiconductor",
+   "tier": "core",
+   "market": "US",
+   "tags": [
+    "photonics"
+   ],
+   "watch": {
+    "news_name": "POET Technologies Inc.",
+    "extra_keywords": [
+     "optical interposer",
+     "optical engine",
+     "CPO"
+    ]
+   }
+  },
+  {
+   "id": "nlight",
+   "name": "nLIGHT, Inc.",
+   "aliases": [
+    "nLIGHT",
+    "エンライト"
+   ],
+   "ticker": "LASR",
+   "exchange": "NASDAQ",
+   "sector": "semiconductor",
+   "tier": "core",
+   "market": "US",
+   "tags": [
+    "photonics"
+   ],
+   "watch": {
+    "news_name": "nLIGHT, Inc.",
+    "extra_keywords": [
+     "fiber laser",
+     "semiconductor laser",
+     "directed energy"
+    ]
+   }
+  },
+  {
+   "id": "ipg_photonics",
+   "name": "IPG Photonics Corporation",
+   "aliases": [
+    "IPG Photonics",
+    "アイピージーフォトニクス"
+   ],
+   "ticker": "IPGP",
+   "exchange": "NASDAQ",
+   "sector": "semiconductor",
+   "tier": "watch",
+   "market": "US",
+   "tags": [
+    "photonics"
+   ],
+   "watch": {
+    "news_name": "IPG Photonics Corporation",
+    "extra_keywords": [
+     "fiber laser",
+     "materials processing"
+    ]
+   }
+  },
+  {
+   "id": "lightwave_logic",
+   "name": "Lightwave Logic, Inc.",
+   "aliases": [
+    "Lightwave Logic",
+    "ライトウェーブロジック"
+   ],
+   "ticker": "LWLG",
+   "exchange": "NASDAQ",
+   "sector": "semiconductor",
+   "tier": "watch",
+   "market": "US",
+   "tags": [
+    "photonics"
+   ],
+   "watch": {
+    "news_name": "Lightwave Logic, Inc.",
+    "extra_keywords": [
+     "electro-optic polymer",
+     "Perkinamine",
+     "modulator"
+    ]
+   }
+  },
+  {
+   "id": "aeluma",
+   "name": "Aeluma, Inc.",
+   "aliases": [
+    "Aeluma",
+    "アエルマ"
+   ],
+   "ticker": "ALMU",
+   "exchange": "NASDAQ",
+   "sector": "semiconductor",
+   "tier": "watch",
+   "market": "US",
+   "tags": [
+    "photonics"
+   ],
+   "watch": {
+    "news_name": "Aeluma, Inc.",
+    "extra_keywords": [
+     "compound semiconductor",
+     "laser emitter",
+     "photonics"
+    ]
+   }
+  },
+  {
+   "id": "procept",
+   "name": "PROCEPT BioRobotics Corporation",
+   "aliases": [
+    "PROCEPT BioRobotics",
+    "プロセプト"
+   ],
+   "ticker": "PRCT",
+   "exchange": "NASDAQ",
+   "sector": "bio",
+   "tier": "core",
+   "market": "US",
+   "tags": [
+    "medtech"
+   ],
+   "watch": {
+    "news_name": "PROCEPT BioRobotics Corporation",
+    "extra_keywords": [
+     "AquaBeam",
+     "HYDROS",
+     "Aquablation"
+    ],
+    "sponsor": "PROCEPT BioRobotics"
+   }
+  },
+  {
+   "id": "inspire_medical",
+   "name": "Inspire Medical Systems, Inc.",
+   "aliases": [
+    "Inspire Medical Systems",
+    "インスパイア"
+   ],
+   "ticker": "INSP",
+   "exchange": "NYSE",
+   "sector": "bio",
+   "tier": "core",
+   "market": "US",
+   "tags": [
+    "medtech"
+   ],
+   "watch": {
+    "news_name": "Inspire Medical Systems, Inc.",
+    "extra_keywords": [
+     "sleep apnea",
+     "neurostimulation"
+    ],
+    "sponsor": "Inspire Medical Systems"
+   }
+  },
+  {
+   "id": "atricure",
+   "name": "AtriCure, Inc.",
+   "aliases": [
+    "AtriCure",
+    "アトリキュア"
+   ],
+   "ticker": "ATRC",
+   "exchange": "NASDAQ",
+   "sector": "bio",
+   "tier": "core",
+   "market": "US",
+   "tags": [
+    "medtech"
+   ],
+   "watch": {
+    "news_name": "AtriCure, Inc.",
+    "extra_keywords": [
+     "AtriClip",
+     "ablation",
+     "atrial fibrillation"
+    ],
+    "sponsor": "AtriCure"
+   }
+  },
+  {
+   "id": "lensar",
+   "name": "LENSAR, Inc.",
+   "aliases": [
+    "LENSAR",
+    "レンサー"
+   ],
+   "ticker": "LNSR",
+   "exchange": "NASDAQ",
+   "sector": "bio",
+   "tier": "watch",
+   "market": "US",
+   "tags": [
+    "medtech"
+   ],
+   "watch": {
+    "news_name": "LENSAR, Inc.",
+    "extra_keywords": [
+     "ALLY",
+     "cataract",
+     "robotic laser"
+    ],
+    "sponsor": "LENSAR"
+   }
+  },
+  {
+   "id": "nyxoah",
+   "name": "Nyxoah SA",
+   "aliases": [
+    "Nyxoah",
+    "ニクソア"
+   ],
+   "ticker": "NYXH",
+   "exchange": "NASDAQ",
+   "sector": "bio",
+   "tier": "watch",
+   "market": "US",
+   "tags": [
+    "medtech"
+   ],
+   "watch": {
+    "news_name": "Nyxoah SA",
+    "extra_keywords": [
+     "Genio",
+     "hypoglossal",
+     "sleep apnea"
+    ]
+   }
   }
  ]
 }

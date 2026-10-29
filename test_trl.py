@@ -2102,6 +2102,13 @@ class AuditFix2Tests(unittest.TestCase):
         with self.assertRaises(T.ConfigError):
             T.validate_entities(bad)
 
+    def test_stage_validation(self):
+        base = {"entities": [{"id": "x_co", "name": "X Corp", "stage": "demo"}]}
+        T.validate_entities(base)
+        bad = {"entities": [{"id": "x_co", "name": "X Corp", "stage": "growth"}]}
+        with self.assertRaises(T.ConfigError):
+            T.validate_entities(bad)
+
     def test_market_map_guard(self):
         from trlcore.config import _check_market_maps
         _check_market_maps("US", "x_co")

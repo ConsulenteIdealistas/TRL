@@ -1,65 +1,160 @@
-{"entities": [{"aliases": ["Nordic Semiconductor", "ノルディック・セミコンダクター"], "exchange": "Oslo Børs", "id": "nordic_semiconductor", "market": "NO", "name": "Nordic Semiconductor ASA", "sector": "semiconductor", "ticker": "NOD", "tier": "core", "watch": {"extra_keywords": ["Bluetooth", "nRF54", "wireless SoC"], "news_name": "Nordic Semiconductor"}}, {"aliases": ["Kongsberg", "Kongsberg Gruppen", "コングスベルグ"], "exchange": "Oslo Børs", "id": "kongsberg", "market": "NO", "name": "Kongsberg Gruppen ASA", "sector": "space", "ticker": "KOG", "tier": "watch", "watch": {"extra_keywords": ["satellite", "defence", "missile defence"], "news_name": "Kongsberg"}}, {"aliases": ["Photocure", "フォトキュア"], "exchange": "Oslo Børs", "id": "photocure", "market": "NO", "name": "Photocure ASA", "sector": "bio", "ticker": "PHO", "tier": "core", "watch": {"extra_keywords": ["Hexvix", "Cysview", "blue light cystoscopy"], "news_name": "Photocure", "sponsor": "Photocure"}}, {"aliases": ["Nykode Therapeutics", "Nykode"], "exchange": "Oslo Børs", "id": "nykode", "market": "NO", "name": "Nykode Therapeutics ASA", "sector": "bio", "ticker": "NYKD", "tier": "watch", "watch": {"extra_keywords": ["VB10", "cancer vaccine", "neoantigen"], "news_name": "Nykode Therapeutics", "sponsor": "Nykode Therapeutics"}},
 {
-  "id": "autostore",
-  "name": "AutoStore Holdings Ltd.",
-  "aliases": [
-    "AutoStore",
-    "オートストア"
-  ],
-  "ticker": "AUTO",
-  "exchange": "Oslo Børs",
-  "sector": "robotics",
-  "tier": "core",
-  "market": "NO",
-  "watch": {
-    "news_name": "AutoStore Holdings Ltd.",
-    "extra_keywords": [
-      "cubic storage",
-      "warehouse automation",
-      "goods-to-person"
-    ]
-  }
+  "entities": [
+    {
+      "aliases": [
+        "Nordic Semiconductor",
+        "ノルディック・セミコンダクター"
+      ],
+      "exchange": "Oslo Børs",
+      "id": "nordic_semiconductor",
+      "market": "NO",
+      "name": "Nordic Semiconductor ASA",
+      "sector": "semiconductor",
+      "ticker": "NOD",
+      "tier": "core",
+      "watch": {
+        "extra_keywords": [
+          "Bluetooth",
+          "nRF54",
+          "wireless SoC"
+        ],
+        "news_name": "Nordic Semiconductor"
+      },
+      "stage": "commercial"
+    },
+    {
+      "aliases": [
+        "Kongsberg",
+        "Kongsberg Gruppen",
+        "コングスベルグ"
+      ],
+      "exchange": "Oslo Børs",
+      "id": "kongsberg",
+      "market": "NO",
+      "name": "Kongsberg Gruppen ASA",
+      "sector": "space",
+      "ticker": "KOG",
+      "tier": "watch",
+      "watch": {
+        "extra_keywords": [
+          "satellite",
+          "defence",
+          "missile defence"
+        ],
+        "news_name": "Kongsberg"
+      },
+      "stage": "commercial"
+    },
+    {
+      "aliases": [
+        "Photocure",
+        "フォトキュア"
+      ],
+      "exchange": "Oslo Børs",
+      "id": "photocure",
+      "market": "NO",
+      "name": "Photocure ASA",
+      "sector": "bio",
+      "ticker": "PHO",
+      "tier": "core",
+      "watch": {
+        "extra_keywords": [
+          "Hexvix",
+          "Cysview",
+          "blue light cystoscopy"
+        ],
+        "news_name": "Photocure",
+        "sponsor": "Photocure"
+      },
+      "stage": "production"
+    },
+    {
+      "aliases": [
+        "Nykode Therapeutics",
+        "Nykode"
+      ],
+      "exchange": "Oslo Børs",
+      "id": "nykode",
+      "market": "NO",
+      "name": "Nykode Therapeutics ASA",
+      "sector": "bio",
+      "ticker": "NYKD",
+      "tier": "watch",
+      "watch": {
+        "extra_keywords": [
+          "VB10",
+          "cancer vaccine",
+          "neoantigen"
+        ],
+        "news_name": "Nykode Therapeutics",
+        "sponsor": "Nykode Therapeutics"
+      },
+      "stage": "demo"
+    },
+    {
+      "id": "autostore",
+      "name": "AutoStore Holdings Ltd.",
+      "aliases": [
+        "AutoStore",
+        "オートストア"
+      ],
+      "ticker": "AUTO",
+      "exchange": "Oslo Børs",
+      "sector": "robotics",
+      "tier": "core",
+      "market": "NO",
+      "watch": {
+        "news_name": "AutoStore Holdings Ltd.",
+        "extra_keywords": [
+          "cubic storage",
+          "warehouse automation",
+          "goods-to-person"
+        ]
+      },
+      "stage": "commercial"
+    },
+    {
+      "id": "tomra",
+      "name": "Tomra Systems ASA",
+      "aliases": [
+        "Tomra",
+        "トムラ"
+      ],
+      "ticker": "TOM",
+      "exchange": "Oslo Børs",
+      "sector": "robotics",
+      "tier": "watch",
+      "market": "NO",
+      "watch": {
+        "news_name": "Tomra Systems ASA",
+        "extra_keywords": [
+          "sorting",
+          "reverse vending",
+          "sensor-based"
+        ]
+      },
+      "stage": "commercial"
+    },
+    {
+      "id": "zaptec",
+      "name": "Zaptec ASA",
+      "aliases": [
+        "Zaptec",
+        "ザプテック"
+      ],
+      "ticker": "ZAP",
+      "exchange": "Oslo Børs",
+      "sector": "energy",
+      "tier": "watch",
+      "market": "NO",
+      "watch": {
+        "news_name": "Zaptec ASA",
+        "extra_keywords": [
+          "EV charging",
+          "Zaptec Pro"
+        ]
+      },
+      "stage": "commercial"
+    }
+  ]
 }
-,
-{
-  "id": "tomra",
-  "name": "Tomra Systems ASA",
-  "aliases": [
-    "Tomra",
-    "トムラ"
-  ],
-  "ticker": "TOM",
-  "exchange": "Oslo Børs",
-  "sector": "robotics",
-  "tier": "watch",
-  "market": "NO",
-  "watch": {
-    "news_name": "Tomra Systems ASA",
-    "extra_keywords": [
-      "sorting",
-      "reverse vending",
-      "sensor-based"
-    ]
-  }
-},
-{
-  "id": "zaptec",
-  "name": "Zaptec ASA",
-  "aliases": [
-    "Zaptec",
-    "ザプテック"
-  ],
-  "ticker": "ZAP",
-  "exchange": "Oslo Børs",
-  "sector": "energy",
-  "tier": "watch",
-  "market": "NO",
-  "watch": {
-    "news_name": "Zaptec ASA",
-    "extra_keywords": [
-      "EV charging",
-      "Zaptec Pro"
-    ]
-  }
-}
-]}

@@ -18,7 +18,8 @@
           "satellite systems",
           "geointelligence"
         ]
-      }
+      },
+      "stage": "commercial"
     },
     {
       "id": "telesat",
@@ -38,7 +39,8 @@
           "Lightspeed",
           "LEO constellation"
         ]
-      }
+      },
+      "stage": "commercial"
     },
     {
       "id": "coveo",
@@ -59,7 +61,8 @@
           "generative answering",
           "ecommerce"
         ]
-      }
+      },
+      "stage": "commercial"
     },
     {
       "id": "celestica",
@@ -80,7 +83,8 @@
           "hyperscale",
           "800G switch"
         ]
-      }
+      },
+      "stage": "commercial"
     },
     {
       "id": "satellos",
@@ -103,7 +107,8 @@
           "muscle stem cells"
         ],
         "pubmed": "Satellos Bioscience[Affiliation]"
-      }
+      },
+      "stage": "demo"
     },
     {
       "id": "eupraxia",
@@ -126,7 +131,8 @@
           "osteoarthritis"
         ],
         "pubmed": "Eupraxia Pharmaceuticals[Affiliation]"
-      }
+      },
+      "stage": "demo"
     },
     {
       "id": "medicenna",
@@ -148,7 +154,8 @@
           "MDNA11",
           "IL-2 superkine"
         ]
-      }
+      },
+      "stage": "demo"
     },
     {
       "id": "healwell",
@@ -169,7 +176,8 @@
           "disease detection",
           "healthcare data platform"
         ]
-      }
+      },
+      "stage": "production"
     },
     {
       "id": "ats_corporation",
@@ -189,7 +197,8 @@
           "automation systems",
           "assembly lines"
         ]
-      }
+      },
+      "stage": "commercial"
     },
     {
       "id": "nano_one",
@@ -210,7 +219,8 @@
           "cathode",
           "LFP"
         ]
-      }
+      },
+      "stage": "demo"
     },
     {
       "id": "nouveau_monde",
@@ -231,7 +241,8 @@
           "Matawinie",
           "Bécancour"
         ]
-      }
+      },
+      "stage": "demo"
     },
     {
       "id": "ballard",
@@ -252,7 +263,8 @@
           "hydrogen",
           "FCmove"
         ]
-      }
+      },
+      "stage": "production"
     },
     {
       "id": "electrovaya",
@@ -273,7 +285,8 @@
           "forklift",
           "lithium-ion"
         ]
-      }
+      },
+      "stage": "production"
     },
     {
       "id": "profound_medical",
@@ -298,7 +311,8 @@
           "Sonalleve"
         ],
         "sponsor": "Profound Medical"
-      }
+      },
+      "stage": "production"
     },
     {
       "id": "cardiol",
@@ -320,7 +334,8 @@
           "MAVERIC"
         ],
         "sponsor": "Cardiol Therapeutics"
-      }
+      },
+      "stage": "demo"
     },
     {
       "id": "spectral_medical",
@@ -345,7 +360,8 @@
           "sepsis"
         ],
         "sponsor": "Spectral Medical"
-      }
+      },
+      "stage": "demo"
     },
     {
       "id": "kinaxis",
@@ -366,7 +382,8 @@
           "supply chain",
           "concurrent planning"
         ]
-      }
+      },
+      "stage": "commercial"
     }
   ]
 }

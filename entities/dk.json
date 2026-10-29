@@ -21,7 +21,8 @@
      "Tivdak"
     ],
     "pubmed": "Genmab[Affiliation]"
-   }
+   },
+   "stage": "commercial"
   },
   {
    "id": "bavarian_nordic",
@@ -44,7 +45,8 @@
      "vaccine"
     ],
     "openalex": "I4210101414"
-   }
+   },
+   "stage": "commercial"
   },
   {
    "id": "zealand_pharma",
@@ -67,7 +69,8 @@
      "peptide therapeutics"
     ],
     "openalex": "I4210096064"
-   }
+   },
+   "stage": "commercial"
   },
   {
    "id": "gubra",
@@ -89,7 +92,8 @@
      "peptide drug discovery"
     ],
     "pubmed": "Gubra[Affiliation]"
-   }
+   },
+   "stage": "production"
   },
   {
    "id": "alk_abello",
@@ -111,7 +115,8 @@
      "peanut allergy"
     ],
     "pubmed": "ALK-Abelló[Affiliation]"
-   }
+   },
+   "stage": "commercial"
   },
   {
    "id": "bioporto",
@@ -132,7 +137,8 @@
      "acute kidney injury",
      "The NGAL Test"
     ]
-   }
+   },
+   "stage": "production"
   },
   {
    "id": "curasight",
@@ -154,7 +160,8 @@
      "uTRACE"
     ],
     "sponsor": "Curasight"
-   }
+   },
+   "stage": "demo"
   }
  ]
 }

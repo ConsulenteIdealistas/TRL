@@ -21,7 +21,8 @@
      "Neutron",
      "launch services"
     ]
-   }
+   },
+   "stage": "commercial"
   },
   {
    "id": "ast_spacemobile",
@@ -42,7 +43,8 @@
      "direct-to-cell",
      "satellite constellation"
     ]
-   }
+   },
+   "stage": "demo"
   },
   {
    "id": "intuitive_machines",
@@ -63,7 +65,8 @@
      "lunar lander",
      "CLPS"
     ]
-   }
+   },
+   "stage": "production"
   },
   {
    "id": "planet_labs",
@@ -85,7 +88,8 @@
      "Pelican"
     ],
     "openalex": "I4405265495"
-   }
+   },
+   "stage": "commercial"
   },
   {
    "id": "redwire",
@@ -105,7 +109,8 @@
      "space infrastructure",
      "in-space manufacturing"
     ]
-   }
+   },
+   "stage": "commercial"
   },
   {
    "id": "crispr",
@@ -128,7 +133,8 @@
      "sickle cell"
     ],
     "pubmed": "CRISPR Therapeutics[Affiliation]"
-   }
+   },
+   "stage": "production"
   },
   {
    "id": "moderna",
@@ -151,7 +157,8 @@
      "vaccine"
     ],
     "pubmed": "Moderna[Affiliation]"
-   }
+   },
+   "stage": "commercial"
   },
   {
    "id": "beam",
@@ -173,7 +180,8 @@
      "BEAM-101"
     ],
     "pubmed": "Beam Therapeutics[Affiliation]"
-   }
+   },
+   "stage": "demo"
   },
   {
    "id": "arm",
@@ -194,7 +202,8 @@
      "compute subsystem",
      "licensing"
     ]
-   }
+   },
+   "stage": "commercial"
   },
   {
    "id": "firefly",
@@ -215,7 +224,8 @@
      "Blue Ghost",
      "lunar lander"
     ]
-   }
+   },
+   "stage": "production"
   },
   {
    "id": "tempus",
@@ -237,7 +247,8 @@
      "precision medicine"
     ],
     "pubmed": "Tempus Labs[Affiliation]"
-   }
+   },
+   "stage": "commercial"
   },
   {
    "id": "recursion",
@@ -260,7 +271,8 @@
      "phenomics"
     ],
     "pubmed": "Recursion Pharmaceuticals[Affiliation]"
-   }
+   },
+   "stage": "demo"
   },
   {
    "id": "intellia",
@@ -282,7 +294,8 @@
      "NTLA-2001",
      "CRISPR"
     ]
-   }
+   },
+   "stage": "demo"
   },
   {
    "id": "sitime",
@@ -303,7 +316,8 @@
      "oscillator",
      "precision timing"
     ]
-   }
+   },
+   "stage": "commercial"
   },
   {
    "id": "blacksky",
@@ -324,7 +338,8 @@
      "earth observation",
      "constellation"
     ]
-   }
+   },
+   "stage": "commercial"
   },
   {
    "id": "kratos",
@@ -346,7 +361,8 @@
      "satellite communications",
      "hypersonics"
     ]
-   }
+   },
+   "stage": "commercial"
   },
   {
    "id": "ambarella",
@@ -367,7 +383,8 @@
      "edge AI",
      "computer vision"
     ]
-   }
+   },
+   "stage": "commercial"
   },
   {
    "id": "schrodinger",
@@ -389,7 +406,8 @@
      "physics-based",
      "LiveDesign"
     ]
-   }
+   },
+   "stage": "commercial"
   },
   {
    "id": "bigbear_ai",
@@ -410,7 +428,8 @@
      "defense AI",
      "decision intelligence"
     ]
-   }
+   },
+   "stage": "production"
   },
   {
    "id": "bridgebio",
@@ -433,7 +452,8 @@
      "transthyretin amyloidosis"
     ],
     "pubmed": "BridgeBio Pharma[Affiliation]"
-   }
+   },
+   "stage": "production"
   },
   {
    "id": "insmed",
@@ -455,7 +475,8 @@
      "Arikayce"
     ],
     "pubmed": "Insmed[Affiliation]"
-   }
+   },
+   "stage": "commercial"
   },
   {
    "id": "madrigal",
@@ -478,7 +499,8 @@
      "MASH"
     ],
     "pubmed": "Madrigal Pharmaceuticals[Affiliation]"
-   }
+   },
+   "stage": "production"
   },
   {
    "id": "kymera",
@@ -501,7 +523,8 @@
      "STAT6"
     ],
     "pubmed": "Kymera Therapeutics[Affiliation]"
-   }
+   },
+   "stage": "demo"
   },
   {
    "id": "cytokinetics",
@@ -523,7 +546,8 @@
      "hypertrophic cardiomyopathy"
     ],
     "pubmed": "Cytokinetics[Affiliation]"
-   }
+   },
+   "stage": "demo"
   },
   {
    "id": "axsome",
@@ -546,7 +570,8 @@
      "AXS-05"
     ],
     "pubmed": "Axsome Therapeutics[Affiliation]"
-   }
+   },
+   "stage": "commercial"
   },
   {
    "id": "viking",
@@ -569,7 +594,8 @@
      "obesity drug"
     ],
     "pubmed": "Viking Therapeutics[Affiliation]"
-   }
+   },
+   "stage": "demo"
   },
   {
    "id": "denali",
@@ -592,7 +618,8 @@
      "Hunter syndrome"
     ],
     "pubmed": "Denali Therapeutics[Affiliation]"
-   }
+   },
+   "stage": "demo"
   },
   {
    "id": "vera",
@@ -615,7 +642,8 @@
      "BAFF/APRIL"
     ],
     "pubmed": "Vera Therapeutics[Affiliation]"
-   }
+   },
+   "stage": "demo"
   },
   {
    "id": "apogee",
@@ -638,7 +666,8 @@
      "IL-13 antibody"
     ],
     "pubmed": "Apogee Therapeutics[Affiliation]"
-   }
+   },
+   "stage": "demo"
   },
   {
    "id": "nebius",
@@ -659,7 +688,8 @@
      "GPU cloud",
      "neocloud"
     ]
-   }
+   },
+   "stage": "production"
   },
   {
    "id": "uipath",
@@ -679,7 +709,8 @@
      "RPA",
      "agentic automation"
     ]
-   }
+   },
+   "stage": "commercial"
   },
   {
    "id": "soundhound",
@@ -700,7 +731,8 @@
      "speech recognition",
      "conversational AI"
     ]
-   }
+   },
+   "stage": "production"
   },
   {
    "id": "c3ai",
@@ -721,7 +753,8 @@
      "C3 AI platform",
      "predictive analytics"
     ]
-   }
+   },
+   "stage": "commercial"
   },
   {
    "id": "cognex",
@@ -742,7 +775,8 @@
      "In-Sight",
      "barcode readers"
     ]
-   }
+   },
+   "stage": "commercial"
   },
   {
    "id": "quantumscape",
@@ -763,7 +797,8 @@
      "QSE-5",
      "lithium-metal"
     ]
-   }
+   },
+   "stage": "demo"
   },
   {
    "id": "solid_power",
@@ -784,7 +819,8 @@
      "sulfide",
      "MOBIUS"
     ]
-   }
+   },
+   "stage": "demo"
   },
   {
    "id": "enovix",
@@ -805,7 +841,8 @@
      "3D cell",
      "Fab2"
     ]
-   }
+   },
+   "stage": "production"
   },
   {
    "id": "amprius",
@@ -826,7 +863,8 @@
      "SiCore",
      "SiMaxx"
     ]
-   }
+   },
+   "stage": "production"
   },
   {
    "id": "eos_energy",
@@ -847,7 +885,8 @@
      "Znyth",
      "long duration storage"
     ]
-   }
+   },
+   "stage": "production"
   },
   {
    "id": "ses_ai",
@@ -868,7 +907,8 @@
      "Li-Metal",
      "UZ Energy"
     ]
-   }
+   },
+   "stage": "demo"
   },
   {
    "id": "fluence",
@@ -889,7 +929,8 @@
      "energy storage",
      "backlog"
     ]
-   }
+   },
+   "stage": "commercial"
   },
   {
    "id": "iqm",
@@ -910,7 +951,8 @@
      "quantum computer",
      "on-premise"
     ]
-   }
+   },
+   "stage": "production"
   },
   {
    "id": "infleqtion",
@@ -931,7 +973,8 @@
      "Sqale",
      "quantum sensing"
     ]
-   }
+   },
+   "stage": "production"
   },
   {
    "id": "rigetti",
@@ -952,7 +995,8 @@
      "Cepheus",
      "quantum cloud"
     ]
-   }
+   },
+   "stage": "production"
   },
   {
    "id": "dwave",
@@ -973,7 +1017,8 @@
      "Advantage2",
      "gate-model"
     ]
-   }
+   },
+   "stage": "production"
   },
   {
    "id": "quantinuum",
@@ -994,7 +1039,8 @@
      "Helios",
      "logical qubits"
     ]
-   }
+   },
+   "stage": "production"
   },
   {
    "id": "ionq",
@@ -1015,7 +1061,8 @@
      "Forte",
      "Tempo"
     ]
-   }
+   },
+   "stage": "production"
   },
   {
    "id": "quantum_computing_inc",
@@ -1036,7 +1083,8 @@
      "TFLN",
      "Dirac"
     ]
-   }
+   },
+   "stage": "demo"
   },
   {
    "id": "arqit",
@@ -1056,7 +1104,8 @@
      "quantum-safe",
      "symmetric key agreement"
     ]
-   }
+   },
+   "stage": "demo"
   },
   {
    "id": "applied_optoelectronics",
@@ -1081,7 +1130,8 @@
      "1.6T",
      "datacenter"
     ]
-   }
+   },
+   "stage": "commercial"
   },
   {
    "id": "poet",
@@ -1105,7 +1155,8 @@
      "optical engine",
      "CPO"
     ]
-   }
+   },
+   "stage": "production"
   },
   {
    "id": "nlight",
@@ -1129,7 +1180,8 @@
      "semiconductor laser",
      "directed energy"
     ]
-   }
+   },
+   "stage": "commercial"
   },
   {
    "id": "ipg_photonics",
@@ -1152,7 +1204,8 @@
      "fiber laser",
      "materials processing"
     ]
-   }
+   },
+   "stage": "commercial"
   },
   {
    "id": "lightwave_logic",
@@ -1176,7 +1229,8 @@
      "Perkinamine",
      "modulator"
     ]
-   }
+   },
+   "stage": "demo"
   },
   {
    "id": "aeluma",
@@ -1200,7 +1254,8 @@
      "laser emitter",
      "photonics"
     ]
-   }
+   },
+   "stage": "demo"
   },
   {
    "id": "procept",
@@ -1225,7 +1280,8 @@
      "Aquablation"
     ],
     "sponsor": "PROCEPT BioRobotics"
-   }
+   },
+   "stage": "production"
   },
   {
    "id": "inspire_medical",
@@ -1249,7 +1305,8 @@
      "neurostimulation"
     ],
     "sponsor": "Inspire Medical Systems"
-   }
+   },
+   "stage": "commercial"
   },
   {
    "id": "atricure",
@@ -1274,7 +1331,8 @@
      "atrial fibrillation"
     ],
     "sponsor": "AtriCure"
-   }
+   },
+   "stage": "commercial"
   },
   {
    "id": "lensar",
@@ -1299,7 +1357,8 @@
      "robotic laser"
     ],
     "sponsor": "LENSAR"
-   }
+   },
+   "stage": "production"
   },
   {
    "id": "nyxoah",
@@ -1323,7 +1382,8 @@
      "hypoglossal",
      "sleep apnea"
     ]
-   }
+   },
+   "stage": "production"
   },
   {
    "id": "iovance",
@@ -1345,7 +1405,8 @@
      "lifileucel"
     ],
     "sponsor": "Iovance Biotherapeutics"
-   }
+   },
+   "stage": "production"
   },
   {
    "id": "cogent",
@@ -1367,7 +1428,8 @@
      "GIST"
     ],
     "sponsor": "Cogent Biosciences"
-   }
+   },
+   "stage": "demo"
   },
   {
    "id": "scholar_rock",
@@ -1389,7 +1451,8 @@
      "spinal muscular atrophy"
     ],
     "sponsor": "Scholar Rock"
-   }
+   },
+   "stage": "demo"
   },
   {
    "id": "transmedics",
@@ -1414,7 +1477,8 @@
      "organ transplant"
     ],
     "sponsor": "TransMedics"
-   }
+   },
+   "stage": "commercial"
   },
   {
    "id": "moonlake",
@@ -1435,7 +1499,8 @@
      "hidradenitis suppurativa"
     ],
     "sponsor": "MoonLake Immunotherapeutics"
-   }
+   },
+   "stage": "demo"
   },
   {
    "id": "kyverna",
@@ -1457,7 +1522,8 @@
      "autoimmune"
     ],
     "sponsor": "Kyverna Therapeutics"
-   }
+   },
+   "stage": "demo"
   },
   {
    "id": "geron",
@@ -1479,7 +1545,8 @@
      "myelofibrosis"
     ],
     "sponsor": "Geron Corporation"
-   }
+   },
+   "stage": "production"
   },
   {
    "id": "voyager_technologies",
@@ -1501,7 +1568,8 @@
      "space station",
      "defense"
     ]
-   }
+   },
+   "stage": "production"
   },
   {
    "id": "satellogic",
@@ -1522,7 +1590,8 @@
      "constellation",
      "EO data"
     ]
-   }
+   },
+   "stage": "production"
   },
   {
    "id": "spire_global",
@@ -1543,7 +1612,8 @@
      "NOAA",
      "Space Services"
     ]
-   }
+   },
+   "stage": "commercial"
   },
   {
    "id": "virgin_galactic",
@@ -1564,7 +1634,8 @@
      "spaceflight",
      "Unity"
     ]
-   }
+   },
+   "stage": "demo"
   },
   {
    "id": "semtech",
@@ -1585,7 +1656,8 @@
      "Active Copper Edge",
      "Tri-Edge"
     ]
-   }
+   },
+   "stage": "commercial"
   },
   {
    "id": "formfactor",
@@ -1606,7 +1678,8 @@
      "HBM",
      "wafer test"
     ]
-   }
+   },
+   "stage": "commercial"
   },
   {
    "id": "navitas",
@@ -1627,7 +1700,8 @@
      "SiC",
      "GaNFast"
     ]
-   }
+   },
+   "stage": "production"
   },
   {
    "id": "aehr_test",
@@ -1648,7 +1722,8 @@
      "burn-in",
      "SiC"
     ]
-   }
+   },
+   "stage": "commercial"
   },
   {
    "id": "veeco",
@@ -1669,7 +1744,8 @@
      "laser annealing",
      "MOCVD"
     ]
-   }
+   },
+   "stage": "commercial"
   },
   {
    "id": "applied_digital",
@@ -1690,7 +1766,8 @@
      "CoreWeave",
      "Ellendale"
     ]
-   }
+   },
+   "stage": "production"
   },
   {
    "id": "hut8",
@@ -1711,7 +1788,8 @@
      "HPC",
      "American Bitcoin"
     ]
-   }
+   },
+   "stage": "commercial"
   },
   {
    "id": "innodata",
@@ -1732,7 +1810,8 @@
      "data engineering",
      "generative AI"
     ]
-   }
+   },
+   "stage": "commercial"
   },
   {
    "id": "upstart",
@@ -1753,7 +1832,8 @@
      "credit model",
      "loan volume"
     ]
-   }
+   },
+   "stage": "commercial"
   },
   {
    "id": "terawulf",
@@ -1774,7 +1854,8 @@
      "Lake Mariner",
      "HPC hosting"
     ]
-   }
+   },
+   "stage": "production"
   },
   {
    "id": "aerovironment",
@@ -1795,7 +1876,8 @@
      "Puma",
      "loitering munition"
     ]
-   }
+   },
+   "stage": "commercial"
   },
   {
    "id": "oceaneering",
@@ -1816,7 +1898,8 @@
      "subsea robotics",
      "autonomous"
     ]
-   }
+   },
+   "stage": "commercial"
   },
   {
    "id": "red_cat",
@@ -1837,7 +1920,8 @@
      "Black Widow",
      "SRR"
     ]
-   }
+   },
+   "stage": "production"
   },
   {
    "id": "serve_robotics",
@@ -1857,7 +1941,8 @@
      "sidewalk delivery robot",
      "Uber Eats"
     ]
-   }
+   },
+   "stage": "production"
   },
   {
    "id": "richtech_robotics",
@@ -1878,7 +1963,8 @@
      "service robot",
      "Medbot"
     ]
-   }
+   },
+   "stage": "production"
   },
   {
    "id": "enersys",
@@ -1899,7 +1985,8 @@
      "data center",
      "lithium"
     ]
-   }
+   },
+   "stage": "commercial"
   },
   {
    "id": "energy_vault",
@@ -1920,7 +2007,8 @@
      "gravity storage",
      "long duration"
     ]
-   }
+   },
+   "stage": "production"
   },
   {
    "id": "t1_energy",
@@ -1942,7 +2030,8 @@
      "solar cell",
      "Trina Solar"
     ]
-   }
+   },
+   "stage": "production"
   },
   {
    "id": "kulr",
@@ -1963,7 +2052,8 @@
      "battery safety",
      "KULR ONE"
     ]
-   }
+   },
+   "stage": "production"
   },
   {
    "id": "microvast",
@@ -1984,7 +2074,8 @@
      "LpCO",
      "solid-state"
     ]
-   }
+   },
+   "stage": "production"
   },
   {
    "id": "horizon_quantum",
@@ -2004,7 +2095,8 @@
      "Triple Alpha",
      "quantum software"
     ]
-   }
+   },
+   "stage": "rd"
   },
   {
    "id": "xanadu",
@@ -2025,7 +2117,8 @@
      "Aurora",
      "DARPA QBI"
     ]
-   }
+   },
+   "stage": "demo"
   },
   {
    "id": "btq_technologies",
@@ -2045,7 +2138,8 @@
      "post-quantum cryptography",
      "QSS"
     ]
-   }
+   },
+   "stage": "rd"
   }
  ]
 }

@@ -387,6 +387,19 @@ class ExportTests(unittest.TestCase):
         self.assertTrue(ents)
         self.assertTrue(all(e["market"] == "JP" and e["sector"] == "space" for e in ents))
 
+    def test_entities_carry_stage(self):
+        # 企業の段階 (stage) が書き出しにも載る (表示・分析専用)
+        cfg = cfg_with()
+        cfg["entities"] = copy.deepcopy(cfg["entities"])
+        for e in cfg["entities"]["entities"]:
+            e["stage"] = "demo"
+        T.run_pipeline(self.store, cfg, None, as_of=AS_OF, kinds=("long",),
+                       fetchers=fetch_n(1), sources=("arxiv",), log=lambda *a: None)
+        data = T.build_site_data(self.store, cfg, datetime(2026, 10, 26, tzinfo=timezone.utc))
+        ents = [e for c in data["candidates"] for e in c["entities"]]
+        self.assertTrue(ents)
+        self.assertTrue(all(e["stage"] == "demo" for e in ents))
+
     def test_entities_carry_tags(self):
         # 二層化: 辞書の tags (フォトニクス/医療機器など) が書き出しにも載る
         cfg = cfg_with()

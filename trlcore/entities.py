@@ -19,6 +19,7 @@ MARKETS = ("JP", "US", "GB", "CH", "DE", "CA", "AU", "IT", "SE", "DK", "ES", "FR
 # 監視の層。core は評価予算を使う対象、watch は収集とプール専用 (評価しない)。
 # 評価選定はコア企業のリンクがある候補だけを対象にする (trlcore/pipeline.py)。
 TIERS = ("core", "watch")
+STAGES = ("rd", "demo", "production", "commercial")  # 企業の段階 (表示・分析専用、評価には使わない)
 
 
 def validate_entities(data):
@@ -57,6 +58,9 @@ def validate_entities(data):
         tier = entity.get("tier")
         if tier is not None and tier not in TIERS:
             raise ConfigError(f"entities[{i}].tier must be one of {TIERS}")
+        stage = entity.get("stage")
+        if stage is not None and stage not in STAGES:
+            raise ConfigError(f"entities[{i}].stage must be one of {STAGES}")
         tags = entity.get("tags")
         if tags is not None and (not isinstance(tags, list)
                                  or any(not isinstance(t, str) or not re.fullmatch(r"[a-z0-9_]+", t) for t in tags)):

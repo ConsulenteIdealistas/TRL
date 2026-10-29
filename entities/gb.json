@@ -23,7 +23,8 @@
       },
       "tags": [
         "medtech"
-      ]
+      ],
+      "stage": "commercial"
     },
     {
       "id": "oxford_instruments",
@@ -44,7 +45,8 @@
           "etching",
           "deposition"
         ]
-      }
+      },
+      "stage": "commercial"
     },
     {
       "id": "genus",
@@ -66,7 +68,8 @@
           "pig genetics"
         ],
         "pubmed": "Genus plc[Affiliation]"
-      }
+      },
+      "stage": "commercial"
     },
     {
       "id": "filtronic",
@@ -87,7 +90,8 @@
           "transceiver",
           "E-band"
         ]
-      }
+      },
+      "stage": "commercial"
     },
     {
       "id": "qinetiq",
@@ -108,7 +112,8 @@
           "robotics",
           "hypersonics"
         ]
-      }
+      },
+      "stage": "commercial"
     },
     {
       "id": "oxford_biomedica",
@@ -129,7 +134,8 @@
           "lentiviral vector",
           "cell and gene therapy"
         ]
-      }
+      },
+      "stage": "commercial"
     },
     {
       "id": "iqe",
@@ -153,7 +159,8 @@
       },
       "tags": [
         "photonics"
-      ]
+      ],
+      "stage": "commercial"
     },
     {
       "id": "puretech",
@@ -176,7 +183,8 @@
           "Founded Entities"
         ],
         "pubmed": "PureTech Health[Affiliation]"
-      }
+      },
+      "stage": "production"
     },
     {
       "id": "hutchmed",
@@ -199,7 +207,8 @@
           "savolitinib"
         ],
         "pubmed": "Hutchison MediPharma[Affiliation]"
-      }
+      },
+      "stage": "commercial"
     },
     {
       "id": "avacta",
@@ -221,7 +230,8 @@
           "AVA6000",
           "peptide drug conjugate"
         ]
-      }
+      },
+      "stage": "demo"
     },
     {
       "id": "scancell",
@@ -242,7 +252,8 @@
           "melanoma vaccine",
           "Modi-1"
         ]
-      }
+      },
+      "stage": "demo"
     },
     {
       "id": "kainos",
@@ -262,7 +273,8 @@
           "digital transformation",
           "AI solutions"
         ]
-      }
+      },
+      "stage": "commercial"
     },
     {
       "id": "seeing_machines",
@@ -282,7 +294,8 @@
           "DMS",
           "computer vision"
         ]
-      }
+      },
+      "stage": "production"
     },
     {
       "id": "renishaw",
@@ -303,7 +316,8 @@
           "machine tool probes",
           "metrology"
         ]
-      }
+      },
+      "stage": "commercial"
     },
     {
       "id": "ilika",
@@ -324,7 +338,8 @@
           "Goliath",
           "solid-state battery"
         ]
-      }
+      },
+      "stage": "demo"
     },
     {
       "id": "invinity",
@@ -344,7 +359,8 @@
           "vanadium flow battery",
           "Endurium"
         ]
-      }
+      },
+      "stage": "production"
     },
     {
       "id": "creo_medical",
@@ -369,7 +385,8 @@
           "endoscopy"
         ],
         "sponsor": "Creo Medical"
-      }
+      },
+      "stage": "production"
     },
     {
       "id": "ocado",
@@ -390,7 +407,8 @@
           "fulfillment",
           "OSP"
         ]
-      }
+      },
+      "stage": "commercial"
     },
     {
       "id": "ceres_power",
@@ -411,7 +429,8 @@
           "fuel cell",
           "electrolysis"
         ]
-      }
+      },
+      "stage": "production"
     },
     {
       "id": "netcall",
@@ -432,7 +451,8 @@
           "low-code",
           "contact centre"
         ]
-      }
+      },
+      "stage": "commercial"
     },
     {
       "id": "allergy_therapeutics",
@@ -454,7 +474,8 @@
           "immunotherapy"
         ],
         "sponsor": "Allergy Therapeutics"
-      }
+      },
+      "stage": "commercial"
     },
     {
       "id": "poolbeg",
@@ -475,7 +496,8 @@
           "influenza",
           "hVIVO"
         ]
-      }
+      },
+      "stage": "rd"
     }
   ]
 }

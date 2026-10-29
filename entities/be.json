@@ -1,48 +1,123 @@
-{"entities":[{"aliases":["UCB","UCB Pharma","ユーシービー"],"exchange":"Euronext Brussels","id":"ucb","market":"BE","name":"UCB S.A.","sector":"bio","ticker":"UCB","tier":"core","watch":{"extra_keywords":["Bimzelx","bimekizumab","Rystiggo"],"news_name":"UCB","pubmed":"UCB[Affiliation]","sponsor":"UCB Pharma"}}, {"aliases": ["argenx"], "exchange": "Euronext Brussels", "id": "argenx", "market": "BE", "name": "argenx SE", "sector": "bio", "ticker": "ARGX", "tier": "core", "watch": {"extra_keywords": ["Vyvgart", "efgartigimod", "FcRn"], "news_name": "argenx", "pubmed": "argenx[Affiliation]", "sponsor": "argenx"}}, {"aliases": ["Hyloris Pharmaceuticals", "Hyloris"], "exchange": "Euronext Brussels", "id": "hyloris", "market": "BE", "name": "Hyloris Pharmaceuticals SA", "sector": "bio", "ticker": "HYL", "tier": "core", "watch": {"extra_keywords": ["505(b)(2)", "drug reformulation", "value-added medicines"], "news_name": "Hyloris Pharmaceuticals", "sponsor": "Hyloris Pharmaceuticals"}},
 {
-  "id": "onward_medical",
-  "name": "Onward Medical N.V.",
-  "aliases": [
-    "Onward Medical",
-    "オンワード"
-  ],
-  "ticker": "ONWD",
-  "exchange": "Euronext Brussels",
-  "sector": "bio",
-  "tier": "core",
-  "market": "BE",
-  "tags": [
-    "medtech"
-  ],
-  "watch": {
-    "news_name": "Onward Medical N.V.",
-    "extra_keywords": [
-      "ARC-IM",
-      "spinal cord",
-      "ARC-EX"
-    ],
-    "sponsor": "Onward Medical"
-  }
-},
-{
-  "id": "melexis",
-  "name": "Melexis NV",
-  "aliases": [
-    "Melexis",
-    "メレクシス"
-  ],
-  "ticker": "MELE",
-  "exchange": "Euronext Brussels",
-  "sector": "semiconductor",
-  "tier": "core",
-  "market": "BE",
-  "watch": {
-    "news_name": "Melexis NV",
-    "extra_keywords": [
-      "sensor IC",
-      "Triaxis",
-      "automotive"
-    ]
-  }
+  "entities": [
+    {
+      "aliases": [
+        "UCB",
+        "UCB Pharma",
+        "ユーシービー"
+      ],
+      "exchange": "Euronext Brussels",
+      "id": "ucb",
+      "market": "BE",
+      "name": "UCB S.A.",
+      "sector": "bio",
+      "ticker": "UCB",
+      "tier": "core",
+      "watch": {
+        "extra_keywords": [
+          "Bimzelx",
+          "bimekizumab",
+          "Rystiggo"
+        ],
+        "news_name": "UCB",
+        "pubmed": "UCB[Affiliation]",
+        "sponsor": "UCB Pharma"
+      },
+      "stage": "commercial"
+    },
+    {
+      "aliases": [
+        "argenx"
+      ],
+      "exchange": "Euronext Brussels",
+      "id": "argenx",
+      "market": "BE",
+      "name": "argenx SE",
+      "sector": "bio",
+      "ticker": "ARGX",
+      "tier": "core",
+      "watch": {
+        "extra_keywords": [
+          "Vyvgart",
+          "efgartigimod",
+          "FcRn"
+        ],
+        "news_name": "argenx",
+        "pubmed": "argenx[Affiliation]",
+        "sponsor": "argenx"
+      },
+      "stage": "commercial"
+    },
+    {
+      "aliases": [
+        "Hyloris Pharmaceuticals",
+        "Hyloris"
+      ],
+      "exchange": "Euronext Brussels",
+      "id": "hyloris",
+      "market": "BE",
+      "name": "Hyloris Pharmaceuticals SA",
+      "sector": "bio",
+      "ticker": "HYL",
+      "tier": "core",
+      "watch": {
+        "extra_keywords": [
+          "505(b)(2)",
+          "drug reformulation",
+          "value-added medicines"
+        ],
+        "news_name": "Hyloris Pharmaceuticals",
+        "sponsor": "Hyloris Pharmaceuticals"
+      },
+      "stage": "production"
+    },
+    {
+      "id": "onward_medical",
+      "name": "Onward Medical N.V.",
+      "aliases": [
+        "Onward Medical",
+        "オンワード"
+      ],
+      "ticker": "ONWD",
+      "exchange": "Euronext Brussels",
+      "sector": "bio",
+      "tier": "core",
+      "market": "BE",
+      "tags": [
+        "medtech"
+      ],
+      "watch": {
+        "news_name": "Onward Medical N.V.",
+        "extra_keywords": [
+          "ARC-IM",
+          "spinal cord",
+          "ARC-EX"
+        ],
+        "sponsor": "Onward Medical"
+      },
+      "stage": "production"
+    },
+    {
+      "id": "melexis",
+      "name": "Melexis NV",
+      "aliases": [
+        "Melexis",
+        "メレクシス"
+      ],
+      "ticker": "MELE",
+      "exchange": "Euronext Brussels",
+      "sector": "semiconductor",
+      "tier": "core",
+      "market": "BE",
+      "watch": {
+        "news_name": "Melexis NV",
+        "extra_keywords": [
+          "sensor IC",
+          "Triaxis",
+          "automotive"
+        ]
+      },
+      "stage": "commercial"
+    }
+  ]
 }
-]}

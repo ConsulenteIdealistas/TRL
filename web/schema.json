@@ -73,6 +73,7 @@
     "tier",
     "market",
     "sector",
-    "tags"
+    "tags",
+    "stage"
   ]
 }

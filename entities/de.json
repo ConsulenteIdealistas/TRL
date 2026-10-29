@@ -20,7 +20,8 @@
      "Raumfahrt"
     ],
     "openalex": "I4210155862"
-   }
+   },
+   "stage": "commercial"
   },
   {
    "id": "evotec",
@@ -41,7 +42,8 @@
      "Just – Evotec Biologics"
     ],
     "openalex": "I4210130816"
-   }
+   },
+   "stage": "commercial"
   },
   {
    "id": "aixtron",
@@ -64,7 +66,8 @@
      "G10"
     ],
     "openalex": "I2801287017"
-   }
+   },
+   "stage": "commercial"
   },
   {
    "id": "siltronic",
@@ -85,7 +88,8 @@
      "Silizium",
      "300 mm"
     ]
-   }
+   },
+   "stage": "commercial"
   },
   {
    "id": "formycon",
@@ -107,7 +111,8 @@
      "FYB201",
      "Ranibizumab"
     ]
-   }
+   },
+   "stage": "production"
   },
   {
    "id": "biontech",
@@ -130,7 +135,8 @@
      "Impfstoff"
     ],
     "pubmed": "BioNTech[Affiliation]"
-   }
+   },
+   "stage": "commercial"
   },
   {
    "id": "sartorius",
@@ -152,7 +158,8 @@
      "Umsatz"
     ],
     "openalex": "I4210117289"
-   }
+   },
+   "stage": "commercial"
   },
   {
    "id": "suss_microtec",
@@ -175,7 +182,8 @@
      "Halbleiter"
     ],
     "openalex": "I4210165638"
-   }
+   },
+   "stage": "commercial"
   },
   {
    "id": "heidelberg_pharma",
@@ -197,7 +205,8 @@
      "HDP-101"
     ],
     "pubmed": "Heidelberg Pharma[Affiliation]"
-   }
+   },
+   "stage": "demo"
   },
   {
    "id": "gft",
@@ -217,7 +226,8 @@
      "banking software",
      "GenAI"
     ]
-   }
+   },
+   "stage": "commercial"
   },
   {
    "id": "basler",
@@ -238,7 +248,8 @@
      "pylon",
      "line scan"
     ]
-   }
+   },
+   "stage": "commercial"
   },
   {
    "id": "lpkf",
@@ -262,7 +273,8 @@
      "laser systems",
      "glass processing"
     ]
-   }
+   },
+   "stage": "commercial"
   },
   {
    "id": "durr",
@@ -283,7 +295,8 @@
      "EcoRP",
      "automation"
     ]
-   }
+   },
+   "stage": "commercial"
   },
   {
    "id": "kion",
@@ -304,7 +317,8 @@
      "warehouse automation",
      "Linde"
     ]
-   }
+   },
+   "stage": "commercial"
   },
   {
    "id": "teamviewer",
@@ -325,7 +339,8 @@
      "TeamViewer AI",
      "Dex"
     ]
-   }
+   },
+   "stage": "commercial"
   },
   {
    "id": "jenoptik",
@@ -349,7 +364,8 @@
      "optics",
      "semiconductor optics"
     ]
-   }
+   },
+   "stage": "commercial"
   },
   {
    "id": "pva_tepla",
@@ -370,7 +386,8 @@
      "metrology",
      "SiC"
     ]
-   }
+   },
+   "stage": "commercial"
   },
   {
    "id": "two_g_energy",
@@ -391,7 +408,8 @@
      "cogeneration",
      "hydrogen"
     ]
-   }
+   },
+   "stage": "commercial"
   },
   {
    "id": "brain_biotech",
@@ -412,7 +430,8 @@
      "bioeconomy",
      "Biocatalysts"
     ]
-   }
+   },
+   "stage": "production"
   },
   {
    "id": "eckert_ziegler",
@@ -433,7 +452,8 @@
      "GalliaPharm",
      "radiopharma"
     ]
-   }
+   },
+   "stage": "commercial"
   }
  ]
 }

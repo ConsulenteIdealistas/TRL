@@ -1,26 +1,149 @@
-{"entities": [{"aliases": ["PharmaMar", "Pharma Mar", "ファーママール"], "exchange": "Bolsa de Madrid", "id": "pharmamar", "market": "ES", "name": "PharmaMar S.A.", "sector": "bio", "ticker": "PHM", "tier": "core", "watch": {"extra_keywords": ["Zepzelca", "lurbinectedin", "Yondelis"], "news_name": "PharmaMar", "pubmed": "PharmaMar[Affiliation]", "sponsor": "PharmaMar"}}, {"aliases": ["Almirall", "アルミラル"], "exchange": "Bolsa de Madrid", "id": "almirall", "market": "ES", "name": "Almirall S.A.", "sector": "bio", "ticker": "ALM", "tier": "core", "watch": {"extra_keywords": ["Ilumetri", "tildrakizumab", "Ebglyss"], "news_name": "Almirall", "pubmed": "Almirall[Affiliation]", "sponsor": "Almirall"}}, {"aliases": ["Oryzon", "Oryzon Genomics", "オリゾン"], "exchange": "Bolsa de Madrid", "id": "oryzon", "market": "ES", "name": "Oryzon Genomics S.A.", "sector": "bio", "ticker": "ORY", "tier": "core", "watch": {"extra_keywords": ["iadademstat", "vafidemstat", "epigenetics"], "news_name": "Oryzon Genomics", "pubmed": "Oryzon[Affiliation]", "sponsor": "Oryzon Genomics"}}, {"aliases": ["Indra", "Indra Sistemas", "インドラ"], "exchange": "Bolsa de Madrid", "id": "indra", "market": "ES", "name": "Indra Sistemas S.A.", "sector": "space", "ticker": "IDR", "tier": "watch", "watch": {"extra_keywords": ["Hispasat", "satellite", "air traffic management"], "news_name": "Indra"}}, {"aliases": ["Grifols", "グリフォルス"], "exchange": "Bolsa de Madrid", "id": "grifols", "market": "ES", "name": "Grifols S.A.", "sector": "bio", "ticker": "GRF", "tier": "watch", "watch": {"extra_keywords": ["plasma", "immunoglobulin", "Biotest"], "news_name": "Grifols", "sponsor": "Grifols"}},
 {
-  "id": "atrys",
-  "name": "Atrys Health, S.A.",
-  "aliases": [
-    "Atrys Health",
-    "アトリス"
-  ],
-  "ticker": "ATRY",
-  "exchange": "Bolsa de Madrid",
-  "sector": "bio",
-  "tier": "core",
-  "market": "ES",
-  "tags": [
-    "medtech"
-  ],
-  "watch": {
-    "news_name": "Atrys Health, S.A.",
-    "extra_keywords": [
-      "teleradiology",
-      "precision medicine",
-      "radiotherapy"
-    ]
-  }
+  "entities": [
+    {
+      "aliases": [
+        "PharmaMar",
+        "Pharma Mar",
+        "ファーママール"
+      ],
+      "exchange": "Bolsa de Madrid",
+      "id": "pharmamar",
+      "market": "ES",
+      "name": "PharmaMar S.A.",
+      "sector": "bio",
+      "ticker": "PHM",
+      "tier": "core",
+      "watch": {
+        "extra_keywords": [
+          "Zepzelca",
+          "lurbinectedin",
+          "Yondelis"
+        ],
+        "news_name": "PharmaMar",
+        "pubmed": "PharmaMar[Affiliation]",
+        "sponsor": "PharmaMar"
+      },
+      "stage": "commercial"
+    },
+    {
+      "aliases": [
+        "Almirall",
+        "アルミラル"
+      ],
+      "exchange": "Bolsa de Madrid",
+      "id": "almirall",
+      "market": "ES",
+      "name": "Almirall S.A.",
+      "sector": "bio",
+      "ticker": "ALM",
+      "tier": "core",
+      "watch": {
+        "extra_keywords": [
+          "Ilumetri",
+          "tildrakizumab",
+          "Ebglyss"
+        ],
+        "news_name": "Almirall",
+        "pubmed": "Almirall[Affiliation]",
+        "sponsor": "Almirall"
+      },
+      "stage": "commercial"
+    },
+    {
+      "aliases": [
+        "Oryzon",
+        "Oryzon Genomics",
+        "オリゾン"
+      ],
+      "exchange": "Bolsa de Madrid",
+      "id": "oryzon",
+      "market": "ES",
+      "name": "Oryzon Genomics S.A.",
+      "sector": "bio",
+      "ticker": "ORY",
+      "tier": "core",
+      "watch": {
+        "extra_keywords": [
+          "iadademstat",
+          "vafidemstat",
+          "epigenetics"
+        ],
+        "news_name": "Oryzon Genomics",
+        "pubmed": "Oryzon[Affiliation]",
+        "sponsor": "Oryzon Genomics"
+      },
+      "stage": "demo"
+    },
+    {
+      "aliases": [
+        "Indra",
+        "Indra Sistemas",
+        "インドラ"
+      ],
+      "exchange": "Bolsa de Madrid",
+      "id": "indra",
+      "market": "ES",
+      "name": "Indra Sistemas S.A.",
+      "sector": "space",
+      "ticker": "IDR",
+      "tier": "watch",
+      "watch": {
+        "extra_keywords": [
+          "Hispasat",
+          "satellite",
+          "air traffic management"
+        ],
+        "news_name": "Indra"
+      },
+      "stage": "commercial"
+    },
+    {
+      "aliases": [
+        "Grifols",
+        "グリフォルス"
+      ],
+      "exchange": "Bolsa de Madrid",
+      "id": "grifols",
+      "market": "ES",
+      "name": "Grifols S.A.",
+      "sector": "bio",
+      "ticker": "GRF",
+      "tier": "watch",
+      "watch": {
+        "extra_keywords": [
+          "plasma",
+          "immunoglobulin",
+          "Biotest"
+        ],
+        "news_name": "Grifols",
+        "sponsor": "Grifols"
+      },
+      "stage": "commercial"
+    },
+    {
+      "id": "atrys",
+      "name": "Atrys Health, S.A.",
+      "aliases": [
+        "Atrys Health",
+        "アトリス"
+      ],
+      "ticker": "ATRY",
+      "exchange": "Bolsa de Madrid",
+      "sector": "bio",
+      "tier": "core",
+      "market": "ES",
+      "tags": [
+        "medtech"
+      ],
+      "watch": {
+        "news_name": "Atrys Health, S.A.",
+        "extra_keywords": [
+          "teleradiology",
+          "precision medicine",
+          "radiotherapy"
+        ]
+      },
+      "stage": "commercial"
+    }
+  ]
 }
-]}

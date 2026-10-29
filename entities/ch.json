@@ -22,7 +22,8 @@
           "aprocitentan"
         ],
         "pubmed": "Idorsia[Affiliation]"
-      }
+      },
+      "stage": "production"
     },
     {
       "id": "lonza",
@@ -44,7 +45,8 @@
           "biologics manufacturing"
         ],
         "pubmed": "Lonza[Affiliation]"
-      }
+      },
+      "stage": "commercial"
     },
     {
       "id": "comet",
@@ -66,7 +68,8 @@
           "X-ray inspection",
           "plasma control"
         ]
-      }
+      },
+      "stage": "commercial"
     },
     {
       "id": "basilea",
@@ -89,7 +92,8 @@
           "antifungal"
         ],
         "pubmed": "Basilea Pharmaceutica[Affiliation]"
-      }
+      },
+      "stage": "commercial"
     },
     {
       "id": "molecular_partners",
@@ -111,7 +115,8 @@
           "radio DARPin"
         ],
         "pubmed": "Molecular Partners[Affiliation]"
-      }
+      },
+      "stage": "demo"
     },
     {
       "id": "newron",
@@ -134,7 +139,8 @@
           "schizophrenia"
         ],
         "pubmed": "Newron Pharmaceuticals[Affiliation]"
-      }
+      },
+      "stage": "production"
     },
     {
       "id": "kardex",
@@ -155,7 +161,8 @@
           "shuttle",
           "intralogistics"
         ]
-      }
+      },
+      "stage": "commercial"
     },
     {
       "id": "interroll",
@@ -176,7 +183,8 @@
           "drum motors",
           "sorters"
         ]
-      }
+      },
+      "stage": "commercial"
     },
     {
       "id": "santhera",
@@ -198,7 +206,8 @@
           "Duchenne"
         ],
         "sponsor": "Santhera Pharmaceuticals"
-      }
+      },
+      "stage": "production"
     },
     {
       "id": "kuros",
@@ -222,7 +231,8 @@
           "bone graft",
           "Fibrin-PTH"
         ]
-      }
+      },
+      "stage": "production"
     }
   ]
 }

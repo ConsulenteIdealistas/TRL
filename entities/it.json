@@ -19,7 +19,8 @@
           "Vega E",
           "lanciatore"
         ]
-      }
+      },
+      "stage": "commercial"
     },
     {
       "id": "diasorin",
@@ -41,7 +42,8 @@
           "immunoassay",
           "molecular diagnostics"
         ]
-      }
+      },
+      "stage": "commercial"
     },
     {
       "id": "technoprobe",
@@ -61,7 +63,8 @@
           "probe cards",
           "semiconductor testing"
         ]
-      }
+      },
+      "stage": "commercial"
     },
     {
       "id": "philogen",
@@ -83,7 +86,8 @@
           "immunocytokine"
         ],
         "pubmed": "Philogen[Affiliation]"
-      }
+      },
+      "stage": "demo"
     }
   ]
 }

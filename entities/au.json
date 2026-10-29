@@ -22,7 +22,8 @@
           "theranostics"
         ],
         "pubmed": "Telix Pharmaceuticals[Affiliation]"
-      }
+      },
+      "stage": "commercial"
     },
     {
       "id": "mesoblast",
@@ -44,7 +45,8 @@
           "remestemcel-L",
           "stem cell therapy"
         ]
-      }
+      },
+      "stage": "production"
     },
     {
       "id": "eos",
@@ -64,7 +66,8 @@
           "satellite tracking",
           "defence"
         ]
-      }
+      },
+      "stage": "commercial"
     },
     {
       "id": "neuren",
@@ -86,7 +89,8 @@
           "trofinetide",
           "DAYBUE"
         ]
-      }
+      },
+      "stage": "commercial"
     },
     {
       "id": "weebit_nano",
@@ -107,7 +111,8 @@
           "resistive RAM",
           "embedded memory"
         ]
-      }
+      },
+      "stage": "demo"
     },
     {
       "id": "brainchip",
@@ -129,7 +134,8 @@
           "neuromorphic",
           "edge AI"
         ]
-      }
+      },
+      "stage": "demo"
     },
     {
       "id": "clarity",
@@ -152,7 +158,8 @@
           "copper-64"
         ],
         "pubmed": "Clarity Pharmaceuticals[Affiliation]"
-      }
+      },
+      "stage": "demo"
     },
     {
       "id": "racura",
@@ -175,7 +182,8 @@
           "acute myeloid leukemia"
         ],
         "pubmed": "Race Oncology[Affiliation]"
-      }
+      },
+      "stage": "demo"
     },
     {
       "id": "paradigm",
@@ -197,7 +205,8 @@
           "pentosan polysulfate",
           "osteoarthritis"
         ]
-      }
+      },
+      "stage": "demo"
     },
     {
       "id": "appen",
@@ -217,7 +226,8 @@
           "data annotation",
           "AI lifecycle"
         ]
-      }
+      },
+      "stage": "commercial"
     },
     {
       "id": "novonix",
@@ -238,7 +248,8 @@
           "Riverside",
           "synthetic graphite"
         ]
-      }
+      },
+      "stage": "production"
     },
     {
       "id": "polynovo",
@@ -263,7 +274,8 @@
           "wound"
         ],
         "sponsor": "PolyNovo"
-      }
+      },
+      "stage": "production"
     },
     {
       "id": "nanosonics",
@@ -287,7 +299,8 @@
           "CORIS",
           "disinfection"
         ]
-      }
+      },
+      "stage": "commercial"
     },
     {
       "id": "droneshield",
@@ -308,7 +321,8 @@
           "DroneGun",
           "RfOne"
         ]
-      }
+      },
+      "stage": "commercial"
     },
     {
       "id": "silex",
@@ -329,7 +343,8 @@
           "uranium enrichment",
           "GLE"
         ]
-      }
+      },
+      "stage": "demo"
     },
     {
       "id": "archer_materials",
@@ -350,7 +365,8 @@
           "quantum chip",
           "biochip"
         ]
-      }
+      },
+      "stage": "rd"
     },
     {
       "id": "talga",
@@ -371,7 +387,8 @@
           "graphite anode",
           "Talnode"
         ]
-      }
+      },
+      "stage": "demo"
     },
     {
       "id": "vulcan_energy",
@@ -392,7 +409,8 @@
           "geothermal",
           "Lionheart"
         ]
-      }
+      },
+      "stage": "demo"
     }
   ]
 }

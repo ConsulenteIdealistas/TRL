@@ -47,7 +47,8 @@
      ],
      "type": "debris_removal_service"
     }
-   ]
+   ],
+   "stage": "production"
   },
   {
    "id": "ispace",
@@ -99,7 +100,8 @@
      ],
      "type": "lunar_rover"
     }
-   ]
+   ],
+   "stage": "production"
   },
   {
    "id": "synspective",
@@ -143,7 +145,8 @@
      ],
      "type": "data_service"
     }
-   ]
+   ],
+   "stage": "production"
   },
   {
    "id": "oncolys",
@@ -183,7 +186,8 @@
      ],
      "type": "drug_candidate"
     }
-   ]
+   ],
+   "stage": "demo"
   },
   {
    "id": "reprocell",
@@ -241,7 +245,8 @@
      ],
      "type": "cell_therapy"
     }
-   ]
+   ],
+   "stage": "production"
   },
   {
    "id": "peptidream",
@@ -297,7 +302,8 @@
      ],
      "type": "drug_candidate"
     }
-   ]
+   ],
+   "stage": "commercial"
   },
   {
    "id": "qps",
@@ -325,7 +331,8 @@
      ],
      "type": "sar_satellite"
     }
-   ]
+   ],
+   "stage": "production"
   },
   {
    "id": "axelspace",
@@ -371,7 +378,8 @@
      ],
      "type": "satellite_platform"
     }
-   ]
+   ],
+   "stage": "production"
   },
   {
    "id": "sanbio",
@@ -404,7 +412,8 @@
      ],
      "type": "regenerative_cell_medicine"
     }
-   ]
+   ],
+   "stage": "demo"
   },
   {
    "id": "healios",
@@ -435,7 +444,8 @@
      ],
      "type": "somatic_stem_cell_therapy"
     }
-   ]
+   ],
+   "stage": "demo"
   },
   {
    "id": "stella_pharma",
@@ -467,7 +477,8 @@
      ],
      "type": "bnct_drug"
     }
-   ]
+   ],
+   "stage": "demo"
   },
   {
    "id": "kringle",
@@ -498,7 +509,8 @@
      ],
      "type": "hgf_protein_therapy"
     }
-   ]
+   ],
+   "stage": "demo"
   },
   {
    "id": "stemrim",
@@ -529,7 +541,8 @@
      ],
      "type": "regenerative_drug"
     }
-   ]
+   ],
+   "stage": "demo"
   },
   {
    "id": "pksha",
@@ -565,7 +578,8 @@
      ],
      "type": "ai_algorithm"
     }
-   ]
+   ],
+   "stage": "commercial"
   },
   {
    "id": "fronteo",
@@ -594,7 +608,8 @@
      ],
      "type": "ai_platform"
     }
-   ]
+   ],
+   "stage": "commercial"
   },
   {
    "id": "exawizards",
@@ -624,7 +639,8 @@
      ],
      "type": "ai_platform"
     }
-   ]
+   ],
+   "stage": "commercial"
   },
   {
    "id": "heroz",
@@ -653,7 +669,8 @@
      ],
      "type": "ai_engine"
     }
-   ]
+   ],
+   "stage": "production"
   },
   {
    "id": "cyberdyne",
@@ -688,7 +705,8 @@
    "tags": [
     "robotics",
     "medtech"
-   ]
+   ],
+   "stage": "production"
   },
   {
    "id": "lasertec",
@@ -718,7 +736,8 @@
      ],
      "type": "mask_inspection_system"
     }
-   ]
+   ],
+   "stage": "commercial"
   },
   {
    "id": "socionext",
@@ -748,7 +767,8 @@
      ],
      "type": "soc_design"
     }
-   ]
+   ],
+   "stage": "commercial"
   },
   {
    "id": "thine",
@@ -777,7 +797,8 @@
      ],
      "type": "interface_lsi"
     }
-   ]
+   ],
+   "stage": "commercial"
   },
   {
    "id": "torex",
@@ -806,7 +827,8 @@
      ],
      "type": "power_ic"
     }
-   ]
+   ],
+   "stage": "commercial"
   },
   {
    "id": "harmonic_drive",
@@ -831,7 +853,8 @@
      "減速機",
      "アクチュエータ"
     ]
-   }
+   },
+   "stage": "commercial"
   },
   {
    "id": "nabtesco",
@@ -854,7 +877,8 @@
      "精密減速機",
      "RV減速機"
     ]
-   }
+   },
+   "stage": "commercial"
   },
   {
    "id": "ckd",
@@ -881,7 +905,8 @@
      "空気圧機器",
      "電動アクチュエータ"
     ]
-   }
+   },
+   "stage": "commercial"
   },
   {
    "id": "sanyo_denki",
@@ -905,7 +930,8 @@
      "SANMOTION",
      "冷却ファン"
     ]
-   }
+   },
+   "stage": "commercial"
   },
   {
    "id": "nippon_thompson",
@@ -933,7 +959,8 @@
      "リニアガイド",
      "IKO"
     ]
-   }
+   },
+   "stage": "commercial"
   },
   {
    "id": "hirata",
@@ -959,7 +986,8 @@
      "生産システム",
      "搬送ロボット"
     ]
-   }
+   },
+   "stage": "commercial"
   },
   {
    "id": "optex_group",
@@ -984,7 +1012,8 @@
      "シーシーエス",
      "検査照明"
     ]
-   }
+   },
+   "stage": "commercial"
   },
   {
    "id": "toyo_kanetsu",
@@ -1008,7 +1037,8 @@
      "物流システム",
      "仕分け"
     ]
-   }
+   },
+   "stage": "commercial"
   },
   {
    "id": "kuroda_precision",
@@ -1030,7 +1060,8 @@
      "ボールねじ",
      "アクチュエータ"
     ]
-   }
+   },
+   "stage": "commercial"
   },
   {
    "id": "nachi_fujikoshi",
@@ -1054,7 +1085,8 @@
      "産業用ロボット",
      "軸受"
     ]
-   }
+   },
+   "stage": "commercial"
   },
   {
    "id": "daihen",
@@ -1077,7 +1109,8 @@
      "溶接ロボット",
      "アーク溶接"
     ]
-   }
+   },
+   "stage": "commercial"
   },
   {
    "id": "tsubakimoto",
@@ -1101,7 +1134,8 @@
      "減速機",
      "チェーン"
     ]
-   }
+   },
+   "stage": "commercial"
   },
   {
    "id": "maxell",
@@ -1124,7 +1158,8 @@
      "全固体電池",
      "PSB"
     ]
-   }
+   },
+   "stage": "commercial"
   },
   {
    "id": "ohara",
@@ -1148,7 +1183,8 @@
      "固体電解質",
      "光学ガラス"
     ]
-   }
+   },
+   "stage": "commercial"
   },
   {
    "id": "santec",
@@ -1175,7 +1211,8 @@
      "波長可変レーザー",
      "光部品"
     ]
-   }
+   },
+   "stage": "commercial"
   },
   {
    "id": "seikoh_giken",
@@ -1200,7 +1237,8 @@
      "光コネクタ",
      "フェルール"
     ]
-   }
+   },
+   "stage": "commercial"
   },
   {
    "id": "asahi_intecc",
@@ -1226,7 +1264,8 @@
      "カテーテル"
     ],
     "sponsor": "Asahi Intecc"
-   }
+   },
+   "stage": "commercial"
   },
   {
    "id": "japan_lifeline",
@@ -1252,7 +1291,8 @@
      "人工弁"
     ],
     "sponsor": "Japan Lifeline"
-   }
+   },
+   "stage": "commercial"
   },
   {
    "id": "jms",
@@ -1278,7 +1318,8 @@
      "血液透析装置",
      "輸液ポンプ"
     ]
-   }
+   },
+   "stage": "commercial"
   },
   {
    "id": "mizuho_medy",
@@ -1303,7 +1344,8 @@
      "POCT",
      "遺伝子検査"
     ]
-   }
+   },
+   "stage": "commercial"
   }
  ]
 }

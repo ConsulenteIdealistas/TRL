@@ -126,6 +126,7 @@ def build_site_data(store, cfg, now=None):
     ent_sectors = {e["id"]: e.get("sector") for e in (cfg.get("entities") or {}).get("entities", [])}
     ent_tags = {e["id"]: ([t for t in e["tags"] if isinstance(t, str)] if isinstance(e.get("tags"), list) else [])
                 for e in (cfg.get("entities") or {}).get("entities", [])}
+    ent_stages = {e["id"]: e.get("stage") for e in (cfg.get("entities") or {}).get("entities", [])}
     queue = {}
     for q in store.list_queue():
         if str(q["reason"] or "").startswith(LEGACY_INFRA_QUEUE_PREFIX):
@@ -157,7 +158,8 @@ def build_site_data(store, cfg, now=None):
                              "tier": ent_tiers.get(e["entity_id"], "core"),
                              "market": ent_markets.get(e["entity_id"], "JP"),
                              "sector": ent_sectors.get(e["entity_id"]),
-                             "tags": ent_tags.get(e["entity_id"], [])})
+                             "tags": ent_tags.get(e["entity_id"], []),
+                             "stage": ent_stages.get(e["entity_id"])})
         cands.append({
             "id": cid, "title": c["title"], "source": c["source"], "published": c["published"], "url": c["url"],
             "abstract": c["abstract"] or "", "fields": c["fields"],

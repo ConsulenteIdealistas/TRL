@@ -28,6 +28,8 @@ const MO = ["JP", "US", "GB", "CH", "DE", "DK", "SE", "IT", "CA", "AU", "ES", "F
 const CL = {space: "宇宙", bio: "バイオ", semiconductor: "半導体", ai: "AI", robotics: "ロボティクス", energy: "エネルギー・蓄電池", quantum: "量子技術"};
 const CO = ["space", "bio", "semiconductor", "ai", "robotics", "energy", "quantum"];  // 分野別の並び
 const TL = {photonics: "フォトニクス", medtech: "医療機器"};  // タグ (分野と違い複数付けられる第二の分類)
+const STG = {rd: "研究開発型", demo: "実証型", production: "量産型", commercial: "商業化型"};  // 企業の段階 (表示・分析専用)
+const STGO = ["rd", "demo", "production", "commercial"];
 const tagLabel = t => CL[t] || TL[t] || t;
 const primEnt = p => p.entities.find(e => e.strength === "strong") || p.entities[0] || null;
 const marketOf = p => { const e = primEnt(p); return e ? e.market || "JP" : null; };
@@ -49,17 +51,18 @@ function inR(t, f) {
 }
 function haystack(p) {
   const items = p.long ? Object.values(p.long.items).flatMap(i => i.missing_info) : [];
-  const facets = p.entities.flatMap(e => [...(e.tags || []), ...(e.tags || []).map(tagLabel), CL[e.sector] || "", ML[e.market || "JP"] || ""]);
+  const facets = p.entities.flatMap(e => [...(e.tags || []), ...(e.tags || []).map(tagLabel), CL[e.sector] || "", ML[e.market || "JP"] || "", STG[e.stage] || ""]);
   return [p.title, p.title_ja || "", p.source, p.abstract, p.abstract_ja || "", ...(p.fields || []), ...p.entities.map(e => e.name), ...facets, ...items].join(" ").toLowerCase();
 }
 function filtered() {
   const q = $("#q").value.trim().toLowerCase(), s = $("#fs").value, t = $("#ft").value, o = $("#fo").value, fd = $("#fd").value;
-  const fm = $("#fm").value, fc = $("#fc").value, fg = $("#fg").value;
+  const fm = $("#fm").value, fc = $("#fc").value, fg = $("#fg").value, fst = $("#fst").value;
   const r = P.filter(p => (!q || haystack(p).includes(q)) && (s === "all" || p.display_status === s) && inR(lvl(p), t)
     && (fd === "all" || (fd === "none" ? !dirOf(p) : dirOf(p) === fd))
     && (fm === "all" || p.entities.some(e => (e.market || "JP") === fm))
     && (fc === "all" || p.entities.some(e => e.sector === fc))
-    && (fg === "all" || p.entities.some(e => (e.tags || []).includes(fg))));
+    && (fg === "all" || p.entities.some(e => (e.tags || []).includes(fg)))
+    && (fst === "all" || p.entities.some(e => e.stage === fst)));
   const byStatus = (a, b) => (SO[a.display_status] - SO[b.display_status])
     || ((ok(lvl(b)) ? lvl(b) : -1) - (ok(lvl(a)) ? lvl(a) : -1))
     || String(b.published || "").localeCompare(String(a.published || ""));
@@ -82,6 +85,7 @@ function facetOptions() {
   fill("#fm", new Set(P.flatMap(p => p.entities.map(e => e.market || "JP"))), MO, ML);
   fill("#fc", new Set(P.flatMap(p => p.entities.map(e => e.sector).filter(Boolean))), CO, CL);
   fill("#fg", new Set(P.flatMap(p => p.entities.flatMap(e => e.tags || []))), [...CO, "photonics", "medtech"], {...CL, ...TL});
+  fill("#fst", new Set(P.flatMap(p => p.entities.map(e => e.stage).filter(Boolean))), STGO, STG);
 }
 function sc(p, k) { const it = p.long && p.long.items[k]; return it ? it.score : null; }
 function fmtScore(v) { return typeof v === "number" && isFinite(v) ? v : "—"; }
@@ -130,7 +134,7 @@ function detail() {
 <section class="ds"><h4>材料の方向性</h4>${L && L.direction ? `<p>${dirB(p)} ${esc(L.direction.reason || "")}</p><p class="hint">方向性は点数やTRLとは独立に、資料が示す出来事の追い風・逆風を判定したものです。</p>` : `<p class="hint">未判定です（方向を決める出来事が資料に無いか、旧基準の評価です）。</p>`}</section>
 <section class="ds"><h4>不足している観点</h4>${L && L.critical_missing.length ? `<p class="m" style="color:#a96500;font-weight:700">必須項目の不足: ${L.critical_missing.map(k => esc(label(k))).join("、")}</p>` : ""}${pts(missAll, 1)}${waitAll.length ? `<p class="hint">結果待ち（不足ではなく、治験の結果公表など時間の経過でしか解けないもの）:</p><ul class="pts">${waitAll.map(x => `<li><b>◷</b><span>${esc(x)}</span></li>`).join("")}</ul>` : ""}${q && q.next_sources.length ? `<p class="hint">次に確認する情報源: ${q.next_sources.map(esc).join(" / ")}</p>` : ""}${q && q.reeval_conditions.length ? `<p class="hint">再評価の条件: ${q.reeval_conditions.map(esc).join(" / ")}</p>` : ""}</section>
 ${p.display_status === "error" && LL && LL.errors.length ? `<section class="ds"><h4>処理上の注意</h4>${pts(LL.errors, 1)}</section>` : ""}
-<section class="ds"><h4>関連企業</h4>${p.entities.map(e => `<span class="chip">${esc(e.name)}${e.product_name ? "（" + esc(e.product_name) + "）" : ""}${e.market ? "・" + esc(ML[e.market] || e.market) : ""}${e.sector ? "・" + esc(CL[e.sector] || e.sector) : ""}${(e.tags || []).length ? "・" + e.tags.map(t => esc(tagLabel(t))).join("・") : ""} ${e.strength === "strong" ? "" : "・弱"}${e.tier === "watch" ? "・ウォッチ" : ""}</span>`).join("") || '<span class="hint">関連企業は未特定です。</span>'}</section>
+<section class="ds"><h4>関連企業</h4>${p.entities.map(e => `<span class="chip">${esc(e.name)}${e.product_name ? "（" + esc(e.product_name) + "）" : ""}${e.market ? "・" + esc(ML[e.market] || e.market) : ""}${e.sector ? "・" + esc(CL[e.sector] || e.sector) : ""}${(e.tags || []).length ? "・" + e.tags.map(t => esc(tagLabel(t))).join("・") : ""}${e.stage ? "・" + esc(STG[e.stage] || e.stage) : ""} ${e.strength === "strong" ? "" : "・弱"}${e.tier === "watch" ? "・ウォッチ" : ""}</span>`).join("") || '<span class="hint">関連企業は未特定です。</span>'}</section>
 <section class="ds"><h4>調査メモ</h4><textarea id="note" aria-label="調査メモ" placeholder="仮説、確認したい点、次の調査などを記録...">${esc(p.id in noteDrafts ? noteDrafts[p.id] : getNote(p.id))}</textarea><div class="acts"><button class="btn sec" type="button" id="save">メモを保存</button><a class="btn src" href="${esc(safeUrl(p.url))}" target="_blank" rel="noopener noreferrer">原文サイトを開く ↗</a></div><p id="msg" class="hint" aria-live="polite">メモはこの端末のブラウザにだけ保存されます。</p></section></div>`;
 }
 function render() {
@@ -245,9 +249,9 @@ $("#q").addEventListener("keydown", e => {
 });
 $("#q").addEventListener("blur", () => { sugHideTimer = setTimeout(hideSug, 120); });
 $("#sf").addEventListener("submit", hideSug);
-["#fs", "#ft", "#fo", "#fd", "#fm", "#fc", "#fg"].forEach(s => $(s).addEventListener("change", render));
+["#fs", "#ft", "#fo", "#fd", "#fm", "#fc", "#fg", "#fst"].forEach(s => $(s).addEventListener("change", render));
 $("#fl").addEventListener("change", () => { LANG = $("#fl").value; try { localStorage.setItem("trl-lang", LANG); } catch (e) { /* 保存できなくても切替は効く */ } render(); });
-$("#rs").addEventListener("click", () => { $("#q").value = ""; $("#fs").value = "all"; $("#ft").value = "all"; $("#fo").value = "status"; $("#fd").value = "all"; $("#fm").value = "all"; $("#fc").value = "all"; $("#fg").value = "all"; sel = P[0] ? P[0].id : null; render(); });
+$("#rs").addEventListener("click", () => { $("#q").value = ""; $("#fs").value = "all"; $("#ft").value = "all"; $("#fo").value = "status"; $("#fd").value = "all"; $("#fm").value = "all"; $("#fc").value = "all"; $("#fg").value = "all"; $("#fst").value = "all"; sel = P[0] ? P[0].id : null; render(); });
 $("#list").addEventListener("click", e => { const c = e.target.closest("[data-id]"); if (c) { sel = c.dataset.id; render(); } });
 $("#det").addEventListener("input", e => { if (e.target.id === "note" && sel) noteDrafts[sel] = e.target.value; });
 $("#det").addEventListener("click", e => {

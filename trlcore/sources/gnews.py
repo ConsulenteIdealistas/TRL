@@ -47,7 +47,9 @@ def parse_feed(xml_bytes, source="gnews"):
         link = (item.findtext("link") or "").strip()
         if not title or not link:
             continue
-        media = (item.findtext("source") or "").strip()
+        src_el = item.find("source")
+        media = (src_el.text or "").strip() if src_el is not None else ""
+        media_url = (src_el.get("url") or "").strip() if src_el is not None else ""
         if any(p in media for p in EXCLUDED_MEDIA_PARTS):
             continue
         if any(p in title for p in EXCLUDED_TITLE_PARTS):
@@ -67,6 +69,7 @@ def parse_feed(xml_bytes, source="gnews"):
             "source": source, "source_id": sid,
             "title": title, "abstract": abstract,
             "url": link, "published": published,
+            "media_url": media_url,
             "fields": [media] if media else [],
             "affiliations": [], "info_type": "news",
         })

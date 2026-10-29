@@ -293,6 +293,7 @@ class NewSourceParseTests(unittest.TestCase):
         items = gnews.parse_feed(GNEWS_XML)
         self.assertEqual(len(items), 2)  # BigGo の転載コラムは媒体フィルタで除外
         r = items[0]
+        self.assertEqual(r["media_url"], "https://example.com")  # 媒体サイト (source url 属性)
         self.assertEqual((r["source"], r["info_type"], r["published"]), ("gnews", "news", "2026-10-18"))
         self.assertIn("配信元: Example News", r["abstract"])
         self.assertTrue(r["url"].startswith("https://news.google.com/"))
@@ -1336,6 +1337,30 @@ class NewsPoolTests(unittest.TestCase):
         rel2 = store.related_news(prid, AS_OF)
         self.assertEqual(len(rel2), 2)  # 報道(gnews)と企業発表(prtimes)が擦り合わさる
         self.assertEqual({r["origin"] for r in rel2}, {"報道", "企業発表"})
+        store.close()
+
+    def test_news_media_url_and_site_search_link(self):
+        # Google News の記事URLは直接開けないため、媒体URLの保存とサイト側の検索リンク付けを担保する
+        from trlcore.site import _news_for_site
+        store = Store(self.path)
+        paper, _ = normalize(raw(sid="2610.7701", affiliations=["Astroscale Holdings Inc."]),
+                             "2026-10-20T00:00:00+00:00")
+        pid, _ = store.upsert_candidate(paper, "r0")
+        store.set_entities(pid, link_entities(paper, CFG.get("entities", {})))
+        n = self.news_raw("n77", "アストロスケールが大型契約を獲得")
+        n["url"] = "https://news.google.com/rss/articles/TOKEN"
+        n["media_url"] = "https://www.nikkei.com"
+        news, _ = normalize(n, "2026-10-20T00:00:00+00:00")
+        nid, _ = store.upsert_candidate(news, "r0")
+        store.set_entities(nid, link_entities(news, CFG.get("entities", {})))
+        rel = store.related_news(pid, AS_OF)
+        self.assertEqual(len(rel), 1)
+        self.assertEqual(rel[0]["media_url"], "https://www.nikkei.com")
+        site_n = _news_for_site(rel[0])
+        self.assertTrue(site_n["via_google_news"])
+        self.assertIn("google.com/search?q=", site_n["search_url"])
+        from urllib.parse import unquote_plus
+        self.assertIn("大型契約", unquote_plus(site_n["search_url"]))
         store.close()
 
     def test_evaluate_one_includes_related(self):

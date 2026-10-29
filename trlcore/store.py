@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS candidates(
   doi TEXT, published TEXT, retrieved_at TEXT, fields_json TEXT, info_type TEXT,
   status TEXT NOT NULL DEFAULT 'new', screen_reason TEXT, last_eval_at TEXT,
   retry_count INTEGER NOT NULL DEFAULT 0, first_seen_run TEXT,
-  title_ja TEXT, abstract_ja TEXT, translation_src TEXT);
+  title_ja TEXT, abstract_ja TEXT, translation_src TEXT, media_url TEXT);
 CREATE TABLE IF NOT EXISTS identifiers(key TEXT PRIMARY KEY, candidate_id TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS evaluations(
   id INTEGER PRIMARY KEY AUTOINCREMENT, run_id TEXT, candidate_id TEXT, kind TEXT, as_of TEXT,
@@ -78,7 +78,7 @@ class Store:
         if "extra_json" not in cols:
             self.conn.execute("ALTER TABLE evaluations ADD COLUMN extra_json TEXT")
         ccols = {r[1] for r in self.conn.execute("PRAGMA table_info(candidates)")}
-        for col in ("title_ja", "abstract_ja", "translation_src", "material_updated_at"):
+        for col in ("title_ja", "abstract_ja", "translation_src", "material_updated_at", "media_url"):
             if col not in ccols:
                 self.conn.execute(f"ALTER TABLE candidates ADD COLUMN {col} TEXT")
         self.conn.commit()
@@ -120,6 +120,8 @@ class Store:
                 c.execute("UPDATE candidates SET abstract=? WHERE id=?", (rec["abstract"], existing))
             if not cur["doi"] and rec.get("doi"):
                 c.execute("UPDATE candidates SET doi=? WHERE id=?", (rec["doi"], existing))
+            if not cur.get("media_url") and rec.get("media_url"):
+                c.execute("UPDATE candidates SET media_url=? WHERE id=?", (rec["media_url"], existing))
             # 治験登録はレジストリ側で内容が更新される(結果公表・ステータス変更)。
             # 要旨が変わったら取り込み、材料更新の印を付ける(優先再評価の対象になる)。
             if rec.get("source") == "trials" and rec.get("abstract") and cur["abstract"] != rec["abstract"]:
@@ -130,9 +132,10 @@ class Store:
         cid = "c_" + hashlib.sha1(rec["keys"][0].encode()).hexdigest()[:12]
         c.execute(
             "INSERT INTO candidates(id,title,abstract,url,source,source_id,doi,published,retrieved_at,"
-            "fields_json,info_type,status,first_seen_run) VALUES(?,?,?,?,?,?,?,?,?,?,?,'new',?)",
+            "fields_json,info_type,status,first_seen_run,media_url) VALUES(?,?,?,?,?,?,?,?,?,?,?,'new',?,?)",
             (cid, rec["title"], rec["abstract"], rec["url"], rec["source"], rec["source_id"], rec.get("doi"),
-             rec["published"], rec["retrieved_at"], _j(rec["fields"]), rec["info_type"], run_id))
+             rec["published"], rec["retrieved_at"], _j(rec["fields"]), rec["info_type"], run_id,
+             rec.get("media_url") or ""))
         for k in rec["keys"]:
             c.execute("INSERT OR IGNORE INTO identifiers VALUES(?,?)", (k, cid))
         c.commit()
@@ -255,7 +258,7 @@ class Store:
         """
         start = (as_of - timedelta(days=window_days)).isoformat()
         rows = self.conn.execute(
-            "SELECT DISTINCT n.title, n.published, n.url, n.fields_json, n.source FROM candidates n "
+            "SELECT DISTINCT n.title, n.published, n.url, n.fields_json, n.source, n.media_url FROM candidates n "
             "JOIN candidate_entities ne ON ne.candidate_id = n.id "
             "JOIN candidate_entities ce ON ce.entity_id = ne.entity_id "
             "WHERE ce.candidate_id = ? AND n.id != ? AND n.info_type = 'news' "
@@ -267,6 +270,7 @@ class Store:
             fields = json.loads(r["fields_json"] or "[]")
             out.append({"title": r["title"], "published": r["published"], "url": r["url"],
                         "media": fields[0] if fields else "",
+                        "media_url": r["media_url"] or "",
                         "origin": "企業発表" if r["source"] == "prtimes" else "報道"})
         return out
 

@@ -3,6 +3,7 @@
 import json
 from datetime import datetime, timezone
 from pathlib import Path
+from urllib.parse import quote_plus
 from .config import ROOT
 from .dates import parse_date
 from .pipeline import select_for_eval
@@ -19,6 +20,19 @@ TECH_ITEMS = ("technology_readiness", "technological_advantage")
 
 
 LEGACY_INFRA_QUEUE_PREFIX = "evaluation_error: HttpError"
+
+
+def _news_for_site(n):
+    """関連ニュースの表示用に、タイトル検索URLを添える。
+
+    Google News の記事URL(news.google.com のトークン)は直接開くとブロックされるため、
+    表示側ではタイトル検索で元記事に辿り着けるようにする。媒体サイトURL (media_url)
+    はフィードに含まれていれば収集時に保存してある。
+    """
+    out = dict(n)
+    out["search_url"] = "https://www.google.com/search?q=" + quote_plus(n.get("title") or "")
+    out["via_google_news"] = "news.google.com" in (n.get("url") or "")
+    return out
 
 
 def _split_missing(texts):
@@ -144,7 +158,7 @@ def build_site_data(store, cfg, now=None):
             "display_status": display_status(c, long_ev, store),
             "next_up": cid in next_ids and long_ev is None and event_ev is None,
             "long": long_ev, "event": event_ev, "entities": ents,
-            "related_news": store.related_news(cid, pool_as_of) if pool_as_of else [],
+            "related_news": [_news_for_site(n) for n in store.related_news(cid, pool_as_of)] if pool_as_of else [],
             "related_financials": store.related_financials(cid, pool_as_of) if pool_as_of else [],
             "queue": {k: queue[(cid, k)] for k in ("long", "event") if (cid, k) in queue}})
     run_out = None

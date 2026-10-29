@@ -59,6 +59,7 @@ def normalize(raw, retrieved_at):
         "title": title,
         "abstract": clean_text(raw.get("abstract")),
         "url": url or "",
+        "media_url": norm_url(raw.get("media_url")) or "",
         "published": published,
         "retrieved_at": retrieved_at,
         "fields": [clean_text(f) for f in raw.get("fields", []) if clean_text(f)],

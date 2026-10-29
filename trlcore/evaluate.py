@@ -2,7 +2,7 @@
 
 import hashlib
 import json
-from .errors import HttpError, LLMError
+from .errors import HttpError, LLMError, ResponseShapeError
 from .dates import freshness_info
 from .http import redact
 from .scoring import compute, item_keys
@@ -128,7 +128,11 @@ def _candidate_block(cand):
 
 
 def input_hash(cand, as_of):
-    s = "|".join(str(cand.get(k)) for k in ("title", "abstract", "url", "published")) + "|" + as_of.isoformat()
+    # as_of の日付そのものではなく鮮度バケットをキーにする。抽出で as_of が効くのは
+    # バケット (30日/180日の境界) だけなので、日付まで含めると実行を跨ぐたびに
+    # キャッシュがミスして再抽出のコストがかかる
+    bucket = freshness_info(cand.get("published"), as_of)["bucket"]
+    s = "|".join(str(cand.get(k)) for k in ("title", "abstract", "url", "published")) + "|" + bucket
     return hashlib.sha256(s.encode()).hexdigest()[:16]
 
 
@@ -217,4 +221,7 @@ def evaluate_one(cand, kind, cfg, llm, as_of, extraction=None, extract_meta=None
             # API側の失敗(429/5xx/タイムアウト/認証・モデル名の誤り等)。論文の内容に起因しないため、
             # 呼び出し側は評価結果として保存せず、候補を未評価のまま残す
             result["infra_failure"] = {"transient": e.transient, "status": e.status}
+        elif isinstance(e, ResponseShapeError):
+            # 応答形状の異常(候補空・安全フィルタ等)も API 側事情であり内容エラーではない
+            result["infra_failure"] = {"transient": True, "status": None}
     return result

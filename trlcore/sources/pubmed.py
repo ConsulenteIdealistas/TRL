@@ -83,7 +83,7 @@ def pubmed_fetch(query, max_results, lookback_days, as_of, http=None, sleep=time
     common = {"tool": "trl-analysis"}
     if key:
         common["api_key"] = key
-    params = dict(common, db="pubmed", term=query, retmax=max_results, retmode="json",
+    params = dict(common, db="pubmed", term=query, retmax=max(max_results, 100), retmode="json",
                   datetype="pdat", sort="pub_date",
                   mindate=(as_of - timedelta(days=lookback_days)).strftime("%Y/%m/%d"),
                   maxdate=as_of.strftime("%Y/%m/%d"))

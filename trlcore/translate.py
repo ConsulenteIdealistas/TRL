@@ -189,7 +189,9 @@ def translate_display_set(store, cfg, today, log=print, http=http_fetch):
     done = 0
     for s in range(0, len(todo), BATCH):
         chunk = todo[s:s + BATCH]
-        items = [(c["title"], c["abstract"]) for _, c, _, _ in chunk]
+        # 必要な側だけ送る (既訳・和文の側まで送ると API 枠と使用量カウントを無駄に消費する)
+        items = [(c["title"] if wt else "", c["abstract"] if wa else "")
+                 for _, c, wt, wa in chunk]
         got, provider = {}, None
         for name, fn in chain:
             try:

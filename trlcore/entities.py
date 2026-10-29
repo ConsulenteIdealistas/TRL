@@ -57,6 +57,11 @@ def validate_entities(data):
         tier = entity.get("tier")
         if tier is not None and tier not in TIERS:
             raise ConfigError(f"entities[{i}].tier must be one of {TIERS}")
+        tags = entity.get("tags")
+        if tags is not None and (not isinstance(tags, list)
+                                 or any(not isinstance(t, str) or not re.fullmatch(r"[a-z0-9_]+", t) for t in tags)):
+            # 文字列で書くと site 側で1文字ずつに分解されて表示が壊れるため、ここで弾く
+            raise ConfigError(f"entities[{i}].tags must be a list of tag strings")
         watch = entity.get("watch")
         if watch is not None:
             if not isinstance(watch, dict):

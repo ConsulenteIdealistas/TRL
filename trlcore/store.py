@@ -231,11 +231,14 @@ class Store:
         rows = self.conn.execute(f"SELECT id FROM candidates WHERE status IN ({q})", statuses).fetchall()
         return [self.get_candidate(r[0]) for r in rows]
 
-    def set_status(self, cid, status, reason=None, eval_at=None, retry_inc=False):
+    def set_status(self, cid, status, reason=None, eval_at=None, retry_inc=False, retry_reset=False):
+        # retry_reset: 成功 (hold/final) で再試行カウンタを戻す。戻さないと過去の失敗が
+        # 生涯累積し、後年の1回の失敗で再試行上限に達してしまう
         self.conn.execute(
             "UPDATE candidates SET status=?, screen_reason=COALESCE(?,screen_reason), "
-            "last_eval_at=COALESCE(?,last_eval_at), retry_count=retry_count+? WHERE id=?",
-            (status, reason, eval_at, 1 if retry_inc else 0, cid))
+            "last_eval_at=COALESCE(?,last_eval_at), "
+            "retry_count=CASE WHEN ? THEN 0 ELSE retry_count+? END WHERE id=?",
+            (status, reason, eval_at, 1 if retry_reset else 0, 1 if retry_inc else 0, cid))
         self.conn.commit()
 
     def count_candidates(self):

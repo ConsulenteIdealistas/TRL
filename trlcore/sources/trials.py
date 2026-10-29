@@ -67,9 +67,19 @@ def parse_studies(data):
 
 def trials_fetch(query, max_results, lookback_days, as_of, http=None):
     http = http or http_fetch
-    raw = http(URL, params={"query.term": query, "pageSize": max_results,
-                            "format": "json", "sort": "LastUpdatePostDate:desc"})
-    items = parse_studies(json.loads(raw))
+    items, token = [], None
+    # pageSize だけだと更新の多いスポンサーで窓内の治験が溢れて欠落する。
+    # nextPageToken を最大3ページまで辿る
+    for _ in range(3):
+        params = {"query.term": query, "pageSize": max_results,
+                  "format": "json", "sort": "LastUpdatePostDate:desc"}
+        if token:
+            params["pageToken"] = token
+        data = json.loads(http(URL, params=params))
+        items.extend(parse_studies(data))
+        token = data.get("nextPageToken")
+        if not token:
+            break
     start = (as_of - timedelta(days=lookback_days)).isoformat()
     items = [r for r in items if r["published"] and start <= r["published"] <= as_of.isoformat()]
-    return items[:max_results]
+    return items[:max_results * 3]

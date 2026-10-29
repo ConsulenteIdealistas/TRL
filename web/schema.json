@@ -54,7 +54,8 @@
     "reason",
     "evidence",
     "counter_evidence",
-    "missing_info"
+    "missing_info",
+    "awaiting_info"
   ],
   "display_status": [
     "final",
@@ -63,5 +64,15 @@
     "pending",
     "error",
     "rejected"
+  ],
+  "entity": [
+    "entity_id",
+    "name",
+    "strength",
+    "product_name",
+    "tier",
+    "market",
+    "sector",
+    "tags"
   ]
 }

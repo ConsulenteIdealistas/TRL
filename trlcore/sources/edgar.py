@@ -51,6 +51,7 @@ _IFRS_FALLBACK = {  # 20-F 等の IFRS 報告 (us-gaap が無い外国企業) �
 }
 
 _tickers_cache = None
+_tickers_error = None
 _rate_lock = threading.Lock()
 _last_call = [0.0]
 
@@ -73,8 +74,12 @@ def _get(url, http):
 
 def ticker_map(http=None):
     """ティッカー → (CIK, 会社名)。プロセス内キャッシュ (週次実行で1回だけ取得)。"""
-    global _tickers_cache
-    if _tickers_cache is None:
+    global _tickers_cache, _tickers_error
+    if _tickers_cache is not None:
+        return _tickers_cache
+    if _tickers_error is not None:
+        raise _tickers_error  # 取得失敗を全社分リトライしない (実行内のみ有効)
+    try:
         data = _get(TICKERS_URL, http)
         m = {}
         for row in (data or {}).values():
@@ -82,6 +87,9 @@ def ticker_map(http=None):
             if t and row.get("cik_str") is not None:
                 m[t] = (int(row["cik_str"]), row.get("title") or t)
         _tickers_cache = m
+    except Exception as e:
+        _tickers_error = e
+        raise
     return _tickers_cache
 
 
@@ -102,18 +110,20 @@ def _series(taxonomy_facts, concept, currency="USD"):
 
 
 def _detect_currency(gaap, ifrs):
-    """報告通貨を決める (USD を優先し、無ければ売上/純利益の単位キーから拾う)。
-    外国企業 (20-F) は EUR 等で報告するため。"""
-    for facts in (gaap, ifrs):
-        for concept in ("RevenueFromContractWithCustomerExcludingAssessedTax", "Revenues",
-                        "Revenue", "NetIncomeLoss", "ProfitLoss"):
-            units = ((facts.get(concept) or {}).get("units") or {})
-            if units.get("USD"):
-                return "USD"
-            for k in units:
-                if len(k) == 3 and k.isupper() and k in _CURRENCY_UNITS:
-                    return k
-    return "USD"
+    """報告通貨を決める。全概念の単位を走査して候補を集め、優先順位で選ぶ。
+    概念の走査順に依存すると、混在ケースで先に当たった概念の通貨に全体が引っ張られる。"""
+    found = set()
+    concepts = [c for _, cs in _FLOW_ITEMS + _INSTANT_ITEMS for c in cs]
+    concepts += [c for cs in _IFRS_FALLBACK.values() for c in cs]
+    for tax in (gaap, ifrs):
+        for concept in concepts:
+            for u in ((tax.get(concept) or {}).get("units") or {}):
+                if len(u) == 3 and u.isupper():
+                    found.add(u)
+    for u in ("USD", "EUR", "GBP", "JPY", "CHF", "CAD", "AUD"):
+        if u in found:
+            return u
+    return sorted(found)[0] if found else "USD"
 
 
 def _latest(rows, kind, as_of):
@@ -133,9 +143,9 @@ def _latest(rows, kind, as_of):
             except (KeyError, ValueError):
                 continue
             days = (end - start).days
-            bucket = "q" if days <= 130 else "fy" if days >= 300 else None
-            if bucket is None:
-                continue
+            # 131〜299日は期首累計 (YTD)。10-Q の営業CF等はこの形でしか出ないため、
+            # 落とさず累計として保持する
+            bucket = "q" if days <= 130 else "fy" if days >= 300 else "ytd"
             key = (bucket, end)
         else:
             key = ("i", end)
@@ -144,7 +154,7 @@ def _latest(rows, kind, as_of):
             best[key] = r
     if kind == "flow":
         out = {}
-        for bucket in ("q", "fy"):
+        for bucket in ("q", "fy", "ytd"):
             ends = [e for (b, e) in best if b == bucket]
             if ends:
                 out[bucket] = best[(bucket, max(ends))]
@@ -193,6 +203,7 @@ def parse_company_facts(data, as_of):
                 instants[label] = got
     q = {k: v["q"] for k, v in flows.items() if v.get("q")}
     fy = {k: v["fy"] for k, v in flows.items() if v.get("fy")}
+    ytd = {k: v["ytd"] for k, v in flows.items() if v.get("ytd")}
     main = q or fy
     if not main:
         return "", None, ""
@@ -202,10 +213,13 @@ def parse_company_facts(data, as_of):
     for label, concepts in _FLOW_ITEMS:
         if label in main:
             parts.append(f"{label} {_fmt_money(main[label]['val'], unit)}")
+    if "営業キャッシュフロー" not in main and "営業キャッシュフロー" in ytd:
+        # 四半期の営業CFは累計 (期首からの合計) でしか開示されないことが多い
+        parts.append(f"営業キャッシュフロー(期首累計) {_fmt_money(ytd['営業キャッシュフロー']['val'], unit)}")
     text = f"直近{kind}({period}まで) " + "、".join(parts)
     if fy and q:
         seg = [f"{label} {_fmt_money(fy[label]['val'], unit)}" for label, _ in _FLOW_ITEMS
-               if label in fy and label in ("売上高", "純利益")]
+               if label in fy and label in ("売上高", "純利益", "営業キャッシュフロー")]
         if seg:
             text += f"。通期({max(r['end'] for r in fy.values())}まで) " + "、".join(seg)
     if instants:

@@ -24,3 +24,9 @@ class PromptError(ValueError):
 
 class LLMError(Exception):
     pass
+
+
+class ResponseShapeError(LLMError):
+    """API 応答の形状異常 (候補が空・安全フィルタ等)。論文の内容に起因しないため、
+    内容エラーではなくインフラ側の一時的失敗として扱う。"""
+    pass

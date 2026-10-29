@@ -2059,6 +2059,114 @@ class AuditFixTests(unittest.TestCase):
             store.close()
 
 
+class AuditFix2Tests(unittest.TestCase):
+    """2026-10-29 監査の低優先修正の固定。"""
+
+    def test_input_hash_stable_within_freshness_bucket(self):
+        cand = {"title": "T", "abstract": "A", "url": "https://x", "published": "2026-10-01"}
+        h1 = T.input_hash(cand, date(2026, 10, 20))
+        h2 = T.input_hash(cand, date(2026, 10, 25))  # 同じ fresh_30d バケット
+        h3 = T.input_hash(cand, date(2027, 1, 1))    # older バケット
+        self.assertEqual(h1, h2)
+        self.assertNotEqual(h1, h3)
+
+    def test_response_shape_error_is_infra_failure(self):
+        from trlcore.errors import ResponseShapeError
+        cand = {"id": "c_x", "title": "T", "abstract": "A", "url": "https://x",
+                "source": "arxiv", "published": "2026-10-10", "fields": []}
+
+        def fn(_p):
+            raise ResponseShapeError("unexpected Gemini response shape")
+        res = ev.evaluate_one(cand, "long", CFG, Mock(fn), AS_OF)
+        self.assertEqual(res["status"], "error")
+        self.assertEqual(res["infra_failure"], {"transient": True, "status": None})
+
+    def test_retry_count_resets_on_success(self):
+        with tempfile.TemporaryDirectory() as td:
+            store = T.Store(Path(td) / "d.sqlite")
+            rec, _ = normalize(raw(sid="2610.9701"), "2026-10-20T00:00:00+00:00")
+            cid, _ = store.upsert_candidate(rec, "r0")
+            store.set_status(cid, "error", retry_inc=True)
+            store.set_status(cid, "error", retry_inc=True)
+            self.assertEqual(store.get_candidate(cid)["retry_count"], 2)
+            store.set_status(cid, "hold", retry_reset=True)
+            self.assertEqual(store.get_candidate(cid)["retry_count"], 0)
+            store.close()
+
+    def test_tags_must_be_list_of_strings(self):
+        base = {"entities": [{"id": "x_co", "name": "X Corp"}]}
+        T.validate_entities(base)
+        ok = {"entities": [{"id": "x_co", "name": "X Corp", "tags": ["photonics"]}]}
+        T.validate_entities(ok)
+        bad = {"entities": [{"id": "x_co", "name": "X Corp", "tags": "photonics"}]}
+        with self.assertRaises(T.ConfigError):
+            T.validate_entities(bad)
+
+    def test_market_map_guard(self):
+        from trlcore.config import _check_market_maps
+        _check_market_maps("US", "x_co")
+        with self.assertRaises(T.ConfigError):
+            _check_market_maps("XX", "x_co")
+
+    def test_edgar_operating_cf_ytd(self):
+        import copy
+        from trlcore.sources import edgar
+        facts = {"entityName": "CF Corp", "facts": {"us-gaap": {
+            "RevenueFromContractWithCustomerExcludingAssessedTax": {"units": {"USD": [
+                {"start": "2026-04-01", "end": "2026-06-30", "val": 100_000_000, "form": "10-Q", "filed": "2026-08-01"},
+                {"start": "2025-01-01", "end": "2025-12-31", "val": 400_000_000, "form": "10-K", "filed": "2026-03-01"}]}},
+            "NetCashProvidedByUsedInOperatingActivities": {"units": {"USD": [
+                {"start": "2026-01-01", "end": "2026-06-30", "val": -30_000_000, "form": "10-Q", "filed": "2026-08-01"},
+                {"start": "2025-01-01", "end": "2025-12-31", "val": -120_000_000, "form": "10-K", "filed": "2026-03-01"}]}},
+        }}}
+        text, period, kind = edgar.parse_company_facts(facts, date(2026, 10, 29))
+        self.assertIn("営業キャッシュフロー(期首累計) △30百万米ドル", text)
+        self.assertIn("営業キャッシュフロー △120百万米ドル", text)  # 通期分も出す
+
+    def test_trials_pagination(self):
+        def study(nct, upd):
+            return {"protocolSection": {
+                "identificationModule": {"nctId": nct, "officialTitle": f"Study {nct}"},
+                "descriptionModule": {"briefSummary": "summary"},
+                "statusModule": {"overallStatus": "RECRUITING",
+                                 "lastUpdatePostDateStruct": {"date": upd}},
+                "sponsorCollaboratorsModule": {"leadSponsor": {"name": "Astroscale"}}}}
+        calls = []
+
+        def fake_http(url, params=None, **kw):
+            calls.append(dict(params or {}))
+            if params.get("pageToken"):
+                return json.dumps({"studies": [study("NCT002", "2026-10-15")]})
+            return json.dumps({"studies": [study("NCT001", "2026-10-16")], "nextPageToken": "tok2"})
+        out = trials.fetch("Astroscale", 20, 180, AS_OF, http=fake_http)
+        self.assertEqual([r["source_id"] for r in out], ["NCT001", "NCT002"])
+        self.assertEqual(calls[1].get("pageToken"), "tok2")
+
+    def test_translate_sends_only_wanted_fields(self):
+        import os
+        from unittest import mock as um
+        tmp = tempfile.TemporaryDirectory()
+        store = T.Store(Path(tmp.name) / "d.sqlite")
+        rec, _ = T.normalize(raw(), T.now_iso())
+        cid, _ = store.upsert_candidate(rec, "rX")
+        store.conn.execute(
+            "INSERT INTO evaluations(run_id, candidate_id, kind, status) VALUES('rX', ?, 'long', 'ok')", (cid,))
+        store.conn.commit()
+        store.set_translation(cid, "既訳タイトル", None)  # タイトルは訳済み → 抄録だけ送る
+        sent = []
+
+        def g_http(url, params=None, headers=None, data=None, **kw):
+            qs = json.loads(data)["q"]
+            sent.extend(qs)
+            return json.dumps({"data": {"translations": [{"translatedText": "訳:" + q} for q in qs]}})
+        with um.patch.dict(os.environ, {"GOOGLE_TRANSLATE_API_KEY": "gk"}, clear=False):
+            n, stats = T.translate_display_set(store, CFG, AS_OF, log=lambda *_: None, http=g_http)
+        self.assertEqual(n, 1)
+        self.assertEqual(sent, [rec["abstract"]])
+        self.assertEqual(stats, {"google": len(rec["abstract"])})
+        store.close()
+
+
 class EdgarTests(unittest.TestCase):
     FACTS = {"entityName": "Test Corp", "facts": {"us-gaap": {
         "RevenueFromContractWithCustomerExcludingAssessedTax": {"units": {"USD": [

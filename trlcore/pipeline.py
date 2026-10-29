@@ -82,20 +82,26 @@ def collect(store, cfg, run_id, as_of, sources, fetchers, counts, log):
                 raise exc
             fetched = len(raws)
             for raw in raws:
-                rec, problems = normalize(raw, now)
-                if rec is None:
+                try:
+                    rec, problems = normalize(raw, now)
+                    if rec is None:
+                        invalid += 1
+                        continue
+                    entity_links = link_entities(rec, cfg.get("entities", {}))
+                    if not entity_links:
+                        # 評価もプールも企業リンクが前提。対象企業に紐付かない候補は
+                        # 種別を問わず残さない (キューに死蔵されるだけになるため)
+                        invalid += 1
+                        continue
+                    cid, is_new = store.upsert_candidate(rec, run_id)
+                    store.set_entities(cid, entity_links)
+                    new += is_new
+                    dups += (not is_new)
+                except Exception as e:
+                    # 1件の不良レコードでクエリの残り全件を落とさない
                     invalid += 1
-                    continue
-                entity_links = link_entities(rec, cfg.get("entities", {}))
-                if not entity_links:
-                    # 評価もプールも企業リンクが前提。対象企業に紐付かない候補は
-                    # 種別を問わず残さない (キューに死蔵されるだけになるため)
-                    invalid += 1
-                    continue
-                cid, is_new = store.upsert_candidate(rec, run_id)
-                store.set_entities(cid, entity_links)
-                new += is_new
-                dups += (not is_new)
+                    log(f"::warning::source {sname} / {q['name']}: record skipped: "
+                        f"{redact(f'{type(e).__name__}: {e}')[:200]}")
         except Exception as e:
             err = redact(f"{type(e).__name__}: {e}")[:300]
             log(f"::warning::source {sname} / {q['name']} failed: {err}")
@@ -343,7 +349,7 @@ def run_pipeline(store, cfg, llm, *, as_of, sources=("pubmed", "arxiv"), kinds=(
             if outcomes:
                 status = "hold" if "hold" in outcomes else ("error" if "error" in outcomes else "evaluated")
                 store.set_status(c["id"], status, eval_at=datetime.now(timezone.utc).isoformat(timespec="seconds"),
-                                 retry_inc=(status == "error"))
+                                 retry_inc=(status == "error"), retry_reset=(status != "error"))
     if degraded in ("llm_fatal_error", "llm_consecutive_failures"):
         log(f"::warning::[eval] LLM APIの失敗が続くため評価フェーズを打ち切ります ({degraded})。未評価の候補は次回に回します")
     if degraded:

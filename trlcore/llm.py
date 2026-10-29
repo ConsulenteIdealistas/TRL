@@ -3,7 +3,7 @@
 import json
 import os
 import re
-from .errors import HttpError, LLMError
+from .errors import HttpError, LLMError, ResponseShapeError
 from .http import http_fetch
 from .config import LLM_DEFAULTS
 
@@ -68,7 +68,7 @@ class Anthropic:
         try:
             return "".join(b.get("text", "") for b in json.loads(raw)["content"])
         except (KeyError, ValueError, TypeError, AttributeError):
-            raise LLMError("unexpected Anthropic response shape") from None
+            raise ResponseShapeError("unexpected Anthropic response shape") from None
 
 
 class Gemini:
@@ -105,7 +105,7 @@ class Gemini:
             parts = json.loads(raw)["candidates"][0]["content"]["parts"]
             return "".join(p.get("text", "") for p in parts)
         except (KeyError, IndexError, ValueError, TypeError):
-            raise LLMError("unexpected Gemini response shape") from None
+            raise ResponseShapeError("unexpected Gemini response shape") from None
 
 
 class Mock:

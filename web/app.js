@@ -21,7 +21,7 @@ const SRC_CLASS = {arxiv: "s-arxiv", pubmed: "s-pubmed", gnews: "s-gnews", trial
 const SRC_LABEL = {arxiv: "arXiv", pubmed: "PubMed", gnews: "News", trials: "ClinicalTrials", edinet: "EDINET", yahoo: "Yahoo Finance", openalex: "OpenAlex", prtimes: "PR TIMES", edgar: "SEC EDGAR"};
 const src = s => "badge " + (SRC_CLASS[s] || "");
 const srcName = s => SRC_LABEL[s] || esc(s);
-const stB = s => `<span class="st ${s === "final" ? "" : "st-" + s}">${SL[s] || esc(s)}</span>`;
+const stB = s => `<span class="st ${s === "final" ? "" : "st-" + esc(s)}">${SL[s] || esc(s)}</span>`;
 const DL = {positive: "ポジティブ", negative: "ネガティブ", mixed: "混在"};
 const ML = {JP: "日本", US: "米国", GB: "英国", CH: "スイス", DE: "ドイツ", DK: "デンマーク", SE: "スウェーデン", IT: "イタリア", CA: "カナダ", AU: "オーストラリア", ES: "スペイン", FR: "フランス", NL: "オランダ", FI: "フィンランド", NO: "ノルウェー", BE: "ベルギー"};
 const MO = ["JP", "US", "GB", "CH", "DE", "DK", "SE", "IT", "CA", "AU", "ES", "FR", "NL", "FI", "NO", "BE"];  // 国・市場別の並び
@@ -33,8 +33,8 @@ const primEnt = p => p.entities.find(e => e.strength === "strong") || p.entities
 const marketOf = p => { const e = primEnt(p); return e ? e.market || "JP" : null; };
 const sectorOf = p => { const e = primEnt(p); return e ? e.sector || null : null; };
 const ord = (v, list) => { const i = list.indexOf(v); return i < 0 ? list.length : i; };
-const dirOf = p => (p.long && p.long.direction && p.long.direction.direction) || null;
-const dirB = p => { const d = dirOf(p); return d ? `<span class="dir dir-${d}">${DL[d]}</span>` : ""; };
+const dirOf = p => (p.long && p.long.status !== "error" && p.long.direction && p.long.direction.direction) || null;  // error 評価の方向性は出さない (詳細側の扱いと揃える)
+const dirB = p => { const d = dirOf(p); return d ? `<span class="dir dir-${esc(d)}">${DL[d]}</span>` : ""; };
 const jst = iso => { try { return new Date(iso).toLocaleString("ja-JP", {timeZone: "Asia/Tokyo", hour12: false}); } catch (e) { return iso; } };
 const label = k => IL[k] || k;
 
@@ -49,7 +49,8 @@ function inR(t, f) {
 }
 function haystack(p) {
   const items = p.long ? Object.values(p.long.items).flatMap(i => i.missing_info) : [];
-  return [p.title, p.title_ja || "", p.source, p.abstract, p.abstract_ja || "", ...(p.fields || []), ...p.entities.map(e => e.name), ...items].join(" ").toLowerCase();
+  const facets = p.entities.flatMap(e => [...(e.tags || []), ...(e.tags || []).map(tagLabel), CL[e.sector] || "", ML[e.market || "JP"] || ""]);
+  return [p.title, p.title_ja || "", p.source, p.abstract, p.abstract_ja || "", ...(p.fields || []), ...p.entities.map(e => e.name), ...facets, ...items].join(" ").toLowerCase();
 }
 function filtered() {
   const q = $("#q").value.trim().toLowerCase(), s = $("#fs").value, t = $("#ft").value, o = $("#fo").value, fd = $("#fd").value;
@@ -106,6 +107,7 @@ function scoreRow(k, it) {
 const pts = (a, w) => a.length ? `<ul class="pts">${a.map(x => `<li><b class="${w ? "w" : ""}">${w ? "!" : "✓"}</b><span>${esc(x)}</span></li>`).join("")}</ul>` : `<p class="hint">登録された情報はありません。</p>`;
 
 function getNote(id) { try { return localStorage.getItem("trl-note:" + id) || ""; } catch (e) { return ""; } }
+const noteDrafts = {};  // 未保存のメモ下書き。再描画で入力途中のメモが消えないように保持する
 function setNote(id, v) { try { localStorage.setItem("trl-note:" + id, v); return true; } catch (e) { return false; } }
 
 function detail() {
@@ -129,7 +131,7 @@ function detail() {
 <section class="ds"><h4>不足している観点</h4>${L && L.critical_missing.length ? `<p class="m" style="color:#a96500;font-weight:700">必須項目の不足: ${L.critical_missing.map(k => esc(label(k))).join("、")}</p>` : ""}${pts(missAll, 1)}${waitAll.length ? `<p class="hint">結果待ち（不足ではなく、治験の結果公表など時間の経過でしか解けないもの）:</p><ul class="pts">${waitAll.map(x => `<li><b>◷</b><span>${esc(x)}</span></li>`).join("")}</ul>` : ""}${q && q.next_sources.length ? `<p class="hint">次に確認する情報源: ${q.next_sources.map(esc).join(" / ")}</p>` : ""}${q && q.reeval_conditions.length ? `<p class="hint">再評価の条件: ${q.reeval_conditions.map(esc).join(" / ")}</p>` : ""}</section>
 ${p.display_status === "error" && LL && LL.errors.length ? `<section class="ds"><h4>処理上の注意</h4>${pts(LL.errors, 1)}</section>` : ""}
 <section class="ds"><h4>関連企業</h4>${p.entities.map(e => `<span class="chip">${esc(e.name)}${e.product_name ? "（" + esc(e.product_name) + "）" : ""}${e.market ? "・" + esc(ML[e.market] || e.market) : ""}${e.sector ? "・" + esc(CL[e.sector] || e.sector) : ""}${(e.tags || []).length ? "・" + e.tags.map(t => esc(tagLabel(t))).join("・") : ""} ${e.strength === "strong" ? "" : "・弱"}${e.tier === "watch" ? "・ウォッチ" : ""}</span>`).join("") || '<span class="hint">関連企業は未特定です。</span>'}</section>
-<section class="ds"><h4>調査メモ</h4><textarea id="note" aria-label="調査メモ" placeholder="仮説、確認したい点、次の調査などを記録...">${esc(getNote(p.id))}</textarea><div class="acts"><button class="btn sec" type="button" id="save">メモを保存</button><a class="btn src" href="${esc(safeUrl(p.url))}" target="_blank" rel="noopener noreferrer">原文サイトを開く ↗</a></div><p id="msg" class="hint" aria-live="polite">メモはこの端末のブラウザにだけ保存されます。</p></section></div>`;
+<section class="ds"><h4>調査メモ</h4><textarea id="note" aria-label="調査メモ" placeholder="仮説、確認したい点、次の調査などを記録...">${esc(p.id in noteDrafts ? noteDrafts[p.id] : getNote(p.id))}</textarea><div class="acts"><button class="btn sec" type="button" id="save">メモを保存</button><a class="btn src" href="${esc(safeUrl(p.url))}" target="_blank" rel="noopener noreferrer">原文サイトを開く ↗</a></div><p id="msg" class="hint" aria-live="polite">メモはこの端末のブラウザにだけ保存されます。</p></section></div>`;
 }
 function render() {
   const r = filtered();
@@ -247,9 +249,10 @@ $("#sf").addEventListener("submit", hideSug);
 $("#fl").addEventListener("change", () => { LANG = $("#fl").value; try { localStorage.setItem("trl-lang", LANG); } catch (e) { /* 保存できなくても切替は効く */ } render(); });
 $("#rs").addEventListener("click", () => { $("#q").value = ""; $("#fs").value = "all"; $("#ft").value = "all"; $("#fo").value = "status"; $("#fd").value = "all"; $("#fm").value = "all"; $("#fc").value = "all"; $("#fg").value = "all"; sel = P[0] ? P[0].id : null; render(); });
 $("#list").addEventListener("click", e => { const c = e.target.closest("[data-id]"); if (c) { sel = c.dataset.id; render(); } });
+$("#det").addEventListener("input", e => { if (e.target.id === "note" && sel) noteDrafts[sel] = e.target.value; });
 $("#det").addEventListener("click", e => {
   if (e.target.closest("#save")) {
-    const saved = setNote(sel, $("#note").value);
+    const saved = setNote(sel, $("#note").value); if (saved) delete noteDrafts[sel];
     $("#msg").textContent = saved ? "この端末のブラウザに保存しました。" : "保存できませんでした(ブラウザの保存機能が無効の可能性があります)。";
   }
 });

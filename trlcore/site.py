@@ -87,12 +87,15 @@ def _ev_for_site(ev, cfg):
     }
 
 
-def display_status(cand, long_ev, store):
+def display_status(cand, long_ev, store, event_ev=None):
     """画面表示用の状態。final=選定可能 / review=要追加調査(必須項目は揃っている) / hold=保留(必須項目が不足) /
     pending=未評価(API失敗で未評価のものを含む) / error=内容起因のエラー / rejected=除外。"""
     if cand["status"] == "rejected":
         return "rejected"
     if long_ev is None or cand["status"] in ("new", "screened"):
+        # イベント評価だけがある候補は「未評価」ではなく要確認として出す
+        if long_ev is None and event_ev is not None and cand["status"] not in ("new", "screened"):
+            return "review"
         return "pending"
     st = long_ev["status"]
     if st == "final":
@@ -121,7 +124,8 @@ def build_site_data(store, cfg, now=None):
     ent_tiers = {e["id"]: e.get("tier") or "core" for e in (cfg.get("entities") or {}).get("entities", [])}
     ent_markets = {e["id"]: e.get("market") or "JP" for e in (cfg.get("entities") or {}).get("entities", [])}
     ent_sectors = {e["id"]: e.get("sector") for e in (cfg.get("entities") or {}).get("entities", [])}
-    ent_tags = {e["id"]: list(e.get("tags") or []) for e in (cfg.get("entities") or {}).get("entities", [])}
+    ent_tags = {e["id"]: ([t for t in e["tags"] if isinstance(t, str)] if isinstance(e.get("tags"), list) else [])
+                for e in (cfg.get("entities") or {}).get("entities", [])}
     queue = {}
     for q in store.list_queue():
         if str(q["reason"] or "").startswith(LEGACY_INFRA_QUEUE_PREFIX):
@@ -159,7 +163,7 @@ def build_site_data(store, cfg, now=None):
             "abstract": c["abstract"] or "", "fields": c["fields"],
             "title_ja": c.get("title_ja") or None, "abstract_ja": c.get("abstract_ja") or None,
             "translation_src": _translation_src(c),
-            "display_status": display_status(c, long_ev, store),
+            "display_status": display_status(c, long_ev, store, event_ev),
             "next_up": cid in next_ids and long_ev is None and event_ev is None,
             "long": long_ev, "event": event_ev, "entities": ents,
             "related_news": [_news_for_site(n) for n in store.related_news(cid, pool_as_of)] if pool_as_of else [],

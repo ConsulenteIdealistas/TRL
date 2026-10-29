@@ -160,6 +160,12 @@ KEYWORD_SETS_BY_MARKET = {"JP": "keyword_sets", "DE": "keyword_sets_de",
                           "IT": "keyword_sets_it", "SE": "keyword_sets_sv"}
 
 
+def _check_market_maps(market, eid):
+    if market not in YAHOO_SUFFIX or (market != "JP" and market not in GNEWS_LOCALE):
+        raise ConfigError(f"entities.json: {eid}.market {market!r} is missing from "
+                          "YAHOO_SUFFIX/GNEWS_LOCALE in config.py")
+
+
 def build_entity_queries(entities, src):
     """entities.json の watch から企業クエリを生成する。
     生成順は gnews(全社) → trials → edinet → yahoo → prtimes で、各系統内は entities の並び順。
@@ -175,6 +181,7 @@ def build_entity_queries(entities, src):
         if not isinstance(w, dict):
             continue
         eid = e.get("id")
+        _check_market_maps(e.get("market") or "JP", eid)
         news_name = w.get("news_name")
         if not isinstance(news_name, str) or not news_name.strip():
             raise ConfigError(f"entities.json: {eid}.watch.news_name is required")

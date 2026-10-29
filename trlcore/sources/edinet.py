@@ -16,6 +16,7 @@ import csv
 import io
 import json
 import os
+import threading
 import time
 import zipfile
 import xml.etree.ElementTree as ET
@@ -33,6 +34,7 @@ FINANCIAL_MARKER = "財務数値(EDINET XBRL)"
 
 _day_cache = {}
 _doc_cache = {}
+_cache_lock = threading.Lock()  # collect は並行実行されるため、キャッシュの判定と登録を原子的にする
 
 # (表示名, 要素名候補 (要約サフィックスを除いたローカル名), 期間項目か, 種別)
 _FIN_ITEMS = [
@@ -267,8 +269,13 @@ def _facts_from_zip(data):
 
 def fetch_financial_text(doc_id, http, key):
     """書類取得APIから財務数値テキストを得る。type=5 (CSV形式) → type=1 (XBRL) の順に試す。"""
-    if doc_id in _doc_cache:
-        return _doc_cache[doc_id]
+    with _cache_lock:
+        if doc_id in _doc_cache:
+            return _doc_cache[doc_id]
+        return _fetch_financial_text_uncached(doc_id, http, key)
+
+
+def _fetch_financial_text_uncached(doc_id, http, key):
     text = ""
     for typ in (5, 1):
         try:
@@ -295,14 +302,15 @@ def fetch_financial_text(doc_id, http, key):
 # ---------------------------------------------------------------- 取得
 
 def _day_results(day, http, key, sleep):
-    if day in _day_cache:
-        return _day_cache[day]
-    raw = http(BASE, params={"date": day.isoformat(), "type": 2},
-               headers={"Ocp-Apim-Subscription-Key": key})
-    results = json.loads(raw).get("results") or []
-    _day_cache[day] = results
-    sleep(0.2)  # 日次リストは再利用される。取得時だけ間隔を空ける
-    return results
+    with _cache_lock:
+        if day in _day_cache:
+            return _day_cache[day]
+        raw = http(BASE, params={"date": day.isoformat(), "type": 2},
+                   headers={"Ocp-Apim-Subscription-Key": key})
+        results = json.loads(raw).get("results") or []
+        _day_cache[day] = results
+        sleep(0.2)  # 日次リストは再利用される。取得時だけ間隔を空ける
+        return results
 
 
 def _enrich_financials(out, days, ticker, http, key):

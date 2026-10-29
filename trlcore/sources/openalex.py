@@ -59,7 +59,7 @@ def openalex_fetch(institution_id, max_results, lookback_days, as_of, http=None)
     start = (as_of - timedelta(days=lookback_days)).isoformat()
     params = {"filter": (f"authorships.institutions.id:{institution_id},"
                          f"from_publication_date:{start},to_publication_date:{as_of.isoformat()}"),
-              "sort": "publication_date:desc", "per-page": max_results, "select": SELECT}
+              "sort": "publication_date:desc", "per-page": max(max_results, 100), "select": SELECT}
     key = os.environ.get("OPENALEX_API_KEY")
     if key:
         params["api_key"] = key

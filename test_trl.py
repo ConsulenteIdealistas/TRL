@@ -383,13 +383,15 @@ class NewSourceParseTests(unittest.TestCase):
             qs = json.loads(data)["q"]
             return json.dumps({"data": {"translations": [{"translatedText": "訳:" + q} for q in qs]}})
         with um.patch.dict(os.environ, {"GOOGLE_TRANSLATE_API_KEY": "gk"}, clear=False):
-            n = T.translate_display_set(store, CFG, AS_OF, log=lambda *_: None, http=g_http)
+            n, stats = T.translate_display_set(store, CFG, AS_OF, log=lambda *_: None, http=g_http)
             self.assertEqual(n, 1)
+            # 訳した文字数は、送信した原文 (title + abstract) の字数を段ごとに数える
+            self.assertEqual(stats, {"google": len(rec["title"]) + len(rec["abstract"])})
             c = store.get_candidate(cid)
             self.assertTrue(c["title_ja"].startswith("訳:"))
             self.assertEqual(json.loads(c["translation_src"]), {"title": "google", "abstract": "google"})
-            # 2回目は未訳が無いので 0 件
-            self.assertEqual(T.translate_display_set(store, CFG, AS_OF, log=lambda *_: None, http=g_http), 0)
+            # 2回目は未訳が無いので 0 件・0 字
+            self.assertEqual(T.translate_display_set(store, CFG, AS_OF, log=lambda *_: None, http=g_http), (0, {}))
         store.close()
         tmp.cleanup()
 
@@ -424,11 +426,31 @@ class NewSourceParseTests(unittest.TestCase):
             return deepl_http(url, params=params, headers=headers, data=data)
         env = {"DEEPL_API_KEY": "k:fx", "AZURE_TRANSLATOR_KEY": "k2"}
         with um.patch.dict(os.environ, env, clear=False):
-            n = T.translate_display_set(store, CFG, AS_OF, log=lambda *_: None, http=flaky_http)
+            n, stats = T.translate_display_set(store, CFG, AS_OF, log=lambda *_: None, http=flaky_http)
         self.assertEqual(n, 1)
+        self.assertEqual(set(stats), {"deepl"})
         c = store.get_candidate(cid)
         self.assertTrue(c["title_ja"].startswith("訳:"))
         self.assertEqual(json.loads(c["translation_src"]), {"title": "deepl", "abstract": "deepl"})
+        store.close()
+        tmp.cleanup()
+
+    def test_usage_thresholds_and_totals(self):
+        self.assertEqual(T.crossed_thresholds(400_000, 550_000), [500_000])
+        self.assertEqual(T.crossed_thresholds(500_000, 500_000), [])
+        self.assertEqual(T.crossed_thresholds(900_000, 2_100_000),
+                         [1_000_000, 1_250_000, 1_500_000, 1_750_000, 2_000_000])
+        # 集計: azure/google は当月のみ、deepl は通算 (一回限り枠のため)
+        tmp = tempfile.TemporaryDirectory()
+        store = T.Store(Path(tmp.name) / "d.sqlite")
+
+        def add_run(started, chars):
+            store.conn.execute("INSERT INTO runs(run_id, started_at, counts_json) VALUES(?, ?, ?)",
+                               (started, started, json.dumps({"translation_chars": chars})))
+        add_run("2026-09-15T00:00:00Z", {"azure": 700_000, "deepl": 300_000, "google": 10_000})
+        add_run("2026-10-05T00:00:00Z", {"azure": 200_000, "deepl": 100_000, "google": 5_000})
+        store.conn.commit()
+        self.assertEqual(T.usage_totals(store, AS_OF), {"azure": 200_000, "deepl": 400_000, "google": 5_000})
         store.close()
         tmp.cleanup()
 

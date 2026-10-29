@@ -106,6 +106,39 @@ def google_translate(texts, key, http=http_fetch):
     return out
 
 
+# --- 使用量の計測としきい値 --------------------------------------------------
+
+# 無料枠に対する使用量の通知しきい値 (字)。Azure は月 200万字で月初リセット、
+# Google は月 50万字、DeepL は合計 100万字の一回限り枠。跨いだら run 記録と
+# ログに残し、気づかず枠を使い切ることを防ぐ。
+USAGE_THRESHOLDS = [500_000, 1_000_000, 1_250_000, 1_500_000, 1_750_000, 2_000_000]
+
+
+def crossed_thresholds(before, after):
+    """before < t <= after となる しきい値のリスト。"""
+    return [t for t in USAGE_THRESHOLDS if before < t <= after]
+
+
+def usage_totals(store, today):
+    """過去の run 記録から段ごとの使用量ベースラインを集計する。
+
+    azure/google は today の属する月の累計、deepl は全期間の通算 (一回限り枠のため)。
+    戻り値: {"azure": 字数, "deepl": 字数, "google": 字数}
+    """
+    totals = {"azure": 0, "deepl": 0, "google": 0}
+    month = today.strftime("%Y-%m")
+    for started, counts_json in store.conn.execute("SELECT started_at, counts_json FROM runs"):
+        try:
+            chars = (json.loads(counts_json) or {}).get("translation_chars") or {}
+        except (TypeError, ValueError):
+            continue
+        for name in totals:
+            v = chars.get(name)
+            if isinstance(v, (int, float)) and (name == "deepl" or str(started or "")[:7] == month):
+                totals[name] += int(v)
+    return totals
+
+
 # --- 表示対象の翻訳 ----------------------------------------------------------
 
 def display_ids(store, cfg, today, pending_limit=10):
@@ -133,10 +166,15 @@ def _backends(http):
 
 
 def translate_display_set(store, cfg, today, log=print, http=http_fetch):
-    """表示対象のうち未訳のものを訳して保存する。-> 訳した件数。"""
+    """表示対象のうち未訳のものを訳して保存する。
+
+    -> (訳した件数, 段ごとの翻訳文字数 {"azure": 字数, ...})。
+    文字数は実際に送信して訳し終えた原文の字数 (課金・枠消費の単位)。
+    """
     chain = _backends(http)
     if not chain:
-        return 0
+        return 0, {}
+    stats = {}
     todo = []
     for cid in sorted(display_ids(store, cfg, today)):
         c = store.get_candidate(cid)
@@ -167,6 +205,8 @@ def translate_display_set(store, cfg, today, log=print, http=http_fetch):
             got = {}
         if provider is None:
             continue
+        sent = sum(len(x) for pair in items for x in pair if x)
+        stats[provider] = stats.get(provider, 0) + sent
         for i, (cid, c, want_title, want_abs) in enumerate(chunk):
             t_ja, a_ja = got[i]
             store.set_translation(cid,
@@ -177,4 +217,4 @@ def translate_display_set(store, cfg, today, log=print, http=http_fetch):
             done += 1
     if done:
         log(f"[translate] 日本語訳を {done} 件作成")
-    return done
+    return done, stats

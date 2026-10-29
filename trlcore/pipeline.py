@@ -14,7 +14,7 @@ from .sources.trials import trials_fetch
 from .sources.edinet import edinet_fetch
 from .sources.yahoo import yahoo_fetch
 from .sources.openalex import openalex_fetch
-from .translate import translate_display_set
+from .translate import crossed_thresholds, translate_display_set, usage_totals
 from .entities import entity_screen, link_entities
 from .prompts import load_prompt
 from .llm import llm_settings
@@ -347,7 +347,18 @@ def run_pipeline(store, cfg, llm, *, as_of, sources=("pubmed", "arxiv"), kinds=(
     if degraded:
         counts["llm_degraded"] = degraded
     # 翻訳は専用 API (Azure → DeepL → Google) で行い、評価用 LLM には任せない
-    counts["translated"] = translate_display_set(store, cfg, today, log)
+    usage_before = usage_totals(store, today)
+    counts["translated"], counts["translation_chars"] = translate_display_set(store, cfg, today, log)
+    # 無料枠のしきい値を跨いだら記録とログに残す (azure/google は月次累計、deepl は通算)
+    alerts = []
+    for name, chars in sorted(counts["translation_chars"].items()):
+        before = usage_before.get(name, 0)
+        for t in crossed_thresholds(before, before + chars):
+            alerts.append({"provider": name, "threshold": t, "total": before + chars})
+            span = "通算" if name == "deepl" else "月次累計"
+            log(f"[translate] 使用量アラート: {name} の{span}が {before + chars:,} 字になり、しきい値 {t:,} 字を超過しました")
+    if alerts:
+        counts["translation_alerts"] = alerts
     all_failed = do_collect and counts["sources_ok"] == 0 and counts["sources_failed"] > 0
     store.finish_run(run_id, counts, "failed" if all_failed else "ok", time.monotonic() - t0)
     return {"run_id": run_id, "counts": counts, "failed": all_failed, "llm_degraded": degraded}

@@ -1024,6 +1024,32 @@ class EvaluateOneTests(unittest.TestCase):
         self.assertEqual((r["status"], r["total"], r["band"]["label"]), ("final", 60.0, "strong"))
         self.assertEqual(set(r["prompt_versions"]), {"extract", "long"})
 
+    def _flaky_fn(self, calls, always_bad=False):
+        def fn(prompt):
+            if "根拠抽出」担当" in prompt:
+                return json.dumps(EXTRACTION)
+            calls["assess"] += 1
+            a = assessment(LONG_KEYS, {k: 60 for k in LONG_KEYS})
+            if always_bad or calls["assess"] == 1:
+                del a["items"]["moat_durability"]
+            return json.dumps(a)
+        return fn
+
+    def test_assessment_regenerated_once_on_missing_item(self):
+        # 項目欠落などの検証エラーは、不足点を伝えて1回だけ再生成し、復旧すれば通常の評価にする
+        calls = {"assess": 0}
+        r = ev.evaluate_one(self.cand, "long", CFG, Mock(self._flaky_fn(calls)), AS_OF)
+        self.assertEqual(r["status"], "final")
+        self.assertEqual(calls["assess"], 2)
+        self.assertEqual(r["extra"]["assess_attempts"], 2)
+
+    def test_assessment_regeneration_gives_up_after_two(self):
+        calls = {"assess": 0}
+        r = ev.evaluate_one(self.cand, "long", CFG, Mock(self._flaky_fn(calls, always_bad=True)), AS_OF)
+        self.assertEqual(r["status"], "error")
+        self.assertIn("missing_item:moat_durability", r["errors"])
+        self.assertEqual(calls["assess"], 2)
+
     def test_long_hold_on_null(self):
         r = self.run_it(long_scores={"monetization": None})
         self.assertEqual((r["status"], r["total"], r["critical_missing"]), ("hold", None, ["monetization"]))

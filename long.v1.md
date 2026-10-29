@@ -101,6 +101,8 @@
 
 ## 出力形式(JSONのみ)
 
+出力前の自己確認: items には評価項目キー({{item_keys}})の全項目が1つも欠けずに含まれていること。材料が無い項目も省略せず、score=null と missing_info で出すこと(項目自体の省略は形式エラーとして扱われる)。trl_level と direction も必ず含めること。
+
 {"items":{"<キー>":{"score":数値またはnull,"reason":"...","evidence":[{"ref":"出典URLや識別子","summary":"...","kind":"fact"}], "counter_evidence":["..."],"missing_info":["..."]}}, "trl_level":{"level":1〜9の整数またはnull,"reason":"...","evidence":[{"ref":"出典URLや識別子","summary":"...","kind":"fact"}],"missing_info":["..."]},
 "direction":{"direction":"positive"/"negative"/"mixed"/null,"reason":"方向を決めた出来事(1文)"},
 "next_sources":["次に確認すべき情報源"],"reeval_conditions":["再評価の条件"]}

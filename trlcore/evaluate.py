@@ -167,13 +167,28 @@ def evaluate_one(cand, kind, cfg, llm, as_of, extraction=None, extract_meta=None
                                   "related": json.dumps(related or [], ensure_ascii=False),
                                   "financials": json.dumps(financials or [], ensure_ascii=False),
                                   "item_keys": ", ".join(item_keys(kind, cfg))})
-        obj = extract_json(llm.complete(text))
-        scores, details, errs = validate_assessment(obj, kind, cfg)
-        if kind == "long":
-            trl, trl_errs = parse_trl_level(obj.get("trl_level"))
-            errs = errs + trl_errs
-            result["extra"]["trl_level"] = trl
-            result["extra"]["direction"] = parse_direction(obj.get("direction"))
+        # 検証エラー(項目の欠落などモデルの出力不備)は、不足点を伝えて1回だけ再生成する。
+        # API失敗(HttpError)はここでは扱わず、従来どおり未評価のまま残す。
+        feedback = ""
+        obj, scores, details, errs = None, None, None, []
+        for attempt in (1, 2):
+            result["extra"]["assess_attempts"] = attempt
+            try:
+                obj = extract_json(llm.complete(text + feedback))
+            except LLMError as e:
+                obj, errs = None, [f"{type(e).__name__}: {redact(e)}"[:300]]
+            if obj is not None:
+                scores, details, errs = validate_assessment(obj, kind, cfg)
+                if kind == "long":
+                    trl, trl_errs = parse_trl_level(obj.get("trl_level"))
+                    errs = errs + trl_errs
+                    result["extra"]["trl_level"] = trl
+                    result["extra"]["direction"] = parse_direction(obj.get("direction"))
+            if not errs:
+                break
+            feedback = ("\n\n[再出力の指示] 前回の出力には次の不備がありました: " + ", ".join(errs[:8])
+                        + "。items には評価項目キーの全項目を1つも省略せずに含め、材料が無い項目は score=null と missing_info で出すこと。"
+                          "その他の指定フィールドも全て含めて、JSON のみを再出力してください。")
         if errs:
             result["errors"] = errs
             return result

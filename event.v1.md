@@ -35,6 +35,7 @@
 {{related}}
 
 ## 出力形式(JSONのみ)
+出力前の自己確認: items には評価項目キー({{item_keys}})の全項目が1つも欠けずに含まれていること。材料が無い項目も省略せず、score=null と missing_info で出すこと(項目自体の省略は形式エラーとして扱われる)。event も必ず含めること。
 {"event":{"description":"...","expected_date":"YYYY-MM-DD/YYYY-MM/null","market_expectation":"確認できた場合のみ。無ければ空文字",
  "actual_result":"...","classification":1〜4またはnull,"priced_in_note":"...","post_reaction":"..."},
  "items":{"<キー>":{"score":数値またはnull,"reason":"...","evidence":[{"ref":"...","summary":"...","kind":"fact"}],

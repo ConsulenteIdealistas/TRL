@@ -177,6 +177,52 @@
           "sorters"
         ]
       }
+    },
+    {
+      "id": "santhera",
+      "name": "Santhera Pharmaceuticals Holding AG",
+      "aliases": [
+        "Santhera",
+        "サンテラ"
+      ],
+      "ticker": "SANN",
+      "exchange": "SIX",
+      "sector": "bio",
+      "tier": "core",
+      "market": "CH",
+      "watch": {
+        "news_name": "Santhera Pharmaceuticals Holding AG",
+        "extra_keywords": [
+          "Agamree",
+          "vamorolone",
+          "Duchenne"
+        ],
+        "sponsor": "Santhera Pharmaceuticals"
+      }
+    },
+    {
+      "id": "kuros",
+      "name": "Kuros Biosciences AG",
+      "aliases": [
+        "Kuros Biosciences",
+        "クロス"
+      ],
+      "ticker": "KURN",
+      "exchange": "SIX",
+      "sector": "bio",
+      "tier": "core",
+      "market": "CH",
+      "tags": [
+        "medtech"
+      ],
+      "watch": {
+        "news_name": "Kuros Biosciences AG",
+        "extra_keywords": [
+          "MagnetOs",
+          "bone graft",
+          "Fibrin-PTH"
+        ]
+      }
     }
   ]
 }

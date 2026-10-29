@@ -133,6 +133,28 @@
      "The NGAL Test"
     ]
    }
+  },
+  {
+   "id": "curasight",
+   "name": "Curasight A/S",
+   "aliases": [
+    "Curasight",
+    "キュラサイト"
+   ],
+   "ticker": "CURAS",
+   "exchange": "Nasdaq Copenhagen",
+   "sector": "bio",
+   "tier": "watch",
+   "market": "DK",
+   "watch": {
+    "news_name": "Curasight A/S",
+    "extra_keywords": [
+     "uPAR",
+     "theranostics",
+     "uTRACE"
+    ],
+    "sponsor": "Curasight"
+   }
   }
  ]
 }

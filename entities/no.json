@@ -20,4 +20,46 @@
     ]
   }
 }
+,
+{
+  "id": "tomra",
+  "name": "Tomra Systems ASA",
+  "aliases": [
+    "Tomra",
+    "トムラ"
+  ],
+  "ticker": "TOM",
+  "exchange": "Oslo Børs",
+  "sector": "robotics",
+  "tier": "watch",
+  "market": "NO",
+  "watch": {
+    "news_name": "Tomra Systems ASA",
+    "extra_keywords": [
+      "sorting",
+      "reverse vending",
+      "sensor-based"
+    ]
+  }
+},
+{
+  "id": "zaptec",
+  "name": "Zaptec ASA",
+  "aliases": [
+    "Zaptec",
+    "ザプテック"
+  ],
+  "ticker": "ZAP",
+  "exchange": "Oslo Børs",
+  "sector": "energy",
+  "tier": "watch",
+  "market": "NO",
+  "watch": {
+    "news_name": "Zaptec ASA",
+    "extra_keywords": [
+      "EV charging",
+      "Zaptec Pro"
+    ]
+  }
+}
 ]}

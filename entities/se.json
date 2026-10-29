@@ -157,6 +157,161 @@
      "training"
     ]
    }
+  },
+  {
+   "id": "ependion",
+   "name": "Ependion AB",
+   "aliases": [
+    "Ependion",
+    "Beijer Electronics",
+    "エペンディオン"
+   ],
+   "ticker": "EPEN",
+   "exchange": "Nasdaq Stockholm",
+   "sector": "robotics",
+   "tier": "watch",
+   "market": "SE",
+   "watch": {
+    "news_name": "Ependion AB",
+    "extra_keywords": [
+     "HMI",
+     "Westermo",
+     "industrial automation"
+    ]
+   }
+  },
+  {
+   "id": "powercell",
+   "name": "PowerCell Sweden AB (publ)",
+   "aliases": [
+    "PowerCell",
+    "パワーセル"
+   ],
+   "ticker": "PCELL",
+   "exchange": "Nasdaq Stockholm",
+   "sector": "energy",
+   "tier": "core",
+   "market": "SE",
+   "watch": {
+    "news_name": "PowerCell Sweden AB (publ)",
+    "extra_keywords": [
+     "fuel cell stack",
+     "hydrogen",
+     "marine"
+    ]
+   }
+  },
+  {
+   "id": "sectra",
+   "name": "Sectra AB (publ)",
+   "aliases": [
+    "Sectra",
+    "セクトラ"
+   ],
+   "ticker": "SECT-B",
+   "exchange": "Nasdaq Stockholm",
+   "sector": "ai",
+   "tier": "core",
+   "market": "SE",
+   "tags": [
+    "medtech"
+   ],
+   "watch": {
+    "news_name": "Sectra AB (publ)",
+    "extra_keywords": [
+     "medical imaging IT",
+     "PACS",
+     "digital pathology"
+    ]
+   }
+  },
+  {
+   "id": "xbrane",
+   "name": "Xbrane Biopharma AB",
+   "aliases": [
+    "Xbrane",
+    "エクスブレーン"
+   ],
+   "ticker": "XBRANE",
+   "exchange": "Nasdaq Stockholm",
+   "sector": "bio",
+   "tier": "watch",
+   "market": "SE",
+   "watch": {
+    "news_name": "Xbrane Biopharma AB",
+    "extra_keywords": [
+     "Ximluci",
+     "biosimilar",
+     "ranibizumab"
+    ],
+    "sponsor": "Xbrane Biopharma"
+   }
+  },
+  {
+   "id": "saniona",
+   "name": "Saniona AB",
+   "aliases": [
+    "Saniona",
+    "サニオナ"
+   ],
+   "ticker": "SANION",
+   "exchange": "Nasdaq Stockholm",
+   "sector": "bio",
+   "tier": "core",
+   "market": "SE",
+   "watch": {
+    "news_name": "Saniona AB",
+    "extra_keywords": [
+     "SAN711",
+     "tesofensine",
+     "obesity"
+    ],
+    "sponsor": "Saniona"
+   }
+  },
+  {
+   "id": "bioinvent",
+   "name": "BioInvent International AB",
+   "aliases": [
+    "BioInvent",
+    "バイオインベント"
+   ],
+   "ticker": "BINV",
+   "exchange": "Nasdaq Stockholm",
+   "sector": "bio",
+   "tier": "watch",
+   "market": "SE",
+   "watch": {
+    "news_name": "BioInvent International AB",
+    "extra_keywords": [
+     "BI-1808",
+     "antibody",
+     "n-CoDeR"
+    ],
+    "sponsor": "BioInvent"
+   }
+  },
+  {
+   "id": "egetis",
+   "name": "Egetis Therapeutics AB",
+   "aliases": [
+    "Egetis",
+    "エゲティス"
+   ],
+   "ticker": "EGTX",
+   "exchange": "Nasdaq Stockholm",
+   "sector": "bio",
+   "tier": "watch",
+   "market": "SE",
+   "watch": {
+    "news_name": "Egetis Therapeutics AB",
+    "extra_keywords": [
+     "Emcitate",
+     "tiratricol",
+     "MCT8"
+    ],
+    "sponsor": "Egetis Therapeutics"
+   }
   }
  ]
 }

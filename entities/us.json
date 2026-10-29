@@ -1324,6 +1324,728 @@
      "sleep apnea"
     ]
    }
+  },
+  {
+   "id": "iovance",
+   "name": "Iovance Biotherapeutics, Inc.",
+   "aliases": [
+    "Iovance Biotherapeutics",
+    "イオバンス"
+   ],
+   "ticker": "IOVA",
+   "exchange": "NASDAQ",
+   "sector": "bio",
+   "tier": "core",
+   "market": "US",
+   "watch": {
+    "news_name": "Iovance Biotherapeutics, Inc.",
+    "extra_keywords": [
+     "Amtagvi",
+     "TIL",
+     "lifileucel"
+    ],
+    "sponsor": "Iovance Biotherapeutics"
+   }
+  },
+  {
+   "id": "cogent",
+   "name": "Cogent Biosciences, Inc.",
+   "aliases": [
+    "Cogent Biosciences",
+    "コージェント"
+   ],
+   "ticker": "COGT",
+   "exchange": "NASDAQ",
+   "sector": "bio",
+   "tier": "core",
+   "market": "US",
+   "watch": {
+    "news_name": "Cogent Biosciences, Inc.",
+    "extra_keywords": [
+     "bezuclastinib",
+     "mastocytosis",
+     "GIST"
+    ],
+    "sponsor": "Cogent Biosciences"
+   }
+  },
+  {
+   "id": "scholar_rock",
+   "name": "Scholar Rock Holding Corporation",
+   "aliases": [
+    "Scholar Rock",
+    "スカラーロック"
+   ],
+   "ticker": "SRRK",
+   "exchange": "NASDAQ",
+   "sector": "bio",
+   "tier": "core",
+   "market": "US",
+   "watch": {
+    "news_name": "Scholar Rock Holding Corporation",
+    "extra_keywords": [
+     "apitegromab",
+     "ISEMBRYLD",
+     "spinal muscular atrophy"
+    ],
+    "sponsor": "Scholar Rock"
+   }
+  },
+  {
+   "id": "transmedics",
+   "name": "TransMedics Group, Inc.",
+   "aliases": [
+    "TransMedics",
+    "トランスメディクス"
+   ],
+   "ticker": "TMDX",
+   "exchange": "NASDAQ",
+   "sector": "bio",
+   "tier": "core",
+   "market": "US",
+   "tags": [
+    "medtech"
+   ],
+   "watch": {
+    "news_name": "TransMedics Group, Inc.",
+    "extra_keywords": [
+     "Organ Care System",
+     "OCS",
+     "organ transplant"
+    ],
+    "sponsor": "TransMedics"
+   }
+  },
+  {
+   "id": "moonlake",
+   "name": "MoonLake Immunotherapeutics",
+   "aliases": [
+    "MoonLake",
+    "ムーンレイク"
+   ],
+   "ticker": "MLTX",
+   "exchange": "NASDAQ",
+   "sector": "bio",
+   "tier": "core",
+   "market": "US",
+   "watch": {
+    "news_name": "MoonLake Immunotherapeutics",
+    "extra_keywords": [
+     "sonelokimab",
+     "hidradenitis suppurativa"
+    ],
+    "sponsor": "MoonLake Immunotherapeutics"
+   }
+  },
+  {
+   "id": "kyverna",
+   "name": "Kyverna Therapeutics, Inc.",
+   "aliases": [
+    "Kyverna",
+    "カイバーナ"
+   ],
+   "ticker": "KYTX",
+   "exchange": "NASDAQ",
+   "sector": "bio",
+   "tier": "watch",
+   "market": "US",
+   "watch": {
+    "news_name": "Kyverna Therapeutics, Inc.",
+    "extra_keywords": [
+     "KYV-101",
+     "CAR-T",
+     "autoimmune"
+    ],
+    "sponsor": "Kyverna Therapeutics"
+   }
+  },
+  {
+   "id": "geron",
+   "name": "Geron Corporation",
+   "aliases": [
+    "Geron",
+    "ジェロン"
+   ],
+   "ticker": "GERN",
+   "exchange": "NASDAQ",
+   "sector": "bio",
+   "tier": "watch",
+   "market": "US",
+   "watch": {
+    "news_name": "Geron Corporation",
+    "extra_keywords": [
+     "Rytelo",
+     "imetelstat",
+     "myelofibrosis"
+    ],
+    "sponsor": "Geron Corporation"
+   }
+  },
+  {
+   "id": "voyager_technologies",
+   "name": "Voyager Technologies, Inc.",
+   "aliases": [
+    "Voyager Technologies",
+    "Voyager Space",
+    "ボイジャー"
+   ],
+   "ticker": "VOYG",
+   "exchange": "NYSE",
+   "sector": "space",
+   "tier": "core",
+   "market": "US",
+   "watch": {
+    "news_name": "Voyager Technologies, Inc.",
+    "extra_keywords": [
+     "Starlab",
+     "space station",
+     "defense"
+    ]
+   }
+  },
+  {
+   "id": "satellogic",
+   "name": "Satellogic Inc.",
+   "aliases": [
+    "Satellogic",
+    "サテロジック"
+   ],
+   "ticker": "SATL",
+   "exchange": "NASDAQ",
+   "sector": "space",
+   "tier": "watch",
+   "market": "US",
+   "watch": {
+    "news_name": "Satellogic Inc.",
+    "extra_keywords": [
+     "Earth observation",
+     "constellation",
+     "EO data"
+    ]
+   }
+  },
+  {
+   "id": "spire_global",
+   "name": "Spire Global, Inc.",
+   "aliases": [
+    "Spire Global",
+    "スパイア"
+   ],
+   "ticker": "SPIR",
+   "exchange": "NYSE",
+   "sector": "space",
+   "tier": "watch",
+   "market": "US",
+   "watch": {
+    "news_name": "Spire Global, Inc.",
+    "extra_keywords": [
+     "weather data",
+     "NOAA",
+     "Space Services"
+    ]
+   }
+  },
+  {
+   "id": "virgin_galactic",
+   "name": "Virgin Galactic Holdings, Inc.",
+   "aliases": [
+    "Virgin Galactic",
+    "ヴァージン・ギャラクティック"
+   ],
+   "ticker": "SPCE",
+   "exchange": "NYSE",
+   "sector": "space",
+   "tier": "watch",
+   "market": "US",
+   "watch": {
+    "news_name": "Virgin Galactic Holdings, Inc.",
+    "extra_keywords": [
+     "Delta class",
+     "spaceflight",
+     "Unity"
+    ]
+   }
+  },
+  {
+   "id": "semtech",
+   "name": "Semtech Corporation",
+   "aliases": [
+    "Semtech",
+    "セムテック"
+   ],
+   "ticker": "SMTC",
+   "exchange": "NASDAQ",
+   "sector": "semiconductor",
+   "tier": "watch",
+   "market": "US",
+   "watch": {
+    "news_name": "Semtech Corporation",
+    "extra_keywords": [
+     "LoRa",
+     "Active Copper Edge",
+     "Tri-Edge"
+    ]
+   }
+  },
+  {
+   "id": "formfactor",
+   "name": "FormFactor, Inc.",
+   "aliases": [
+    "FormFactor",
+    "フォームファクター"
+   ],
+   "ticker": "FORM",
+   "exchange": "NASDAQ",
+   "sector": "semiconductor",
+   "tier": "core",
+   "market": "US",
+   "watch": {
+    "news_name": "FormFactor, Inc.",
+    "extra_keywords": [
+     "probe card",
+     "HBM",
+     "wafer test"
+    ]
+   }
+  },
+  {
+   "id": "navitas",
+   "name": "Navitas Semiconductor Corporation",
+   "aliases": [
+    "Navitas Semiconductor",
+    "ナビタス"
+   ],
+   "ticker": "NVTS",
+   "exchange": "NASDAQ",
+   "sector": "semiconductor",
+   "tier": "watch",
+   "market": "US",
+   "watch": {
+    "news_name": "Navitas Semiconductor Corporation",
+    "extra_keywords": [
+     "GaN",
+     "SiC",
+     "GaNFast"
+    ]
+   }
+  },
+  {
+   "id": "aehr_test",
+   "name": "Aehr Test Systems, Inc.",
+   "aliases": [
+    "Aehr Test Systems",
+    "エアー・テスト"
+   ],
+   "ticker": "AEHR",
+   "exchange": "NASDAQ",
+   "sector": "semiconductor",
+   "tier": "core",
+   "market": "US",
+   "watch": {
+    "news_name": "Aehr Test Systems, Inc.",
+    "extra_keywords": [
+     "FOX-XP",
+     "burn-in",
+     "SiC"
+    ]
+   }
+  },
+  {
+   "id": "veeco",
+   "name": "Veeco Instruments Inc.",
+   "aliases": [
+    "Veeco",
+    "ビーコ"
+   ],
+   "ticker": "VECO",
+   "exchange": "NASDAQ",
+   "sector": "semiconductor",
+   "tier": "core",
+   "market": "US",
+   "watch": {
+    "news_name": "Veeco Instruments Inc.",
+    "extra_keywords": [
+     "ion beam",
+     "laser annealing",
+     "MOCVD"
+    ]
+   }
+  },
+  {
+   "id": "applied_digital",
+   "name": "Applied Digital Corporation",
+   "aliases": [
+    "Applied Digital",
+    "アプライド・デジタル"
+   ],
+   "ticker": "APLD",
+   "exchange": "NASDAQ",
+   "sector": "ai",
+   "tier": "core",
+   "market": "US",
+   "watch": {
+    "news_name": "Applied Digital Corporation",
+    "extra_keywords": [
+     "AI data center",
+     "CoreWeave",
+     "Ellendale"
+    ]
+   }
+  },
+  {
+   "id": "hut8",
+   "name": "Hut 8 Corp.",
+   "aliases": [
+    "Hut 8",
+    "ハット8"
+   ],
+   "ticker": "HUT",
+   "exchange": "NASDAQ",
+   "sector": "ai",
+   "tier": "watch",
+   "market": "US",
+   "watch": {
+    "news_name": "Hut 8 Corp.",
+    "extra_keywords": [
+     "AI data center",
+     "HPC",
+     "American Bitcoin"
+    ]
+   }
+  },
+  {
+   "id": "innodata",
+   "name": "Innodata Inc.",
+   "aliases": [
+    "Innodata",
+    "イノデータ"
+   ],
+   "ticker": "INOD",
+   "exchange": "NASDAQ",
+   "sector": "ai",
+   "tier": "core",
+   "market": "US",
+   "watch": {
+    "news_name": "Innodata Inc.",
+    "extra_keywords": [
+     "AI training data",
+     "data engineering",
+     "generative AI"
+    ]
+   }
+  },
+  {
+   "id": "upstart",
+   "name": "Upstart Holdings, Inc.",
+   "aliases": [
+    "Upstart",
+    "アップスタート"
+   ],
+   "ticker": "UPST",
+   "exchange": "NASDAQ",
+   "sector": "ai",
+   "tier": "watch",
+   "market": "US",
+   "watch": {
+    "news_name": "Upstart Holdings, Inc.",
+    "extra_keywords": [
+     "AI lending",
+     "credit model",
+     "loan volume"
+    ]
+   }
+  },
+  {
+   "id": "terawulf",
+   "name": "TeraWulf Inc.",
+   "aliases": [
+    "TeraWulf",
+    "テラウルフ"
+   ],
+   "ticker": "WULF",
+   "exchange": "NASDAQ",
+   "sector": "ai",
+   "tier": "watch",
+   "market": "US",
+   "watch": {
+    "news_name": "TeraWulf Inc.",
+    "extra_keywords": [
+     "AI data center",
+     "Lake Mariner",
+     "HPC hosting"
+    ]
+   }
+  },
+  {
+   "id": "aerovironment",
+   "name": "AeroVironment, Inc.",
+   "aliases": [
+    "AeroVironment",
+    "エアロバイロンメント"
+   ],
+   "ticker": "AVAV",
+   "exchange": "NASDAQ",
+   "sector": "robotics",
+   "tier": "core",
+   "market": "US",
+   "watch": {
+    "news_name": "AeroVironment, Inc.",
+    "extra_keywords": [
+     "Switchblade",
+     "Puma",
+     "loitering munition"
+    ]
+   }
+  },
+  {
+   "id": "oceaneering",
+   "name": "Oceaneering International, Inc.",
+   "aliases": [
+    "Oceaneering",
+    "オシアニアリング"
+   ],
+   "ticker": "OII",
+   "exchange": "NYSE",
+   "sector": "robotics",
+   "tier": "watch",
+   "market": "US",
+   "watch": {
+    "news_name": "Oceaneering International, Inc.",
+    "extra_keywords": [
+     "ROV",
+     "subsea robotics",
+     "autonomous"
+    ]
+   }
+  },
+  {
+   "id": "red_cat",
+   "name": "Red Cat Holdings, Inc.",
+   "aliases": [
+    "Red Cat",
+    "レッドキャット"
+   ],
+   "ticker": "RCAT",
+   "exchange": "NASDAQ",
+   "sector": "robotics",
+   "tier": "core",
+   "market": "US",
+   "watch": {
+    "news_name": "Red Cat Holdings, Inc.",
+    "extra_keywords": [
+     "Teal",
+     "Black Widow",
+     "SRR"
+    ]
+   }
+  },
+  {
+   "id": "serve_robotics",
+   "name": "Serve Robotics Inc.",
+   "aliases": [
+    "Serve Robotics",
+    "サーブ・ロボティクス"
+   ],
+   "ticker": "SERV",
+   "exchange": "NASDAQ",
+   "sector": "robotics",
+   "tier": "watch",
+   "market": "US",
+   "watch": {
+    "news_name": "Serve Robotics Inc.",
+    "extra_keywords": [
+     "sidewalk delivery robot",
+     "Uber Eats"
+    ]
+   }
+  },
+  {
+   "id": "richtech_robotics",
+   "name": "Richtech Robotics Inc.",
+   "aliases": [
+    "Richtech Robotics",
+    "リッチテック"
+   ],
+   "ticker": "RR",
+   "exchange": "NASDAQ",
+   "sector": "robotics",
+   "tier": "watch",
+   "market": "US",
+   "watch": {
+    "news_name": "Richtech Robotics Inc.",
+    "extra_keywords": [
+     "ADAM",
+     "service robot",
+     "Medbot"
+    ]
+   }
+  },
+  {
+   "id": "enersys",
+   "name": "EnerSys",
+   "aliases": [
+    "EnerSys",
+    "エナシス"
+   ],
+   "ticker": "ENS",
+   "exchange": "NYSE",
+   "sector": "energy",
+   "tier": "watch",
+   "market": "US",
+   "watch": {
+    "news_name": "EnerSys",
+    "extra_keywords": [
+     "industrial batteries",
+     "data center",
+     "lithium"
+    ]
+   }
+  },
+  {
+   "id": "energy_vault",
+   "name": "Energy Vault Holdings, Inc.",
+   "aliases": [
+    "Energy Vault",
+    "エナジーボルト"
+   ],
+   "ticker": "NRGV",
+   "exchange": "NYSE",
+   "sector": "energy",
+   "tier": "watch",
+   "market": "US",
+   "watch": {
+    "news_name": "Energy Vault Holdings, Inc.",
+    "extra_keywords": [
+     "B-Vault",
+     "gravity storage",
+     "long duration"
+    ]
+   }
+  },
+  {
+   "id": "t1_energy",
+   "name": "T1 Energy Inc.",
+   "aliases": [
+    "T1 Energy",
+    "旧FREYR",
+    "FREYR Battery"
+   ],
+   "ticker": "TE",
+   "exchange": "NYSE",
+   "sector": "energy",
+   "tier": "watch",
+   "market": "US",
+   "watch": {
+    "news_name": "T1 Energy Inc.",
+    "extra_keywords": [
+     "Giga Texas",
+     "solar cell",
+     "Trina Solar"
+    ]
+   }
+  },
+  {
+   "id": "kulr",
+   "name": "KULR Technology Group, Inc.",
+   "aliases": [
+    "KULR Technology",
+    "KULR"
+   ],
+   "ticker": "KULR",
+   "exchange": "NYSE",
+   "sector": "energy",
+   "tier": "watch",
+   "market": "US",
+   "watch": {
+    "news_name": "KULR Technology Group, Inc.",
+    "extra_keywords": [
+     "thermal runaway",
+     "battery safety",
+     "KULR ONE"
+    ]
+   }
+  },
+  {
+   "id": "microvast",
+   "name": "Microvast Holdings, Inc.",
+   "aliases": [
+    "Microvast",
+    "マイクロバスト"
+   ],
+   "ticker": "MVST",
+   "exchange": "NASDAQ",
+   "sector": "energy",
+   "tier": "watch",
+   "market": "US",
+   "watch": {
+    "news_name": "Microvast Holdings, Inc.",
+    "extra_keywords": [
+     "commercial vehicle battery",
+     "LpCO",
+     "solid-state"
+    ]
+   }
+  },
+  {
+   "id": "horizon_quantum",
+   "name": "Horizon Quantum Computing Pte. Ltd.",
+   "aliases": [
+    "Horizon Quantum",
+    "ホライズン・クアンタム"
+   ],
+   "ticker": "HQ",
+   "exchange": "NASDAQ",
+   "sector": "quantum",
+   "tier": "watch",
+   "market": "US",
+   "watch": {
+    "news_name": "Horizon Quantum Computing Pte. Ltd.",
+    "extra_keywords": [
+     "Triple Alpha",
+     "quantum software"
+    ]
+   }
+  },
+  {
+   "id": "xanadu",
+   "name": "Xanadu Quantum Technologies Inc.",
+   "aliases": [
+    "Xanadu",
+    "ザナドゥ"
+   ],
+   "ticker": "XNDU",
+   "exchange": "NASDAQ",
+   "sector": "quantum",
+   "tier": "watch",
+   "market": "US",
+   "watch": {
+    "news_name": "Xanadu Quantum Technologies Inc.",
+    "extra_keywords": [
+     "photonic quantum",
+     "Aurora",
+     "DARPA QBI"
+    ]
+   }
+  },
+  {
+   "id": "btq_technologies",
+   "name": "BTQ Technologies Corp.",
+   "aliases": [
+    "BTQ Technologies",
+    "BTQ"
+   ],
+   "ticker": "BTQ",
+   "exchange": "NASDAQ",
+   "sector": "quantum",
+   "tier": "watch",
+   "market": "US",
+   "watch": {
+    "news_name": "BTQ Technologies Corp.",
+    "extra_keywords": [
+     "post-quantum cryptography",
+     "QSS"
+    ]
+   }
   }
  ]
 }

@@ -211,6 +211,162 @@
           "LFP"
         ]
       }
+    },
+    {
+      "id": "nouveau_monde",
+      "name": "Nouveau Monde Graphite Inc.",
+      "aliases": [
+        "Nouveau Monde Graphite",
+        "ヌーボー・モンド"
+      ],
+      "ticker": "NOU",
+      "exchange": "TSX",
+      "sector": "energy",
+      "tier": "core",
+      "market": "CA",
+      "watch": {
+        "news_name": "Nouveau Monde Graphite Inc.",
+        "extra_keywords": [
+          "graphite anode",
+          "Matawinie",
+          "Bécancour"
+        ]
+      }
+    },
+    {
+      "id": "ballard",
+      "name": "Ballard Power Systems Inc.",
+      "aliases": [
+        "Ballard Power",
+        "バラード"
+      ],
+      "ticker": "BLDP",
+      "exchange": "TSX",
+      "sector": "energy",
+      "tier": "watch",
+      "market": "CA",
+      "watch": {
+        "news_name": "Ballard Power Systems Inc.",
+        "extra_keywords": [
+          "fuel cell",
+          "hydrogen",
+          "FCmove"
+        ]
+      }
+    },
+    {
+      "id": "electrovaya",
+      "name": "Electrovaya Inc.",
+      "aliases": [
+        "Electrovaya",
+        "エレクトロバヤ"
+      ],
+      "ticker": "ELVA",
+      "exchange": "TSX",
+      "sector": "energy",
+      "tier": "core",
+      "market": "CA",
+      "watch": {
+        "news_name": "Electrovaya Inc.",
+        "extra_keywords": [
+          "Infinity Battery",
+          "forklift",
+          "lithium-ion"
+        ]
+      }
+    },
+    {
+      "id": "profound_medical",
+      "name": "Profound Medical Corp.",
+      "aliases": [
+        "Profound Medical",
+        "プロファウンド"
+      ],
+      "ticker": "PRN",
+      "exchange": "TSX",
+      "sector": "bio",
+      "tier": "core",
+      "market": "CA",
+      "tags": [
+        "medtech"
+      ],
+      "watch": {
+        "news_name": "Profound Medical Corp.",
+        "extra_keywords": [
+          "TULSA-PRO",
+          "prostate",
+          "Sonalleve"
+        ],
+        "sponsor": "Profound Medical"
+      }
+    },
+    {
+      "id": "cardiol",
+      "name": "Cardiol Therapeutics Inc.",
+      "aliases": [
+        "Cardiol Therapeutics",
+        "カーディオール"
+      ],
+      "ticker": "CRDL",
+      "exchange": "TSX",
+      "sector": "bio",
+      "tier": "core",
+      "market": "CA",
+      "watch": {
+        "news_name": "Cardiol Therapeutics Inc.",
+        "extra_keywords": [
+          "CardiolRx",
+          "pericarditis",
+          "MAVERIC"
+        ],
+        "sponsor": "Cardiol Therapeutics"
+      }
+    },
+    {
+      "id": "spectral_medical",
+      "name": "Spectral Medical Inc.",
+      "aliases": [
+        "Spectral Medical",
+        "スペクトラル"
+      ],
+      "ticker": "EDT",
+      "exchange": "TSX",
+      "sector": "bio",
+      "tier": "watch",
+      "market": "CA",
+      "tags": [
+        "medtech"
+      ],
+      "watch": {
+        "news_name": "Spectral Medical Inc.",
+        "extra_keywords": [
+          "PMX",
+          "Tigris",
+          "sepsis"
+        ],
+        "sponsor": "Spectral Medical"
+      }
+    },
+    {
+      "id": "kinaxis",
+      "name": "Kinaxis Inc.",
+      "aliases": [
+        "Kinaxis",
+        "キナクシス"
+      ],
+      "ticker": "KXS",
+      "exchange": "TSX",
+      "sector": "ai",
+      "tier": "watch",
+      "market": "CA",
+      "watch": {
+        "news_name": "Kinaxis Inc.",
+        "extra_keywords": [
+          "RapidResponse",
+          "supply chain",
+          "concurrent planning"
+        ]
+      }
     }
   ]
 }

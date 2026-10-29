@@ -23,4 +23,115 @@
     ]
   }
 }
+,
+{
+  "id": "cellectis",
+  "name": "Cellectis S.A.",
+  "aliases": [
+    "Cellectis",
+    "セレクティス"
+  ],
+  "ticker": "ALCLS",
+  "exchange": "Euronext Paris",
+  "sector": "bio",
+  "tier": "core",
+  "market": "FR",
+  "watch": {
+    "news_name": "Cellectis S.A.",
+    "extra_keywords": [
+      "UCART",
+      "TALEN",
+      "allogeneic CAR-T"
+    ],
+    "sponsor": "Cellectis"
+  }
+},
+{
+  "id": "sensorion",
+  "name": "Sensorion SA",
+  "aliases": [
+    "Sensorion",
+    "センソリオン"
+  ],
+  "ticker": "ALSEN",
+  "exchange": "Euronext Paris",
+  "sector": "bio",
+  "tier": "core",
+  "market": "FR",
+  "watch": {
+    "news_name": "Sensorion SA",
+    "extra_keywords": [
+      "SENS-501",
+      "gene therapy",
+      "hearing loss"
+    ],
+    "sponsor": "Sensorion"
+  }
+},
+{
+  "id": "crossject",
+  "name": "Crossject SA",
+  "aliases": [
+    "Crossject",
+    "クロスジェクト"
+  ],
+  "ticker": "ALCJ",
+  "exchange": "Euronext Paris",
+  "sector": "bio",
+  "tier": "core",
+  "market": "FR",
+  "tags": [
+    "medtech"
+  ],
+  "watch": {
+    "news_name": "Crossject SA",
+    "extra_keywords": [
+      "Zeneo",
+      "needle-free",
+      "auto-injector"
+    ]
+  }
+},
+{
+  "id": "planisware",
+  "name": "Planisware SAS",
+  "aliases": [
+    "Planisware",
+    "プラニスウェア"
+  ],
+  "ticker": "PLNW",
+  "exchange": "Euronext Paris",
+  "sector": "ai",
+  "tier": "watch",
+  "market": "FR",
+  "watch": {
+    "news_name": "Planisware SAS",
+    "extra_keywords": [
+      "project portfolio",
+      "Orchestra",
+      "AI"
+    ]
+  }
+},
+{
+  "id": "xfab",
+  "name": "X-FAB Silicon Foundries SE",
+  "aliases": [
+    "X-FAB",
+    "エックスファブ"
+  ],
+  "ticker": "XFAB",
+  "exchange": "Euronext Paris",
+  "sector": "semiconductor",
+  "tier": "watch",
+  "market": "FR",
+  "watch": {
+    "news_name": "X-FAB Silicon Foundries SE",
+    "extra_keywords": [
+      "analog foundry",
+      "MEMS",
+      "SiC"
+    ]
+  }
+}
 ]}

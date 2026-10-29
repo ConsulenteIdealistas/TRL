@@ -239,6 +239,160 @@
           "synthetic graphite"
         ]
       }
+    },
+    {
+      "id": "polynovo",
+      "name": "PolyNovo Limited",
+      "aliases": [
+        "PolyNovo",
+        "ポリノボ"
+      ],
+      "ticker": "PNV",
+      "exchange": "ASX",
+      "sector": "bio",
+      "tier": "core",
+      "market": "AU",
+      "tags": [
+        "medtech"
+      ],
+      "watch": {
+        "news_name": "PolyNovo Limited",
+        "extra_keywords": [
+          "NovoSorb",
+          "BTM",
+          "wound"
+        ],
+        "sponsor": "PolyNovo"
+      }
+    },
+    {
+      "id": "nanosonics",
+      "name": "Nanosonics Limited",
+      "aliases": [
+        "Nanosonics",
+        "ナノソニックス"
+      ],
+      "ticker": "NAN",
+      "exchange": "ASX",
+      "sector": "bio",
+      "tier": "core",
+      "market": "AU",
+      "tags": [
+        "medtech"
+      ],
+      "watch": {
+        "news_name": "Nanosonics Limited",
+        "extra_keywords": [
+          "trophon",
+          "CORIS",
+          "disinfection"
+        ]
+      }
+    },
+    {
+      "id": "droneshield",
+      "name": "DroneShield Limited",
+      "aliases": [
+        "DroneShield",
+        "ドローンシールド"
+      ],
+      "ticker": "DRO",
+      "exchange": "ASX",
+      "sector": "space",
+      "tier": "core",
+      "market": "AU",
+      "watch": {
+        "news_name": "DroneShield Limited",
+        "extra_keywords": [
+          "counter-drone",
+          "DroneGun",
+          "RfOne"
+        ]
+      }
+    },
+    {
+      "id": "silex",
+      "name": "Silex Systems Limited",
+      "aliases": [
+        "Silex Systems",
+        "サイレックス"
+      ],
+      "ticker": "SLX",
+      "exchange": "ASX",
+      "sector": "energy",
+      "tier": "core",
+      "market": "AU",
+      "watch": {
+        "news_name": "Silex Systems Limited",
+        "extra_keywords": [
+          "SILEX",
+          "uranium enrichment",
+          "GLE"
+        ]
+      }
+    },
+    {
+      "id": "archer_materials",
+      "name": "Archer Materials Limited",
+      "aliases": [
+        "Archer Materials",
+        "アーチャー"
+      ],
+      "ticker": "AXE",
+      "exchange": "ASX",
+      "sector": "quantum",
+      "tier": "watch",
+      "market": "AU",
+      "watch": {
+        "news_name": "Archer Materials Limited",
+        "extra_keywords": [
+          "12CQ",
+          "quantum chip",
+          "biochip"
+        ]
+      }
+    },
+    {
+      "id": "talga",
+      "name": "Talga Group Limited",
+      "aliases": [
+        "Talga Group",
+        "タルガ"
+      ],
+      "ticker": "TLG",
+      "exchange": "ASX",
+      "sector": "energy",
+      "tier": "watch",
+      "market": "AU",
+      "watch": {
+        "news_name": "Talga Group Limited",
+        "extra_keywords": [
+          "Vittangi",
+          "graphite anode",
+          "Talnode"
+        ]
+      }
+    },
+    {
+      "id": "vulcan_energy",
+      "name": "Vulcan Energy Resources Limited",
+      "aliases": [
+        "Vulcan Energy",
+        "バルカン・エナジー"
+      ],
+      "ticker": "VUL",
+      "exchange": "ASX",
+      "sector": "energy",
+      "tier": "core",
+      "market": "AU",
+      "watch": {
+        "news_name": "Vulcan Energy Resources Limited",
+        "extra_keywords": [
+          "Zero Carbon Lithium",
+          "geothermal",
+          "Lionheart"
+        ]
+      }
     }
   ]
 }

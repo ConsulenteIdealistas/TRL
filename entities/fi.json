@@ -1,1 +1,118 @@
-{"entities": [{"aliases": ["Orion", "Orion Pharma", "オリオン"], "exchange": "Nasdaq Helsinki", "id": "orion", "market": "FI", "name": "Orion Corporation", "sector": "bio", "ticker": "ORNBV", "tier": "core", "watch": {"extra_keywords": ["Nubeqa", "darolutamide", "ODM-208"], "news_name": "Orion Corporation", "pubmed": "Orion Pharma[Affiliation]", "sponsor": "Orion Corporation"}}, {"aliases": ["Herantis", "ヘランティス"], "exchange": "Nasdaq Helsinki", "id": "herantis", "market": "FI", "name": "Herantis Pharma Plc", "sector": "bio", "ticker": "HRTIS", "tier": "core", "watch": {"extra_keywords": ["HER-096", "Parkinson's", "CDNF"], "news_name": "Herantis Pharma", "pubmed": "Herantis Pharma[Affiliation]", "sponsor": "Herantis Pharma"}}, {"aliases": ["Faron", "ファロン"], "exchange": "Nasdaq Helsinki", "id": "faron", "market": "FI", "name": "Faron Pharmaceuticals Oy", "sector": "bio", "ticker": "FARON", "tier": "watch", "watch": {"extra_keywords": ["bexmarilimab", "BEXMAB", "Clever-1"], "news_name": "Faron Pharmaceuticals", "pubmed": "Faron[Affiliation]", "sponsor": "Faron Pharmaceuticals"}}, {"aliases": ["Nanoform"], "exchange": "Nasdaq Helsinki", "id": "nanoform", "market": "FI", "name": "Nanoform Finland Oyj", "sector": "bio", "ticker": "NANOFH", "tier": "watch", "watch": {"extra_keywords": ["CESS", "nanoparticle technology", "drug delivery"], "news_name": "Nanoform"}}]}
+{"entities": [{"aliases": ["Orion", "Orion Pharma", "オリオン"], "exchange": "Nasdaq Helsinki", "id": "orion", "market": "FI", "name": "Orion Corporation", "sector": "bio", "ticker": "ORNBV", "tier": "core", "watch": {"extra_keywords": ["Nubeqa", "darolutamide", "ODM-208"], "news_name": "Orion Corporation", "pubmed": "Orion Pharma[Affiliation]", "sponsor": "Orion Corporation"}}, {"aliases": ["Herantis", "ヘランティス"], "exchange": "Nasdaq Helsinki", "id": "herantis", "market": "FI", "name": "Herantis Pharma Plc", "sector": "bio", "ticker": "HRTIS", "tier": "core", "watch": {"extra_keywords": ["HER-096", "Parkinson's", "CDNF"], "news_name": "Herantis Pharma", "pubmed": "Herantis Pharma[Affiliation]", "sponsor": "Herantis Pharma"}}, {"aliases": ["Faron", "ファロン"], "exchange": "Nasdaq Helsinki", "id": "faron", "market": "FI", "name": "Faron Pharmaceuticals Oy", "sector": "bio", "ticker": "FARON", "tier": "watch", "watch": {"extra_keywords": ["bexmarilimab", "BEXMAB", "Clever-1"], "news_name": "Faron Pharmaceuticals", "pubmed": "Faron[Affiliation]", "sponsor": "Faron Pharmaceuticals"}}, {"aliases": ["Nanoform"], "exchange": "Nasdaq Helsinki", "id": "nanoform", "market": "FI", "name": "Nanoform Finland Oyj", "sector": "bio", "ticker": "NANOFH", "tier": "watch", "watch": {"extra_keywords": ["CESS", "nanoparticle technology", "drug delivery"], "news_name": "Nanoform"}},
+{
+  "id": "kalmar",
+  "name": "Kalmar Oyj",
+  "aliases": [
+    "Kalmar",
+    "カルマー"
+  ],
+  "ticker": "KALMAR",
+  "exchange": "Nasdaq Helsinki",
+  "sector": "robotics",
+  "tier": "watch",
+  "market": "FI",
+  "watch": {
+    "news_name": "Kalmar Oyj",
+    "extra_keywords": [
+      "straddle carrier",
+      "port automation",
+      "Kalmar One"
+    ]
+  }
+},
+{
+  "id": "hiab",
+  "name": "Hiab Oyj",
+  "aliases": [
+    "Hiab",
+    "ヒアブ"
+  ],
+  "ticker": "HIAB",
+  "exchange": "Nasdaq Helsinki",
+  "sector": "robotics",
+  "tier": "watch",
+  "market": "FI",
+  "watch": {
+    "news_name": "Hiab Oyj",
+    "extra_keywords": [
+      "loader crane",
+      "Multilift",
+      "electrification"
+    ]
+  }
+},
+{
+  "id": "detection_technology",
+  "name": "Detection Technology Oyj",
+  "aliases": [
+    "Detection Technology",
+    "ディテクション"
+  ],
+  "ticker": "DETEC",
+  "exchange": "Nasdaq Helsinki",
+  "sector": "semiconductor",
+  "tier": "watch",
+  "market": "FI",
+  "tags": [
+    "photonics"
+  ],
+  "watch": {
+    "news_name": "Detection Technology Oyj",
+    "extra_keywords": [
+      "X-ray detector",
+      "photon-counting",
+      "CT"
+    ]
+  }
+},
+{
+  "id": "revenio",
+  "name": "Revenio Group Oyj",
+  "aliases": [
+    "Revenio",
+    "iCare",
+    "レベニオ"
+  ],
+  "ticker": "REG1V",
+  "exchange": "Nasdaq Helsinki",
+  "sector": "bio",
+  "tier": "core",
+  "market": "FI",
+  "tags": [
+    "medtech"
+  ],
+  "watch": {
+    "news_name": "Revenio Group Oyj",
+    "extra_keywords": [
+      "iCare",
+      "tonometer",
+      "HOME2"
+    ]
+  }
+},
+{
+  "id": "nexstim",
+  "name": "Nexstim Plc",
+  "aliases": [
+    "Nexstim",
+    "ネクスティム"
+  ],
+  "ticker": "NXTMH",
+  "exchange": "Nasdaq Helsinki",
+  "sector": "bio",
+  "tier": "core",
+  "market": "FI",
+  "tags": [
+    "medtech"
+  ],
+  "watch": {
+    "news_name": "Nexstim Plc",
+    "extra_keywords": [
+      "NBT",
+      "TMS",
+      "depression"
+    ],
+    "sponsor": "Nexstim"
+  }
+}
+]}

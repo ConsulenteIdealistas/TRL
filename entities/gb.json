@@ -370,6 +370,112 @@
         ],
         "sponsor": "Creo Medical"
       }
+    },
+    {
+      "id": "ocado",
+      "name": "Ocado Group plc",
+      "aliases": [
+        "Ocado",
+        "オカド"
+      ],
+      "ticker": "OCDO",
+      "exchange": "LSE",
+      "sector": "robotics",
+      "tier": "watch",
+      "market": "GB",
+      "watch": {
+        "news_name": "Ocado Group plc",
+        "extra_keywords": [
+          "Hive",
+          "fulfillment",
+          "OSP"
+        ]
+      }
+    },
+    {
+      "id": "ceres_power",
+      "name": "Ceres Power Holdings plc",
+      "aliases": [
+        "Ceres Power",
+        "セレスパワー"
+      ],
+      "ticker": "CWR",
+      "exchange": "LSE",
+      "sector": "energy",
+      "tier": "core",
+      "market": "GB",
+      "watch": {
+        "news_name": "Ceres Power Holdings plc",
+        "extra_keywords": [
+          "solid oxide",
+          "fuel cell",
+          "electrolysis"
+        ]
+      }
+    },
+    {
+      "id": "netcall",
+      "name": "Netcall plc",
+      "aliases": [
+        "Netcall",
+        "ネットコール"
+      ],
+      "ticker": "NET",
+      "exchange": "LSE",
+      "sector": "ai",
+      "tier": "watch",
+      "market": "GB",
+      "watch": {
+        "news_name": "Netcall plc",
+        "extra_keywords": [
+          "Liberty",
+          "low-code",
+          "contact centre"
+        ]
+      }
+    },
+    {
+      "id": "allergy_therapeutics",
+      "name": "Allergy Therapeutics plc",
+      "aliases": [
+        "Allergy Therapeutics",
+        "アレルギー・セラピューティクス"
+      ],
+      "ticker": "AGY",
+      "exchange": "LSE",
+      "sector": "bio",
+      "tier": "watch",
+      "market": "GB",
+      "watch": {
+        "news_name": "Allergy Therapeutics plc",
+        "extra_keywords": [
+          "Pollinex",
+          "Grass MATA",
+          "immunotherapy"
+        ],
+        "sponsor": "Allergy Therapeutics"
+      }
+    },
+    {
+      "id": "poolbeg",
+      "name": "Poolbeg Pharma PLC",
+      "aliases": [
+        "Poolbeg Pharma",
+        "プールベッグ"
+      ],
+      "ticker": "POLB",
+      "exchange": "LSE",
+      "sector": "bio",
+      "tier": "watch",
+      "market": "GB",
+      "watch": {
+        "news_name": "Poolbeg Pharma PLC",
+        "extra_keywords": [
+          "POLB 001",
+          "influenza",
+          "hVIVO"
+        ]
+      }
     }
   ]
 }

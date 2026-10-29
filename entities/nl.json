@@ -1,1 +1,43 @@
-{"entities": [{"aliases": ["ASM International", "ASMI", "ASMインターナショナル"], "exchange": "Euronext Amsterdam", "id": "asm_international", "market": "NL", "name": "ASM International N.V.", "sector": "semiconductor", "ticker": "ASM", "tier": "core", "watch": {"extra_keywords": ["ALD", "atomic layer deposition", "epitaxy"], "news_name": "ASM International"}}, {"aliases": ["BE Semiconductor", "BESI"], "exchange": "Euronext Amsterdam", "id": "be_semiconductor", "market": "NL", "name": "BE Semiconductor Industries N.V.", "sector": "semiconductor", "ticker": "BESI", "tier": "core", "watch": {"extra_keywords": ["hybrid bonding", "die attach", "packaging"], "news_name": "BE Semiconductor"}}, {"aliases": ["Pharming", "ファーミング"], "exchange": "Euronext Amsterdam", "id": "pharming", "market": "NL", "name": "Pharming Group N.V.", "sector": "bio", "ticker": "PHARM", "tier": "watch", "watch": {"extra_keywords": ["Ruconest", "Joenja", "leniolisib"], "news_name": "Pharming Group", "sponsor": "Pharming"}}, {"aliases": ["Lakefront Biotherapeutics", "Galapagos", "Lakefront"], "exchange": "Euronext Amsterdam", "id": "lakefront", "market": "NL", "name": "Lakefront Biotherapeutics NV", "sector": "bio", "ticker": "LKFT", "tier": "core", "watch": {"extra_keywords": ["cell therapy", "GLPG5101", "T-cell engager"], "news_name": "Lakefront Biotherapeutics", "pubmed": "Galapagos NV[Affiliation]", "sponsor": "Galapagos NV"}}, {"aliases": ["Vivoryon Therapeutics", "Vivoryon"], "exchange": "Euronext Amsterdam", "id": "vivoryon", "market": "NL", "name": "Vivoryon Therapeutics N.V.", "sector": "bio", "ticker": "VVY", "tier": "watch", "watch": {"extra_keywords": ["varoglutamstat", "glutaminyl cyclase", "diabetic kidney disease"], "news_name": "Vivoryon Therapeutics", "sponsor": "Vivoryon Therapeutics"}}]}
+{"entities": [{"aliases": ["ASM International", "ASMI", "ASMインターナショナル"], "exchange": "Euronext Amsterdam", "id": "asm_international", "market": "NL", "name": "ASM International N.V.", "sector": "semiconductor", "ticker": "ASM", "tier": "core", "watch": {"extra_keywords": ["ALD", "atomic layer deposition", "epitaxy"], "news_name": "ASM International"}}, {"aliases": ["BE Semiconductor", "BESI"], "exchange": "Euronext Amsterdam", "id": "be_semiconductor", "market": "NL", "name": "BE Semiconductor Industries N.V.", "sector": "semiconductor", "ticker": "BESI", "tier": "core", "watch": {"extra_keywords": ["hybrid bonding", "die attach", "packaging"], "news_name": "BE Semiconductor"}}, {"aliases": ["Pharming", "ファーミング"], "exchange": "Euronext Amsterdam", "id": "pharming", "market": "NL", "name": "Pharming Group N.V.", "sector": "bio", "ticker": "PHARM", "tier": "watch", "watch": {"extra_keywords": ["Ruconest", "Joenja", "leniolisib"], "news_name": "Pharming Group", "sponsor": "Pharming"}}, {"aliases": ["Lakefront Biotherapeutics", "Galapagos", "Lakefront"], "exchange": "Euronext Amsterdam", "id": "lakefront", "market": "NL", "name": "Lakefront Biotherapeutics NV", "sector": "bio", "ticker": "LKFT", "tier": "core", "watch": {"extra_keywords": ["cell therapy", "GLPG5101", "T-cell engager"], "news_name": "Lakefront Biotherapeutics", "pubmed": "Galapagos NV[Affiliation]", "sponsor": "Galapagos NV"}}, {"aliases": ["Vivoryon Therapeutics", "Vivoryon"], "exchange": "Euronext Amsterdam", "id": "vivoryon", "market": "NL", "name": "Vivoryon Therapeutics N.V.", "sector": "bio", "ticker": "VVY", "tier": "watch", "watch": {"extra_keywords": ["varoglutamstat", "glutaminyl cyclase", "diabetic kidney disease"], "news_name": "Vivoryon Therapeutics", "sponsor": "Vivoryon Therapeutics"}},
+{
+  "id": "alfen",
+  "name": "Alfen N.V.",
+  "aliases": [
+    "Alfen",
+    "アルフェン"
+  ],
+  "ticker": "ALFEN",
+  "exchange": "Euronext Amsterdam",
+  "sector": "energy",
+  "tier": "watch",
+  "market": "NL",
+  "watch": {
+    "news_name": "Alfen N.V.",
+    "extra_keywords": [
+      "energy storage",
+      "EV charging",
+      "smart grid"
+    ]
+  }
+},
+{
+  "id": "fastned",
+  "name": "Fastned B.V.",
+  "aliases": [
+    "Fastned",
+    "ファストネッド"
+  ],
+  "ticker": "FAST",
+  "exchange": "Euronext Amsterdam",
+  "sector": "energy",
+  "tier": "watch",
+  "market": "NL",
+  "watch": {
+    "news_name": "Fastned B.V.",
+    "extra_keywords": [
+      "fast charging",
+      "stations"
+    ]
+  }
+}
+]}

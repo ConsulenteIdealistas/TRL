@@ -263,6 +263,177 @@
      "glass processing"
     ]
    }
+  },
+  {
+   "id": "durr",
+   "name": "Dürr Aktiengesellschaft",
+   "aliases": [
+    "Dürr",
+    "デュル"
+   ],
+   "ticker": "DUE",
+   "exchange": "Xetra",
+   "sector": "robotics",
+   "tier": "watch",
+   "market": "DE",
+   "watch": {
+    "news_name": "Dürr Aktiengesellschaft",
+    "extra_keywords": [
+     "paint robot",
+     "EcoRP",
+     "automation"
+    ]
+   }
+  },
+  {
+   "id": "kion",
+   "name": "KION GROUP AG",
+   "aliases": [
+    "KION Group",
+    "キオン"
+   ],
+   "ticker": "KGX",
+   "exchange": "Xetra",
+   "sector": "robotics",
+   "tier": "watch",
+   "market": "DE",
+   "watch": {
+    "news_name": "KION GROUP AG",
+    "extra_keywords": [
+     "Dematic",
+     "warehouse automation",
+     "Linde"
+    ]
+   }
+  },
+  {
+   "id": "teamviewer",
+   "name": "TeamViewer SE",
+   "aliases": [
+    "TeamViewer",
+    "チームビューアー"
+   ],
+   "ticker": "TMV",
+   "exchange": "Xetra",
+   "sector": "ai",
+   "tier": "watch",
+   "market": "DE",
+   "watch": {
+    "news_name": "TeamViewer SE",
+    "extra_keywords": [
+     "remote connectivity",
+     "TeamViewer AI",
+     "Dex"
+    ]
+   }
+  },
+  {
+   "id": "jenoptik",
+   "name": "Jenoptik AG",
+   "aliases": [
+    "Jenoptik",
+    "イェンオプティク"
+   ],
+   "ticker": "JEN",
+   "exchange": "Xetra",
+   "sector": "semiconductor",
+   "tier": "core",
+   "market": "DE",
+   "tags": [
+    "photonics"
+   ],
+   "watch": {
+    "news_name": "Jenoptik AG",
+    "extra_keywords": [
+     "photonics",
+     "optics",
+     "semiconductor optics"
+    ]
+   }
+  },
+  {
+   "id": "pva_tepla",
+   "name": "PVA TePla AG",
+   "aliases": [
+    "PVA TePla",
+    "PVAテプラ"
+   ],
+   "ticker": "TPE",
+   "exchange": "Xetra",
+   "sector": "semiconductor",
+   "tier": "core",
+   "market": "DE",
+   "watch": {
+    "news_name": "PVA TePla AG",
+    "extra_keywords": [
+     "crystal growing",
+     "metrology",
+     "SiC"
+    ]
+   }
+  },
+  {
+   "id": "two_g_energy",
+   "name": "2G Energy AG",
+   "aliases": [
+    "2G Energy",
+    "2Gエナジー"
+   ],
+   "ticker": "2GB",
+   "exchange": "Xetra",
+   "sector": "energy",
+   "tier": "watch",
+   "market": "DE",
+   "watch": {
+    "news_name": "2G Energy AG",
+    "extra_keywords": [
+     "CHP",
+     "cogeneration",
+     "hydrogen"
+    ]
+   }
+  },
+  {
+   "id": "brain_biotech",
+   "name": "BRAIN Biotech AG",
+   "aliases": [
+    "BRAIN Biotech",
+    "ブレイン"
+   ],
+   "ticker": "BNN",
+   "exchange": "Xetra",
+   "sector": "bio",
+   "tier": "watch",
+   "market": "DE",
+   "watch": {
+    "news_name": "BRAIN Biotech AG",
+    "extra_keywords": [
+     "enzymes",
+     "bioeconomy",
+     "Biocatalysts"
+    ]
+   }
+  },
+  {
+   "id": "eckert_ziegler",
+   "name": "Eckert & Ziegler SE",
+   "aliases": [
+    "Eckert & Ziegler",
+    "エッカート"
+   ],
+   "ticker": "EUZ",
+   "exchange": "Xetra",
+   "sector": "bio",
+   "tier": "core",
+   "market": "DE",
+   "watch": {
+    "news_name": "Eckert & Ziegler SE",
+    "extra_keywords": [
+     "radioisotope",
+     "GalliaPharm",
+     "radiopharma"
+    ]
+   }
   }
  ]
 }

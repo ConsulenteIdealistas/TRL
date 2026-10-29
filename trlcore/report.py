@@ -1,9 +1,7 @@
 """Markdownレポート(スマホで読みやすい箇条書き中心)と、外部検索リンクの生成。"""
 
 import json
-import urllib.error
 import urllib.parse
-import urllib.request
 from .normalize import clean_text
 
 

@@ -973,9 +973,20 @@ class ValidationTests(unittest.TestCase):
             with self.assertRaises(LLMError):
                 extract_json(bad)
 
+    def test_extract_json_trailing_prose(self):
+        # JSON の後ろに括弧を含む説明文が続いても先頭オブジェクトを読める
+        self.assertEqual(extract_json('{"a": 1} 補足{注: あとで確認}'), {"a": 1})
+
     def test_valid_assessment(self):
         s, d, e = ev.validate_assessment(assessment(LONG_KEYS), "long", CFG)
         self.assertEqual(e, [])
+
+    def test_bad_score_rejected(self):
+        # 文字列・真偽値・NaN のスコアは検証エラーにする(表示側の注入経路を断つ)
+        for bad in ("55", True, float("nan")):
+            a = assessment(LONG_KEYS)
+            a["items"]["market_growth"]["score"] = bad
+            self.assertIn("bad_score:market_growth", ev.validate_assessment(a, "long", CFG)[2])
 
     def test_invalid_assessments(self):
         a = assessment(LONG_KEYS)
@@ -1903,6 +1914,29 @@ class EntityQueryGenerationTests(unittest.TestCase):
         s = copy.deepcopy(CFG["sources"]); s["topics"] = [{"name": "t"}]
         with self.assertRaises(ConfigError):
             T.validate_sources(s)
+
+
+class AuditFixTests(unittest.TestCase):
+    def test_yahoo_quarters_are_distinct_candidates(self):
+        # Yahoo の URL は銘柄ページ(四半期で不変)。キーに使うと四半期レコードが
+        # 初回分へ統合され新しい財務数値が取り込まれないため、source_id をキーにする
+        kw = dict(url="https://finance.yahoo.co.jp/quote/TEST", info_type="disclosure")
+        q1 = raw(source="yahoo", sid="TEST-2026-06-30", title="TEST 財務情報(2026-06-30 四半期)",
+                 published="2026-06-30", abstract="TESTの財務数値: 売上高 100", **kw)
+        q2 = raw(source="yahoo", sid="TEST-2026-09-30", title="TEST 財務情報(2026-09-30 四半期)",
+                 published="2026-09-30", abstract="TESTの財務数値: 売上高 200", **kw)
+        r1, _ = normalize(q1, "2026-10-29T00:00:00+00:00")
+        r2, _ = normalize(q2, "2026-10-29T00:00:00+00:00")
+        self.assertEqual(r1["keys"][0], "srcid:yahoo:TEST-2026-06-30")
+        self.assertNotEqual(r1["keys"][0], r2["keys"][0])
+        with tempfile.TemporaryDirectory() as td:
+            store = T.Store(Path(td) / "d.sqlite")
+            c1, n1 = store.upsert_candidate(r1, "run1")
+            c2, n2 = store.upsert_candidate(r2, "run1")
+            self.assertTrue(n1 and n2)
+            self.assertNotEqual(c1, c2)
+            self.assertIn("200", store.get_candidate(c2)["abstract"])
+            store.close()
 
 
 if __name__ == "__main__":

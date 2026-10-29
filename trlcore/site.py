@@ -59,7 +59,9 @@ def _ev_for_site(ev, cfg):
     for k, v in items.items():
         miss, wait = _split_missing(v.get("missing_info"))
         out_items[k] = {
-            "score": v.get("score"), "reason": v.get("reason", ""),
+            "score": v.get("score") if isinstance(v.get("score"), (int, float))
+                     and not isinstance(v.get("score"), bool) else None,
+            "reason": v.get("reason", ""),
             "evidence": [{"ref": e.get("ref", ""), "summary": e.get("summary", ""), "kind": e.get("kind", "")}
                          for e in (v.get("evidence") or []) if isinstance(e, dict)],
             "counter_evidence": [str(x) for x in (v.get("counter_evidence") or [])],

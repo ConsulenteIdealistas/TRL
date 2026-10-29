@@ -79,7 +79,7 @@ function facetOptions() {
   fill("#fc", new Set(P.flatMap(p => p.entities.map(e => e.sector).filter(Boolean))), CO, CL);
 }
 function sc(p, k) { const it = p.long && p.long.items[k]; return it ? it.score : null; }
-function fmtScore(v) { return v == null ? "—" : v; }
+function fmtScore(v) { return typeof v === "number" && isFinite(v) ? v : "—"; }
 
 function facetText(p) {
   const m = marketOf(p), c = sectorOf(p);
@@ -92,7 +92,7 @@ function card(p) {
   return `<article class="card ${s ? "sel" : ""}" data-id="${esc(p.id)}"><div class="main"><div style="min-width:0"><div class="top"><span class="${src(p.source)}">${srcName(p.source)}</span><span class="date">${esc(p.published || "")}</span>${LANG === "ja" && srcOf(p) ? `<span class="date">訳: ${esc(srcOf(p))}</span>` : ""}</div><h3 class="title">${esc(dispT(p))}</h3><p class="abs">${esc(dispA(p))}</p><div class="tags">${(p.fields || []).slice(0, 4).map(t => `<span class="tag">${esc(t)}</span>`).join("")}</div><div class="mi"><span>技術成熟度 <strong>${fmtScore(sc(p, "technology_readiness"))}</strong></span><span>技術的優位性 <strong>${fmtScore(sc(p, "technological_advantage"))}</strong></span><span>関連企業 <strong>${ents ? ents + "社" : "未特定"}</strong></span>${facet ? `<span>国・分野 <strong>${esc(facet)}</strong></span>` : ""}</div></div><div class="side">${stB(p.display_status)}${dirB(p)}${trl(lvl(p))}</div></div><div class="foot"><span>${p.long && p.long.critical_missing.length ? `必須の不足 ${p.long.critical_missing.length}件` : p.display_status === "pending" ? (p.next_up ? "次回評価予定" : "評価待ち") : ""}</span><a class="tg" href="detail.html?id=${encodeURIComponent(p.id)}">詳細を見る →</a></div></article>`;
 }
 function scoreRow(k, it) {
-  const v = it ? it.score : null;
+  const v = it && typeof it.score === "number" && isFinite(it.score) ? it.score : null;
   const why = it && it.reason ? `<p>${esc(it.reason)}</p>` : "";
   const miss = it && v == null && it.missing_info.length ? `<p class="m">不足: ${it.missing_info.map(esc).join(" / ")}</p>` : "";
   const wait = it && it.awaiting_info && it.awaiting_info.length ? `<p class="w2">結果待ち: ${it.awaiting_info.map(esc).join(" / ")}</p>` : "";

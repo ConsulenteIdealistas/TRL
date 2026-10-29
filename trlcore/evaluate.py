@@ -47,6 +47,10 @@ def validate_assessment(obj, kind, cfg):
             errors.append(f"missing_item:{key}")
             continue
         score = it.get("score")
+        if score is not None and (isinstance(score, bool) or not isinstance(score, (int, float))
+                                  or score != score or score in (float("inf"), float("-inf"))):
+            # 型の検証はここで行う(範囲 0-100 は scoring 側の out_of_range が担当)
+            errors.append(f"bad_score:{key}")
         scores[key] = score
         ev = it.get("evidence")
         if score is not None:

@@ -19,8 +19,13 @@ def extract_json(text):
         raise LLMError("no JSON object in response")
     try:
         obj = json.loads(t[a:b + 1])
-    except json.JSONDecodeError as e:
-        raise LLMError(f"invalid JSON: {e.msg}") from None
+    except json.JSONDecodeError:
+        # 前後の説明文(括弧を含む文)が混じると最初{〜最後}の切り出しは壊れる。
+        # 先頭のオブジェクトだけを読む方法にフォールバックする。
+        try:
+            obj, _ = json.JSONDecoder().raw_decode(t[a:])
+        except json.JSONDecodeError as e:
+            raise LLMError(f"invalid JSON: {e.msg}") from None
     if not isinstance(obj, dict):
         raise LLMError("JSON root must be an object")
     return obj
@@ -62,7 +67,7 @@ class Anthropic:
             timeout=self.timeout, retries=self.retries)
         try:
             return "".join(b.get("text", "") for b in json.loads(raw)["content"])
-        except (KeyError, ValueError, TypeError):
+        except (KeyError, ValueError, TypeError, AttributeError):
             raise LLMError("unexpected Anthropic response shape") from None
 
 

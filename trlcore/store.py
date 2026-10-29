@@ -113,9 +113,12 @@ class Store:
                 existing = row[0]
                 break
         if existing:
+            cur = self.get_candidate(existing)
+            if cur is None:
+                existing = None  # identifiers だけが残った孤立参照は新規として扱う
+        if existing:
             for k in rec["keys"]:
                 c.execute("INSERT OR IGNORE INTO identifiers VALUES(?,?)", (k, existing))
-            cur = self.get_candidate(existing)
             if not cur["abstract"] and rec["abstract"]:
                 c.execute("UPDATE candidates SET abstract=? WHERE id=?", (rec["abstract"], existing))
             if not cur["doi"] and rec.get("doi"):

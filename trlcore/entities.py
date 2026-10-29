@@ -90,6 +90,11 @@ def validate_entities(data):
                 )
             aliases[normalized] = eid
 
+        ticker = entity.get("ticker")
+        if ticker is not None and (not isinstance(ticker, str)
+                                    or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9.\-]*", ticker)):
+            raise ConfigError(f"entities[{i}].ticker is invalid: {ticker!r}")
+
         products = entity.get("products", [])
         if not isinstance(products, list):
             raise ConfigError(f"entities[{i}].products must be a list")
@@ -119,6 +124,10 @@ def validate_entities(data):
                 if not isinstance(alias, str) or not alias.strip():
                     raise ConfigError(
                         f"entities[{i}].products[{j}] has an invalid alias"
+                    )
+                if len(_norm_text(alias)) < 3:
+                    raise ConfigError(
+                        f"entities[{i}].products[{j}] alias is too short: {alias}"
                     )
 
     return True

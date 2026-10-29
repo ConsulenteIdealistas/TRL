@@ -515,5 +515,18 @@ class ExportTests(unittest.TestCase):
         self.assertEqual(data["candidates"][0]["queue"], {})
 
 
+class SiteScoreCoercionTests(unittest.TestCase):
+    def test_string_score_is_exported_as_none(self):
+        # 旧データ等で items に文字列スコアが残っていても、サイト側へは数値以外を出さない
+        ev_row = {"kind": "long", "extra_json": "{}", "status": "error", "total": None,
+                  "band": None, "as_of": "2026-10-20", "evaluated_at": "2026-10-20T00:00:00+00:00",
+                  "errors_json": "[]",
+                  "items_json": json.dumps({"technology_readiness": {
+                      "score": "<b>99</b>", "reason": "r", "evidence": [],
+                      "counter_evidence": [], "missing_info": []}})}
+        out = T._ev_for_site(ev_row, CFG)
+        self.assertIsNone(out["items"]["technology_readiness"]["score"])
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -32,6 +32,16 @@ class EntityTests(unittest.TestCase):
         with self.assertRaises(trl.ConfigError):
             trl.validate_entities({"entities": [{"id": "a", "name": "AI"}]})
 
+    def test_invalid_ticker_rejected(self):
+        with self.assertRaises(trl.ConfigError):
+            trl.validate_entities({"entities": [{"id": "a", "name": "Alpha Co", "ticker": "AB/CD"}]})
+
+    def test_short_product_alias_rejected(self):
+        ent = {"entities": [{"id": "a", "name": "Alpha Co",
+                             "products": [{"id": "p1", "name": "Proper Name", "aliases": ["AB"]}]}]}
+        with self.assertRaises(trl.ConfigError):
+            trl.validate_entities(ent)
+
     def test_affiliation_is_strong(self):
         r = trl.link_entities({"title": "t", "abstract": "", "affiliations": ["R&D, Example Corp., Tokyo"]}, ENT)
         self.assertEqual([(x["entity_id"], x["strength"]) for x in r], [("ex_corp", "strong")])

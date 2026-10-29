@@ -114,8 +114,11 @@ def main(argv=None):
         return 2
     kinds = [k for k in a.kinds.split(",") if k]
     sources = [s for s in a.sources.split(",") if s]
-    if not set(kinds) <= {"long", "event"} or not set(sources) <= set(SOURCE_NAMES):
+    if not kinds or not set(kinds) <= {"long", "event"} or not sources or not set(sources) <= set(SOURCE_NAMES):
         print("invalid --kinds or --sources")
+        return 2
+    if a.max_eval is not None and a.max_eval < 0:
+        print("invalid --max-eval (must be >= 0)")
         return 2
     try:
         llm = configure_llm(get_provider(a.llm, a.model), cfg)

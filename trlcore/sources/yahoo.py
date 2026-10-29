@@ -17,12 +17,13 @@ quoteSummary の財務諸表モジュール
 
 import json
 import random
+import sys
 import threading
 import time
 import urllib.request
 from http.cookiejar import CookieJar
 from datetime import date, timedelta
-from ..http import http_fetch
+from ..http import http_fetch, redact
 
 
 SUMMARY_URL = "https://query2.finance.yahoo.com/v10/finance/quoteSummary/{symbol}"
@@ -218,11 +219,14 @@ def yahoo_fetch(query, max_results, lookback_days, as_of, http=None, sleep=time.
                         headers={"User-Agent": _session_ua()})
             data = json.loads(raw)
             break
-        except Exception:
+        except Exception as e:
             # crumb 失効や bot 判定の可能性があるため、次回は crumb と UA を取り直す
             s["crumb"] = None
             s["ua"] = None
             if attempt == 1:
+                # 恒常的な失敗(API仕様変更等)が無言にならないようログに残す
+                print(f"yahoo fetch failed for {symbol}: "
+                      f"{redact(f'{type(e).__name__}: {e}')}", file=sys.stderr)
                 return []
     text, period, name = parse_quote_summary(data)
     if not text or not period:

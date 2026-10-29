@@ -1,4 +1,4 @@
-"""正規化と基本検証。重複判定は安定ID(DOI/PMID/arXiv ID/URL)のみ。タイトル類似では統合しない。"""
+"""正規化と基本検証。重複判定は安定ID(DOI/PMID/arXiv ID/URL/ソース内ID)のみ。タイトル類似では統合しない。"""
 
 import re
 from .dates import parse_date
@@ -41,7 +41,12 @@ def normalize(raw, retrieved_at):
     if raw.get("arxiv_id"):
         keys.append("arxiv:" + str(raw["arxiv_id"]).strip().lower())
     url = norm_url(raw.get("url"))
-    if url:
+    if raw.get("source") == "yahoo" and raw.get("source_id"):
+        # Yahoo の URL は銘柄ページ(四半期で不変)。キーにすると四半期レコードが
+        # 初回分へ統合され、新しい財務数値が永久に取り込まれないため、
+        # レコード単位の source_id(ticker-period)を安定IDとして使う。
+        keys.append("srcid:yahoo:" + str(raw["source_id"]).strip())
+    elif url:
         keys.append("url:" + url)
     if not keys:
         problems.append("no_stable_identifier")

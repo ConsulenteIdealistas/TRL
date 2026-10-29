@@ -44,6 +44,9 @@ def backoff_delay(attempt, retry_after=None, rand=random.random):
     return base * (1 + 0.2 * rand())
 
 
+MAX_RESPONSE_BYTES = 32 * 1024 * 1024  # 異常な巨大応答でメモリを食い潰さないための上限
+
+
 def http_fetch(url, params=None, headers=None, data=None, timeout=30, retries=2,
                opener=None, sleep=time.sleep):
     opener = opener or urllib.request.urlopen
@@ -57,7 +60,10 @@ def http_fetch(url, params=None, headers=None, data=None, timeout=30, retries=2,
         retry_after = None
         try:
             with opener(req, timeout=timeout) as resp:
-                return resp.read()
+                payload = resp.read(MAX_RESPONSE_BYTES + 1)
+                if len(payload) > MAX_RESPONSE_BYTES:
+                    raise HttpError(f"response too large for {url}", None, None)
+                return payload
         except urllib.error.HTTPError as e:
             status = e.code
             retryable = e.code == 429 or e.code in (500, 502, 503, 504)

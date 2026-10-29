@@ -46,7 +46,7 @@ function trl(t) {
     Array.from({length: 9}, (_, i) => `<span class="seg ${k && i < t ? "f" : ""}"></span>`).join("")}</div></div>`;
 }
 function scoreRow(k, it) {
-  const v = it ? it.score : null;
+  const v = it && typeof it.score === "number" && isFinite(it.score) ? it.score : null;
   const why = it && it.reason ? `<p>${esc(it.reason)}</p>` : "";
   const miss = it && v == null && it.missing_info.length ? `<p class="m">不足: ${it.missing_info.map(esc).join(" / ")}</p>` : "";
   const wait = it && it.awaiting_info && it.awaiting_info.length ? `<p class="w2">結果待ち: ${it.awaiting_info.map(esc).join(" / ")}</p>` : "";

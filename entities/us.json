@@ -411,6 +411,317 @@
      "decision intelligence"
     ]
    }
+  },
+  {
+   "id": "bridgebio",
+   "name": "BridgeBio Pharma, Inc.",
+   "aliases": [
+    "BridgeBio Pharma",
+    "BridgeBio"
+   ],
+   "ticker": "BBIO",
+   "exchange": "NASDAQ",
+   "sector": "bio",
+   "tier": "core",
+   "market": "US",
+   "watch": {
+    "news_name": "BridgeBio Pharma",
+    "sponsor": "BridgeBio Pharma, Inc.",
+    "extra_keywords": [
+     "Attruby",
+     "acoramidis",
+     "transthyretin amyloidosis"
+    ],
+    "pubmed": "BridgeBio Pharma[Affiliation]"
+   }
+  },
+  {
+   "id": "insmed",
+   "name": "Insmed Incorporated",
+   "aliases": [
+    "Insmed"
+   ],
+   "ticker": "INSM",
+   "exchange": "NASDAQ",
+   "sector": "bio",
+   "tier": "core",
+   "market": "US",
+   "watch": {
+    "news_name": "Insmed",
+    "sponsor": "Insmed Incorporated",
+    "extra_keywords": [
+     "Brinsupri",
+     "brensocatib",
+     "Arikayce"
+    ],
+    "pubmed": "Insmed[Affiliation]"
+   }
+  },
+  {
+   "id": "madrigal",
+   "name": "Madrigal Pharmaceuticals, Inc.",
+   "aliases": [
+    "Madrigal Pharmaceuticals",
+    "Madrigal"
+   ],
+   "ticker": "MDGL",
+   "exchange": "NASDAQ",
+   "sector": "bio",
+   "tier": "core",
+   "market": "US",
+   "watch": {
+    "news_name": "Madrigal Pharmaceuticals",
+    "sponsor": "Madrigal Pharmaceuticals, Inc.",
+    "extra_keywords": [
+     "Rezdiffra",
+     "resmetirom",
+     "MASH"
+    ],
+    "pubmed": "Madrigal Pharmaceuticals[Affiliation]"
+   }
+  },
+  {
+   "id": "kymera",
+   "name": "Kymera Therapeutics, Inc.",
+   "aliases": [
+    "Kymera Therapeutics",
+    "Kymera"
+   ],
+   "ticker": "KYMR",
+   "exchange": "NASDAQ",
+   "sector": "bio",
+   "tier": "core",
+   "market": "US",
+   "watch": {
+    "news_name": "Kymera Therapeutics",
+    "sponsor": "Kymera Therapeutics, Inc.",
+    "extra_keywords": [
+     "targeted protein degradation",
+     "IRAK4",
+     "STAT6"
+    ],
+    "pubmed": "Kymera Therapeutics[Affiliation]"
+   }
+  },
+  {
+   "id": "cytokinetics",
+   "name": "Cytokinetics, Incorporated",
+   "aliases": [
+    "Cytokinetics"
+   ],
+   "ticker": "CYTK",
+   "exchange": "NASDAQ",
+   "sector": "bio",
+   "tier": "core",
+   "market": "US",
+   "watch": {
+    "news_name": "Cytokinetics",
+    "sponsor": "Cytokinetics",
+    "extra_keywords": [
+     "aficamten",
+     "MYQORZO",
+     "hypertrophic cardiomyopathy"
+    ],
+    "pubmed": "Cytokinetics[Affiliation]"
+   }
+  },
+  {
+   "id": "axsome",
+   "name": "Axsome Therapeutics, Inc.",
+   "aliases": [
+    "Axsome Therapeutics",
+    "Axsome"
+   ],
+   "ticker": "AXSM",
+   "exchange": "NASDAQ",
+   "sector": "bio",
+   "tier": "core",
+   "market": "US",
+   "watch": {
+    "news_name": "Axsome Therapeutics",
+    "sponsor": "Axsome Therapeutics, Inc.",
+    "extra_keywords": [
+     "Auvelity",
+     "Sunosi",
+     "AXS-05"
+    ],
+    "pubmed": "Axsome Therapeutics[Affiliation]"
+   }
+  },
+  {
+   "id": "viking",
+   "name": "Viking Therapeutics, Inc.",
+   "aliases": [
+    "Viking Therapeutics",
+    "Viking"
+   ],
+   "ticker": "VKTX",
+   "exchange": "NASDAQ",
+   "sector": "bio",
+   "tier": "core",
+   "market": "US",
+   "watch": {
+    "news_name": "Viking Therapeutics",
+    "sponsor": "Viking Therapeutics, Inc.",
+    "extra_keywords": [
+     "VK2735",
+     "GLP-1",
+     "obesity drug"
+    ],
+    "pubmed": "Viking Therapeutics[Affiliation]"
+   }
+  },
+  {
+   "id": "denali",
+   "name": "Denali Therapeutics Inc.",
+   "aliases": [
+    "Denali Therapeutics",
+    "Denali"
+   ],
+   "ticker": "DNLI",
+   "exchange": "NASDAQ",
+   "sector": "bio",
+   "tier": "core",
+   "market": "US",
+   "watch": {
+    "news_name": "Denali Therapeutics",
+    "sponsor": "Denali Therapeutics Inc.",
+    "extra_keywords": [
+     "tividenofusp alfa",
+     "enzyme transport vehicle",
+     "Hunter syndrome"
+    ],
+    "pubmed": "Denali Therapeutics[Affiliation]"
+   }
+  },
+  {
+   "id": "vera",
+   "name": "Vera Therapeutics, Inc.",
+   "aliases": [
+    "Vera Therapeutics",
+    "Vera"
+   ],
+   "ticker": "VERA",
+   "exchange": "NASDAQ",
+   "sector": "bio",
+   "tier": "core",
+   "market": "US",
+   "watch": {
+    "news_name": "Vera Therapeutics",
+    "sponsor": "Vera Therapeutics, Inc.",
+    "extra_keywords": [
+     "atacicept",
+     "IgA nephropathy",
+     "BAFF/APRIL"
+    ],
+    "pubmed": "Vera Therapeutics[Affiliation]"
+   }
+  },
+  {
+   "id": "apogee",
+   "name": "Apogee Therapeutics, Inc.",
+   "aliases": [
+    "Apogee Therapeutics",
+    "Apogee"
+   ],
+   "ticker": "APGE",
+   "exchange": "NASDAQ",
+   "sector": "bio",
+   "tier": "core",
+   "market": "US",
+   "watch": {
+    "news_name": "Apogee Therapeutics",
+    "sponsor": "Apogee Therapeutics, Inc.",
+    "extra_keywords": [
+     "APG777",
+     "atopic dermatitis",
+     "IL-13 antibody"
+    ],
+    "pubmed": "Apogee Therapeutics[Affiliation]"
+   }
+  },
+  {
+   "id": "nebius",
+   "name": "Nebius Group N.V.",
+   "aliases": [
+    "Nebius Group",
+    "Nebius"
+   ],
+   "ticker": "NBIS",
+   "exchange": "NASDAQ",
+   "sector": "ai",
+   "tier": "core",
+   "market": "US",
+   "watch": {
+    "news_name": "Nebius",
+    "extra_keywords": [
+     "AI cloud",
+     "GPU cloud",
+     "neocloud"
+    ]
+   }
+  },
+  {
+   "id": "uipath",
+   "name": "UiPath, Inc.",
+   "aliases": [
+    "UiPath"
+   ],
+   "ticker": "PATH",
+   "exchange": "NYSE",
+   "sector": "ai",
+   "tier": "core",
+   "market": "US",
+   "watch": {
+    "news_name": "UiPath",
+    "extra_keywords": [
+     "robotic process automation",
+     "RPA",
+     "agentic automation"
+    ]
+   }
+  },
+  {
+   "id": "soundhound",
+   "name": "SoundHound AI, Inc.",
+   "aliases": [
+    "SoundHound AI",
+    "SoundHound"
+   ],
+   "ticker": "SOUN",
+   "exchange": "NASDAQ",
+   "sector": "ai",
+   "tier": "watch",
+   "market": "US",
+   "watch": {
+    "news_name": "SoundHound AI",
+    "extra_keywords": [
+     "voice AI",
+     "speech recognition",
+     "conversational AI"
+    ]
+   }
+  },
+  {
+   "id": "c3ai",
+   "name": "C3.ai, Inc.",
+   "aliases": [
+    "C3.ai",
+    "C3 AI"
+   ],
+   "ticker": "AI",
+   "exchange": "NYSE",
+   "sector": "ai",
+   "tier": "watch",
+   "market": "US",
+   "watch": {
+    "news_name": "C3.ai",
+    "extra_keywords": [
+     "enterprise AI",
+     "C3 AI platform",
+     "predictive analytics"
+    ]
+   }
   }
  ]
 }

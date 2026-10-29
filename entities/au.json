@@ -130,6 +130,94 @@
           "edge AI"
         ]
       }
+    },
+    {
+      "id": "clarity",
+      "name": "Clarity Pharmaceuticals Ltd",
+      "aliases": [
+        "Clarity Pharmaceuticals",
+        "Clarity"
+      ],
+      "ticker": "CU6",
+      "exchange": "ASX",
+      "sector": "bio",
+      "tier": "core",
+      "market": "AU",
+      "watch": {
+        "news_name": "Clarity Pharmaceuticals",
+        "sponsor": "Clarity Pharmaceuticals",
+        "extra_keywords": [
+          "SAR-bisPSMA",
+          "theranostics",
+          "copper-64"
+        ],
+        "pubmed": "Clarity Pharmaceuticals[Affiliation]"
+      }
+    },
+    {
+      "id": "racura",
+      "name": "Racura Oncology Ltd",
+      "aliases": [
+        "Racura Oncology",
+        "Race Oncology"
+      ],
+      "ticker": "RAC",
+      "exchange": "ASX",
+      "sector": "bio",
+      "tier": "core",
+      "market": "AU",
+      "watch": {
+        "news_name": "Racura Oncology",
+        "sponsor": "Race Oncology",
+        "extra_keywords": [
+          "RC220",
+          "bisantrene",
+          "acute myeloid leukemia"
+        ],
+        "pubmed": "Race Oncology[Affiliation]"
+      }
+    },
+    {
+      "id": "paradigm",
+      "name": "Paradigm Biopharmaceuticals Ltd",
+      "aliases": [
+        "Paradigm Biopharmaceuticals",
+        "Paradigm"
+      ],
+      "ticker": "PAR",
+      "exchange": "ASX",
+      "sector": "bio",
+      "tier": "watch",
+      "market": "AU",
+      "watch": {
+        "news_name": "Paradigm Biopharmaceuticals",
+        "sponsor": "Paradigm Biopharmaceuticals",
+        "extra_keywords": [
+          "Zilosul",
+          "pentosan polysulfate",
+          "osteoarthritis"
+        ]
+      }
+    },
+    {
+      "id": "appen",
+      "name": "Appen Limited",
+      "aliases": [
+        "Appen"
+      ],
+      "ticker": "APX",
+      "exchange": "ASX",
+      "sector": "ai",
+      "tier": "core",
+      "market": "AU",
+      "watch": {
+        "news_name": "Appen",
+        "extra_keywords": [
+          "training data",
+          "data annotation",
+          "AI lifecycle"
+        ]
+      }
     }
   ]
 }

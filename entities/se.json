@@ -65,6 +65,51 @@
      "CAM2029"
     ]
    }
+  },
+  {
+   "id": "hansa",
+   "name": "Hansa Biopharma AB",
+   "aliases": [
+    "Hansa Biopharma",
+    "Hansa"
+   ],
+   "ticker": "HNSA",
+   "exchange": "Nasdaq Stockholm",
+   "sector": "bio",
+   "tier": "core",
+   "market": "SE",
+   "watch": {
+    "news_name": "Hansa Biopharma",
+    "sponsor": "Hansa Biopharma",
+    "extra_keywords": [
+     "imlifidase",
+     "Idefirix",
+     "IgG-cleaving enzyme"
+    ],
+    "pubmed": "Hansa Biopharma[Affiliation]"
+   }
+  },
+  {
+   "id": "vicore",
+   "name": "Vicore Pharma Holding AB",
+   "aliases": [
+    "Vicore Pharma",
+    "Vicore"
+   ],
+   "ticker": "VICO",
+   "exchange": "Nasdaq Stockholm",
+   "sector": "bio",
+   "tier": "watch",
+   "market": "SE",
+   "watch": {
+    "news_name": "Vicore Pharma",
+    "sponsor": "Vicore Pharma",
+    "extra_keywords": [
+     "buloxibutid",
+     "idiopathic pulmonary fibrosis",
+     "angiotensin II type 2 receptor"
+    ]
+   }
   }
  ]
 }

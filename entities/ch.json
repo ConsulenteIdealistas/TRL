@@ -67,6 +67,74 @@
           "plasma control"
         ]
       }
+    },
+    {
+      "id": "basilea",
+      "name": "Basilea Pharmaceutica AG",
+      "aliases": [
+        "Basilea Pharmaceutica",
+        "Basilea"
+      ],
+      "ticker": "BSLN",
+      "exchange": "SIX",
+      "sector": "bio",
+      "tier": "core",
+      "market": "CH",
+      "watch": {
+        "news_name": "Basilea",
+        "sponsor": "Basilea Pharmaceutica",
+        "extra_keywords": [
+          "Cresemba",
+          "Zevtera",
+          "antifungal"
+        ],
+        "pubmed": "Basilea Pharmaceutica[Affiliation]"
+      }
+    },
+    {
+      "id": "molecular_partners",
+      "name": "Molecular Partners AG",
+      "aliases": [
+        "Molecular Partners"
+      ],
+      "ticker": "MOLN",
+      "exchange": "SIX",
+      "sector": "bio",
+      "tier": "core",
+      "market": "CH",
+      "watch": {
+        "news_name": "Molecular Partners",
+        "sponsor": "Molecular Partners AG",
+        "extra_keywords": [
+          "DARPin",
+          "MP0533",
+          "radio DARPin"
+        ],
+        "pubmed": "Molecular Partners[Affiliation]"
+      }
+    },
+    {
+      "id": "newron",
+      "name": "Newron Pharmaceuticals S.p.A.",
+      "aliases": [
+        "Newron Pharmaceuticals",
+        "Newron"
+      ],
+      "ticker": "NWRN",
+      "exchange": "SIX",
+      "sector": "bio",
+      "tier": "core",
+      "market": "CH",
+      "watch": {
+        "news_name": "Newron Pharmaceuticals",
+        "sponsor": "Newron Pharmaceuticals",
+        "extra_keywords": [
+          "evenamide",
+          "Xadago",
+          "schizophrenia"
+        ],
+        "pubmed": "Newron Pharmaceuticals[Affiliation]"
+      }
     }
   ]
 }

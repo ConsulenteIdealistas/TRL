@@ -148,6 +148,135 @@
           "MBE"
         ]
       }
+    },
+    {
+      "id": "puretech",
+      "name": "PureTech Health plc",
+      "aliases": [
+        "PureTech Health",
+        "PureTech"
+      ],
+      "ticker": "PRTC",
+      "exchange": "LSE",
+      "sector": "bio",
+      "tier": "core",
+      "market": "GB",
+      "watch": {
+        "news_name": "PureTech Health",
+        "sponsor": "PureTech Health",
+        "extra_keywords": [
+          "deupirfenidone",
+          "LYT-100",
+          "Founded Entities"
+        ],
+        "pubmed": "PureTech Health[Affiliation]"
+      }
+    },
+    {
+      "id": "hutchmed",
+      "name": "HUTCHMED (China) Limited",
+      "aliases": [
+        "HUTCHMED",
+        "Hutchison China MediTech"
+      ],
+      "ticker": "HCM",
+      "exchange": "LSE",
+      "sector": "bio",
+      "tier": "core",
+      "market": "GB",
+      "watch": {
+        "news_name": "HUTCHMED",
+        "sponsor": "Hutchmed",
+        "extra_keywords": [
+          "fruquintinib",
+          "Fruzaqla",
+          "savolitinib"
+        ],
+        "pubmed": "Hutchison MediPharma[Affiliation]"
+      }
+    },
+    {
+      "id": "avacta",
+      "name": "Avacta Group plc",
+      "aliases": [
+        "Avacta Group",
+        "Avacta"
+      ],
+      "ticker": "AVCT",
+      "exchange": "LSE",
+      "sector": "bio",
+      "tier": "watch",
+      "market": "GB",
+      "watch": {
+        "news_name": "Avacta",
+        "sponsor": "Avacta",
+        "extra_keywords": [
+          "pre|CISION",
+          "AVA6000",
+          "peptide drug conjugate"
+        ]
+      }
+    },
+    {
+      "id": "scancell",
+      "name": "Scancell Holdings plc",
+      "aliases": [
+        "Scancell"
+      ],
+      "ticker": "SCLP",
+      "exchange": "LSE",
+      "sector": "bio",
+      "tier": "watch",
+      "market": "GB",
+      "watch": {
+        "news_name": "Scancell",
+        "sponsor": "Scancell Ltd",
+        "extra_keywords": [
+          "iSCIB1+",
+          "melanoma vaccine",
+          "Modi-1"
+        ]
+      }
+    },
+    {
+      "id": "kainos",
+      "name": "Kainos Group plc",
+      "aliases": [
+        "Kainos"
+      ],
+      "ticker": "KNOS",
+      "exchange": "LSE",
+      "sector": "ai",
+      "tier": "watch",
+      "market": "GB",
+      "watch": {
+        "news_name": "Kainos",
+        "extra_keywords": [
+          "Workday services",
+          "digital transformation",
+          "AI solutions"
+        ]
+      }
+    },
+    {
+      "id": "seeing_machines",
+      "name": "Seeing Machines Limited",
+      "aliases": [
+        "Seeing Machines"
+      ],
+      "ticker": "SEE",
+      "exchange": "LSE",
+      "sector": "ai",
+      "tier": "watch",
+      "market": "GB",
+      "watch": {
+        "news_name": "Seeing Machines",
+        "extra_keywords": [
+          "driver monitoring system",
+          "DMS",
+          "computer vision"
+        ]
+      }
     }
   ]
 }

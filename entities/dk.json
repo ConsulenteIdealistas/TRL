@@ -68,6 +68,71 @@
     ],
     "openalex": "I4210096064"
    }
+  },
+  {
+   "id": "gubra",
+   "name": "Gubra A/S",
+   "aliases": [
+    "Gubra"
+   ],
+   "ticker": "GUBRA",
+   "exchange": "Nasdaq Copenhagen",
+   "sector": "bio",
+   "tier": "core",
+   "market": "DK",
+   "watch": {
+    "news_name": "Gubra",
+    "sponsor": "Gubra",
+    "extra_keywords": [
+     "amylin analog",
+     "GUBamy",
+     "peptide drug discovery"
+    ],
+    "pubmed": "Gubra[Affiliation]"
+   }
+  },
+  {
+   "id": "alk_abello",
+   "name": "ALK-Abelló A/S",
+   "aliases": [
+    "ALK-Abelló"
+   ],
+   "ticker": "ALK-B",
+   "exchange": "Nasdaq Copenhagen",
+   "sector": "bio",
+   "tier": "core",
+   "market": "DK",
+   "watch": {
+    "news_name": "ALK-Abelló",
+    "sponsor": "ALK-Abelló A/S",
+    "extra_keywords": [
+     "allergy immunotherapy",
+     "Grazax",
+     "peanut allergy"
+    ],
+    "pubmed": "ALK-Abelló[Affiliation]"
+   }
+  },
+  {
+   "id": "bioporto",
+   "name": "BioPorto A/S",
+   "aliases": [
+    "BioPorto"
+   ],
+   "ticker": "BIOPOR",
+   "exchange": "Nasdaq Copenhagen",
+   "sector": "bio",
+   "tier": "watch",
+   "market": "DK",
+   "watch": {
+    "news_name": "BioPorto",
+    "sponsor": "BioPorto",
+    "extra_keywords": [
+     "NGAL",
+     "acute kidney injury",
+     "The NGAL Test"
+    ]
+   }
   }
  ]
 }

@@ -81,6 +81,95 @@
           "800G switch"
         ]
       }
+    },
+    {
+      "id": "satellos",
+      "name": "Satellos Bioscience Inc.",
+      "aliases": [
+        "Satellos Bioscience",
+        "Satellos"
+      ],
+      "ticker": "MSCL",
+      "exchange": "TSX",
+      "sector": "bio",
+      "tier": "core",
+      "market": "CA",
+      "watch": {
+        "news_name": "Satellos Bioscience",
+        "sponsor": "Satellos Bioscience Inc.",
+        "extra_keywords": [
+          "SAT-3247",
+          "Duchenne muscular dystrophy",
+          "muscle stem cells"
+        ],
+        "pubmed": "Satellos Bioscience[Affiliation]"
+      }
+    },
+    {
+      "id": "eupraxia",
+      "name": "Eupraxia Pharmaceuticals Inc.",
+      "aliases": [
+        "Eupraxia Pharmaceuticals",
+        "Eupraxia"
+      ],
+      "ticker": "EPRX",
+      "exchange": "TSX",
+      "sector": "bio",
+      "tier": "core",
+      "market": "CA",
+      "watch": {
+        "news_name": "Eupraxia Pharmaceuticals",
+        "sponsor": "Eupraxia Pharmaceuticals Inc.",
+        "extra_keywords": [
+          "Diffusphere",
+          "EP-104",
+          "osteoarthritis"
+        ],
+        "pubmed": "Eupraxia Pharmaceuticals[Affiliation]"
+      }
+    },
+    {
+      "id": "medicenna",
+      "name": "Medicenna Therapeutics Corp.",
+      "aliases": [
+        "Medicenna Therapeutics",
+        "Medicenna"
+      ],
+      "ticker": "MDNA",
+      "exchange": "TSX",
+      "sector": "bio",
+      "tier": "watch",
+      "market": "CA",
+      "watch": {
+        "news_name": "Medicenna Therapeutics",
+        "sponsor": "Medicenna Therapeutics, Inc.",
+        "extra_keywords": [
+          "bizaxofusp",
+          "MDNA11",
+          "IL-2 superkine"
+        ]
+      }
+    },
+    {
+      "id": "healwell",
+      "name": "HEALWELL AI Inc.",
+      "aliases": [
+        "HEALWELL AI",
+        "HealWell"
+      ],
+      "ticker": "AIDX",
+      "exchange": "TSX",
+      "sector": "ai",
+      "tier": "watch",
+      "market": "CA",
+      "watch": {
+        "news_name": "HEALWELL AI",
+        "extra_keywords": [
+          "clinical AI",
+          "disease detection",
+          "healthcare data platform"
+        ]
+      }
     }
   ]
 }

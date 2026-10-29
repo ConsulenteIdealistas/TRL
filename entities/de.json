@@ -176,6 +176,48 @@
     ],
     "openalex": "I4210165638"
    }
+  },
+  {
+   "id": "heidelberg_pharma",
+   "name": "Heidelberg Pharma AG",
+   "aliases": [
+    "Heidelberg Pharma"
+   ],
+   "ticker": "HPHA",
+   "exchange": "Xetra",
+   "sector": "bio",
+   "tier": "core",
+   "market": "DE",
+   "watch": {
+    "news_name": "Heidelberg Pharma",
+    "sponsor": "Heidelberg Pharma",
+    "extra_keywords": [
+     "ATAC",
+     "amanitin",
+     "HDP-101"
+    ],
+    "pubmed": "Heidelberg Pharma[Affiliation]"
+   }
+  },
+  {
+   "id": "gft",
+   "name": "GFT Technologies SE",
+   "aliases": [
+    "GFT Technologies"
+   ],
+   "ticker": "GFT",
+   "exchange": "Xetra",
+   "sector": "ai",
+   "tier": "watch",
+   "market": "DE",
+   "watch": {
+    "news_name": "GFT Technologies",
+    "extra_keywords": [
+     "Wynxx",
+     "banking software",
+     "GenAI"
+    ]
+   }
   }
  ]
 }

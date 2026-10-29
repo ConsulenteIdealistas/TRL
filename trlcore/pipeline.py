@@ -367,6 +367,12 @@ def run_pipeline(store, cfg, llm, *, as_of, sources=("pubmed", "arxiv"), kinds=(
             log(f"[translate] 使用量アラート: {name} の{span}が {before + chars:,} 字になり、しきい値 {t:,} 字を超過しました")
     if alerts:
         counts["translation_alerts"] = alerts
+    # 古い材料の削除 (DB の単調増加を抑える。評価済み・キュー入りは消さない)
+    pruned = store.prune(today, entity_markets={
+        e["id"]: e.get("market") or "JP" for e in (cfg.get("entities") or {}).get("entities", [])})
+    if pruned["total"] or pruned["extraction_cache"]:
+        counts["pruned"] = pruned
+        log(f"[prune] 古い材料を削除しました: {pruned}")
     all_failed = do_collect and counts["sources_ok"] == 0 and counts["sources_failed"] > 0
     store.finish_run(run_id, counts, "failed" if all_failed else "ok", time.monotonic() - t0)
     return {"run_id": run_id, "counts": counts, "failed": all_failed, "llm_degraded": degraded}

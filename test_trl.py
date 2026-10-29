@@ -2167,6 +2167,79 @@ class AuditFix2Tests(unittest.TestCase):
         store.close()
 
 
+class PruneTests(unittest.TestCase):
+    """古い材料の削除ポリシー。評価済み・キュー入りは決して消さない。"""
+
+    def _add(self, store, sid, source="gnews", info_type="news", published="2026-01-01",
+             status=None, url=None, affiliations=None):
+        kw = dict(source=source, sid=sid, info_type=info_type, published=published,
+                  url=url or f"https://example.com/{sid}", abstract="材料テキスト")
+        if affiliations:
+            kw["affiliations"] = affiliations
+        rec, _ = normalize(raw(**kw), "2026-10-20T00:00:00+00:00")
+        cid, _ = store.upsert_candidate(rec, "r0")
+        links = link_entities(rec, CFG.get("entities", {}))
+        if links:
+            store.set_entities(cid, links)
+        if status:
+            store.set_status(cid, status)
+        return cid
+
+    def test_prune_age_rules_and_protection(self):
+        with tempfile.TemporaryDirectory() as td:
+            store = T.Store(Path(td) / "d.sqlite")
+            old_news = self._add(store, "old-news", published="2026-01-01")
+            new_news = self._add(store, "new-news", published="2026-10-01")
+            old_disc = self._add(store, "old-disc", source="yahoo", info_type="disclosure",
+                                 published="2023-01-01")
+            evaluated_news = self._add(store, "eval-news", published="2026-01-01")
+            store.conn.execute("INSERT INTO evaluations(run_id, candidate_id, kind, status) "
+                               "VALUES('r0', ?, 'long', 'ok')", (evaluated_news,))
+            store.conn.commit()
+            queued_news = self._add(store, "queue-news", published="2026-01-01")
+            store.upsert_queue(queued_news, "long", "理由", [], [], [], "2026-10-20T00:00:00+00:00", {})
+            counts = store.prune(AS_OF, entity_markets={})
+            self.assertEqual(counts["news"], 1)
+            self.assertEqual(counts["disclosure"], 1)
+            self.assertIsNone(store.get_candidate(old_news))
+            self.assertIsNone(store.get_candidate(old_disc))
+            self.assertIsNotNone(store.get_candidate(new_news))
+            self.assertIsNotNone(store.get_candidate(evaluated_news))  # 評価済みは保護
+            self.assertIsNotNone(store.get_candidate(queued_news))     # キュー入りは保護
+            store.close()
+
+    def test_prune_stale_yahoo_twins(self):
+        with tempfile.TemporaryDirectory() as td:
+            store = T.Store(Path(td) / "d.sqlite")
+            aff = ["Oxford Nanopore Technologies"]
+            url = "https://finance.yahoo.com/quote/ONT.L"
+            old = self._add(store, "ONT-2026-06-30", source="yahoo", info_type="disclosure",
+                            published="2026-06-30", url=url, affiliations=aff)
+            new = self._add(store, "ONT.L-2026-06-30", source="yahoo", info_type="disclosure",
+                            published="2026-06-30", url=url, affiliations=aff)
+            markets = {e["id"]: e.get("market") or "JP"
+                       for e in CFG["entities"]["entities"]}
+            counts = store.prune(AS_OF, entity_markets=markets)
+            self.assertEqual(counts["stale_yahoo_keys"], 1)
+            self.assertIsNone(store.get_candidate(old))
+            self.assertIsNotNone(store.get_candidate(new))
+            store.close()
+
+    def test_prune_keeps_old_key_without_counterpart(self):
+        with tempfile.TemporaryDirectory() as td:
+            store = T.Store(Path(td) / "d.sqlite")
+            aff = ["Oxford Nanopore Technologies"]
+            only = self._add(store, "ONT-2026-06-30", source="yahoo", info_type="disclosure",
+                             published="2026-06-30", url="https://finance.yahoo.com/quote/ONT.L",
+                             affiliations=aff)
+            markets = {e["id"]: e.get("market") or "JP"
+                       for e in CFG["entities"]["entities"]}
+            counts = store.prune(AS_OF, entity_markets=markets)
+            self.assertEqual(counts["stale_yahoo_keys"], 0)
+            self.assertIsNotNone(store.get_candidate(only))  # 唯一の財務は残す
+            store.close()
+
+
 class EdgarTests(unittest.TestCase):
     FACTS = {"entityName": "Test Corp", "facts": {"us-gaap": {
         "RevenueFromContractWithCustomerExcludingAssessedTax": {"units": {"USD": [

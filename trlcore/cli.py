@@ -51,6 +51,9 @@ def main(argv=None):
     ex.add_argument("--web", default=None, help="web/ のパス(既定: リポジトリ内の web)")
     sub.add_parser("check-config")
     sub.add_parser("queries")
+    pr = sub.add_parser("prune")
+    pr.add_argument("--data-dir", default="data")
+    pr.add_argument("--as-of")
     pg = sub.add_parser("purge")
     pg.add_argument("--data-dir", default="data")
     pg.add_argument("--evaluations", action="store_true",
@@ -103,6 +106,13 @@ def main(argv=None):
         print(f"[export] {len(data['candidates'])}件 -> {Path(a.out) / 'data.json'}")
         return 0
     store = Store(Path(a.data_dir) / "trl.sqlite")
+    if a.cmd == "prune":
+        as_of_p = parse_date(a.as_of) if getattr(a, "as_of", None) else datetime.now(timezone.utc).date()
+        counts = store.prune(as_of_p, entity_markets={
+            e["id"]: e.get("market") or "JP" for e in (cfg.get("entities") or {}).get("entities", [])})
+        store.close()
+        print(f"[prune] {counts}")
+        return 0
     if a.cmd == "queue":
         for x in store.list_queue():
             print(f"[{x['kind']}] {x['title']}\n  {x['reason']}")

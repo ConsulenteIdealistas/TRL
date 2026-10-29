@@ -257,6 +257,83 @@ class Store:
         c.commit()
         return {"evaluations": n_eval, "queue": n_queue, "candidates_reset": cur.rowcount}
 
+    def prune(self, as_of, entity_markets=None, news_days=180, disclosure_days=800,
+              rejected_days=180, cache_days=180):
+        """古い材料を削除し、DB の単調増加を抑える。
+
+        対象は「プール専用の材料」と「除外済み」と「旧キー形式の重複」だけに限る。
+        評価が付いた候補と、未解決のレビューキューにある候補は決して消さない
+        (サイト表示と再評価の前提になるため)。保持期間は利用側の窓の2倍に取る:
+        ニュースは関連プール (90日) の2倍で180日、財務は財務プール (400日) の2倍で800日。
+        """
+        c = self.conn
+        protected = {r[0] for r in c.execute("SELECT DISTINCT candidate_id FROM evaluations")}
+        protected |= {r[0] for r in c.execute(
+            "SELECT candidate_id FROM review_queue WHERE resolved_at IS NULL")}
+        targets = {}  # cid -> 理由
+
+        def add(cid, reason):
+            if cid not in protected:
+                targets.setdefault(cid, reason)
+
+        news_cut = (as_of - timedelta(days=news_days)).isoformat()
+        for (cid,) in c.execute("SELECT id FROM candidates WHERE info_type='news' "
+                                "AND published IS NOT NULL AND published < ?", (news_cut,)):
+            add(cid, "news")
+        disc_cut = (as_of - timedelta(days=disclosure_days)).isoformat()
+        for (cid,) in c.execute("SELECT id FROM candidates WHERE info_type='disclosure' "
+                                "AND published IS NOT NULL AND published < ?", (disc_cut,)):
+            add(cid, "disclosure")
+        rej_cut = (as_of - timedelta(days=rejected_days)).isoformat()
+        for (cid,) in c.execute("SELECT id FROM candidates WHERE status='rejected' AND "
+                                "((published IS NOT NULL AND published < ?) OR "
+                                " (published IS NULL AND substr(retrieved_at,1,10) < ?))",
+                                (rej_cut, rej_cut)):
+            add(cid, "rejected")
+        for cid in self._stale_yahoo_key_ids(entity_markets or {}):
+            add(cid, "stale_yahoo_keys")
+        counts = {"news": 0, "disclosure": 0, "rejected": 0, "stale_yahoo_keys": 0}
+        for cid, reason in targets.items():
+            c.execute("DELETE FROM candidate_entities WHERE candidate_id=?", (cid,))
+            c.execute("DELETE FROM identifiers WHERE candidate_id=?", (cid,))
+            c.execute("DELETE FROM candidates WHERE id=?", (cid,))
+            counts[reason] += 1
+        cache_cut = (as_of - timedelta(days=cache_days)).isoformat()
+        cur = c.execute("DELETE FROM extraction_cache WHERE substr(created_at,1,10) < ?", (cache_cut,))
+        counts["extraction_cache"] = cur.rowcount
+        counts["total"] = sum(counts[k] for k in ("news", "disclosure", "rejected", "stale_yahoo_keys"))
+        c.commit()
+        if counts["total"]:
+            try:
+                c.execute("VACUUM")
+            except Exception:
+                pass  # ファイルが縮まないだけ (行の削除は完了している)
+        return counts
+
+    def _stale_yahoo_key_ids(self, entity_markets):
+        """旧形式キー (接尾辞なし) の Yahoo 財務で、新形式 (接尾辞つき) の同企業・
+        同時期レコードが既にあるものを返す。移行期のツインのうち旧側だけを消す。
+        新形式が無い企業の旧レコードは (それが唯一の財務のうちは) 残す。"""
+        c = self.conn
+        rows = c.execute(
+            "SELECT i.key, i.candidate_id, n.published FROM identifiers i "
+            "JOIN candidates n ON n.id = i.candidate_id "
+            "WHERE i.key LIKE 'srcid:yahoo:%' AND n.source='yahoo'").fetchall()
+        info = {}  # cid -> (symbol, published)
+        for key, cid, published in rows:
+            sid = key[len("srcid:yahoo:"):]
+            info[cid] = (sid[:-11] if len(sid) > 11 else sid, published)
+        groups = {}  # (entity_id, published) -> {"dotted": set, "plain": set}
+        for cid, (sym, published) in info.items():
+            for (eid,) in c.execute("SELECT entity_id FROM candidate_entities WHERE candidate_id=?", (cid,)):
+                g = groups.setdefault((eid, published), {"dotted": set(), "plain": set()})
+                g["dotted" if "." in sym else "plain"].add(cid)
+        stale = set()
+        for (eid, _pub), g in groups.items():
+            if g["dotted"] and g["plain"] and (entity_markets.get(eid) or "JP") != "US":
+                stale |= g["plain"]
+        return stale
+
     def related_news(self, cid, as_of, limit=8, window_days=90):
         """同一企業に紐付く直近ニュースを、評価時の補助根拠として返す。
 

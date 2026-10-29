@@ -2,6 +2,7 @@
 
 import json
 import os
+import threading
 import time
 import xml.etree.ElementTree as ET
 from datetime import timedelta
@@ -9,6 +10,20 @@ from ..http import http_fetch
 
 
 BASE = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/"
+
+_rate_lock = threading.Lock()
+_last_call = [0.0]
+
+
+def _throttle(interval, sleep=time.sleep, now=time.monotonic):
+    """NCBI の上限 (キー無し3 req/s / キー有り10 req/s) を並行実行でも超えないよう、
+    プロセス全体で呼び出し間隔を空ける。クエリ単位の sleep では5並行のバーストを
+    抑えられず HTTP 429 になる (2026-10-29 の実行で6クエリ失敗)。"""
+    with _rate_lock:
+        wait = interval - (now() - _last_call[0])
+        if wait > 0:
+            sleep(wait)
+        _last_call[0] = now()
 
 
 MONTHS = {m: i for i, m in enumerate(
@@ -79,7 +94,7 @@ def parse_efetch(xml_bytes):
 def pubmed_fetch(query, max_results, lookback_days, as_of, http=None, sleep=time.sleep):
     http = http or http_fetch
     key = os.environ.get("NCBI_API_KEY")
-    delay = 0.12 if key else 0.4
+    interval = 0.12 if key else 0.4  # 全体スロットルの間隔 (上限の 3 / 10 req/s に対して余裕を持たせる)
     common = {"tool": "trl-analysis"}
     if key:
         common["api_key"] = key
@@ -87,10 +102,11 @@ def pubmed_fetch(query, max_results, lookback_days, as_of, http=None, sleep=time
                   datetype="pdat", sort="pub_date",
                   mindate=(as_of - timedelta(days=lookback_days)).strftime("%Y/%m/%d"),
                   maxdate=as_of.strftime("%Y/%m/%d"))
+    _throttle(interval, sleep=sleep)
     data = json.loads(http(BASE + "esearch.fcgi", params=params))
     ids = data.get("esearchresult", {}).get("idlist", [])
     if not ids:
         return []
-    sleep(delay)
+    _throttle(interval, sleep=sleep)
     xml = http(BASE + "efetch.fcgi", params=dict(common, db="pubmed", id=",".join(ids), retmode="xml"))
     return parse_efetch(xml)

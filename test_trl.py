@@ -2240,6 +2240,23 @@ class PruneTests(unittest.TestCase):
             store.close()
 
 
+class PubMedThrottleTests(unittest.TestCase):
+    def test_throttle_spaces_calls_process_wide(self):
+        from trlcore.sources import pubmed as pm
+        waits, clock = [], [1000.0]
+
+        def fake_sleep(w):
+            waits.append(w)
+            clock[0] += w
+        pm._last_call[0] = 0.0
+        pm._throttle(0.4, sleep=fake_sleep, now=lambda: clock[0])
+        self.assertEqual(waits, [])  # 初回は待たない
+        pm._throttle(0.4, sleep=fake_sleep, now=lambda: clock[0])
+        self.assertEqual(len(waits), 1)  # 直後の2回目は間隔ぶん待つ
+        self.assertAlmostEqual(waits[0], 0.4, places=2)
+        pm._last_call[0] = 0.0
+
+
 class EdgarTests(unittest.TestCase):
     FACTS = {"entityName": "Test Corp", "facts": {"us-gaap": {
         "RevenueFromContractWithCustomerExcludingAssessedTax": {"units": {"USD": [

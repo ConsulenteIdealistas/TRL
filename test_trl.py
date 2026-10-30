@@ -2149,6 +2149,31 @@ class AuditFix2Tests(unittest.TestCase):
         self.assertEqual([r["source_id"] for r in out], ["NCT001", "NCT002"])
         self.assertEqual(calls[1].get("pageToken"), "tok2")
 
+    def test_translate_redoes_legacy_translation_without_source(self):
+        # 出典記録の無い古い訳 (translation_src が空) は、訳文があっても訳し直して出典を付ける
+        import os
+        from unittest import mock as um
+        tmp = tempfile.TemporaryDirectory()
+        store = T.Store(Path(tmp.name) / "d.sqlite")
+        rec, _ = T.normalize(raw(), T.now_iso())
+        cid, _ = store.upsert_candidate(rec, "rX")
+        store.conn.execute(
+            "INSERT INTO evaluations(run_id, candidate_id, kind, status) VALUES('rX', ?, 'long', 'ok')", (cid,))
+        store.conn.commit()
+        store.set_translation(cid, "出典なしの旧訳タイトル", "出典なしの旧訳抄録")  # by を渡さない = 記録なし
+        self.assertIsNone(store.get_candidate(cid)["translation_src"])
+
+        def g_http(url, params=None, headers=None, data=None, **kw):
+            qs = json.loads(data)["q"]
+            return json.dumps({"data": {"translations": [{"translatedText": "新訳:" + q} for q in qs]}})
+        with um.patch.dict(os.environ, {"GOOGLE_TRANSLATE_API_KEY": "gk"}, clear=False):
+            n, _stats = T.translate_display_set(store, CFG, AS_OF, log=lambda *_: None, http=g_http)
+        self.assertEqual(n, 1)
+        c = store.get_candidate(cid)
+        self.assertTrue(c["title_ja"].startswith("新訳:"))
+        self.assertEqual(json.loads(c["translation_src"]), {"title": "google", "abstract": "google"})
+        store.close()
+
     def test_translate_sends_only_wanted_fields(self):
         import os
         from unittest import mock as um
@@ -2159,7 +2184,7 @@ class AuditFix2Tests(unittest.TestCase):
         store.conn.execute(
             "INSERT INTO evaluations(run_id, candidate_id, kind, status) VALUES('rX', ?, 'long', 'ok')", (cid,))
         store.conn.commit()
-        store.set_translation(cid, "既訳タイトル", None)  # タイトルは訳済み → 抄録だけ送る
+        store.set_translation(cid, "既訳タイトル", None, title_by="google")  # 出典つきで訳済み → 抄録だけ送る
         sent = []
 
         def g_http(url, params=None, headers=None, data=None, **kw):

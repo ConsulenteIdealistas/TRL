@@ -180,8 +180,16 @@ def translate_display_set(store, cfg, today, log=print, http=http_fetch):
         c = store.get_candidate(cid)
         if not c:
             continue
-        want_title = not c.get("title_ja") and needs_translation(c["title"])
-        want_abs = not c.get("abstract_ja") and needs_translation(c["abstract"])
+        # 出典 (translation_src) の記録が無い訳は、記録を付け始める前の古い訳。
+        # 訳文があっても出典が無い項目は未訳扱いにして訳し直し、出典を付け直す
+        try:
+            src = json.loads(c.get("translation_src") or "{}")
+        except ValueError:
+            src = {}
+        if not isinstance(src, dict):
+            src = {}
+        want_title = needs_translation(c["title"]) and (not c.get("title_ja") or "title" not in src)
+        want_abs = needs_translation(c["abstract"]) and (not c.get("abstract_ja") or "abstract" not in src)
         if want_title or want_abs:
             todo.append((cid, c, want_title, want_abs))
         if len(todo) >= MAX_PER_RUN:

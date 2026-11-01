@@ -657,6 +657,24 @@ class YahooFinancialTests(unittest.TestCase):
         self.assertIn("財務数値(Yahoo Finance)", r["abstract"])
         self.assertEqual(r["affiliations"], ["ispace, Inc."])
 
+    def test_fetch_raises_after_retries_and_backs_off(self):
+        # 通信が2回とも失敗したら空結果で握りつぶさず例外にする (収集側で失敗として記録される)
+        from trlcore.sources import yahoo as yh
+        waits = []
+
+        def fake_http(url, params=None, headers=None, **kw):
+            if "getcrumb" in url:
+                return b"crumb123"
+            if "fc.yahoo.com" in url:
+                raise RuntimeError("404")
+            raise RuntimeError("429 Too Many Requests")
+
+        yh._last_call[0] = 0.0
+        with self.assertRaises(RuntimeError):
+            yahoo.fetch("9348.T", 5, 400, AS_OF, http=fake_http, sleep=waits.append)
+        self.assertIn(2, waits)  # 再試行前にバックオフする
+        yh._last_call[0] = 0.0
+
     def test_fetch_source_id_distinguishes_same_ticker_markets(self):
         # NANO.TO (Nano One) と NANO.PA (Nanobiotix) のように市場違いの同名ティッカーで
         # source_id が衝突すると、一方の財務レコードが他方へ統合されて消える
@@ -1826,6 +1844,22 @@ class EntityQueryGenerationTests(unittest.TestCase):
         self.assertNotIn("b-edinet", by_name)  # ticker が無い
         self.assertFalse(any(n.startswith("c-") for n in by_name))  # watch が無い企業は生成しない
 
+    def test_yahoo_queries_core_only(self):
+        # Yahoo はコア企業のみ生成する (ウォッチは評価対象でなく、取得リクエスト削減のため)
+        src = {"keyword_sets": {"space": ["決算"]},
+               "keyword_sets_en": {"space": ["earnings"]},
+               "entity_watch": {"lookback_days": {}}}
+        ents = {"entities": [
+            {"id": "core1", "sector": "space", "market": "US", "ticker": "CORE", "tier": "core",
+             "watch": {"news_name": "Core Corp"}},
+            {"id": "watch1", "sector": "space", "market": "US", "ticker": "WATC", "tier": "watch",
+             "watch": {"news_name": "Watch Corp"}},
+        ]}
+        by_name = {q["name"]: q for q in T.build_entity_queries(ents, src)}
+        self.assertIn("core1-yahoo", by_name)
+        self.assertNotIn("watch1-yahoo", by_name)
+        self.assertIn("watch1-edgar", by_name)  # 今回の対象は Yahoo のみ
+
     def test_generation_rules_foreign_market(self):
         src = {"keyword_sets": {"space": ["決算"]},
                "keyword_sets_en": {"space": ["earnings", "contract"]},
@@ -2272,6 +2306,41 @@ class PruneTests(unittest.TestCase):
             store.close()
 
 
+class FinancialSkipTests(unittest.TestCase):
+    def test_collect_skips_recently_successful_financial_queries(self):
+        tmp = tempfile.TemporaryDirectory()
+        store = T.Store(Path(tmp.name) / "d.sqlite")
+        # 過去の実行記録を仕込む (AS_OF = 2026-10-20):
+        # a は5日前に成功 → 休む / b は5日前に失敗 → 再試行 / c は25日前に成功 → 取りに行く
+        store.conn.execute("INSERT INTO runs(run_id, started_at) VALUES('old-run', '2026-09-25T00:00:00+00:00')")
+        store.conn.execute("INSERT INTO runs(run_id, started_at) VALUES('recent-run', '2026-10-15T00:00:00+00:00')")
+        for rid, qname, ok in (("recent-run", "a-yahoo", 1), ("recent-run", "b-yahoo", 0), ("old-run", "c-yahoo", 1)):
+            store.conn.execute("INSERT INTO run_sources VALUES(?, 'yahoo', ?, 1, 0, 1, 0, ?, NULL, 0.1)",
+                               (rid, qname, ok))
+        store.conn.commit()
+        self.assertEqual(store.last_source_successes().get(("yahoo", "a-yahoo")),
+                         "2026-10-15T00:00:00+00:00")
+        self.assertNotIn(("yahoo", "b-yahoo"), store.last_source_successes())
+        cfg = {"sources": {"defaults": {"max_results": 5, "lookback_days": 400}, "queries": [
+                   {"name": "a-yahoo", "yahoo": "AAA"}, {"name": "b-yahoo", "yahoo": "BBB"},
+                   {"name": "c-yahoo", "yahoo": "CCC"}, {"name": "d-news", "gnews": "NEWSQ"}]},
+               "entities": {"entities": []}}
+        calls = []
+
+        def fake_fetcher(qstr, max_results, lookback, as_of):
+            calls.append(qstr)
+            return []
+        counts = {k: 0 for k in ("fetched", "new", "duplicates", "invalid", "sources_ok", "sources_failed")}
+        T.collect(store, cfg, "new-run", AS_OF, ("yahoo", "gnews"),
+                  {"yahoo": fake_fetcher, "gnews": fake_fetcher}, counts, lambda *a: None)
+        self.assertNotIn("AAA", calls)
+        self.assertIn("BBB", calls)
+        self.assertIn("CCC", calls)
+        self.assertIn("NEWSQ", calls)  # 財務系以外は間隔の対象外
+        self.assertEqual(counts.get("financial_skipped"), 1)
+        store.close()
+
+
 class YahooThrottleTests(unittest.TestCase):
     def test_throttle_spaces_calls_process_wide(self):
         from trlcore.sources import yahoo as yh
@@ -2368,6 +2437,22 @@ class EdgarTests(unittest.TestCase):
         self.assertEqual(recs[0]["source_id"], "TEST-2026-06-30")
         self.assertIn("財務数値(SEC EDGAR)", recs[0]["abstract"])
         self.assertEqual(recs[0]["info_type"], "disclosure")
+
+    def test_fetch_raises_on_http_failure(self):
+        # 通信失敗を空結果で握りつぶさず例外にする (成功扱いになると取得間隔で不当に休むため)
+        from trlcore.sources import edgar
+        tickers = json.dumps({"0": {"cik_str": 123, "ticker": "TEST", "title": "Test Corp"}}).encode()
+
+        def http(url, params=None, headers=None):
+            if "company_tickers" in url:
+                return tickers
+            raise RuntimeError("403 Forbidden")
+        edgar._tickers_cache = None
+        try:
+            with self.assertRaises(RuntimeError):
+                edgar.edgar_fetch("TEST", 20, 400, date(2026, 10, 29), http=http)
+        finally:
+            edgar._tickers_cache = None
 
     def test_fetch_unknown_ticker_and_stale(self):
         from trlcore.sources import edgar

@@ -208,8 +208,12 @@ def build_entity_queries(entities, src):
             if market == "JP":
                 groups["edinet"].append({"name": f"{eid}-edinet", "edinet": e["ticker"],
                                          "lookback_days": params.get("edinet", WATCH_LOOKBACK_DEFAULTS["edinet"])})
-            groups["yahoo"].append({"name": f"{eid}-yahoo", "yahoo": e["ticker"] + YAHOO_SUFFIX[market],
-                                    "lookback_days": params.get("yahoo", WATCH_LOOKBACK_DEFAULTS["yahoo"])})
+            # Yahoo はコア企業のみ。ウォッチ企業は評価対象にならず、その財務が評価の
+            # 根拠プールに入るのはコア候補と共リンクした候補に限られるため、取得対象から
+            # 外してリクエスト数を抑える (300社 → コア180社)
+            if e.get("tier", "core") == "core":
+                groups["yahoo"].append({"name": f"{eid}-yahoo", "yahoo": e["ticker"] + YAHOO_SUFFIX[market],
+                                        "lookback_days": params.get("yahoo", WATCH_LOOKBACK_DEFAULTS["yahoo"])})
             if market == "US":
                 groups["edgar"].append({"name": f"{eid}-edgar", "edgar": e["ticker"],
                                         "lookback_days": params.get("edgar", WATCH_LOOKBACK_DEFAULTS["edgar"])})

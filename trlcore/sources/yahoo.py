@@ -11,19 +11,19 @@ quoteSummary の財務諸表モジュール
 キー・登録は不要。cookie + crumb が必要なためセッションを再利用するが、収集は
 複数スレッドで並行に動くためセッションはスレッドごとに持つ (共有すると crumb の
 取り直しが他スレッドの通信を壊し、取得が不安定になる)。
-非公式APIのため仕様変更で壊れる可能性があるが、失敗したら空リストを返すだけで
-他ソースや評価本体には影響しない (プールが空になるだけ)。
+非公式APIのため仕様変更で壊れる可能性がある。通信が2回とも失敗した場合は
+空リストで握りつぶさず例外として収集側に記録させる (他ソースや評価本体には
+影響しない)。応答は取れたが数値が無い場合は材料なしとして空リストを返す。
 """
 
 import json
 import random
-import sys
 import threading
 import time
 import urllib.request
 from http.cookiejar import CookieJar
 from datetime import date, timedelta
-from ..http import http_fetch, redact
+from ..http import http_fetch
 
 
 SUMMARY_URL = "https://query2.finance.yahoo.com/v10/finance/quoteSummary/{symbol}"
@@ -241,15 +241,15 @@ def yahoo_fetch(query, max_results, lookback_days, as_of, http=None, sleep=time.
                         headers={"User-Agent": _session_ua()})
             data = json.loads(raw)
             break
-        except Exception as e:
+        except Exception:
             # crumb 失効や bot 判定の可能性があるため、次回は crumb と UA を取り直す
             s["crumb"] = None
             s["ua"] = None
             if attempt == 1:
-                # 恒常的な失敗(API仕様変更等)が無言にならないようログに残す
-                print(f"yahoo fetch failed for {symbol}: "
-                      f"{redact(f'{type(e).__name__}: {e}')}", file=sys.stderr)
-                return []
+                # 恒常的な失敗 (API仕様変更等) が無言にならないよう、空結果で
+                # 握りつぶさず例外として収集側 (run_sources / sources_failed) に残す
+                raise
+            sleep(2)  # 一時的な制限・bot 判定を避けるため間を置いて取り直す
     text, period, name = parse_quote_summary(data)
     if not text or not period:
         return []

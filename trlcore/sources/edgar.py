@@ -16,11 +16,10 @@ User-Agent は「運用者名 + 連絡先メール」の形式が必須で (形�
 
 import json
 import os
-import sys
 import threading
 import time
 from datetime import date, timedelta
-from ..http import http_fetch, redact
+from ..http import http_fetch
 
 
 TICKERS_URL = "https://www.sec.gov/files/company_tickers.json"
@@ -253,10 +252,10 @@ def edgar_fetch(query, max_results, lookback_days, as_of, http=None):
             return []  # SEC 登録が無い (未上場・登録外) なら材料なし
         cik, name = hit
         facts = _get(FACTS_URL.format(cik=cik), http)
-    except Exception as e:
-        print(f"edgar fetch failed for {ticker}: "
-              f"{redact(f'{type(e).__name__}: {e}')}", file=sys.stderr)
-        return []
+    except Exception:
+        # 通信失敗を空結果で握りつぶさず、収集側 (run_sources / sources_failed) に
+        # 記録させる。成功として扱われると財務系の取得間隔で不当に休んでしまう
+        raise
     text, period, kind = parse_company_facts(facts, as_of)
     if not text or not period:
         return []

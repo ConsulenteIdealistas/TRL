@@ -479,3 +479,12 @@ class Store:
 
     def run_sources(self, run_id):
         return [dict(r) for r in self.conn.execute("SELECT * FROM run_sources WHERE run_id=?", (run_id,)).fetchall()]
+
+    def last_source_successes(self):
+        """(source, query) ごとの最終成功日時 (run_sources の ok な記録と runs の開始時刻)。
+        財務系ソースの取得間隔 (前回成功から一定期間は休む) の判定に使う。"""
+        rows = self.conn.execute(
+            "SELECT rs.source, rs.query, MAX(r.started_at) FROM run_sources rs "
+            "JOIN runs r ON r.run_id = rs.run_id WHERE rs.ok = 1 "
+            "GROUP BY rs.source, rs.query").fetchall()
+        return {(s, q): t for s, q, t in rows}

@@ -54,10 +54,31 @@ def screen(cand, as_of, cfg):
     return None
 
 
+# 財務系は決算 (四半期) 単位でしか変化しないため、毎回取りに行かず、前回の取得成功から
+# 一定期間はその企業のクエリを休む。失敗したクエリは成功として記録されないため、
+# 間隔の対象にならず次回も試行される (障害中の財務ソースは毎週リトライされる)。
+FINANCIAL_SOURCES = frozenset({"yahoo", "edgar", "edinet"})
+FINANCIAL_SKIP_DAYS = 20
+
+
 def collect(store, cfg, run_id, as_of, sources, fetchers, counts, log):
     d = cfg["sources"]["defaults"]
     now = datetime.now(timezone.utc).isoformat(timespec="seconds")
     jobs = [(sname, q) for q in cfg["sources"]["queries"] for sname in sources if q.get(sname)]
+    last_ok = store.last_source_successes()
+    kept, skipped = [], 0
+    for sname, q in jobs:
+        if sname in FINANCIAL_SOURCES:
+            t = parse_date((last_ok.get((sname, q["name"])) or "")[:10])
+            if t is not None and (as_of - t).days < FINANCIAL_SKIP_DAYS:
+                skipped += 1
+                continue
+        kept.append((sname, q))
+    if skipped:
+        counts["financial_skipped"] = counts.get("financial_skipped", 0) + skipped
+        log(f"[collect] financial skip: {skipped} queries "
+            f"(last success within {FINANCIAL_SKIP_DAYS}d)")
+    jobs = kept
 
     def fetch(job):
         # 取得だけを並列化する (外部HTTPの待ち時間が支配的)。DB書き込みはメインスレッドで
@@ -245,7 +266,8 @@ def run_pipeline(store, cfg, llm, *, as_of, sources=("pubmed", "arxiv"), kinds=(
                  "retry_failed": retry_failed, "collect": do_collect, "only_new": only_new,
                  "llm": getattr(llm, "name", "none")})
     counts = {k: 0 for k in ("fetched", "new", "duplicates", "invalid", "sources_ok", "sources_failed", "screened",
-                             "rejected", "selected", "final", "hold", "error", "skipped_no_llm", "llm_infra_failed")}
+                             "rejected", "selected", "final", "hold", "error", "skipped_no_llm", "llm_infra_failed",
+                             "financial_skipped")}
     log(f"[run] {run_id} as_of={as_of} config={cfg['config_version']}/{cfg['config_hash']}")
     if do_collect:
         collect(store, cfg, run_id, as_of, sources, {**DEFAULT_FETCHERS, **(fetchers or {})}, counts, log)

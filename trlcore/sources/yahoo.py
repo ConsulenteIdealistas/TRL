@@ -56,6 +56,21 @@ _UA_POOL = (
 
 _local = threading.local()
 
+_rate_lock = threading.Lock()
+_last_call = [0.0]
+# Yahoo 向けリクエストのプロセス全体の最小間隔 (秒)。収集は複数スレッドで並行に
+# 動くため、クエリ単位の sleep ではバーストを抑えられず、非公式 API の制限に
+# 触れやすい。PubMed の全体スロットル (2026-10-29) と同じ方式で全リクエストを直列化する。
+MIN_INTERVAL = 1.0
+
+
+def _throttle(interval, sleep=time.sleep, now=time.monotonic):
+    with _rate_lock:
+        wait = interval - (now() - _last_call[0])
+        if wait > 0:
+            sleep(wait)
+        _last_call[0] = now()
+
 
 def _sess():
     """このスレッドのセッション (opener / crumb / UA) を返す。"""
@@ -211,6 +226,13 @@ def yahoo_fetch(query, max_results, lookback_days, as_of, http=None, sleep=time.
         def fetch(url, params=None, headers=None):
             return http(url, params=params, headers=headers)
 
+    _inner_fetch = fetch
+
+    def fetch(url, params=None, headers=None):
+        # cookie / crumb / quoteSummary の全リクエストを全体スロットルに通す
+        _throttle(MIN_INTERVAL, sleep=sleep)
+        return _inner_fetch(url, params=params, headers=headers)
+
     for attempt in (0, 1):
         try:
             crumb = _ensure_crumb(fetch)
@@ -237,7 +259,6 @@ def yahoo_fetch(query, max_results, lookback_days, as_of, http=None, sleep=time.
         return []
     if period_date < as_of - timedelta(days=lookback_days) or period_date > as_of + timedelta(days=92):
         return []  # 古すぎる/未来の決算期はプール材料にしない
-    sleep(0.3)
     return [{
         # source_id は市場接尾辞つきシンボルにする (接尾辞なしだと NANO.TO と NANO.PA の
         # ように市場違いの同名ティッカーで重複排除キーが衝突し、片方の財務が消える)

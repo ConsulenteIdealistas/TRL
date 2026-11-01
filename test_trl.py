@@ -2272,6 +2272,44 @@ class PruneTests(unittest.TestCase):
             store.close()
 
 
+class YahooThrottleTests(unittest.TestCase):
+    def test_throttle_spaces_calls_process_wide(self):
+        from trlcore.sources import yahoo as yh
+        waits, clock = [], [1000.0]
+
+        def fake_sleep(w):
+            waits.append(w)
+            clock[0] += w
+        yh._last_call[0] = 0.0
+        yh._throttle(yh.MIN_INTERVAL, sleep=fake_sleep, now=lambda: clock[0])
+        self.assertEqual(waits, [])  # 初回は待たない
+        yh._throttle(yh.MIN_INTERVAL, sleep=fake_sleep, now=lambda: clock[0])
+        self.assertEqual(len(waits), 1)  # 直後の2回目は間隔ぶん待つ
+        self.assertAlmostEqual(waits[0], yh.MIN_INTERVAL, places=2)
+        yh._last_call[0] = 0.0
+
+    def test_fetch_throttles_every_request(self):
+        # cookie/crumb/quoteSummary の全リクエストが全体スロットルを通る
+        from trlcore.sources import yahoo as yh
+        waits = []
+
+        def fake_http(url, params=None, headers=None, **kw):
+            if "getcrumb" in url:
+                return b"crumb123"
+            if "fc.yahoo.com" in url:
+                raise RuntimeError("404")
+            if "quoteSummary" in url:
+                return json.dumps(YAHOO_SUMMARY).encode()
+            raise AssertionError(url)
+
+        yh._last_call[0] = 0.0
+        out = yahoo.fetch("9348.T", 5, 400, AS_OF, http=fake_http, sleep=waits.append)
+        self.assertEqual(len(out), 1)
+        # 2回目以降のリクエストでは MIN_INTERVAL 前後の待ちが発生する
+        self.assertTrue(any(w > yh.MIN_INTERVAL * 0.8 for w in waits))
+        yh._last_call[0] = 0.0
+
+
 class PubMedThrottleTests(unittest.TestCase):
     def test_throttle_spaces_calls_process_wide(self):
         from trlcore.sources import pubmed as pm

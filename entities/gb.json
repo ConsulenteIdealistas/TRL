@@ -198,6 +198,7 @@
         "Hutchison China MediTech"
       ],
       "ticker": "HCM",
+      "edgar_ticker": "HCM",
       "exchange": "LSE",
       "sector": "bio",
       "tier": "core",

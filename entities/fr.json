@@ -57,6 +57,7 @@
       "name": "Innate Pharma S.A.",
       "sector": "bio",
       "ticker": "IPH",
+      "edgar_ticker": "IPHA",
       "tier": "core",
       "watch": {
         "extra_keywords": [
@@ -196,6 +197,7 @@
       "name": "Nanobiotix SA",
       "sector": "bio",
       "ticker": "NANO",
+      "edgar_ticker": "NBTX",
       "tier": "core",
       "watch": {
         "extra_keywords": [

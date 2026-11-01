@@ -104,6 +104,11 @@ def validate_entities(data):
                                     or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9.\-]*", ticker)):
             raise ConfigError(f"entities[{i}].ticker is invalid: {ticker!r}")
 
+        edgar_ticker = entity.get("edgar_ticker")
+        if edgar_ticker is not None and (not isinstance(edgar_ticker, str)
+                                         or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9.\-]*", edgar_ticker)):
+            raise ConfigError(f"entities[{i}].edgar_ticker is invalid: {edgar_ticker!r}")
+
         products = entity.get("products", [])
         if not isinstance(products, list):
             raise ConfigError(f"entities[{i}].products must be a list")

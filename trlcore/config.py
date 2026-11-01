@@ -215,8 +215,11 @@ def build_entity_queries(entities, src):
             if e.get("tier", "core") == "core":
                 groups["yahoo"].append({"name": f"{eid}-yahoo", "yahoo": e["ticker"] + YAHOO_SUFFIX[market],
                                         "lookback_days": params.get("yahoo", WATCH_LOOKBACK_DEFAULTS["yahoo"])})
-            if market == "US":
-                groups["edgar"].append({"name": f"{eid}-edgar", "edgar": e["ticker"],
+            # EDGAR は米国市場の企業が既定。米国以外でも SEC に 20-F 等を提出する
+            # 企業は、米上場ティッカーを edgar_ticker に明示すれば対象に含める
+            edgar_ticker = e.get("edgar_ticker") or (e["ticker"] if market == "US" else None)
+            if edgar_ticker:
+                groups["edgar"].append({"name": f"{eid}-edgar", "edgar": edgar_ticker,
                                         "lookback_days": params.get("edgar", WATCH_LOOKBACK_DEFAULTS["edgar"])})
         if market == "JP":
             terms = w.get("prtimes_terms") or [news_name]

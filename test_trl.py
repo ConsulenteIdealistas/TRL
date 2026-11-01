@@ -1928,6 +1928,23 @@ class EntityQueryGenerationTests(unittest.TestCase):
         self.assertNotIn("watch1-yahoo", by_name)
         self.assertIn("watch1-edgar", by_name)  # EDGAR は今回の削減対象外
 
+    def test_edgar_queries_for_foreign_20f_filers(self):
+        # 米国以外でも edgar_ticker (米上場ティッカー) を明示した企業は EDGAR 対象にする
+        src = {"keyword_sets": {"bio": ["治験"]},
+               "keyword_sets_en": {"bio": ["trial"]},
+               "entity_watch": {"lookback_days": {}}}
+        ents = {"entities": [
+            {"id": "fr20f", "sector": "bio", "market": "FR", "ticker": "IPH",
+             "edgar_ticker": "IPHA", "tier": "core",
+             "watch": {"news_name": "Innate-like"}},
+            {"id": "frplain", "sector": "bio", "market": "FR", "ticker": "NANO",
+             "tier": "core",
+             "watch": {"news_name": "Plain SA"}},
+        ]}
+        by_name = {q["name"]: q for q in T.build_entity_queries(ents, src)}
+        self.assertEqual(by_name["fr20f-edgar"]["edgar"], "IPHA")
+        self.assertNotIn("frplain-edgar", by_name)  # 明示が無ければ従来どおり対象外
+
     def test_edinet_queries_core_only(self):
         # EDINET もコア企業のみ生成する (Yahoo と同じ扱い)
         src = {"keyword_sets": {"space": ["決算"]},
@@ -2562,6 +2579,37 @@ class EdgarTests(unittest.TestCase):
             {"end": "2026-06-30", "val": 800_000_000, "form": "10-Q", "filed": "2026-08-01"}]}},
     }}}
 
+    def test_parse_facts_prefers_fresher_fy_over_stale_quarter(self):
+        # 20-F 年次報告のみの企業: 古い四半期 (2019) より新しい通期 (2025) を直近とする
+        from trlcore.sources import edgar
+        facts = {"entityName": "Annual Filer", "facts": {"us-gaap": {
+            "RevenueFromContractWithCustomerExcludingAssessedTax": {"units": {"USD": [
+                {"start": "2019-01-01", "end": "2019-03-31", "val": 52_000_000, "form": "6-K", "filed": "2019-05-01"},
+                {"start": "2025-01-01", "end": "2025-12-31", "val": 549_000_000, "form": "20-F", "filed": "2026-03-05"}]}},
+            "NetIncomeLoss": {"units": {"USD": [
+                {"start": "2025-01-01", "end": "2025-12-31", "val": 457_000_000, "form": "20-F", "filed": "2026-03-05"}]}},
+        }}}
+        text, period, kind = edgar.parse_company_facts(facts, date(2026, 11, 2))
+        self.assertEqual((period, kind), ("2025-12-31", "通期"))
+        self.assertIn("売上高 549百万米ドル", text)
+
+    def test_parse_facts_no_double_count_short_term_securities(self):
+        # 広義の現金概念 (短期投資込み) が使えたら、短期有価証券を別掲しない (二重計上防止)
+        from trlcore.sources import edgar
+        facts = {"entityName": "Broad Cash Co", "facts": {"us-gaap": {
+            "RevenueFromContractWithCustomerExcludingAssessedTax": {"units": {"USD": [
+                {"start": "2025-01-01", "end": "2025-12-31", "val": 549_000_000, "form": "20-F", "filed": "2026-03-05"}]}},
+            "CashCashEquivalentsAndShortTermInvestments": {"units": {"USD": [
+                {"end": "2025-12-31", "val": 1_367_000_000, "form": "20-F", "filed": "2026-03-05"}]}},
+            "CashAndCashEquivalentsAtCarryingValue": {"units": {"USD": [
+                {"end": "2025-12-31", "val": 71_000_000, "form": "20-F", "filed": "2026-03-05"}]}},
+            "MarketableSecuritiesCurrent": {"units": {"USD": [
+                {"end": "2025-12-31", "val": 1_296_000_000, "form": "20-F", "filed": "2026-03-05"}]}},
+        }}}
+        text, period, kind = edgar.parse_company_facts(facts, date(2026, 11, 2))
+        self.assertIn("現金及び現金同等物 1,367百万米ドル", text)
+        self.assertNotIn("短期有価証券", text)
+
     def test_parse_facts(self):
         from trlcore.sources import edgar
         text, period, kind = edgar.parse_company_facts(self.FACTS, date(2026, 10, 29))
@@ -2620,11 +2668,16 @@ class EdgarTests(unittest.TestCase):
         finally:
             edgar._tickers_cache = None
 
-    def test_queries_generated_for_us_only(self):
+    def test_queries_generated_for_us_and_20f_filers(self):
         cfg = T.load_config()
         edgar_qs = [q for q in cfg["sources"]["queries"] if q.get("edgar")]
-        self.assertEqual(len(edgar_qs), 94)
+        # 米国94社 + edgar_ticker を明示した 20-F 提出3社 (Innate/HUTCHMED/Nanobiotix)
+        self.assertEqual(len(edgar_qs), 97)
         self.assertTrue(all(q["name"].endswith("-edgar") for q in edgar_qs))
+        by_name = {q["name"]: q["edgar"] for q in edgar_qs}
+        self.assertEqual(by_name["innate_pharma-edgar"], "IPHA")
+        self.assertEqual(by_name["nanobiotix-edgar"], "NBTX")
+        self.assertEqual(by_name["hutchmed-edgar"], "HCM")
 
 
 if __name__ == "__main__":

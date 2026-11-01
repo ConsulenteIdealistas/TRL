@@ -185,16 +185,19 @@ def parse_company_facts(data, as_of):
                     break
         if rows:
             flows[label] = _latest(rows, "flow", as_of)
+    instant_concepts = {}
     for label, concepts in _INSTANT_ITEMS:
         rows = []
         for c in concepts:
             rows = _series(gaap, c, currency)
             if rows:
+                instant_concepts[label] = c
                 break
         if not rows and label in _IFRS_FALLBACK:
             for c in _IFRS_FALLBACK[label]:
                 rows = _series(ifrs, c, currency)
                 if rows:
+                    instant_concepts[label] = c
                     break
         if rows:
             got = _latest(rows, "instant", as_of)
@@ -203,10 +206,16 @@ def parse_company_facts(data, as_of):
     q = {k: v["q"] for k, v in flows.items() if v.get("q")}
     fy = {k: v["fy"] for k, v in flows.items() if v.get("fy")}
     ytd = {k: v["ytd"] for k, v in flows.items() if v.get("ytd")}
-    main = q or fy
-    if not main:
+    # 四半期の開示を止めた企業 (20-F 年次報告のみ等) では古い四半期だけが残る。
+    # 通期の方が新しければ通期を主にする (古い四半期を「直近」と誤認しない)
+    q_end = max((r["end"] for r in q.values()), default="")
+    fy_end = max((r["end"] for r in fy.values()), default="")
+    if fy and fy_end >= q_end:
+        main, kind = fy, "通期"
+    elif q:
+        main, kind = q, "四半期"
+    else:
         return "", None, ""
-    kind = "四半期" if q else "通期"
     period = max(r["end"] for r in main.values())
     parts = []
     for label, concepts in _FLOW_ITEMS:
@@ -216,7 +225,7 @@ def parse_company_facts(data, as_of):
         # 四半期の営業CFは累計 (期首からの合計) でしか開示されないことが多い
         parts.append(f"営業キャッシュフロー(期首累計) {_fmt_money(ytd['営業キャッシュフロー']['val'], unit)}")
     text = f"直近{kind}({period}まで) " + "、".join(parts)
-    if fy and q:
+    if fy and q and kind == "四半期":
         seg = [f"{label} {_fmt_money(fy[label]['val'], unit)}" for label, _ in _FLOW_ITEMS
                if label in fy and label in ("売上高", "純利益", "営業キャッシュフロー")]
         if seg:
@@ -225,8 +234,8 @@ def parse_company_facts(data, as_of):
         seg = [f"{label} {_fmt_money(instants[label]['val'], unit)}" for label, _ in _INSTANT_ITEMS if label in instants]
         # 現金が狭義の概念 (短期投資を含まない) で取れた場合は、短期有価証券を別掲して
         # 流動性の過小表示を防ぐ (広義の現金概念が使えた場合は二重計上になるので出さない)
-        cash_node = (gaap.get("CashAndCashEquivalentsAtCarryingValue") or {})
-        if instants.get("現金及び現金同等物") and cash_node.get("units"):
+        if (instants.get("現金及び現金同等物")
+                and instant_concepts.get("現金及び現金同等物") == "CashAndCashEquivalentsAtCarryingValue"):
             for c in ("MarketableSecuritiesCurrent", "AvailableForSaleSecuritiesDebtSecuritiesCurrent", "ShortTermInvestments"):
                 rows = _series(gaap, c, currency)
                 if rows:

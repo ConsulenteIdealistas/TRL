@@ -310,6 +310,37 @@ class Store:
                 pass  # ファイルが縮まないだけ (行の削除は完了している)
         return counts
 
+    def prune_stale_links(self, entities):
+        """辞書から消えた alias で作られた企業リンクを削除する。
+
+        candidate_entities.matched_alias はリンク生成時に使われた alias の
+        記録。その alias が現在の辞書 (企業名・aliases・製品名・製品 aliases)
+        にもう存在しない場合、そのリンクは陳腐化している (例: 同名別組織への
+        誤リンクを防ぐために単独形 alias を削除したケース)。候補そのものは
+        消さずリンクだけを外す。辞書に載っていない企業へのリンクは判断
+        できないため触らない。
+        """
+        valid = {}
+        for e in entities or []:
+            names = {e.get("name")} | set(e.get("aliases") or [])
+            for p in e.get("products") or []:
+                names.add(p.get("name"))
+                names.update(p.get("aliases") or [])
+            valid[e.get("id")] = {n for n in names if n}
+        c = self.conn
+        deleted = 0
+        rows = c.execute(
+            "SELECT candidate_id, entity_id, matched_alias FROM candidate_entities "
+            "WHERE matched_alias IS NOT NULL AND matched_alias != ''").fetchall()
+        for cid, eid, alias in rows:
+            if eid in valid and alias not in valid[eid]:
+                cur = c.execute(
+                    "DELETE FROM candidate_entities WHERE candidate_id=? AND entity_id=? "
+                    "AND matched_alias=?", (cid, eid, alias))
+                deleted += cur.rowcount
+        c.commit()
+        return deleted
+
     def _stale_yahoo_key_ids(self, entity_markets):
         """旧形式キー (接尾辞なし) の Yahoo 財務で、新形式 (接尾辞つき) の同企業・
         同時期レコードが既にあるものを返す。移行期のツインのうち旧側だけを消す。

@@ -2322,6 +2322,25 @@ class PruneTests(unittest.TestCase):
             self.assertIsNotNone(store.get_candidate(queued_news))     # キュー入りは保護
             store.close()
 
+    def test_prune_stale_links(self):
+        with tempfile.TemporaryDirectory() as td:
+            store = T.Store(Path(td) / "d.sqlite")
+            ins = ("INSERT INTO candidates(id, source, source_id, status) VALUES(?, 'pubmed', ?, 'screened')")
+            link = ("INSERT INTO candidate_entities(candidate_id, entity_id, strength, matched_by, matched_alias) "
+                    "VALUES(?, ?, 'strong', 'affiliation', ?)")
+            store.conn.execute(ins, ("k1", "k1"))
+            store.conn.execute(link, ("k1", "genmab", "Genmab"))        # 現行辞書にある → 残る
+            store.conn.execute(ins, ("k2", "k2"))
+            store.conn.execute(link, ("k2", "genmab", "消えたエイリアス"))  # 辞書に無い → 消える
+            store.conn.execute(ins, ("k3", "k3"))
+            store.conn.execute(link, ("k3", "no_such_entity", "何か"))    # 辞書外の企業 → 触らない
+            store.conn.commit()
+            entities = CFG.get("entities", {}).get("entities", [])
+            self.assertEqual(store.prune_stale_links(entities), 1)
+            rows = [tuple(r) for r in store.conn.execute(
+                "SELECT candidate_id, entity_id, matched_alias FROM candidate_entities ORDER BY candidate_id")]
+            self.assertEqual(rows, [("k1", "genmab", "Genmab"), ("k3", "no_such_entity", "何か")])
+
     def test_prune_stale_yahoo_twins(self):
         with tempfile.TemporaryDirectory() as td:
             store = T.Store(Path(td) / "d.sqlite")

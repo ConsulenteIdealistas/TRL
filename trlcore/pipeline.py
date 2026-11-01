@@ -420,6 +420,12 @@ def run_pipeline(store, cfg, llm, *, as_of, sources=("pubmed", "arxiv"), kinds=(
     if pruned["total"] or pruned["extraction_cache"]:
         counts["pruned"] = pruned
         log(f"[prune] 古い材料を削除しました: {pruned}")
+    # 辞書から消えた alias で作られたリンクの掃除 (同名別組織への誤リンク対策)
+    stale_links = store.prune_stale_links(
+        (cfg.get("entities") or {}).get("entities", []))
+    if stale_links:
+        counts["stale_links_pruned"] = stale_links
+        log(f"[prune] 陳腐化リンクを削除しました: {stale_links} 件")
     all_failed = do_collect and counts["sources_ok"] == 0 and counts["sources_failed"] > 0
     store.finish_run(run_id, counts, "failed" if all_failed else "ok", time.monotonic() - t0)
     return {"run_id": run_id, "counts": counts, "failed": all_failed, "llm_degraded": degraded}

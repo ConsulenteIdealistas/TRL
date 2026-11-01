@@ -111,7 +111,8 @@
           "defence technology",
           "robotics",
           "hypersonics"
-        ]
+        ],
+        "sponsor": "QinetiQ"
       },
       "stage": "commercial"
     },
@@ -315,7 +316,8 @@
           "encoders",
           "machine tool probes",
           "metrology"
-        ]
+        ],
+        "sponsor": "Renishaw"
       },
       "stage": "commercial"
     },
@@ -495,7 +497,8 @@
           "POLB 001",
           "influenza",
           "hVIVO"
-        ]
+        ],
+        "sponsor": "Poolbeg Pharma PLC"
       },
       "stage": "rd"
     }

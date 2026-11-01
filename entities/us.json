@@ -405,7 +405,8 @@
      "drug discovery platform",
      "physics-based",
      "LiveDesign"
-    ]
+    ],
+    "sponsor": "Schrödinger, Inc."
    },
    "stage": "commercial"
   },
@@ -1381,7 +1382,8 @@
      "Genio",
      "hypoglossal",
      "sleep apnea"
-    ]
+    ],
+    "sponsor": "Nyxoah"
    },
    "stage": "production"
   },

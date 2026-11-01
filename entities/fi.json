@@ -90,7 +90,8 @@
           "nanoparticle technology",
           "drug delivery"
         ],
-        "news_name": "Nanoform"
+        "news_name": "Nanoform",
+        "sponsor": "Nanoform Finland"
       },
       "stage": "demo"
     },
@@ -185,7 +186,8 @@
           "iCare",
           "tonometer",
           "HOME2"
-        ]
+        ],
+        "sponsor": "Revenio"
       },
       "stage": "commercial"
     },

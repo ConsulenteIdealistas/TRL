@@ -297,7 +297,8 @@
           "lasers",
           "LiDAR",
           "Quantel"
-        ]
+        ],
+        "sponsor": "Lumibird"
       },
       "stage": "commercial"
     },
@@ -368,7 +369,8 @@
           "Zeneo",
           "needle-free",
           "auto-injector"
-        ]
+        ],
+        "sponsor": "Crossject"
       },
       "stage": "demo"
     },

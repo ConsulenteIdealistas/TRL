@@ -488,3 +488,22 @@ class Store:
             "JOIN runs r ON r.run_id = rs.run_id WHERE rs.ok = 1 "
             "GROUP BY rs.source, rs.query").fetchall()
         return {(s, q): t for s, q, t in rows}
+
+    def last_source_attempts(self, source):
+        """指定ソースについて (source, query) ごとの最終試行 (開始日時, ok) を返す。"""
+        rows = self.conn.execute(
+            "SELECT rs.query, r.started_at, rs.ok FROM run_sources rs "
+            "JOIN runs r ON r.run_id = rs.run_id WHERE rs.source = ? "
+            "ORDER BY r.started_at DESC, rs.rowid DESC", (source,)).fetchall()
+        out = {}
+        for q, t, ok in rows:
+            out.setdefault((source, q), (t, bool(ok)))
+        return out
+
+    def latest_financial_periods(self, source):
+        """企業ごとの最新の財務レコードの期末日 (published) を返す。"""
+        rows = self.conn.execute(
+            "SELECT ce.entity_id, MAX(c.published) FROM candidates c "
+            "JOIN candidate_entities ce ON ce.candidate_id = c.id "
+            "WHERE c.source = ? GROUP BY ce.entity_id", (source,)).fetchall()
+        return {eid: p for eid, p in rows if p}

@@ -2,7 +2,7 @@
 
 import time
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from .errors import PromptError
 from .dates import days_since, parse_date
 from .http import redact
@@ -57,8 +57,27 @@ def screen(cand, as_of, cfg):
 # 財務系は決算 (四半期) 単位でしか変化しないため、毎回取りに行かず、前回の取得成功から
 # 一定期間はその企業のクエリを休む。失敗したクエリは成功として記録されないため、
 # 間隔の対象にならず次回も試行される (障害中の財務ソースは毎週リトライされる)。
-FINANCIAL_SOURCES = frozenset({"yahoo", "edgar", "edinet"})
+FINANCIAL_SOURCES = frozenset({"edgar", "edinet"})
 FINANCIAL_SKIP_DAYS = 20
+# Yahoo は非公式 API で制限の問題が起きやすいため、決算周期に合わせてさらに絞る:
+# 保存済みの最新決算の期末 +97日 (次の四半期末 + 発表が始まる目安) を過ぎた企業だけを
+# 取りに行く。期末の記録が無い企業は発見のため FINANCIAL_SKIP_DAYS の間隔で試行する
+FINANCIAL_PERIOD_DAYS = 97
+
+
+def _yahoo_resting(q, as_of, attempts, periods):
+    """Yahoo クエリを今回休むかどうか。前回試行が失敗なら間隔の対象にせず再試行する。"""
+    att = attempts.get(("yahoo", q["name"]))
+    if att is None:
+        return False  # 未試行なら取りに行く
+    started, ok = att
+    if not ok:
+        return False
+    period = parse_date(periods.get(q["name"].removesuffix("-yahoo")))
+    if period is None:
+        last = parse_date((started or "")[:10])
+        return last is not None and (as_of - last).days < FINANCIAL_SKIP_DAYS
+    return as_of < period + timedelta(days=FINANCIAL_PERIOD_DAYS)
 
 
 def collect(store, cfg, run_id, as_of, sources, fetchers, counts, log):
@@ -66,18 +85,24 @@ def collect(store, cfg, run_id, as_of, sources, fetchers, counts, log):
     now = datetime.now(timezone.utc).isoformat(timespec="seconds")
     jobs = [(sname, q) for q in cfg["sources"]["queries"] for sname in sources if q.get(sname)]
     last_ok = store.last_source_successes()
+    yahoo_attempts = store.last_source_attempts("yahoo")
+    yahoo_periods = store.latest_financial_periods("yahoo")
     kept, skipped = [], 0
     for sname, q in jobs:
-        if sname in FINANCIAL_SOURCES:
+        if sname == "yahoo":
+            resting = _yahoo_resting(q, as_of, yahoo_attempts, yahoo_periods)
+        elif sname in FINANCIAL_SOURCES:
             t = parse_date((last_ok.get((sname, q["name"])) or "")[:10])
-            if t is not None and (as_of - t).days < FINANCIAL_SKIP_DAYS:
-                skipped += 1
-                continue
+            resting = t is not None and (as_of - t).days < FINANCIAL_SKIP_DAYS
+        else:
+            resting = False
+        if resting:
+            skipped += 1
+            continue
         kept.append((sname, q))
     if skipped:
         counts["financial_skipped"] = counts.get("financial_skipped", 0) + skipped
-        log(f"[collect] financial skip: {skipped} queries "
-            f"(last success within {FINANCIAL_SKIP_DAYS}d)")
+        log(f"[collect] financial skip: {skipped} queries (cadence rules)")
     jobs = kept
 
     def fetch(job):

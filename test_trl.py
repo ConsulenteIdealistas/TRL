@@ -2314,16 +2314,16 @@ class FinancialSkipTests(unittest.TestCase):
         # a は5日前に成功 → 休む / b は5日前に失敗 → 再試行 / c は25日前に成功 → 取りに行く
         store.conn.execute("INSERT INTO runs(run_id, started_at) VALUES('old-run', '2026-09-25T00:00:00+00:00')")
         store.conn.execute("INSERT INTO runs(run_id, started_at) VALUES('recent-run', '2026-10-15T00:00:00+00:00')")
-        for rid, qname, ok in (("recent-run", "a-yahoo", 1), ("recent-run", "b-yahoo", 0), ("old-run", "c-yahoo", 1)):
-            store.conn.execute("INSERT INTO run_sources VALUES(?, 'yahoo', ?, 1, 0, 1, 0, ?, NULL, 0.1)",
+        for rid, qname, ok in (("recent-run", "a-edinet", 1), ("recent-run", "b-edinet", 0), ("old-run", "c-edinet", 1)):
+            store.conn.execute("INSERT INTO run_sources VALUES(?, 'edinet', ?, 1, 0, 1, 0, ?, NULL, 0.1)",
                                (rid, qname, ok))
         store.conn.commit()
-        self.assertEqual(store.last_source_successes().get(("yahoo", "a-yahoo")),
+        self.assertEqual(store.last_source_successes().get(("edinet", "a-edinet")),
                          "2026-10-15T00:00:00+00:00")
-        self.assertNotIn(("yahoo", "b-yahoo"), store.last_source_successes())
+        self.assertNotIn(("edinet", "b-edinet"), store.last_source_successes())
         cfg = {"sources": {"defaults": {"max_results": 5, "lookback_days": 400}, "queries": [
-                   {"name": "a-yahoo", "yahoo": "AAA"}, {"name": "b-yahoo", "yahoo": "BBB"},
-                   {"name": "c-yahoo", "yahoo": "CCC"}, {"name": "d-news", "gnews": "NEWSQ"}]},
+                   {"name": "a-edinet", "edinet": "AAA"}, {"name": "b-edinet", "edinet": "BBB"},
+                   {"name": "c-edinet", "edinet": "CCC"}, {"name": "d-news", "gnews": "NEWSQ"}]},
                "entities": {"entities": []}}
         calls = []
 
@@ -2331,13 +2331,49 @@ class FinancialSkipTests(unittest.TestCase):
             calls.append(qstr)
             return []
         counts = {k: 0 for k in ("fetched", "new", "duplicates", "invalid", "sources_ok", "sources_failed")}
-        T.collect(store, cfg, "new-run", AS_OF, ("yahoo", "gnews"),
-                  {"yahoo": fake_fetcher, "gnews": fake_fetcher}, counts, lambda *a: None)
+        T.collect(store, cfg, "new-run", AS_OF, ("edinet", "gnews"),
+                  {"edinet": fake_fetcher, "gnews": fake_fetcher}, counts, lambda *a: None)
         self.assertNotIn("AAA", calls)
         self.assertIn("BBB", calls)
         self.assertIn("CCC", calls)
         self.assertIn("NEWSQ", calls)  # 財務系以外は間隔の対象外
         self.assertEqual(counts.get("financial_skipped"), 1)
+        store.close()
+
+    def test_collect_yahoo_period_gate(self):
+        # Yahoo は期末ベース: 最新決算の期末 +97日を過ぎた企業だけ取りに行く
+        tmp = tempfile.TemporaryDirectory()
+        store = T.Store(Path(tmp.name) / "d.sqlite")
+        store.conn.execute("INSERT INTO runs(run_id, started_at) VALUES('recent-run', '2026-10-15T00:00:00+00:00')")
+        for qname, ok in (("open-yahoo", 1), ("closed-yahoo", 1), ("noperiod-yahoo", 1), ("failed-yahoo", 0)):
+            store.conn.execute("INSERT INTO run_sources VALUES('recent-run', 'yahoo', ?, 1, 0, 1, 0, ?, NULL, 0.1)",
+                               (qname, ok))
+        # open: 期末 2026-06-30 (+97日 = 10/5 を AS_OF 10/20 は過ぎている) → 取得
+        # closed: 期末 2026-09-30 (+97日 = 2027/1/5) → 休む。failed は期末が新しくても再試行する
+        for cid, eid, pub in (("c1", "open", "2026-06-30"), ("c2", "closed", "2026-09-30"),
+                              ("c3", "failed", "2026-09-30")):
+            store.conn.execute("INSERT INTO candidates(id, source, source_id, published, status) "
+                               "VALUES(?, 'yahoo', ?, ?, 'screened')", (cid, f"{eid}-{pub}", pub))
+            store.conn.execute("INSERT INTO candidate_entities(candidate_id, entity_id, strength, matched_by, matched_alias) "
+                               "VALUES(?, ?, 'strong', 'test', '')", (cid, eid))
+        store.conn.commit()
+        self.assertEqual(store.latest_financial_periods("yahoo").get("open"), "2026-06-30")
+        cfg = {"sources": {"defaults": {"max_results": 5, "lookback_days": 400}, "queries": [
+                   {"name": "open-yahoo", "yahoo": "OPEN"}, {"name": "closed-yahoo", "yahoo": "CLOSED"},
+                   {"name": "noperiod-yahoo", "yahoo": "NOPER"}, {"name": "failed-yahoo", "yahoo": "FAIL"}]},
+               "entities": {"entities": []}}
+        calls = []
+
+        def fake_fetcher(qstr, max_results, lookback, as_of):
+            calls.append(qstr)
+            return []
+        counts = {k: 0 for k in ("fetched", "new", "duplicates", "invalid", "sources_ok", "sources_failed")}
+        T.collect(store, cfg, "new-run", AS_OF, ("yahoo",), {"yahoo": fake_fetcher}, counts, lambda *a: None)
+        self.assertIn("OPEN", calls)       # 期末 +97日を過ぎた → 次の決算を取りに行く
+        self.assertNotIn("CLOSED", calls)  # まだ次の決算が出ない時期 → 休む
+        self.assertNotIn("NOPER", calls)   # 記録なし + 前回成功が直近 → 発見の間隔で休む
+        self.assertIn("FAIL", calls)       # 前回失敗 → 再試行する
+        self.assertEqual(counts.get("financial_skipped"), 2)
         store.close()
 
 

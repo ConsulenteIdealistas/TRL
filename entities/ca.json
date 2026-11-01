@@ -17,7 +17,8 @@
           "Canadarm3",
           "satellite systems",
           "geointelligence"
-        ]
+        ],
+        "pubmed": "MDA Space[Affiliation]"
       },
       "stage": "commercial"
     },
@@ -82,7 +83,8 @@
           "data center",
           "hyperscale",
           "800G switch"
-        ]
+        ],
+        "pubmed": "Celestica[Affiliation]"
       },
       "stage": "commercial"
     },
@@ -262,7 +264,8 @@
           "fuel cell",
           "hydrogen",
           "FCmove"
-        ]
+        ],
+        "pubmed": "Ballard Power Systems[Affiliation]"
       },
       "stage": "production"
     },

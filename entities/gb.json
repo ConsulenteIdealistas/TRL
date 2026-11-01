@@ -44,7 +44,8 @@
           "plasma technology",
           "etching",
           "deposition"
-        ]
+        ],
+        "pubmed": "Oxford Instruments[Affiliation]"
       },
       "stage": "commercial"
     },
@@ -112,7 +113,8 @@
           "robotics",
           "hypersonics"
         ],
-        "sponsor": "QinetiQ"
+        "sponsor": "QinetiQ",
+        "pubmed": "QinetiQ[Affiliation]"
       },
       "stage": "commercial"
     },
@@ -156,7 +158,8 @@
           "epiwafer",
           "compound semiconductor",
           "MBE"
-        ]
+        ],
+        "pubmed": "IQE[Affiliation]"
       },
       "tags": [
         "photonics"
@@ -273,7 +276,8 @@
           "Workday services",
           "digital transformation",
           "AI solutions"
-        ]
+        ],
+        "pubmed": "Kainos[Affiliation]"
       },
       "stage": "commercial"
     },
@@ -294,7 +298,8 @@
           "driver monitoring system",
           "DMS",
           "computer vision"
-        ]
+        ],
+        "pubmed": "Seeing Machines[Affiliation]"
       },
       "stage": "production"
     },
@@ -317,7 +322,8 @@
           "machine tool probes",
           "metrology"
         ],
-        "sponsor": "Renishaw"
+        "sponsor": "Renishaw",
+        "pubmed": "Renishaw[Affiliation]"
       },
       "stage": "commercial"
     },
@@ -339,7 +345,8 @@
           "Stereax",
           "Goliath",
           "solid-state battery"
-        ]
+        ],
+        "pubmed": "Ilika[Affiliation]"
       },
       "stage": "demo"
     },
@@ -408,7 +415,8 @@
           "Hive",
           "fulfillment",
           "OSP"
-        ]
+        ],
+        "pubmed": "Ocado[Affiliation]"
       },
       "stage": "commercial"
     },
@@ -430,7 +438,8 @@
           "solid oxide",
           "fuel cell",
           "electrolysis"
-        ]
+        ],
+        "pubmed": "Ceres Power[Affiliation]"
       },
       "stage": "production"
     },
@@ -498,7 +507,8 @@
           "influenza",
           "hVIVO"
         ],
-        "sponsor": "Poolbeg Pharma PLC"
+        "sponsor": "Poolbeg Pharma PLC",
+        "pubmed": "Poolbeg Pharma[Affiliation]"
       },
       "stage": "rd"
     }

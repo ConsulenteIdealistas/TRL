@@ -225,7 +225,8 @@
      "Wynxx",
      "banking software",
      "GenAI"
-    ]
+    ],
+    "pubmed": "GFT Technologies[Affiliation]"
    },
    "stage": "commercial"
   },
@@ -247,7 +248,8 @@
      "machine vision cameras",
      "pylon",
      "line scan"
-    ]
+    ],
+    "pubmed": "Basler[Affiliation]"
    },
    "stage": "commercial"
   },
@@ -272,7 +274,8 @@
      "LIDE",
      "laser systems",
      "glass processing"
-    ]
+    ],
+    "pubmed": "LPKF Laser & Electronics[Affiliation]"
    },
    "stage": "commercial"
   },
@@ -429,7 +432,8 @@
      "enzymes",
      "bioeconomy",
      "Biocatalysts"
-    ]
+    ],
+    "pubmed": "BRAIN Biotech[Affiliation]"
    },
    "stage": "production"
   },
@@ -451,7 +455,8 @@
      "radioisotope",
      "GalliaPharm",
      "radiopharma"
-    ]
+    ],
+    "pubmed": "Eckert & Ziegler[Affiliation]"
    },
    "stage": "commercial"
   }

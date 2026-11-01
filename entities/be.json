@@ -115,7 +115,8 @@
           "sensor IC",
           "Triaxis",
           "automotive"
-        ]
+        ],
+        "pubmed": "Melexis[Affiliation]"
       },
       "stage": "commercial"
     }

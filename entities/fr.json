@@ -272,7 +272,8 @@
           "generative AI",
           "enterprise LLM"
         ],
-        "news_name": "LightOn"
+        "news_name": "LightOn",
+        "pubmed": "LightOn[Affiliation]"
       },
       "stage": "production"
     },

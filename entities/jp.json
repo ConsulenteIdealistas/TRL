@@ -597,7 +597,8 @@
     "prtimes_terms": [
      "FRONTEO",
      "フロンテオ"
-    ]
+    ],
+    "pubmed": "FRONTEO[Affiliation]"
    },
    "products": [
     {
@@ -1157,7 +1158,8 @@
     "extra_keywords": [
      "全固体電池",
      "PSB"
-    ]
+    ],
+    "pubmed": "Maxell[Affiliation]"
    },
    "stage": "commercial"
   },
@@ -1210,7 +1212,8 @@
      "光測定器",
      "波長可変レーザー",
      "光部品"
-    ]
+    ],
+    "pubmed": "santec[Affiliation]"
    },
    "stage": "commercial"
   },
@@ -1317,7 +1320,8 @@
     "extra_keywords": [
      "血液透析装置",
      "輸液ポンプ"
-    ]
+    ],
+    "pubmed": "JMS[Affiliation]"
    },
    "stage": "commercial"
   },

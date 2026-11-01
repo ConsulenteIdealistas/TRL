@@ -18,7 +18,8 @@
           "Vega C",
           "Vega E",
           "lanciatore"
-        ]
+        ],
+        "pubmed": "Avio[Affiliation]"
       },
       "stage": "commercial"
     },
@@ -62,7 +63,8 @@
         "extra_keywords": [
           "probe cards",
           "semiconductor testing"
-        ]
+        ],
+        "pubmed": "Technoprobe[Affiliation]"
       },
       "stage": "commercial"
     },

@@ -93,7 +93,8 @@
           "satellite",
           "air traffic management"
         ],
-        "news_name": "Indra"
+        "news_name": "Indra",
+        "pubmed": "Indra Sistemas[Affiliation]"
       },
       "stage": "commercial"
     },
@@ -141,7 +142,8 @@
           "teleradiology",
           "precision medicine",
           "radiotherapy"
-        ]
+        ],
+        "pubmed": "Atrys Health[Affiliation]"
       },
       "stage": "commercial"
     }

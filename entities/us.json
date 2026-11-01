@@ -64,7 +64,8 @@
      "Nova-C",
      "lunar lander",
      "CLPS"
-    ]
+    ],
+    "pubmed": "Intuitive Machines[Affiliation]"
    },
    "stage": "production"
   },
@@ -406,7 +407,8 @@
      "physics-based",
      "LiveDesign"
     ],
-    "sponsor": "Schrödinger, Inc."
+    "sponsor": "Schrödinger, Inc.",
+    "pubmed": "Schrödinger[Affiliation]"
    },
    "stage": "commercial"
   },
@@ -907,7 +909,8 @@
      "lithium-metal",
      "Li-Metal",
      "UZ Energy"
-    ]
+    ],
+    "pubmed": "SES AI[Affiliation]"
    },
    "stage": "demo"
   },
@@ -951,7 +954,8 @@
      "superconducting",
      "quantum computer",
      "on-premise"
-    ]
+    ],
+    "pubmed": "IQM Quantum Computers[Affiliation]"
    },
    "stage": "production"
   },
@@ -973,7 +977,8 @@
      "neutral atom",
      "Sqale",
      "quantum sensing"
-    ]
+    ],
+    "pubmed": "Infleqtion[Affiliation]"
    },
    "stage": "production"
   },
@@ -995,7 +1000,8 @@
      "superconducting",
      "Cepheus",
      "quantum cloud"
-    ]
+    ],
+    "pubmed": "Rigetti Computing[Affiliation]"
    },
    "stage": "production"
   },
@@ -1017,7 +1023,8 @@
      "quantum annealing",
      "Advantage2",
      "gate-model"
-    ]
+    ],
+    "pubmed": "D-Wave Quantum[Affiliation]"
    },
    "stage": "production"
   },
@@ -1039,7 +1046,8 @@
      "ion trap",
      "Helios",
      "logical qubits"
-    ]
+    ],
+    "pubmed": "Quantinuum[Affiliation]"
    },
    "stage": "production"
   },
@@ -1061,7 +1069,8 @@
      "ion trap",
      "Forte",
      "Tempo"
-    ]
+    ],
+    "pubmed": "IonQ[Affiliation]"
    },
    "stage": "production"
   },
@@ -1383,7 +1392,8 @@
      "hypoglossal",
      "sleep apnea"
     ],
-    "sponsor": "Nyxoah"
+    "sponsor": "Nyxoah",
+    "pubmed": "Nyxoah[Affiliation]"
    },
    "stage": "production"
   },
@@ -1679,7 +1689,8 @@
      "probe card",
      "HBM",
      "wafer test"
-    ]
+    ],
+    "pubmed": "FormFactor[Affiliation]"
    },
    "stage": "commercial"
   },
@@ -1745,7 +1756,8 @@
      "ion beam",
      "laser annealing",
      "MOCVD"
-    ]
+    ],
+    "pubmed": "Veeco Instruments[Affiliation]"
    },
    "stage": "commercial"
   },
@@ -1767,7 +1779,8 @@
      "AI data center",
      "CoreWeave",
      "Ellendale"
-    ]
+    ],
+    "pubmed": "Applied Digital[Affiliation]"
    },
    "stage": "production"
   },
@@ -1833,7 +1846,8 @@
      "AI lending",
      "credit model",
      "loan volume"
-    ]
+    ],
+    "pubmed": "Upstart[Affiliation]"
    },
    "stage": "commercial"
   },
@@ -1877,7 +1891,8 @@
      "Switchblade",
      "Puma",
      "loitering munition"
-    ]
+    ],
+    "pubmed": "AeroVironment[Affiliation]"
    },
    "stage": "commercial"
   },
@@ -2118,7 +2133,8 @@
      "photonic quantum",
      "Aurora",
      "DARPA QBI"
-    ]
+    ],
+    "pubmed": "Xanadu Quantum Technologies[Affiliation]"
    },
    "stage": "demo"
   },

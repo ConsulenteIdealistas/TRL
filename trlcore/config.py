@@ -205,7 +205,8 @@ def build_entity_queries(entities, src):
             groups["trials"].append({"name": f"{eid}-trials", "trials": w["sponsor"],
                                      "lookback_days": params.get("trials", WATCH_LOOKBACK_DEFAULTS["trials"])})
         if e.get("ticker"):
-            if market == "JP":
+            # EDINET も Yahoo と同様にコア企業のみ (ウォッチは評価対象にならないため)
+            if market == "JP" and e.get("tier", "core") == "core":
                 groups["edinet"].append({"name": f"{eid}-edinet", "edinet": e["ticker"],
                                          "lookback_days": params.get("edinet", WATCH_LOOKBACK_DEFAULTS["edinet"])})
             # Yahoo はコア企業のみ。ウォッチ企業は評価対象にならず、その財務が評価の

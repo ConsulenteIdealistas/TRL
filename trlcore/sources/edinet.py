@@ -2,7 +2,9 @@
 
 クエリ文字列は証券コード (例: "9348"、"186A")。EDINET の secCode は末尾に 0 を
 付けた5桁 (例: "93480") なので変換して照合する。書類一覧APIは日単位のため、
-lookback_days 分の日次リストを取得し、プロセス内キャッシュで複数クエリから再利用する。
+lookback_days 分の日次リストを取得し、証券コード別の索引にまとめてから
+全クエリで共有する (クエリごとに全日リストを走査すると費用がクエリ数×日数に
+膨らむため)。
 
 EDINET_API_KEY 未設定なら何も取得しない (空リストを返す)。財務書類 (有価証券報告書・
 四半期報告書・半期報告書とその訂正) については、直近のものから XBRL_PER_QUERY 件まで
@@ -34,6 +36,7 @@ FINANCIAL_MARKER = "財務数値(EDINET XBRL)"
 
 _day_cache = {}
 _doc_cache = {}
+_index_cache = {}
 _cache_lock = threading.Lock()  # collect は並行実行されるため、キャッシュの判定と登録を原子的にする
 
 # (表示名, 要素名候補 (要約サフィックスを除いたローカル名), 期間項目か, 種別)
@@ -313,20 +316,39 @@ def _day_results(day, http, key, sleep):
         return results
 
 
-def _enrich_financials(out, days, ticker, http, key):
+def _sec_index(days, http, key, sleep):
+    """日次リストを証券コード別の索引にまとめる。構築は実行内で実質1回だけ行い、
+    全クエリで共有する (_day_cache が日次リスト自体を保持するため、二重構築でも
+    HTTP は増えない)。"""
+    cache_key = (days[0].isoformat(), days[-1].isoformat())
+    with _cache_lock:
+        idx = _index_cache.get(cache_key)
+    if idx is not None:
+        return idx
+    idx = {}
+    for day in days:
+        for r in _day_results(day, http, key, sleep):
+            sec = r.get("secCode")
+            if sec:
+                idx.setdefault(sec, []).append(r)
+    with _cache_lock:
+        _index_cache[cache_key] = idx
+    return idx
+
+
+def _enrich_financials(out, index, ticker, http, key):
     """直近の財務書類 (XBRL_PER_QUERY 件まで) の abstract に財務数値を付ける。"""
     sec = sec_code(ticker)
     by_id = {r["source_id"]: r for r in out}
     fins, seen = [], set()
-    for day in days:
-        for r in _day_cache.get(day) or []:
-            doc_id = r.get("docID")
-            if (r.get("secCode") != sec or r.get("docTypeCode") not in FINANCIAL_DOC_TYPES
-                    or r.get("xbrlFlag") != "1" or r.get("withdrawalStatus") == "1"
-                    or doc_id not in by_id or doc_id in seen):
-                continue
-            seen.add(doc_id)
-            fins.append(r)
+    for r in index.get(sec) or []:
+        doc_id = r.get("docID")
+        if (r.get("docTypeCode") not in FINANCIAL_DOC_TYPES
+                or r.get("xbrlFlag") != "1" or r.get("withdrawalStatus") == "1"
+                or doc_id not in by_id or doc_id in seen):
+            continue
+        seen.add(doc_id)
+        fins.append(r)
     fins.sort(key=lambda r: r.get("submitDateTime") or "", reverse=True)
     for r in fins[:XBRL_PER_QUERY]:
         text = fetch_financial_text(r["docID"], http, key)
@@ -340,14 +362,12 @@ def edinet_fetch(query, max_results, lookback_days, as_of, http=None, sleep=time
     if not key:
         return []
     http = http or http_fetch
-    out, days = [], []
-    for offset in range(lookback_days + 1):
-        day = as_of - timedelta(days=offset)
-        days.append(day)
-        out.extend(parse_results(_day_results(day, http, key, sleep), query))
+    days = [as_of - timedelta(days=offset) for offset in range(lookback_days + 1)]
+    index = _sec_index(days, http, key, sleep)
+    out = parse_results(index.get(sec_code(query)) or [], query)
     out.sort(key=lambda r: r["published"] or "", reverse=True)
     try:
-        _enrich_financials(out, days, query, http, key)
+        _enrich_financials(out, index, query, http, key)
     except Exception:
         pass  # 数値抽出の失敗でメタデータ取得まで落とさない
     return out[:max_results]

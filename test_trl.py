@@ -541,6 +541,7 @@ class EdinetFinancialTests(unittest.TestCase):
         from trlcore.sources import edinet as edinet_mod
         edinet_mod._day_cache.clear()
         edinet_mod._doc_cache.clear()
+        edinet_mod._index_cache.clear()
         fin_doc = {"docID": "S100FIN", "edinetCode": "E00001", "secCode": "93480", "filerName": "株式会社ispace",
                    "docDescription": "第2四半期報告書", "docTypeCode": "140", "xbrlFlag": "1",
                    "submitDateTime": "2026-10-19 15:00", "periodStart": "2026-04-01",
@@ -567,6 +568,7 @@ class EdinetFinancialTests(unittest.TestCase):
         from trlcore.sources import edinet as edinet_mod
         edinet_mod._day_cache.clear()
         edinet_mod._doc_cache.clear()
+        edinet_mod._index_cache.clear()
         fin_doc = {"docID": "S100FIN", "edinetCode": "E00001", "secCode": "93480", "filerName": "株式会社ispace",
                    "docDescription": "第2四半期報告書", "docTypeCode": "140", "xbrlFlag": "1",
                    "submitDateTime": "2026-10-19 15:00", "periodStart": "2026-04-01",
@@ -583,6 +585,47 @@ class EdinetFinancialTests(unittest.TestCase):
             out = edinet.fetch("9348", 20, 30, AS_OF, http=fake_http, sleep=lambda *_: None)
         self.assertEqual(len(out), 1)
         self.assertNotIn("財務数値", out[0]["abstract"])
+
+    def test_fetch_uses_shared_sec_index(self):
+        # 日次リストは証券コード別の索引として共有し、クエリごとに全件走査しない
+        import os
+        from unittest import mock
+        from trlcore.sources import edinet as edinet_mod
+        edinet_mod._day_cache.clear()
+        edinet_mod._doc_cache.clear()
+        edinet_mod._index_cache.clear()
+        foreign = [{"docID": f"S100F{i}", "edinetCode": "E99999", "secCode": "99990",
+                    "filerName": "他社", "docDescription": "有価証券報告書", "docTypeCode": "120",
+                    "xbrlFlag": "1", "submitDateTime": "2026-10-19 15:00", "withdrawalStatus": "0"}
+                   for i in range(50)]
+        own = {"docID": "S100OWN", "edinetCode": "E00001", "secCode": "93480", "filerName": "株式会社ispace",
+               "docDescription": "四半期報告書", "docTypeCode": "140", "xbrlFlag": "1",
+               "submitDateTime": "2026-10-19 15:00", "withdrawalStatus": "0"}
+
+        def fake_http(url, params=None, headers=None, **kw):
+            if url.endswith("documents.json"):
+                if params.get("date") == "2026-10-19":
+                    return json.dumps({"results": foreign + [own]}).encode()
+                return json.dumps({"results": []}).encode()
+            raise RuntimeError("no doc download expected")
+
+        seen_sizes = []
+        orig_parse = edinet_mod.parse_results
+
+        def counting(results, ticker):
+            seen_sizes.append(len(results))
+            return orig_parse(results, ticker)
+        edinet_mod.parse_results = counting
+        try:
+            with mock.patch.dict(os.environ, {"EDINET_API_KEY": "test-key"}):
+                out1 = edinet.fetch("9348", 20, 30, AS_OF, http=fake_http, sleep=lambda *_: None)
+                out2 = edinet.fetch("7777", 20, 30, AS_OF, http=fake_http, sleep=lambda *_: None)
+        finally:
+            edinet_mod.parse_results = orig_parse
+        self.assertEqual(len(out1), 1)
+        self.assertEqual(len(out2), 0)
+        # 索引のスライスだけが parse に渡る (他社の50件は混ざらない)
+        self.assertEqual(seen_sizes, [1, 0])
 
 
 YAHOO_SUMMARY = {
@@ -1744,32 +1787,22 @@ class EntityQueryGenerationTests(unittest.TestCase):
     },
     {
         "edinet": "186A",
-        "lookback_days": 120,
+        "lookback_days": 45,
         "name": "astroscale-edinet"
     },
     {
         "edinet": "9348",
-        "lookback_days": 120,
+        "lookback_days": 45,
         "name": "ispace-edinet"
     },
     {
         "edinet": "290A",
-        "lookback_days": 120,
+        "lookback_days": 45,
         "name": "synspective-edinet"
     },
     {
-        "edinet": "4588",
-        "lookback_days": 120,
-        "name": "oncolys-edinet"
-    },
-    {
-        "edinet": "4978",
-        "lookback_days": 120,
-        "name": "reprocell-edinet"
-    },
-    {
         "edinet": "4587",
-        "lookback_days": 120,
+        "lookback_days": 45,
         "name": "peptidream-edinet"
     },
     {
@@ -1858,7 +1891,22 @@ class EntityQueryGenerationTests(unittest.TestCase):
         by_name = {q["name"]: q for q in T.build_entity_queries(ents, src)}
         self.assertIn("core1-yahoo", by_name)
         self.assertNotIn("watch1-yahoo", by_name)
-        self.assertIn("watch1-edgar", by_name)  # 今回の対象は Yahoo のみ
+        self.assertIn("watch1-edgar", by_name)  # EDGAR は今回の削減対象外
+
+    def test_edinet_queries_core_only(self):
+        # EDINET もコア企業のみ生成する (Yahoo と同じ扱い)
+        src = {"keyword_sets": {"space": ["決算"]},
+               "keyword_sets_en": {"space": ["earnings"]},
+               "entity_watch": {"lookback_days": {}}}
+        ents = {"entities": [
+            {"id": "jpcore", "sector": "space", "market": "JP", "ticker": "1111", "tier": "core",
+             "watch": {"news_name": "コア社"}},
+            {"id": "jpwatch", "sector": "space", "market": "JP", "ticker": "2222", "tier": "watch",
+             "watch": {"news_name": "ウォッチ社"}},
+        ]}
+        by_name = {q["name"]: q for q in T.build_entity_queries(ents, src)}
+        self.assertIn("jpcore-edinet", by_name)
+        self.assertNotIn("jpwatch-edinet", by_name)
 
     def test_generation_rules_foreign_market(self):
         src = {"keyword_sets": {"space": ["決算"]},

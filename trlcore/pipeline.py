@@ -323,6 +323,7 @@ def run_pipeline(store, cfg, llm, *, as_of, sources=("pubmed", "arxiv"), kinds=(
         # 系統(long/event)は抽出を共有するため候補内では従来どおり直列に処理する
         per_kind = []
         entry_cached = was_cached
+        extraction_model = None
         for kind in kinds:
             eval_t0 = time.monotonic()
             res = evaluate_one(c, kind, cfg, llm, as_of, extraction, meta, prompt_dir,
@@ -331,6 +332,10 @@ def run_pipeline(store, cfg, llm, *, as_of, sources=("pubmed", "arxiv"), kinds=(
             if res.get("infra_failure"):
                 break  # この候補の残りの系統は打ち切る (従来どおり)
             extraction, meta = res["extraction"], res["prompt_versions"].get("extract")
+            if res.get("extraction_model"):
+                extraction_model = res["extraction_model"]
+            elif extraction_model:
+                res["extraction_model"] = extraction_model  # 2系統目にも抽出の実モデルを引き継ぐ
             entry_cached = False
         return per_kind
 
@@ -369,7 +374,9 @@ def run_pipeline(store, cfg, llm, *, as_of, sources=("pubmed", "arxiv"), kinds=(
             for kind, res, eval_seconds, cached in per_kind:
                 log(f"[eval:time] {c['id']} {kind}: {eval_seconds:.1f}s")
                 if res["extraction"] is not None and not cached and extract_sha:
-                    store.put_extraction(ihash, extract_sha, model, res["extraction"], res["prompt_versions"].get("extract"))
+                    # キャッシュのキーは抽出を実際に行ったモデル (フォールバック時は代替モデル)
+                    store.put_extraction(ihash, extract_sha, res.get("extraction_model") or model,
+                                         res["extraction"], res["prompt_versions"].get("extract"))
                 if res.get("infra_failure"):
                     # API側の失敗は評価結果として保存しない(error滞留とキュー汚染を防ぐ)。候補は未評価のまま次回へ
                     consecutive += 1

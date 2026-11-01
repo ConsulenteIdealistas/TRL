@@ -3,6 +3,7 @@
 import json
 import os
 import re
+import threading
 from .errors import HttpError, LLMError, ResponseShapeError
 from .http import http_fetch
 from .config import LLM_DEFAULTS
@@ -48,16 +49,27 @@ class Anthropic:
         self.key = os.environ.get("ANTHROPIC_API_KEY")
         if not self.key:
             raise LLMError("ANTHROPIC_API_KEY is not set")
+        self._tls = threading.local()  # last_model はスレッドごとに保持する (評価は並列実行)
+
+    @property
+    def last_model(self):
+        """直近の complete() が実際に応答したモデル名 (フォールバック時は代替モデル)。
+        評価の来歴と抽出キャッシュのキーに使う。未呼び出しなら None。"""
+        return getattr(self._tls, "model", None)
 
     def complete(self, prompt):
         try:
-            return self._complete(self.model, prompt)
+            out = self._complete(self.model, prompt)
+            self._tls.model = self.model
+            return out
         except HttpError as e:
             # 503/429 等の一時的失敗はモデル側の過負荷であることが多く、同一プロバイダの
             # 別モデルでは応答することがある。恒常的な失敗(404/401等)では切り替えない。
             if not (self.fallback_model and e.transient):
                 raise
-            return self._complete(self.fallback_model, prompt)
+            out = self._complete(self.fallback_model, prompt)
+            self._tls.model = self.fallback_model
+            return out
 
     def _complete(self, model, prompt):
         body = json.dumps({"model": model, "max_tokens": 3000, "system": SYSTEM,
@@ -82,16 +94,27 @@ class Gemini:
         self.key = os.environ.get("GEMINI_API_KEY")
         if not self.key:
             raise LLMError("GEMINI_API_KEY is not set")
+        self._tls = threading.local()  # last_model はスレッドごとに保持する (評価は並列実行)
+
+    @property
+    def last_model(self):
+        """直近の complete() が実際に応答したモデル名 (フォールバック時は代替モデル)。
+        評価の来歴と抽出キャッシュのキーに使う。未呼び出しなら None。"""
+        return getattr(self._tls, "model", None)
 
     def complete(self, prompt):
         try:
-            return self._complete(self.model, prompt)
+            out = self._complete(self.model, prompt)
+            self._tls.model = self.model
+            return out
         except HttpError as e:
             # 503/429 等の一時的失敗はモデル側の過負荷であることが多く、同一プロバイダの
             # 別モデルでは応答することがある。恒常的な失敗(404/401等)では切り替えない。
             if not (self.fallback_model and e.transient):
                 raise
-            return self._complete(self.fallback_model, prompt)
+            out = self._complete(self.fallback_model, prompt)
+            self._tls.model = self.fallback_model
+            return out
 
     def _complete(self, model, prompt):
         body = json.dumps({

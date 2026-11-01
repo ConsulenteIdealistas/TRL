@@ -40,7 +40,7 @@ const STG = {rd: "研究開発型", demo: "実証型", production: "量産型", 
 const tagLabel = t => CL[t] || TL[t] || t;
 const label = k => IL[k] || k;
 const DL = {positive: "ポジティブ", negative: "ネガティブ", mixed: "混在"};
-const dirB = ev => { const d = ev && ev.direction; return d && d.direction ? `<span class="dir dir-${d.direction}">${DL[d.direction]}</span>` : ""; };
+const dirB = ev => { const d = ev && ev.status !== "error" && ev.direction; return d && d.direction ? `<span class="dir dir-${d.direction}">${DL[d.direction]}</span>` : ""; };  // error 評価の方向性は出さない (一覧側と揃える)
 const jst = iso => { try { return new Date(iso).toLocaleString("ja-JP", {timeZone: "Asia/Tokyo", hour12: false}); } catch (e) { return iso; } };
 
 function trl(t) {

@@ -490,6 +490,9 @@ class Store:
 
     # --- runs ---
     def start_run(self, run_id, config_version, config_hash, as_of, params):
+        # 前の実行が異常終了して 'running' のまま残っていたら、新しい実行の開始時点で
+        # 'interrupted' に確定させる (放置すると最新実行の表示や観測の前提が崩れる)
+        self.conn.execute("UPDATE runs SET status='interrupted' WHERE status='running'")
         self.conn.execute("INSERT INTO runs(run_id,started_at,config_version,config_hash,as_of,params_json,status) "
                           "VALUES(?,?,?,?,?,?,'running')", (run_id, now_iso(), config_version, config_hash, as_of, _j(params)))
         self.conn.commit()

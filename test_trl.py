@@ -666,7 +666,7 @@ class YahooFinancialTests(unittest.TestCase):
         self.assertEqual(yahoo_mod._session_ua(), ua1)  # セッション内では変わらない
 
     def test_parse_quote_summary(self):
-        text, period, name = yahoo.parse(YAHOO_SUMMARY)
+        text, period, name = yahoo.parse(YAHOO_SUMMARY, "9348.T")
         self.assertEqual(period, "2026-06-30")
         self.assertEqual(name, "ispace, Inc.")
         self.assertIn("売上高 168百万円", text)
@@ -674,6 +674,18 @@ class YahooFinancialTests(unittest.TestCase):
         self.assertIn("自己資本比率 25.0%", text)
         self.assertIn("現預金 25,700百万円", text)
         self.assertIn("流動比率 3.89", text)
+
+    def test_parse_quote_summary_currency_from_suffix(self):
+        # price.currency が無くてもティッカーのサフィックスから通貨を推定する
+        text, _, _ = yahoo.parse(YAHOO_SUMMARY, "XYZ")  # サフィックス無し = 米国
+        self.assertIn("売上高 168百万米ドル", text)
+        text, _, _ = yahoo.parse(YAHOO_SUMMARY, "ABC.L")
+        self.assertIn("売上高 168百万英ポンド", text)
+
+    def test_parse_quote_summary_unknown_currency_skips(self):
+        # 通貨が特定できない財務は、単位を偽って記録しない
+        self.assertEqual(yahoo.parse(YAHOO_SUMMARY), ("", None, ""))
+        self.assertEqual(yahoo.parse(YAHOO_SUMMARY, "ABC.XX"), ("", None, ""))
 
     def test_parse_quote_summary_foreign_currency(self):
         import copy
@@ -802,6 +814,17 @@ class FinancialPoolTests(unittest.TestCase):
         res = ev.evaluate_one(cand, "long", CFG, Mock(fn), AS_OF, financials=fins)
         self.assertEqual(res["extra"]["related_financials_count"], 1)
         self.assertTrue(any("関連財務根拠" in p and "30,000百万円" in p for p in seen))
+
+    def test_evaluate_one_records_used_model(self):
+        # フォールバックで応答した場合は、評価の来歴も抽出キャッシュのキーも実モデルになる
+        class UsedModelMock(Mock):
+            model = "main-model"
+            last_model = "fallback-model"
+        cand = {"id": "c1", "title": "T", "abstract": "A" * 300, "url": "u", "source": "trials",
+                "published": "2026-10-10", "fields": []}
+        res = ev.evaluate_one(cand, "long", CFG, UsedModelMock(make_llm_fn()), AS_OF)
+        self.assertEqual(res["llm_model"], "fallback-model")
+        self.assertEqual(res["extraction_model"], "fallback-model")
 
 
 class DirectionTests(unittest.TestCase):
@@ -1056,6 +1079,18 @@ class BomTests(unittest.TestCase):
         for f in ("scoring", "sources"):
             (d / f"{f}.json").write_bytes(b"\xef\xbb\xbf" + (T.ROOT / f"{f}.json").read_bytes().lstrip(b"\xef\xbb\xbf"))
         self.assertEqual(load_config(d)["config_version"], CFG["config_version"])
+
+    def test_config_hash_includes_prompts(self):
+        d = Path(tempfile.mkdtemp())
+        for f in ("scoring", "sources"):
+            (d / f"{f}.json").write_bytes((T.ROOT / f"{f}.json").read_bytes())
+        names = []
+        for n, v in CFG["scoring"]["prompts"].items():
+            (d / f"{n}.{v}.md").write_bytes((T.ROOT / f"{n}.{v}.md").read_bytes())
+            names.append(f"{n}.{v}.md")
+        h1 = load_config(d)["config_hash"]
+        (d / names[0]).write_text((d / names[0]).read_text(encoding="utf-8") + "\n変更\n", encoding="utf-8")
+        self.assertNotEqual(load_config(d)["config_hash"], h1)  # プロンプトだけの変更でも世代が変わる
 
 import json
 import tempfile
@@ -2340,6 +2375,18 @@ class PruneTests(unittest.TestCase):
             rows = [tuple(r) for r in store.conn.execute(
                 "SELECT candidate_id, entity_id, matched_alias FROM candidate_entities ORDER BY candidate_id")]
             self.assertEqual(rows, [("k1", "genmab", "Genmab"), ("k3", "no_such_entity", "何か")])
+
+    def test_start_run_closes_stale_running(self):
+        with tempfile.TemporaryDirectory() as td:
+            store = T.Store(Path(td) / "d.sqlite")
+            store.start_run("r1", "v", "h", "2026-10-20", {})
+            self.assertEqual(store.get_run("r1")["status"], "running")
+            store.start_run("r2", "v", "h", "2026-10-27", {})  # r1 は異常終了したものとして確定する
+            self.assertEqual(store.get_run("r1")["status"], "interrupted")
+            self.assertEqual(store.get_run("r2")["status"], "running")
+            store.finish_run("r2", {}, "ok", 1.0)
+            store.start_run("r3", "v", "h", "2026-11-03", {})  # 終了済みのものは触らない
+            self.assertEqual(store.get_run("r2")["status"], "ok")
 
     def test_prune_stale_yahoo_twins(self):
         with tempfile.TemporaryDirectory() as td:

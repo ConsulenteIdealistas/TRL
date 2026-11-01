@@ -34,13 +34,21 @@ MODULES = ("incomeStatementHistoryQuarterly,incomeStatementHistory,balanceSheetH
            "cashflowStatementHistoryQuarterly,financialData,quoteType,price")
 
 # 財務諸表の報告通貨ごとの金額単位。数値は百万単位で整形するため、通貨を取り違えると
-# 根拠が桁違いになる。price モジュールの currency から決め、無ければ円とみなす。
+# 根拠が桁違いになる。price モジュールの currency から決め、取れない場合はティッカーの
+# 市場サフィックスから推定する。どちらでも決まらなければ、通貨を偽って記録するより
+# その銘柄の財務は作らない (通貨不明のまま円扱いする旧仕様の廃止)。
 MONEY_UNITS = {"JPY": "百万円", "USD": "百万米ドル", "GBP": "百万英ポンド", "GBp": "百万英ポンド",
                "CHF": "百万スイスフラン", "EUR": "百万ユーロ",
                "CAD": "百万カナダドル", "AUD": "百万豪ドル", "SEK": "百万スウェーデンクローナ",
                "DKK": "百万デンマーククローナ",
                "NOK": "百万ノルウェークローナ"}
 FINANCIAL_MARKER = "財務数値(Yahoo Finance)"
+
+# ティッカーの市場サフィックス→通貨 (price.currency が取れないときの推定用)。
+# サフィックス無しは米国市場として USD とみなす。
+SUFFIX_CURRENCIES = {"": "USD", "T": "JPY", "L": "GBp", "DE": "EUR", "PA": "EUR", "AS": "EUR",
+                     "BR": "EUR", "MI": "EUR", "MC": "EUR", "HE": "EUR", "CO": "DKK", "ST": "SEK",
+                     "OL": "NOK", "SW": "CHF", "AX": "AUD", "TO": "CAD"}
 
 # 実在するブラウザの User-Agent 候補。bot 判定の回避のため、セッション (プロセス)
 # ごとに1つをランダムに選び、そのセッション内では使い続ける (実ブラウザは
@@ -123,10 +131,10 @@ def _pl_segment(stmt, label_prefix, unit="百万円"):
     return f"{label_prefix} " + "、".join(seg) if seg else ""
 
 
-def parse_quote_summary(data):
+def parse_quote_summary(data, symbol=None):
     """quoteSummary の JSON から (財務テキスト, 対象四半期末日, 会社名) を作る。
 
-    数値が不足する場合は ("", None, "") を返す。
+    数値が不足する場合と、通貨が特定できない場合は ("", None, "") を返す。
     """
     try:
         res = (data.get("quoteSummary") or {}).get("result") or []
@@ -143,7 +151,12 @@ def parse_quote_summary(data):
     qt = r.get("quoteType") or {}
     name = qt.get("longName") or qt.get("shortName") or ""
     currency = (r.get("price") or {}).get("currency")
-    unit = MONEY_UNITS.get(currency, "百万円" if not currency else f"百万{currency}")
+    if not currency and symbol:
+        suffix = symbol.rsplit(".", 1)[1] if "." in symbol else ""
+        currency = SUFFIX_CURRENCIES.get(suffix)
+    if not currency:
+        return "", None, ""  # 通貨が特定できない財務は、単位を偽って記録しない
+    unit = MONEY_UNITS.get(currency, f"百万{currency}")
 
     parts = []
     period = _end_date(isq[0]) if isq else _end_date(isa[0]) if isa else None
@@ -250,7 +263,7 @@ def yahoo_fetch(query, max_results, lookback_days, as_of, http=None, sleep=time.
                 # 握りつぶさず例外として収集側 (run_sources / sources_failed) に残す
                 raise
             sleep(2)  # 一時的な制限・bot 判定を避けるため間を置いて取り直す
-    text, period, name = parse_quote_summary(data)
+    text, period, name = parse_quote_summary(data, symbol)
     if not text or not period:
         return []
     try:

@@ -80,7 +80,7 @@ def _ev_for_site(ev, cfg):
                              and not (extra.get("business_stage") == "pre_stage" and k not in TECH_ITEMS)],
         "errors": json.loads(ev["errors_json"] or "[]") if ev["status"] == "error" else [],
         "trl_level": trl,
-        "direction": extra.get("direction"),
+        "direction": extra.get("direction") if ev["status"] != "error" else None,  # error 評価の方向性は出さない (一覧・詳細で共通)
         "axes": extra.get("axes"),
         "business_stage": extra.get("business_stage"),
         "total_scope": extra.get("total_scope"),
@@ -133,7 +133,12 @@ def build_site_data(store, cfg, now=None):
             continue  # 旧版がAPI失敗を保存した分。論文側の不足ではないので表示しない
         queue[(q["candidate_id"], q["kind"])] = {
             "reason": q["reason"], "next_sources": q["next_sources"] or [], "reeval_conditions": q["reeval_conditions"] or []}
-    run = store.conn.execute("SELECT * FROM runs ORDER BY started_at DESC LIMIT 1").fetchone()
+    # 表示の基準にする実行は「終了した最新のもの」。異常終了で 'running' のままの行を
+    # 掴むと、その実行の as_of や件数でサイトが組まれてしまう
+    run = store.conn.execute(
+        "SELECT * FROM runs WHERE status != 'running' ORDER BY started_at DESC LIMIT 1").fetchone()
+    if run is None:
+        run = store.conn.execute("SELECT * FROM runs ORDER BY started_at DESC LIMIT 1").fetchone()
     pool_as_of = parse_date(run["as_of"]) if run else None
     next_ids = set()
     if pool_as_of is not None:

@@ -147,6 +147,12 @@ def run_extraction(cand, cfg, llm, as_of, prompt_dir=None):
     return obj, {"name": "extract", "version": p["version"], "sha": p["sha"]}
 
 
+def _used_model(llm):
+    """その呼び出しに実際に応答したモデル名。プロバイダが last_model を持てば
+    (フォールバック時は代替モデル)、無ければ主モデル名にフォールバックする。"""
+    return getattr(llm, "last_model", None) or getattr(llm, "model", None)
+
+
 def evaluate_one(cand, kind, cfg, llm, as_of, extraction=None, extract_meta=None, prompt_dir=None,
                  related=None, financials=None):
     """1候補・1系統の評価。失敗しても例外を投げず status=error の結果を返す。"""
@@ -161,6 +167,7 @@ def evaluate_one(cand, kind, cfg, llm, as_of, extraction=None, extract_meta=None
         if extraction is None:
             extraction, meta = run_extraction(cand, cfg, llm, as_of, prompt_dir)
             result["extraction"], extract_meta = extraction, meta
+            result["extraction_model"] = _used_model(llm)  # 抽出キャッシュのキーに使う実モデル
         versions["extract"] = extract_meta
         p = load_prompt(kind, cfg["scoring"]["prompts"][kind], prompt_dir)
         versions[kind] = {"name": kind, "version": p["version"], "sha": p["sha"]}
@@ -193,6 +200,7 @@ def evaluate_one(cand, kind, cfg, llm, as_of, extraction=None, extract_meta=None
             feedback = ("\n\n[再出力の指示] 前回の出力には次の不備がありました: " + ", ".join(errs[:8])
                         + "。items には評価項目キーの全項目を1つも省略せずに含め、材料が無い項目は score=null と missing_info で出すこと。"
                           "その他の指定フィールドも全て含めて、JSON のみを再出力してください。")
+        result["llm_model"] = _used_model(llm)  # 査定に実際に応答したモデルを来歴として記録する
         if errs:
             result["errors"] = errs
             return result

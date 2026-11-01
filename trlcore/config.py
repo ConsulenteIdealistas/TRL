@@ -292,6 +292,13 @@ def load_config(config_dir=None):
         h.update(entities_text.encode("utf-8"))
         entities = json.loads(entities_text)
 
+    # 評価プロンプト本文も世代の印 (config_hash) に含める。プロンプトだけの変更でも
+    # ハッシュが変わり、同一世代内でのプロンプト混在に気付けるようにする
+    for pname, pver in (raw["scoring"].get("prompts") or {}).items():
+        ppath = d / f"{pname}.{pver}.md"
+        if ppath.is_file():
+            h.update(ppath.read_text(encoding="utf-8-sig").encode("utf-8"))
+
     cfg = {
         "scoring": raw["scoring"],
         "sources": raw["sources"],

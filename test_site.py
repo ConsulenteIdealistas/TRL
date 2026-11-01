@@ -84,6 +84,22 @@ class FallbackModelTests(unittest.TestCase):
         self.assertEqual(g.complete("p"), "fb-ok")
         self.assertEqual(len(seen), 2)
 
+    def test_last_model_tracking(self):
+        def ok_http(url, **kw):
+            return json.dumps({"candidates": [{"content": {"parts": [{"text": "ok"}]}}]}).encode()
+        g = T.Gemini(model="gemini-main", http=ok_http, fallback_model="gemini-sub")
+        self.assertIsNone(g.last_model)
+        g.complete("p")
+        self.assertEqual(g.last_model, "gemini-main")
+
+        def flaky_http(url, **kw):
+            if "gemini-main" in url:
+                raise T.HttpError("HTTP 503 for x", 503)
+            return json.dumps({"candidates": [{"content": {"parts": [{"text": "fb"}]}}]}).encode()
+        g2 = T.Gemini(model="gemini-main", http=flaky_http, fallback_model="gemini-sub")
+        g2.complete("p")
+        self.assertEqual(g2.last_model, "gemini-sub")
+
     def test_no_fallback_on_permanent_error(self):
         def http(url, **kw):
             raise T.HttpError("HTTP 404 for x", 404)
@@ -103,6 +119,18 @@ class FallbackModelTests(unittest.TestCase):
         import os
         os.environ["TRL_LLM_FALLBACK_MODEL"] = "gemini-sub"
         self.assertEqual(T.Gemini(model="m", http=lambda *a, **k: b"{}").fallback_model, "gemini-sub")
+
+
+class SiteConsistencyTests(unittest.TestCase):
+    def test_error_evaluation_direction_is_dropped(self):
+        # error 評価の方向性はサイトに出さない (一覧・詳細の共通ルールを site 側で担保)
+        from trlcore.site import _ev_for_site
+        ev = {"kind": "long", "status": "error", "total": None, "band": None, "as_of": "2026-10-20",
+              "evaluated_at": "2026-10-20T00:00:00Z", "items_json": "{}", "errors_json": "[\"x\"]",
+              "extra_json": json.dumps({"direction": {"direction": "positive", "reason": "r"}})}
+        self.assertIsNone(_ev_for_site(ev, CFG)["direction"])
+        ev["status"] = "hold"
+        self.assertEqual(_ev_for_site(ev, CFG)["direction"]["direction"], "positive")
 
 
 class ReportLegacyQueueTests(unittest.TestCase):

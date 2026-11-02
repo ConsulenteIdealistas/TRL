@@ -1,5 +1,6 @@
 {
  "config_version": "2026.11.0",
+ "recalc_on_run": false,
  "long": {
   "weights": {
    "technology_readiness": 30,

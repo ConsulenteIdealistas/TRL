@@ -421,6 +421,20 @@ class Store:
         self.conn.commit()
         return cur.lastrowid
 
+    def final_evaluations(self):
+        """再計算 (trlcore/recalc) 用に final 評価の必要列を返す。"""
+        rows = self.conn.execute(
+            "SELECT id, candidate_id, kind, total, band, items_json, extra_json,"
+            " config_version FROM evaluations WHERE status='final' ORDER BY id").fetchall()
+        return [dict(r) for r in rows]
+
+    def update_evaluation_recalc(self, eval_id, total, band, config_version, config_hash, extra):
+        self.conn.execute(
+            "UPDATE evaluations SET total=?, band=?, config_version=?, config_hash=?,"
+            " extra_json=? WHERE id=?",
+            (total, band, config_version, config_hash, _j(extra), eval_id))
+        self.conn.commit()
+
     def get_extraction(self, input_hash, prompt_sha, model):
         r = self.conn.execute("SELECT extraction_json, meta_json FROM extraction_cache "
                               "WHERE input_hash=? AND prompt_sha=? AND model=?", (input_hash, prompt_sha, model)).fetchone()

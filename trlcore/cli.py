@@ -58,6 +58,10 @@ def main(argv=None):
     pg.add_argument("--data-dir", default="data")
     pg.add_argument("--evaluations", action="store_true",
                     help="評価とレビューキューを全削除し、候補を未評価に戻す")
+    rc_ = sub.add_parser("recalc")
+    rc_.add_argument("--data-dir", default="data")
+    rc_.add_argument("--apply", action="store_true",
+                     help="実際に書き換える (既定は報告のみ)")
     a = ap.parse_args(argv)
     if a.cmd == "check-config":
         for n, ok in required_files():
@@ -94,6 +98,23 @@ def main(argv=None):
             sname = next(s for s in SOURCE_NAMES if q.get(s))
             lookback = q.get("lookback_days", defaults["lookback_days"])
             print(f"{q['name']} [{sname}] lookback={lookback}d: {q[sname]}")
+        return 0
+    if a.cmd == "recalc":
+        db = Path(a.data_dir) / "trl.sqlite"
+        if not db.is_file():
+            print(f"::error::{db} がありません")
+            return 2
+        from .recalc import recalculate_evaluations
+        store = Store(db)
+        res = recalculate_evaluations(store, cfg, apply=a.apply)
+        store.close()
+        for d in res["details"]:
+            print(f"[recalc] eval {d['id']} ({d['candidate_id']}): "
+                  f"total {d['old_total']} -> {d['new_total']}, "
+                  f"band {d['old_band']} -> {d['new_band']}, "
+                  f"version {d['old_version']} -> {cfg['config_version']}")
+        print(f"[recalc] checked={res['checked']} changed={res['changed']} "
+              f"anomalies={res['anomalies']} applied={a.apply}")
         return 0
     if a.cmd == "export":
         db = Path(a.data_dir) / "trl.sqlite"

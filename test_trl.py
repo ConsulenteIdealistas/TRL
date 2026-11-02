@@ -1795,6 +1795,44 @@ class IntegrationTests(unittest.TestCase):
         self.assertEqual(len(skipped), 2)
         store.close()
 
+    def test_recalc_recomputes_totals_under_current_weights(self):
+        # 規程 A2 類: 保存済み評価の総合点を現行の重みで再計算する (LLM不要)
+        from trlcore.recalc import recalculate_evaluations
+        store = Store(self.path)
+        rec, _ = normalize(raw(sid="2401.0001", title="Recalc test paper"),
+                           "2026-10-20T00:00:00+00:00")
+        cid, _ = store.upsert_candidate(rec, "r0")
+        items = {"technology_readiness": {"score": 100},
+                 **{k: {"score": 0} for k in
+                    ("technological_advantage", "monetization", "market_growth",
+                     "financial_sustainability", "moat_durability")}}
+        ev = {"kind": "long", "as_of": "2026-10-20", "status": "final", "total": 25.0,
+              "band": {"label": "弱い"}, "items": items, "extraction": None, "event": None,
+              "prompt_versions": {}, "config_version": "2026.10.0", "config_hash": "old",
+              "llm_provider": "gemini", "llm_model": "gemini-3.6-flash",
+              "input_hash": "rh", "errors": [],
+              "extra": {"trl_level": {"level": 7, "reason": "r", "evidence": "e"}}}
+        store.add_evaluation("r0", cid, ev)
+        store.add_evaluation("r0", cid, dict(ev, status="hold", total=None, band=None,
+                                             input_hash="rh2"))
+
+        dry = recalculate_evaluations(store, CFG, apply=False)
+        self.assertEqual((dry["checked"], dry["changed"]), (1, 1))
+        row = store.final_evaluations()[0]
+        self.assertEqual(row["total"], 25.0)  # 報告のみでは書き換えない
+
+        done = recalculate_evaluations(store, CFG, apply=True)
+        self.assertEqual(done["changed"], 1)
+        row = store.final_evaluations()[0]
+        self.assertEqual(row["total"], 30.0)  # 現行の重み (技術成熟度 30) で再計算
+        self.assertEqual(row["config_version"], CFG["config_version"])
+        extra = json.loads(row["extra_json"])
+        self.assertEqual(extra["recalculated"]["from_version"], "2026.10.0")
+        self.assertEqual(extra["recalculated"]["old_total"], 25.0)
+        again = recalculate_evaluations(store, CFG, apply=True)
+        self.assertEqual(again["changed"], 0)  # 冪等
+        store.close()
+
     def test_all_sources_failed_flag(self):
         store = Store(self.path)
 

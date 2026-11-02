@@ -349,6 +349,16 @@ def run_pipeline(store, cfg, llm, *, as_of, sources=("pubmed", "arxiv"), kinds=(
         _log(msg)
 
     log(f"[run] {run_id} as_of={as_of} config={cfg['config_version']}/{cfg['config_hash']}")
+    if cfg["scoring"].get("recalc_on_run"):
+        # 重み等の集計変更 (規程の A2 類) を保存済み評価へ反映する。再計算の
+        # 来歴は各評価の extra_json に残る (trlcore/recalc)
+        from .recalc import recalculate_evaluations
+        rc = recalculate_evaluations(store, cfg, apply=True)
+        counts["recalculated"] = rc["changed"]
+        if rc["changed"]:
+            log(f"[recalc] 保存済み評価 {rc['changed']} 件の総合点を現行設定で再計算しました")
+        if rc["anomalies"]:
+            log(f"::warning::[recalc] 再計算で final にならない評価が {rc['anomalies']} 件あり、対象外にしました")
     if do_collect:
         collect(store, cfg, run_id, as_of, sources, {**DEFAULT_FETCHERS, **(fetchers or {})}, counts, log)
     for c in store.list_by_status(["new"]):

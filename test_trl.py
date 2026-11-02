@@ -95,7 +95,7 @@ class ScoringTests(unittest.TestCase):
         self.assertEqual((r["status"], r["total"]), ("final", 80.0))
         items = {"technology_readiness": 100, "technological_advantage": 0, "monetization": 0,
                  "market_growth": 0, "financial_sustainability": 0, "moat_durability": 0}
-        self.assertEqual(scoring.compute(items, "long", CFG)["total"], 25.0)
+        self.assertEqual(scoring.compute(items, "long", CFG)["total"], 30.0)
 
     def test_null_means_hold_no_redistribution(self):
         items = {k: 90 for k in LONG_KEYS}
@@ -113,7 +113,7 @@ class ScoringTests(unittest.TestCase):
         r = scoring.compute(items, "long", CFG, trl_level=2)
         self.assertEqual(r["status"], "final")
         self.assertEqual(r["total_scope"], "technology")
-        self.assertEqual(r["total"], 72.5)  # (80*25 + 60*15) / 40
+        self.assertEqual(r["total"], 73.3)  # (80*30 + 60*15) / 45
         self.assertEqual(r["business_stage"], "pre_stage")
         self.assertEqual(r["axes"]["business"]["status"], "pre_stage")
         self.assertEqual(r["critical_missing"], [])  # monetization は不足に数えない

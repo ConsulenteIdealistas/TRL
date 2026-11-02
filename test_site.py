@@ -537,7 +537,7 @@ class ExportTests(unittest.TestCase):
         data = self.build(Mock(fn), n=1)
         c = data["candidates"][0]
         self.assertEqual(c["display_status"], "final")
-        self.assertEqual(c["long"]["total"], 72.5)
+        self.assertEqual(c["long"]["total"], 73.3)
         self.assertEqual(c["long"]["total_scope"], "technology")
         self.assertEqual(c["long"]["business_stage"], "pre_stage")
 

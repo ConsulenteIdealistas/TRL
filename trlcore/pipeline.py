@@ -434,5 +434,19 @@ def run_pipeline(store, cfg, llm, *, as_of, sources=("pubmed", "arxiv"), kinds=(
         counts["stale_links_pruned"] = stale_links
         log(f"[prune] 陳腐化リンクを削除しました: {stale_links} 件")
     all_failed = do_collect and counts["sources_ok"] == 0 and counts["sources_failed"] > 0
-    store.finish_run(run_id, counts, "failed" if all_failed else "ok", time.monotonic() - t0)
-    return {"run_id": run_id, "counts": counts, "failed": all_failed, "llm_degraded": degraded}
+    # 部分障害 (監査 O-1): ソース単位の全滅や、選定した評価の全件エラーは
+    # 'ok' で埋もれさせず 'partial' として記録する。一部のクエリ失敗程度では
+    # 倒さない (恒常化して意味を失うため、単位はソースと評価全体に取る)
+    partial = False
+    if do_collect and not all_failed:
+        by_source = {}
+        for row in store.run_sources(run_id):
+            by_source.setdefault(row["source"], []).append(row)
+        partial = any(rows and all(not r["ok"] for r in rows)
+                      for rows in by_source.values())
+    if counts.get("selected", 0) > 0 and counts.get("error", 0) >= counts["selected"]:
+        partial = True
+    status = "failed" if all_failed else "partial" if partial else "ok"
+    store.finish_run(run_id, counts, status, time.monotonic() - t0)
+    return {"run_id": run_id, "counts": counts, "failed": all_failed,
+            "partial": partial, "llm_degraded": degraded}

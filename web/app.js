@@ -164,6 +164,7 @@ function warn(d) {
   const run = d.run;
   if (run && run.llm_degraded) w.push("直近の実行ではLLM APIの失敗が続いたため、評価を途中で打ち切りました。未評価の論文は次回の実行で再評価されます。");
   if (run && run.status === "failed") w.push("直近の実行は、すべての情報源の取得に失敗しました。");
+  if (run && run.status === "partial") w.push("直近の実行は、一部の情報源の取得または評価に失敗しました。");
   const el = $("#warn");
   el.hidden = !w.length;
   el.textContent = w.join(" ");

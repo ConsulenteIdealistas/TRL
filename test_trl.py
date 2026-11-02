@@ -475,14 +475,15 @@ class NewSourceParseTests(unittest.TestCase):
         self.assertEqual(out[0]["info_type"], "disclosure")
         self.assertIn("臨時報告書", out[0]["abstract"])
 
-    def test_edinet_without_key_fetches_nothing(self):
+    def test_edinet_without_key_raises(self):
+        # キー未設定を成功・0件で握りつぶさない (監査 A-3: 財務系の休止判定の誤作動防止)
         import os
         from unittest import mock
         with mock.patch.dict(os.environ, {}, clear=False):
             os.environ.pop("EDINET_API_KEY", None)
             called = []
-            out = edinet.fetch("9348", 20, 30, AS_OF, http=lambda *a, **k: called.append(a) or b"{}")
-        self.assertEqual(out, [])
+            with self.assertRaises(RuntimeError):
+                edinet.fetch("9348", 20, 30, AS_OF, http=lambda *a, **k: called.append(a) or b"{}")
         self.assertEqual(called, [])
 
 
@@ -1716,6 +1717,9 @@ class IntegrationTests(unittest.TestCase):
         r = run_pipeline(store, self.cfg(), None, as_of=AS_OF, fetchers=self.fetchers(fail_pubmed=True),
                          today=AS_OF, log=logs.append)
         self.assertEqual((r["counts"]["sources_ok"], r["counts"]["sources_failed"], r["failed"]), (1, 1, False))
+        # ソース単位の全滅は 'partial' として残る (監査 O-1)
+        self.assertTrue(r["partial"])
+        self.assertEqual(store.get_run(r["run_id"])["status"], "partial")
         self.assertFalse(any("SECRETSECRET" in str(x) for x in logs))
         srcs = {s["source"]: s for s in store.run_sources(r["run_id"])}
         self.assertEqual(srcs["pubmed"]["ok"], 0)

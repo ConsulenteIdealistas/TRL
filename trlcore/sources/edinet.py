@@ -6,7 +6,8 @@ lookback_days 分の日次リストを取得し、証券コード別の索引に
 全クエリで共有する (クエリごとに全日リストを走査すると費用がクエリ数×日数に
 膨らむため)。
 
-EDINET_API_KEY 未設定なら何も取得しない (空リストを返す)。財務書類 (有価証券報告書・
+EDINET_API_KEY 未設定なら例外にして失敗として記録させる (成功・0件で握りつぶすと
+財務系の休止判定まで誤作動するため)。財務書類 (有価証券報告書・
 四半期報告書・半期報告書とその訂正) については、直近のものから XBRL_PER_QUERY 件まで
 書類取得APIで財務数値を抽出し (type=5 の CSV 形式を優先し、取れなければ type=1 の
 XBRL 本体を読む)、根拠テキストに "財務数値(EDINET XBRL)" として付ける。この数値付き
@@ -360,7 +361,10 @@ def _enrich_financials(out, index, ticker, http, key):
 def edinet_fetch(query, max_results, lookback_days, as_of, http=None, sleep=time.sleep):
     key = os.environ.get("EDINET_API_KEY")
     if not key:
-        return []
+        # キー未設定を「成功・0件」で握りつぶすと、財務系の休止判定 (前回成功
+        # から20日) まで誤って発動し、欠落が長期間見えなくなる (監査 A-3)。
+        # 失敗として記録させるため例外にする
+        raise RuntimeError("EDINET_API_KEY が未設定です")
     http = http or http_fetch
     days = [as_of - timedelta(days=offset) for offset in range(lookback_days + 1)]
     index = _sec_index(days, http, key, sleep)

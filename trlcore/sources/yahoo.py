@@ -14,6 +14,14 @@ quoteSummary の財務諸表モジュール
 非公式APIのため仕様変更で壊れる可能性がある。通信が2回とも失敗した場合は
 空リストで握りつぶさず例外として収集側に記録させる (他ソースや評価本体には
 影響しない)。応答は取れたが数値が無い場合は材料なしとして空リストを返す。
+
+429 (レート制限) への対処: http_fetch 内の再試行 (Retry-After 尊重・
+5→15→30秒) をすり抜けて 429 が上がってきたら、制限がかかっている時間帯に
+全スレッドが個別に叩き続けないよう、プロセス全体で COOLDOWN_SEC 秒の
+休止を共有する (以降の全リクエストは休止明けまで待つ)。429 のクエリは
+この層では再試行しない (下層で既に3回試しており、二重に燃やさない)。
+あわせて、実行開始直後に全スレッドのセッション確立 (cookie + crumb) が
+一斉に集中しないよう、スレッドごとに初回だけ 0〜3秒のジッターを入れる。
 """
 
 import json
@@ -66,6 +74,26 @@ _local = threading.local()
 
 _rate_lock = threading.Lock()
 _last_call = [0.0]
+
+_cooldown_lock = threading.Lock()
+_cooldown_until = [0.0]  # monotonic 時刻。429 観測時に全体で共有する休止の期限
+COOLDOWN_SEC = 60.0
+
+
+def _note_429(retry_after=None, now=time.monotonic):
+    """429 を観測したら、全体の休止期限を延ばす (短くはしない)。"""
+    until = now() + max(COOLDOWN_SEC, retry_after or 0.0)
+    with _cooldown_lock:
+        if until > _cooldown_until[0]:
+            _cooldown_until[0] = until
+
+
+def _wait_cooldown(sleep, now=time.monotonic):
+    """全体休止が明けるまで待つ。"""
+    with _cooldown_lock:
+        remain = _cooldown_until[0] - now()
+    if remain > 0:
+        sleep(remain)
 # Yahoo 向けリクエストのプロセス全体の最小間隔 (秒)。収集は複数スレッドで並行に
 # 動くため、クエリ単位の sleep ではバーストを抑えられず、非公式 API の制限に
 # 触れやすい。PubMed の全体スロットル (2026-10-29) と同じ方式で全リクエストを直列化する。
@@ -242,9 +270,17 @@ def yahoo_fetch(query, max_results, lookback_days, as_of, http=None, sleep=time.
     _inner_fetch = fetch
 
     def fetch(url, params=None, headers=None):
-        # cookie / crumb / quoteSummary の全リクエストを全体スロットルに通す
+        # cookie / crumb / quoteSummary の全リクエストを、429 の全体休止と
+        # 全体スロットルに通す
+        _wait_cooldown(sleep)
         _throttle(MIN_INTERVAL, sleep=sleep)
         return _inner_fetch(url, params=params, headers=headers)
+
+    if not s.get("staggered"):
+        # セッション確立 (cookie + crumb) が全スレッドで同時刻に集中しないよう、
+        # スレッドの初回だけ開始をずらす
+        s["staggered"] = True
+        sleep(random.uniform(0, 3))
 
     for attempt in (0, 1):
         try:
@@ -254,10 +290,15 @@ def yahoo_fetch(query, max_results, lookback_days, as_of, http=None, sleep=time.
                         headers={"User-Agent": _session_ua()})
             data = json.loads(raw)
             break
-        except Exception:
+        except Exception as e:
             # crumb 失効や bot 判定の可能性があるため、次回は crumb と UA を取り直す
             s["crumb"] = None
             s["ua"] = None
+            if getattr(e, "status", None) == 429:
+                # http_fetch が既に Retry-After 尊重で3回試した後の 429。
+                # ここで二重に再試行せず、全体休止を共有して即座に失敗として残す
+                _note_429(getattr(e, "retry_after", None))
+                raise
             if attempt == 1:
                 # 恒常的な失敗 (API仕様変更等) が無言にならないよう、空結果で
                 # 握りつぶさず例外として収集側 (run_sources / sources_failed) に残す

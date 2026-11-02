@@ -730,6 +730,44 @@ class YahooFinancialTests(unittest.TestCase):
         self.assertIn(2, waits)  # 再試行前にバックオフする
         yh._last_call[0] = 0.0
 
+    def test_fetch_429_no_double_retry_and_sets_cooldown(self):
+        # http_fetch の再試行をすり抜けた 429 は、この層では再試行せず
+        # プロセス全体の休止を設定して即座に例外にする
+        from trlcore.sources import yahoo as yh
+        from trlcore.errors import HttpError
+        calls = []
+
+        def fake_http(url, params=None, headers=None, **kw):
+            if "getcrumb" in url:
+                return b"crumb123"
+            if "fc.yahoo.com" in url:
+                raise RuntimeError("404")
+            calls.append(url)
+            raise HttpError("HTTP 429 for url", 429, None)
+
+        yh._last_call[0] = 0.0
+        yh._cooldown_until[0] = 0.0
+        try:
+            with self.assertRaises(HttpError):
+                yahoo.fetch("9348.T", 5, 400, AS_OF, http=fake_http, sleep=lambda *_: None)
+            self.assertEqual(len(calls), 1)  # quoteSummary は1回だけ (二重再試行なし)
+            self.assertGreater(yh._cooldown_until[0], 0.0)
+        finally:
+            yh._cooldown_until[0] = 0.0
+            yh._last_call[0] = 0.0
+
+    def test_wait_cooldown_sleeps_until_deadline(self):
+        from trlcore.sources import yahoo as yh
+        waits = []
+        yh._cooldown_until[0] = 1030.0
+        try:
+            yh._wait_cooldown(waits.append, now=lambda: 1000.0)
+            self.assertEqual(waits, [30.0])
+            yh._wait_cooldown(waits.append, now=lambda: 2000.0)
+            self.assertEqual(waits, [30.0])  # 期限を過ぎていれば待たない
+        finally:
+            yh._cooldown_until[0] = 0.0
+
     def test_fetch_source_id_distinguishes_same_ticker_markets(self):
         # NANO.TO (Nano One) と NANO.PA (Nanobiotix) のように市場違いの同名ティッカーで
         # source_id が衝突すると、一方の財務レコードが他方へ統合されて消える

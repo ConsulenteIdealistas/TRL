@@ -154,7 +154,16 @@ jobs:
           fi
 
           git commit -q -m "data $(date -u +%FT%TZ)"
-          git push -q origin data
+          # push の一時的な失敗でその回の収集・評価が失われないよう、3回まで試す
+          for i in 1 2 3; do
+            if git push -q origin data; then
+              exit 0
+            fi
+            echo "push failed (attempt $i), retrying..."
+            sleep 5
+          done
+          echo "::error::Could not persist data after 3 attempts"
+          exit 1
 
   deploy:
     # Settings -> Pages -> Source を「GitHub Actions」にしておくこと

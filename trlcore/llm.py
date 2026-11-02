@@ -46,6 +46,7 @@ class Anthropic:
         self.fallback_model = _fallback_model(self.model, fallback_model)
         self.http = http or http_fetch
         self.timeout, self.retries = 120, 2  # configure_llm() で scoring.json の llm 設定に上書き
+        self.call_budget = 240  # 同上 (1回の呼び出し全体の時間上限・監査 A-2)
         self.key = os.environ.get("ANTHROPIC_API_KEY")
         if not self.key:
             raise LLMError("ANTHROPIC_API_KEY is not set")
@@ -65,7 +66,7 @@ class Anthropic:
         except HttpError as e:
             # 503/429 等の一時的失敗はモデル側の過負荷であることが多く、同一プロバイダの
             # 別モデルでは応答することがある。恒常的な失敗(404/401等)では切り替えない。
-            if not (self.fallback_model and e.transient):
+            if not (self.fallback_model and e.transient) or e.deadline_exceeded:
                 raise
             out = self._complete(self.fallback_model, prompt)
             self._tls.model = self.fallback_model
@@ -76,7 +77,7 @@ class Anthropic:
                            "messages": [{"role": "user", "content": prompt}]}).encode()
         raw = self.http("https://api.anthropic.com/v1/messages", data=body, headers={
             "x-api-key": self.key, "anthropic-version": "2023-06-01", "content-type": "application/json"},
-            timeout=self.timeout, retries=self.retries)
+            timeout=self.timeout, retries=self.retries, deadline=self.call_budget)
         try:
             return "".join(b.get("text", "") for b in json.loads(raw)["content"])
         except (KeyError, ValueError, TypeError, AttributeError):
@@ -91,6 +92,7 @@ class Gemini:
         self.fallback_model = _fallback_model(self.model, fallback_model)
         self.http = http or http_fetch
         self.timeout, self.retries = 120, 2  # configure_llm() で scoring.json の llm 設定に上書き
+        self.call_budget = 240  # 同上 (1回の呼び出し全体の時間上限・監査 A-2)
         self.key = os.environ.get("GEMINI_API_KEY")
         if not self.key:
             raise LLMError("GEMINI_API_KEY is not set")
@@ -110,7 +112,7 @@ class Gemini:
         except HttpError as e:
             # 503/429 等の一時的失敗はモデル側の過負荷であることが多く、同一プロバイダの
             # 別モデルでは応答することがある。恒常的な失敗(404/401等)では切り替えない。
-            if not (self.fallback_model and e.transient):
+            if not (self.fallback_model and e.transient) or e.deadline_exceeded:
                 raise
             out = self._complete(self.fallback_model, prompt)
             self._tls.model = self.fallback_model
@@ -123,7 +125,7 @@ class Gemini:
             "generationConfig": {"responseMimeType": "application/json", "temperature": 0}}).encode()
         raw = self.http(f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
                         data=body, headers={"x-goog-api-key": self.key, "content-type": "application/json"},
-                        timeout=self.timeout, retries=self.retries)
+                        timeout=self.timeout, retries=self.retries, deadline=self.call_budget)
         try:
             parts = json.loads(raw)["candidates"][0]["content"]["parts"]
             return "".join(p.get("text", "") for p in parts)
@@ -166,4 +168,5 @@ def configure_llm(llm, cfg):
     if llm is not None and hasattr(llm, "timeout"):
         st = llm_settings(cfg)
         llm.timeout, llm.retries = st["timeout_sec"], st["retries"]
+        llm.call_budget = st["call_budget_sec"]
     return llm

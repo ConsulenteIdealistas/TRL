@@ -7,10 +7,13 @@ class ConfigError(ValueError):
 
 
 class HttpError(Exception):
-    def __init__(self, message, status=None, retry_after=None):
+    def __init__(self, message, status=None, retry_after=None, deadline_exceeded=False):
         super().__init__(message)
         self.status = status
         self.retry_after = retry_after
+        # 呼び出し側の時間上限 (deadline) で再試行を打ち切った場合に立つ。
+        # 一時的失敗でも、予算を使い切った失敗はフォールバックで倍化させない
+        self.deadline_exceeded = deadline_exceeded
 
     @property
     def transient(self):

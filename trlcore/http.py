@@ -49,12 +49,17 @@ MAX_RESPONSE_BYTES = 32 * 1024 * 1024  # 異常な巨大応答でメモリを食
 
 
 def http_fetch(url, params=None, headers=None, data=None, timeout=30, retries=2,
-               opener=None, sleep=time.sleep):
+               opener=None, sleep=time.sleep, deadline=None):
+    """deadline は呼び出し開始からの秒数 (任意)。次の再試行待ちが上限を超える
+    場合は再試行せず、その失敗を deadline_exceeded つきで送出する。実行中の
+    リクエスト自体は timeout が上限になる (監査 A-2: 1回の呼び出しが呼び出し側の
+    フェーズ予算を際限なく食わないようにする)。"""
     opener = opener or urllib.request.urlopen
     full = url + ("?" + urllib.parse.urlencode(params) if params else "")
     hdrs = {"User-Agent": "trl-analysis/0.1"}
     hdrs.update(headers or {})
     attempt = 0
+    t0 = time.monotonic()
 
     while True:
         req = urllib.request.Request(full, data=data, headers=hdrs)
@@ -79,4 +84,8 @@ def http_fetch(url, params=None, headers=None, data=None, timeout=30, retries=2,
             # URLのクエリ(APIキーが入り得る)はメッセージに含めない
             raise HttpError(redact(f"{msg} for {url}"), status, retry_after)
 
-        sleep(backoff_delay(attempt, retry_after))
+        delay = backoff_delay(attempt, retry_after)
+        if deadline is not None and (time.monotonic() - t0) + delay > deadline:
+            raise HttpError(redact(f"{msg} for {url} (call deadline {deadline}s exceeded)"),
+                            status, retry_after, deadline_exceeded=True)
+        sleep(delay)

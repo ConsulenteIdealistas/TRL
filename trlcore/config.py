@@ -245,7 +245,7 @@ ENTITY_FILE_ORDER = ("jp", "us", "gb", "ch", "de", "ca", "au", "it", "se", "dk",
 
 
 LLM_DEFAULTS = {"timeout_sec": 120, "retries": 3, "max_consecutive_failures": 2, "phase_budget_sec": 1200,
-                "eval_workers": 1}
+                "eval_workers": 1, "call_budget_sec": 240}
 
 
 def required_files(config_dir=None):

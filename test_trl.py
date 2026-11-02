@@ -1099,6 +1099,20 @@ class HttpTests(unittest.TestCase):
             http.fetch("http://x", retries=2, opener=opener, sleep=lambda s: None)
         self.assertEqual(len(n), 3)
 
+    def test_deadline_stops_retries(self):
+        # 監査 A-2: 次の再試行待ちが呼び出し上限を超えるなら待たずに打ち切る
+        n, slept = [], []
+
+        def opener(req, timeout):
+            n.append(1)
+            raise urllib.error.HTTPError(req.full_url, 503, "x", {"Retry-After": "5"}, None)
+        with self.assertRaises(http.HttpError) as cm:
+            http.fetch("http://x", retries=3, opener=opener,
+                       sleep=lambda s: slept.append(s), deadline=1)
+        self.assertTrue(cm.exception.deadline_exceeded)
+        self.assertEqual(len(n), 1)
+        self.assertEqual(slept, [])
+
     def test_redact_env_secret(self):
         os.environ["ANTHROPIC_API_KEY"] = "sk-abcdef123456"
         try:
@@ -1337,6 +1351,35 @@ class NewsPoolTests(unittest.TestCase):
                          fetchers={"gnews": lambda q, n, d, a: raws}, today=AS_OF, log=lambda *_: None)
         self.assertEqual(store.count_candidates(), 1)
         self.assertEqual(r["counts"]["invalid"], 1)
+        store.close()
+
+    def test_gnews_same_title_deduped_across_urls(self):
+        # 監査 I-4: 同一企業・同一タイトル・同日の gnews は配信社が違っても統合
+        store = Store(self.path)
+        cfg = dict(CFG)
+        cfg["sources"] = {"defaults": {"max_results": 5, "lookback_days": 30},
+                          "queries": [{"name": "n", "gnews": "q"}]}
+        raws = [self.news_raw("n1", "アストロスケールが防衛案件の大型契約を獲得"),
+                self.news_raw("n2", "アストロスケールが防衛案件の大型契約を獲得！")]
+        r = run_pipeline(store, cfg, None, as_of=AS_OF, sources=("gnews",), kinds=(),
+                         fetchers={"gnews": lambda q, n, d, a: raws}, today=AS_OF,
+                         log=lambda *_: None)
+        self.assertEqual(store.count_candidates(), 1)
+        self.assertEqual(r["counts"]["duplicates"], 1)
+        store.close()
+
+    def test_cap_reached_queries_counted(self):
+        # 監査 I-5: 取得上限ちょうどのクエリを数える
+        store = Store(self.path)
+        cfg = dict(CFG)
+        cfg["sources"] = {"defaults": {"max_results": 5, "lookback_days": 30},
+                          "queries": [{"name": "n", "gnews": "q"}]}
+        raws = [self.news_raw(f"n{i}", f"アストロスケール関連の事業ニュース第{i}号が報じられた")
+                for i in range(5)]
+        r = run_pipeline(store, cfg, None, as_of=AS_OF, sources=("gnews",), kinds=(),
+                         fetchers={"gnews": lambda q, n, d, a: raws}, today=AS_OF,
+                         log=lambda *_: None)
+        self.assertEqual(r["counts"].get("cap_reached_queries"), 1)
         store.close()
 
     def test_collect_drops_paper_without_entity(self):

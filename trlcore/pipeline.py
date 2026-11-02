@@ -1,6 +1,7 @@
 """処理フロー: 収集 → 正規化 → 重複排除 → 検証 → スクリーニング → 評価 → 保存。"""
 
 import time
+import unicodedata
 import uuid
 from datetime import datetime, timedelta, timezone
 from .errors import PromptError
@@ -80,6 +81,18 @@ def _yahoo_resting(q, as_of, attempts, periods):
     return as_of < period + timedelta(days=FINANCIAL_PERIOD_DAYS)
 
 
+def _gnews_title_key(rec, entity_links):
+    """gnews の同一記事判定キー (監査 I-4)。配信社ごとに URL が違う同じ記事を、
+    同一企業・正規化タイトル・同日で統合する。短いタイトルは誤統合を避けて
+    キーを作らない。"""
+    title = unicodedata.normalize("NFKC", rec.get("title") or "").casefold()
+    title = "".join(ch for ch in title if ch.isalnum())
+    if len(title) < 12 or not entity_links:
+        return None
+    return (f"gtitle:{entity_links[0]['entity_id']}:{title[:80]}:"
+            f"{(rec.get('published') or '')[:10]}")
+
+
 def collect(store, cfg, run_id, as_of, sources, fetchers, counts, log):
     d = cfg["sources"]["defaults"]
     now = datetime.now(timezone.utc).isoformat(timespec="seconds")
@@ -148,6 +161,12 @@ def collect(store, cfg, run_id, as_of, sources, fetchers, counts, log):
             if exc is not None:
                 raise exc
             fetched = len(raws)
+            # 取得上限に到達したクエリの記録 (監査 I-5)。上限ちょうどの取得は
+            # 「切り捨てられた可能性」を示す (API の総数は fetcher の外に出ない
+            # ため近似として数える。trials は内部上限が要求の3倍)
+            cap = q.get("max_results", d["max_results"]) * (3 if sname == "trials" else 1)
+            if fetched >= cap:
+                counts["cap_reached_queries"] = counts.get("cap_reached_queries", 0) + 1
             for raw in raws:
                 try:
                     rec, problems = normalize(raw, now)
@@ -160,6 +179,10 @@ def collect(store, cfg, run_id, as_of, sources, fetchers, counts, log):
                         # 種別を問わず残さない (キューに死蔵されるだけになるため)
                         invalid += 1
                         continue
+                    if sname == "gnews":
+                        tk = _gnews_title_key(rec, entity_links)
+                        if tk:
+                            rec["keys"] = list(rec.get("keys") or []) + [tk]
                     cid, is_new = store.upsert_candidate(rec, run_id)
                     store.set_entities(cid, entity_links)
                     new += is_new

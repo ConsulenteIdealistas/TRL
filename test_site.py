@@ -40,12 +40,13 @@ class RetryTests(unittest.TestCase):
         self.assertIsNone(T._retry_after_seconds(None))
 
     def test_backoff_default_and_jitter_bounds(self):
-        self.assertEqual(T.backoff_delay(1, rand=lambda: 0.0), 5)
-        self.assertAlmostEqual(T.backoff_delay(2, rand=lambda: 1.0), 18.0)
+        # 初回から30秒置く (短い間隔の叩き直しはレート制限を長引かせるため)
+        self.assertEqual(T.backoff_delay(1, rand=lambda: 0.0), 30)
+        self.assertAlmostEqual(T.backoff_delay(2, rand=lambda: 1.0), 36.0)
         self.assertEqual(T.backoff_delay(1, retry_after=3.0), 3.0)
 
     def test_backoff_extends_for_later_attempts(self):
-        # 503/429 の過負荷は数秒では回復しないため、3回目以降は間隔を延ばし上限60秒にする
+        # 試行1〜3は30秒固定、4回目以降は60秒を上限にする
         self.assertEqual(T.backoff_delay(3, rand=lambda: 0.0), 30)
         self.assertEqual(T.backoff_delay(4, rand=lambda: 0.0), 60)
         self.assertEqual(T.backoff_delay(9, rand=lambda: 0.0), 60)

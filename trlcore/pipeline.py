@@ -116,10 +116,31 @@ def collect(store, cfg, run_id, as_of, sources, fetchers, counts, log):
         except Exception as e:
             return None, e, time.monotonic() - t0
 
+    # 収集フェーズ全体の時間予算 (監査 A-1): ジョブのタイムアウトだけが歯止めに
+    # ならないよう、波 (10件) ごとに経過を見て、超過したら未着手のクエリを
+    # 打ち切って評価へ進む。予算 0 は無制限。実行中の取得は止めない (HTTP の
+    # タイムアウトと再試行で上限が付いている)
+    budget = ((cfg.get("scoring") or {}).get("screening") or {}).get("collect_budget_sec", 1200)
+    results = []
+    exceeded = 0
+    collect_t0 = time.monotonic()
     from concurrent.futures import ThreadPoolExecutor
     with ThreadPoolExecutor(max_workers=5) as ex:
-        futures = [ex.submit(fetch, j) for j in jobs]
-        results = [f.result() for f in futures]
+        idx = 0
+        while idx < len(jobs):
+            if idx and budget and time.monotonic() - collect_t0 > budget:
+                exceeded = len(jobs) - idx
+                results.extend((None, RuntimeError("collect budget exceeded"), 0.0)
+                               for _ in jobs[idx:])
+                break
+            chunk = jobs[idx:idx + 10]
+            futures = [ex.submit(fetch, j) for j in chunk]
+            results.extend(f.result() for f in futures)
+            idx += len(chunk)
+    if exceeded:
+        counts["collect_budget_exceeded"] = exceeded
+        log(f"::warning::[collect] 収集フェーズの時間予算({budget}秒)を超えたため "
+            f"{exceeded} クエリを打ち切りました")
     for (sname, q), (raws, exc, elapsed) in zip(jobs, results):
         fetched, new, dups, invalid, err = 0, 0, 0, 0, None
         log(f"[collect:start] {sname}/{q['name']}")
@@ -293,6 +314,17 @@ def run_pipeline(store, cfg, llm, *, as_of, sources=("pubmed", "arxiv"), kinds=(
     counts = {k: 0 for k in ("fetched", "new", "duplicates", "invalid", "sources_ok", "sources_failed", "screened",
                              "rejected", "selected", "final", "hold", "error", "skipped_no_llm", "llm_infra_failed",
                              "financial_skipped")}
+    # 警告は Actions ログにしか残らず後から追えないため (監査 O-3)、run の
+    # counts にも上限つきで残す (本文は発生箇所で秘匿済みのものに限られる)
+    warnings = []
+    _log = log
+
+    def log(msg):
+        s = str(msg)
+        if s.startswith("::warning::") and len(warnings) < 20:
+            warnings.append(s[len("::warning::"):][:200])
+        _log(msg)
+
     log(f"[run] {run_id} as_of={as_of} config={cfg['config_version']}/{cfg['config_hash']}")
     if do_collect:
         collect(store, cfg, run_id, as_of, sources, {**DEFAULT_FETCHERS, **(fetchers or {})}, counts, log)
@@ -433,6 +465,8 @@ def run_pipeline(store, cfg, llm, *, as_of, sources=("pubmed", "arxiv"), kinds=(
     if stale_links:
         counts["stale_links_pruned"] = stale_links
         log(f"[prune] 陳腐化リンクを削除しました: {stale_links} 件")
+    if warnings:
+        counts["warnings"] = warnings
     all_failed = do_collect and counts["sources_ok"] == 0 and counts["sources_failed"] > 0
     # 部分障害 (監査 O-1): ソース単位の全滅や、選定した評価の全件エラーは
     # 'ok' で埋もれさせず 'partial' として記録する。一部のクエリ失敗程度では

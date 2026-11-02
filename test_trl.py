@@ -1727,6 +1727,31 @@ class IntegrationTests(unittest.TestCase):
         self.assertEqual(srcs["arxiv"]["ok"], 1)
         self.assertGreater(r["counts"]["skipped_no_llm"], 0)  # LLM未設定 → 評価せず収集のみ
 
+    def test_collect_budget_skips_remaining_queries(self):
+        # 収集フェーズの時間予算 (監査 A-1): 予算超過後は未着手クエリを打ち切る
+        import copy
+        import time as time_mod
+        store = Store(self.path)
+        store.start_run("r1", "test", "hash", AS_OF.isoformat(), {})
+        c = copy.deepcopy(CFG)
+        c["sources"] = {"defaults": {"max_results": 5, "lookback_days": 30},
+                        "queries": [{"name": f"q{i}", "arxiv": "a"} for i in range(12)]}
+        c["scoring"]["screening"]["collect_budget_sec"] = 0.05
+
+        def slow(q, max_results, lookback_days, as_of):
+            time_mod.sleep(0.1)
+            return []
+
+        counts = {k: 0 for k in ("fetched", "new", "duplicates", "invalid",
+                                 "sources_ok", "sources_failed")}
+        collect(store, c, "r1", AS_OF, ("arxiv",), {"arxiv": slow},
+                counts, lambda *_: None)
+        self.assertEqual(counts.get("collect_budget_exceeded"), 2)
+        rows = store.run_sources("r1")
+        skipped = [r for r in rows if "collect budget exceeded" in (r["error"] or "")]
+        self.assertEqual(len(skipped), 2)
+        store.close()
+
     def test_all_sources_failed_flag(self):
         store = Store(self.path)
 

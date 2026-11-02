@@ -12,6 +12,9 @@
    "ticker": "RKLB",
    "exchange": "NASDAQ",
    "sector": "space",
+   "tags": [
+    "space_transport"
+   ],
    "tier": "core",
    "market": "US",
    "watch": {
@@ -34,6 +37,9 @@
    "ticker": "ASTS",
    "exchange": "NASDAQ",
    "sector": "space",
+   "tags": [
+    "constellation"
+   ],
    "tier": "core",
    "market": "US",
    "watch": {
@@ -56,6 +62,9 @@
    "ticker": "LUNR",
    "exchange": "NASDAQ",
    "sector": "space",
+   "tags": [
+    "lunar"
+   ],
    "tier": "core",
    "market": "US",
    "watch": {
@@ -79,6 +88,9 @@
    "ticker": "PL",
    "exchange": "NYSE",
    "sector": "space",
+   "tags": [
+    "earth_observation"
+   ],
    "tier": "core",
    "market": "US",
    "watch": {
@@ -123,6 +135,9 @@
    "ticker": "CRSP",
    "exchange": "NASDAQ",
    "sector": "bio",
+   "tags": [
+    "gene_therapy"
+   ],
    "tier": "core",
    "market": "US",
    "watch": {
@@ -147,6 +162,9 @@
    "ticker": "MRNA",
    "exchange": "NASDAQ",
    "sector": "bio",
+   "tags": [
+    "mrna"
+   ],
    "tier": "core",
    "market": "US",
    "watch": {
@@ -216,6 +234,10 @@
    "ticker": "FLY",
    "exchange": "NASDAQ",
    "sector": "space",
+   "tags": [
+    "space_transport",
+    "lunar"
+   ],
    "tier": "core",
    "market": "US",
    "watch": {
@@ -261,6 +283,9 @@
    "ticker": "RXRX",
    "exchange": "NASDAQ",
    "sector": "bio",
+   "tags": [
+    "drug_ai"
+   ],
    "tier": "core",
    "market": "US",
    "watch": {
@@ -285,6 +310,9 @@
    "ticker": "NTLA",
    "exchange": "NASDAQ",
    "sector": "bio",
+   "tags": [
+    "gene_therapy"
+   ],
    "tier": "core",
    "market": "US",
    "watch": {
@@ -330,6 +358,9 @@
    "ticker": "BKSY",
    "exchange": "NYSE",
    "sector": "space",
+   "tags": [
+    "earth_observation"
+   ],
    "tier": "core",
    "market": "US",
    "watch": {
@@ -398,6 +429,9 @@
    "ticker": "SDGR",
    "exchange": "NASDAQ",
    "sector": "ai",
+   "tags": [
+    "drug_ai"
+   ],
    "tier": "core",
    "market": "US",
    "watch": {
@@ -658,6 +692,9 @@
    "ticker": "APGE",
    "exchange": "NASDAQ",
    "sector": "bio",
+   "tags": [
+    "antibody"
+   ],
    "tier": "core",
    "market": "US",
    "watch": {
@@ -682,6 +719,9 @@
    "ticker": "NBIS",
    "exchange": "NASDAQ",
    "sector": "ai",
+   "tags": [
+    "ai_infra"
+   ],
    "tier": "core",
    "market": "US",
    "watch": {
@@ -725,6 +765,9 @@
    "ticker": "SOUN",
    "exchange": "NASDAQ",
    "sector": "ai",
+   "tags": [
+    "voice_ai"
+   ],
    "tier": "watch",
    "market": "US",
    "watch": {
@@ -879,6 +922,9 @@
    "ticker": "EOSE",
    "exchange": "NASDAQ",
    "sector": "energy",
+   "tags": [
+    "ess"
+   ],
    "tier": "core",
    "market": "US",
    "watch": {
@@ -924,6 +970,9 @@
    "ticker": "FLNC",
    "exchange": "NASDAQ",
    "sector": "energy",
+   "tags": [
+    "ess"
+   ],
    "tier": "watch",
    "market": "US",
    "watch": {
@@ -946,6 +995,9 @@
    "ticker": "IQMX",
    "exchange": "NASDAQ",
    "sector": "quantum",
+   "tags": [
+    "quantum_computing"
+   ],
    "tier": "core",
    "market": "US",
    "watch": {
@@ -969,6 +1021,10 @@
    "ticker": "INFQ",
    "exchange": "NYSE",
    "sector": "quantum",
+   "tags": [
+    "quantum_computing",
+    "quantum_sensing"
+   ],
    "tier": "core",
    "market": "US",
    "watch": {
@@ -992,6 +1048,9 @@
    "ticker": "RGTI",
    "exchange": "NASDAQ",
    "sector": "quantum",
+   "tags": [
+    "quantum_computing"
+   ],
    "tier": "core",
    "market": "US",
    "watch": {
@@ -1015,6 +1074,9 @@
    "ticker": "QBTS",
    "exchange": "NASDAQ",
    "sector": "quantum",
+   "tags": [
+    "quantum_computing"
+   ],
    "tier": "core",
    "market": "US",
    "watch": {
@@ -1038,6 +1100,9 @@
    "ticker": "QNT",
    "exchange": "NASDAQ",
    "sector": "quantum",
+   "tags": [
+    "quantum_computing"
+   ],
    "tier": "watch",
    "market": "US",
    "watch": {
@@ -1061,6 +1126,9 @@
    "ticker": "IONQ",
    "exchange": "NYSE",
    "sector": "quantum",
+   "tags": [
+    "quantum_computing"
+   ],
    "tier": "watch",
    "market": "US",
    "watch": {
@@ -1084,6 +1152,10 @@
    "ticker": "QUBT",
    "exchange": "NASDAQ",
    "sector": "quantum",
+   "tags": [
+    "quantum_computing",
+    "quantum_sensing"
+   ],
    "tier": "watch",
    "market": "US",
    "watch": {
@@ -1106,6 +1178,9 @@
    "ticker": "ARQQ",
    "exchange": "NASDAQ",
    "sector": "quantum",
+   "tags": [
+    "quantum_comm"
+   ],
    "tier": "watch",
    "market": "US",
    "watch": {
@@ -1280,7 +1355,8 @@
    "tier": "core",
    "market": "US",
    "tags": [
-    "medtech"
+    "medtech",
+    "surgical_robot"
    ],
    "watch": {
     "news_name": "PROCEPT BioRobotics Corporation",
@@ -1524,6 +1600,9 @@
    "ticker": "KYTX",
    "exchange": "NASDAQ",
    "sector": "bio",
+   "tags": [
+    "cell_therapy"
+   ],
    "tier": "watch",
    "market": "US",
    "watch": {
@@ -1593,6 +1672,9 @@
    "ticker": "SATL",
    "exchange": "NASDAQ",
    "sector": "space",
+   "tags": [
+    "earth_observation"
+   ],
    "tier": "watch",
    "market": "US",
    "watch": {
@@ -1615,6 +1697,9 @@
    "ticker": "SPIR",
    "exchange": "NYSE",
    "sector": "space",
+   "tags": [
+    "earth_observation"
+   ],
    "tier": "watch",
    "market": "US",
    "watch": {
@@ -1637,6 +1722,9 @@
    "ticker": "SPCE",
    "exchange": "NYSE",
    "sector": "space",
+   "tags": [
+    "space_transport"
+   ],
    "tier": "watch",
    "market": "US",
    "watch": {
@@ -1681,6 +1769,9 @@
    "ticker": "FORM",
    "exchange": "NASDAQ",
    "sector": "semiconductor",
+   "tags": [
+    "semi_equipment"
+   ],
    "tier": "core",
    "market": "US",
    "watch": {
@@ -1704,6 +1795,9 @@
    "ticker": "NVTS",
    "exchange": "NASDAQ",
    "sector": "semiconductor",
+   "tags": [
+    "power_semi"
+   ],
    "tier": "watch",
    "market": "US",
    "watch": {
@@ -1726,6 +1820,10 @@
    "ticker": "AEHR",
    "exchange": "NASDAQ",
    "sector": "semiconductor",
+   "tags": [
+    "power_semi",
+    "semi_equipment"
+   ],
    "tier": "core",
    "market": "US",
    "watch": {
@@ -1748,6 +1846,9 @@
    "ticker": "VECO",
    "exchange": "NASDAQ",
    "sector": "semiconductor",
+   "tags": [
+    "semi_equipment"
+   ],
    "tier": "core",
    "market": "US",
    "watch": {
@@ -1771,6 +1872,9 @@
    "ticker": "APLD",
    "exchange": "NASDAQ",
    "sector": "ai",
+   "tags": [
+    "ai_infra"
+   ],
    "tier": "core",
    "market": "US",
    "watch": {
@@ -1794,6 +1898,9 @@
    "ticker": "HUT",
    "exchange": "NASDAQ",
    "sector": "ai",
+   "tags": [
+    "ai_infra"
+   ],
    "tier": "watch",
    "market": "US",
    "watch": {
@@ -1861,6 +1968,9 @@
    "ticker": "WULF",
    "exchange": "NASDAQ",
    "sector": "ai",
+   "tags": [
+    "ai_infra"
+   ],
    "tier": "watch",
    "market": "US",
    "watch": {
@@ -1883,6 +1993,9 @@
    "ticker": "AVAV",
    "exchange": "NASDAQ",
    "sector": "robotics",
+   "tags": [
+    "autonomous_mobility"
+   ],
    "tier": "core",
    "market": "US",
    "watch": {
@@ -1906,6 +2019,9 @@
    "ticker": "OII",
    "exchange": "NYSE",
    "sector": "robotics",
+   "tags": [
+    "autonomous_mobility"
+   ],
    "tier": "watch",
    "market": "US",
    "watch": {
@@ -1928,6 +2044,9 @@
    "ticker": "RCAT",
    "exchange": "NASDAQ",
    "sector": "robotics",
+   "tags": [
+    "autonomous_mobility"
+   ],
    "tier": "core",
    "market": "US",
    "watch": {
@@ -1950,6 +2069,9 @@
    "ticker": "SERV",
    "exchange": "NASDAQ",
    "sector": "robotics",
+   "tags": [
+    "autonomous_mobility"
+   ],
    "tier": "watch",
    "market": "US",
    "watch": {
@@ -1993,6 +2115,9 @@
    "ticker": "ENS",
    "exchange": "NYSE",
    "sector": "energy",
+   "tags": [
+    "ess"
+   ],
    "tier": "watch",
    "market": "US",
    "watch": {
@@ -2015,6 +2140,9 @@
    "ticker": "NRGV",
    "exchange": "NYSE",
    "sector": "energy",
+   "tags": [
+    "ess"
+   ],
    "tier": "watch",
    "market": "US",
    "watch": {
@@ -2104,6 +2232,9 @@
    "ticker": "HQ",
    "exchange": "NASDAQ",
    "sector": "quantum",
+   "tags": [
+    "quantum_computing"
+   ],
    "tier": "watch",
    "market": "US",
    "watch": {
@@ -2125,6 +2256,9 @@
    "ticker": "XNDU",
    "exchange": "NASDAQ",
    "sector": "quantum",
+   "tags": [
+    "quantum_computing"
+   ],
    "tier": "watch",
    "market": "US",
    "watch": {
@@ -2148,6 +2282,9 @@
    "ticker": "BTQ",
    "exchange": "NASDAQ",
    "sector": "quantum",
+   "tags": [
+    "quantum_comm"
+   ],
    "tier": "watch",
    "market": "US",
    "watch": {

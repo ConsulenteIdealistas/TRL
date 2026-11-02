@@ -105,6 +105,9 @@
       "market": "FR",
       "name": "Eutelsat Group",
       "sector": "space",
+      "tags": [
+        "constellation"
+      ],
       "ticker": "ETL",
       "tier": "watch",
       "watch": {
@@ -315,6 +318,9 @@
       "ticker": "ALCLS",
       "exchange": "Euronext Paris",
       "sector": "bio",
+      "tags": [
+        "cell_therapy"
+      ],
       "tier": "core",
       "market": "FR",
       "watch": {
@@ -338,6 +344,9 @@
       "ticker": "ALSEN",
       "exchange": "Euronext Paris",
       "sector": "bio",
+      "tags": [
+        "gene_therapy"
+      ],
       "tier": "core",
       "market": "FR",
       "watch": {
@@ -409,6 +418,9 @@
       "ticker": "XFAB",
       "exchange": "Euronext Paris",
       "sector": "semiconductor",
+      "tags": [
+        "power_semi"
+      ],
       "tier": "watch",
       "market": "FR",
       "watch": {

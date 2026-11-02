@@ -101,6 +101,9 @@
       "ticker": "AUTO",
       "exchange": "Oslo Børs",
       "sector": "robotics",
+      "tags": [
+        "warehouse_automation"
+      ],
       "tier": "core",
       "market": "NO",
       "watch": {
@@ -145,6 +148,9 @@
       "ticker": "ZAP",
       "exchange": "Oslo Børs",
       "sector": "energy",
+      "tags": [
+        "ev_charging"
+      ],
       "tier": "watch",
       "market": "NO",
       "watch": {

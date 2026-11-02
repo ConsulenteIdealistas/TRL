@@ -36,6 +36,9 @@
       "ticker": "OXIG",
       "exchange": "LSE",
       "sector": "semiconductor",
+      "tags": [
+        "semi_equipment"
+      ],
       "tier": "core",
       "market": "GB",
       "watch": {
@@ -128,6 +131,9 @@
       "ticker": "OXB",
       "exchange": "LSE",
       "sector": "bio",
+      "tags": [
+        "gene_therapy"
+      ],
       "tier": "core",
       "market": "GB",
       "watch": {
@@ -361,6 +367,9 @@
       "ticker": "IES",
       "exchange": "LSE",
       "sector": "energy",
+      "tags": [
+        "ess"
+      ],
       "tier": "watch",
       "market": "GB",
       "watch": {
@@ -408,6 +417,9 @@
       "ticker": "OCDO",
       "exchange": "LSE",
       "sector": "robotics",
+      "tags": [
+        "warehouse_automation"
+      ],
       "tier": "watch",
       "market": "GB",
       "watch": {
@@ -431,6 +443,9 @@
       "ticker": "CWR",
       "exchange": "LSE",
       "sector": "energy",
+      "tags": [
+        "hydrogen"
+      ],
       "tier": "core",
       "market": "GB",
       "watch": {

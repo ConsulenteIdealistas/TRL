@@ -32,6 +32,9 @@
       "ticker": "TSAT",
       "exchange": "TSX",
       "sector": "space",
+      "tags": [
+        "constellation"
+      ],
       "tier": "watch",
       "market": "CA",
       "watch": {
@@ -75,6 +78,9 @@
       "ticker": "CLS",
       "exchange": "TSX",
       "sector": "ai",
+      "tags": [
+        "ai_infra"
+      ],
       "tier": "watch",
       "market": "CA",
       "watch": {
@@ -98,6 +104,9 @@
       "ticker": "MSCL",
       "exchange": "TSX",
       "sector": "bio",
+      "tags": [
+        "regenerative_medicine"
+      ],
       "tier": "core",
       "market": "CA",
       "watch": {
@@ -190,6 +199,9 @@
       "ticker": "ATS",
       "exchange": "TSX",
       "sector": "robotics",
+      "tags": [
+        "industrial_robotics"
+      ],
       "tier": "core",
       "market": "CA",
       "watch": {
@@ -255,6 +267,9 @@
       "ticker": "BLDP",
       "exchange": "TSX",
       "sector": "energy",
+      "tags": [
+        "hydrogen"
+      ],
       "tier": "watch",
       "market": "CA",
       "watch": {

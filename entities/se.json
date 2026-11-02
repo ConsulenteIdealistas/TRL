@@ -176,6 +176,9 @@
    "ticker": "EPEN",
    "exchange": "Nasdaq Stockholm",
    "sector": "robotics",
+   "tags": [
+    "industrial_robotics"
+   ],
    "tier": "watch",
    "market": "SE",
    "watch": {
@@ -198,6 +201,9 @@
    "ticker": "PCELL",
    "exchange": "Nasdaq Stockholm",
    "sector": "energy",
+   "tags": [
+    "hydrogen"
+   ],
    "tier": "core",
    "market": "SE",
    "watch": {
@@ -291,6 +297,9 @@
    "ticker": "BINV",
    "exchange": "Nasdaq Stockholm",
    "sector": "bio",
+   "tags": [
+    "antibody"
+   ],
    "tier": "watch",
    "market": "SE",
    "watch": {

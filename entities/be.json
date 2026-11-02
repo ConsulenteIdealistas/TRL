@@ -34,6 +34,9 @@
       "market": "BE",
       "name": "argenx SE",
       "sector": "bio",
+      "tags": [
+        "antibody"
+      ],
       "ticker": "ARGX",
       "tier": "core",
       "watch": {

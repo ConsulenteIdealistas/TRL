@@ -10,6 +10,9 @@
    "ticker": "GMAB",
    "exchange": "Nasdaq Copenhagen",
    "sector": "bio",
+   "tags": [
+    "antibody"
+   ],
    "market": "DK",
    "tier": "core",
    "watch": {

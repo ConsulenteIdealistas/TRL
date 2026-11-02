@@ -10,6 +10,9 @@
       "ticker": "AVIO",
       "exchange": "BIT",
       "sector": "space",
+      "tags": [
+        "space_transport"
+      ],
       "tier": "core",
       "market": "IT",
       "watch": {
@@ -33,6 +36,9 @@
       "ticker": "DIA",
       "exchange": "Borsa Italiana",
       "sector": "bio",
+      "tags": [
+        "diagnostics"
+      ],
       "tier": "core",
       "market": "IT",
       "watch": {
@@ -56,6 +62,9 @@
       "ticker": "TPRO",
       "exchange": "Borsa Italiana",
       "sector": "semiconductor",
+      "tags": [
+        "semi_equipment"
+      ],
       "tier": "core",
       "market": "IT",
       "watch": {

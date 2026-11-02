@@ -11,6 +11,9 @@
       "market": "NL",
       "name": "ASM International N.V.",
       "sector": "semiconductor",
+      "tags": [
+        "semi_equipment"
+      ],
       "ticker": "ASM",
       "tier": "core",
       "watch": {
@@ -34,6 +37,9 @@
       "market": "NL",
       "name": "BE Semiconductor Industries N.V.",
       "sector": "semiconductor",
+      "tags": [
+        "advanced_packaging"
+      ],
       "ticker": "BESI",
       "tier": "core",
       "watch": {
@@ -80,6 +86,9 @@
       "market": "NL",
       "name": "Lakefront Biotherapeutics NV",
       "sector": "bio",
+      "tags": [
+        "cell_therapy"
+      ],
       "ticker": "LKFT",
       "tier": "core",
       "watch": {
@@ -127,6 +136,10 @@
       "ticker": "ALFEN",
       "exchange": "Euronext Amsterdam",
       "sector": "energy",
+      "tags": [
+        "ess",
+        "ev_charging"
+      ],
       "tier": "watch",
       "market": "NL",
       "watch": {
@@ -149,6 +162,9 @@
       "ticker": "FAST",
       "exchange": "Euronext Amsterdam",
       "sector": "energy",
+      "tags": [
+        "ev_charging"
+      ],
       "tier": "watch",
       "market": "NL",
       "watch": {

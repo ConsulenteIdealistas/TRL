@@ -42,7 +42,7 @@ Python 標準ライブラリのみで動作し、運用はスマホのブラウ�
 | `id` / `name` / `aliases` | 一意なID、正式名、別名（日本語名含む）。別名は3文字未満・他企業との衝突を検証で拒否 |
 | `ticker` / `exchange` / `market` | 証券コード（接尾辞なし）、取引所、市場コード（US/GB/...、JP は省略可）。ticker の形式も検証する |
 | `sector` | `bio` / `space` / `semiconductor` / `ai` / `robotics` / `energy` / `quantum`（主分類は1社1つ） |
-| `tags` | 分野を跨ぐ第二の分類（複数可）。現在は `photonics`（半導体内の光通信）と `medtech`（バイオ内の医療機器）、および他分野の sector キー（例: 半導体寄りのロボティクス企業への `semiconductor`）を使う |
+| `tags` | 分野を跨ぐ第二の分類（複数可、表示・分析専用で評価には使わない）。`photonics`（光通信）と `medtech`（医療機器）に加え、技術テーマ別の語彙（地球観測・量子コンピュータ・創薬AI・パワー半導体・蓄電ESS 等。ラベルは `web/app.js` の `TL`）と、他分野の sector キー（例: 半導体寄りのロボティクス企業への `semiconductor`）を使う。重なりは具体的なタグを優先し、包含関係にある汎用タグ（例: `industrial_robotics`）は付けない |
 | `tier` | `core` / `watch`（後述） |
 | `stage` | 企業の段階: `rd`（研究開発型）/ `demo`（実証型）/ `production`（量産型）/ `commercial`（商業化型）。サイト表示と分析専用で、評価・選定には使わない |
 | `watch.news_name` | ニュース検索に使う代表名 |

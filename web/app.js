@@ -27,7 +27,7 @@ const ML = {JP: "日本", US: "米国", GB: "英国", CH: "スイス", DE: "ド�
 const MO = ["JP", "US", "GB", "CH", "DE", "DK", "SE", "IT", "CA", "AU", "ES", "FR", "NL", "FI", "NO", "BE"];  // 国・市場別の並び
 const CL = {space: "宇宙", bio: "バイオ", semiconductor: "半導体", ai: "AI", robotics: "ロボティクス", energy: "エネルギー・蓄電池", quantum: "量子技術"};
 const CO = ["space", "bio", "semiconductor", "ai", "robotics", "energy", "quantum"];  // 分野別の並び
-const TL = {photonics: "フォトニクス", medtech: "医療機器"};  // タグ (分野と違い複数付けられる第二の分類)
+const TL = {photonics: "フォトニクス", medtech: "医療機器", earth_observation: "地球観測", constellation: "衛星コンステレーション", space_transport: "宇宙輸送", lunar: "月面開発", debris_removal: "デブリ除去", mrna: "mRNA", cell_therapy: "細胞治療", gene_therapy: "遺伝子治療・ゲノム編集", antibody: "抗体医薬", radiopharm: "放射性医薬品", regenerative_medicine: "再生医療", diagnostics: "診断", drug_ai: "創薬AI", surgical_robot: "手術ロボット", power_semi: "パワー半導体", advanced_packaging: "先端パッケージング", memory: "メモリ", semi_equipment: "半導体製造装置", ai_infra: "AIインフラ・データセンター", voice_ai: "音声AI", industrial_robotics: "産業用ロボット・自動化", warehouse_automation: "倉庫・物流自動化", autonomous_mobility: "自律移動・ドローン", humanoid: "ヒューマノイド", hydrogen: "水素・燃料電池", ess: "蓄電・ESS", ev_charging: "EV充電", perovskite: "ペロブスカイト太陽電池", fusion: "核融合", smr: "SMR", quantum_computing: "量子コンピュータ", quantum_comm: "量子通信・暗号", quantum_sensing: "量子センシング"};  // タグ (分野と違い複数付けられる第二の分類)
 const STG = {rd: "研究開発型", demo: "実証型", production: "量産型", commercial: "商業化型"};  // 企業の段階 (表示・分析専用)
 const STGO = ["rd", "demo", "production", "commercial"];
 const tagLabel = t => CL[t] || TL[t] || t;
@@ -84,7 +84,7 @@ function facetOptions() {
   };
   fill("#fm", new Set(P.flatMap(p => p.entities.map(e => e.market || "JP"))), MO, ML);
   fill("#fc", new Set(P.flatMap(p => p.entities.map(e => e.sector).filter(Boolean))), CO, CL);
-  fill("#fg", new Set(P.flatMap(p => p.entities.flatMap(e => e.tags || []))), [...CO, "photonics", "medtech"], {...CL, ...TL});
+  fill("#fg", new Set(P.flatMap(p => p.entities.flatMap(e => e.tags || []))), [...CO, "photonics", "medtech", "earth_observation", "constellation", "space_transport", "lunar", "debris_removal", "mrna", "cell_therapy", "gene_therapy", "antibody", "radiopharm", "regenerative_medicine", "diagnostics", "drug_ai", "surgical_robot", "power_semi", "advanced_packaging", "memory", "semi_equipment", "ai_infra", "voice_ai", "industrial_robotics", "warehouse_automation", "autonomous_mobility", "humanoid", "hydrogen", "ess", "ev_charging", "perovskite", "fusion", "smr", "quantum_computing", "quantum_comm", "quantum_sensing"], {...CL, ...TL});
   fill("#fst", new Set(P.flatMap(p => p.entities.map(e => e.stage).filter(Boolean))), STGO, STG);
 }
 function sc(p, k) { const it = p.long && p.long.items[k]; return it ? it.score : null; }

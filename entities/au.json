@@ -11,6 +11,9 @@
       "ticker": "TLX",
       "exchange": "ASX",
       "sector": "bio",
+      "tags": [
+        "radiopharm"
+      ],
       "tier": "core",
       "market": "AU",
       "watch": {
@@ -35,6 +38,9 @@
       "ticker": "MSB",
       "exchange": "ASX",
       "sector": "bio",
+      "tags": [
+        "regenerative_medicine"
+      ],
       "tier": "core",
       "market": "AU",
       "watch": {
@@ -102,6 +108,9 @@
       "ticker": "WBT",
       "exchange": "ASX",
       "sector": "semiconductor",
+      "tags": [
+        "memory"
+      ],
       "tier": "core",
       "market": "AU",
       "watch": {
@@ -355,6 +364,9 @@
       "ticker": "AXE",
       "exchange": "ASX",
       "sector": "quantum",
+      "tags": [
+        "quantum_computing"
+      ],
       "tier": "watch",
       "market": "AU",
       "watch": {

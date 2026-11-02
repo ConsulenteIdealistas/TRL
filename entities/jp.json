@@ -11,6 +11,9 @@
    "ticker": "186A",
    "exchange": "TSE",
    "sector": "space",
+   "tags": [
+    "debris_removal"
+   ],
    "tier": "core",
    "watch": {
     "news_name": "アストロスケール",
@@ -61,6 +64,9 @@
    "ticker": "9348",
    "exchange": "TSE",
    "sector": "space",
+   "tags": [
+    "lunar"
+   ],
    "tier": "core",
    "watch": {
     "news_name": "ispace",
@@ -114,6 +120,9 @@
    "ticker": "290A",
    "exchange": "TSE",
    "sector": "space",
+   "tags": [
+    "earth_observation"
+   ],
    "tier": "core",
    "watch": {
     "news_name": "Synspective",
@@ -200,6 +209,9 @@
    "ticker": "4978",
    "exchange": "TSE",
    "sector": "bio",
+   "tags": [
+    "regenerative_medicine"
+   ],
    "tier": "watch",
    "watch": {
     "news_name": "リプロセル",
@@ -315,6 +327,9 @@
    "ticker": "5595",
    "exchange": "TSE",
    "sector": "space",
+   "tags": [
+    "earth_observation"
+   ],
    "tier": "core",
    "watch": {
     "news_name": "QPS研究所",
@@ -345,6 +360,9 @@
    "ticker": "402A",
    "exchange": "TSE",
    "sector": "space",
+   "tags": [
+    "earth_observation"
+   ],
    "tier": "core",
    "watch": {
     "news_name": "アクセルスペース",
@@ -391,6 +409,9 @@
    "ticker": "4592",
    "exchange": "TSE",
    "sector": "bio",
+   "tags": [
+    "regenerative_medicine"
+   ],
    "tier": "watch",
    "watch": {
     "news_name": "サンバイオ",
@@ -522,6 +543,9 @@
    "ticker": "4599",
    "exchange": "TSE",
    "sector": "bio",
+   "tags": [
+    "regenerative_medicine"
+   ],
    "tier": "watch",
    "watch": {
     "news_name": "ステムリム",
@@ -719,6 +743,9 @@
    "ticker": "6920",
    "exchange": "TSE",
    "sector": "semiconductor",
+   "tags": [
+    "semi_equipment"
+   ],
    "tier": "core",
    "watch": {
     "news_name": "レーザーテック",
@@ -842,6 +869,9 @@
    "ticker": "6324",
    "exchange": "TSE",
    "sector": "robotics",
+   "tags": [
+    "industrial_robotics"
+   ],
    "tier": "core",
    "watch": {
     "news_name": "ハーモニック・ドライブ・システムズ",
@@ -867,6 +897,9 @@
    "ticker": "6268",
    "exchange": "TSE",
    "sector": "robotics",
+   "tags": [
+    "industrial_robotics"
+   ],
    "tier": "core",
    "watch": {
     "news_name": "ナブテスコ",
@@ -893,7 +926,8 @@
    "sector": "robotics",
    "tier": "core",
    "tags": [
-    "semiconductor"
+    "semiconductor",
+    "industrial_robotics"
    ],
    "watch": {
     "news_name": "CKD",
@@ -918,6 +952,9 @@
    "ticker": "6516",
    "exchange": "TSE",
    "sector": "robotics",
+   "tags": [
+    "industrial_robotics"
+   ],
    "tier": "core",
    "watch": {
     "news_name": "山洋電気",
@@ -946,7 +983,8 @@
    "sector": "robotics",
    "tier": "core",
    "tags": [
-    "semiconductor"
+    "semiconductor",
+    "industrial_robotics"
    ],
    "watch": {
     "news_name": "日本トムソン",
@@ -974,7 +1012,8 @@
    "sector": "robotics",
    "tier": "core",
    "tags": [
-    "semiconductor"
+    "semiconductor",
+    "industrial_robotics"
    ],
    "watch": {
     "news_name": "平田機工",
@@ -1000,6 +1039,9 @@
    "ticker": "6914",
    "exchange": "TSE",
    "sector": "robotics",
+   "tags": [
+    "industrial_robotics"
+   ],
    "tier": "core",
    "watch": {
     "news_name": "オプテックスグループ",
@@ -1025,6 +1067,9 @@
    "ticker": "6369",
    "exchange": "TSE",
    "sector": "robotics",
+   "tags": [
+    "warehouse_automation"
+   ],
    "tier": "core",
    "watch": {
     "news_name": "トーヨーカネツ",
@@ -1050,6 +1095,9 @@
    "ticker": "7726",
    "exchange": "TSE",
    "sector": "robotics",
+   "tags": [
+    "industrial_robotics"
+   ],
    "tier": "watch",
    "watch": {
     "news_name": "黒田精工",
@@ -1074,6 +1122,9 @@
    "ticker": "6474",
    "exchange": "TSE",
    "sector": "robotics",
+   "tags": [
+    "industrial_robotics"
+   ],
    "tier": "watch",
    "watch": {
     "news_name": "不二越",
@@ -1098,6 +1149,9 @@
    "ticker": "6622",
    "exchange": "TSE",
    "sector": "robotics",
+   "tags": [
+    "industrial_robotics"
+   ],
    "tier": "watch",
    "watch": {
     "news_name": "ダイヘン",
@@ -1336,7 +1390,8 @@
    "sector": "bio",
    "tier": "watch",
    "tags": [
-    "medtech"
+    "medtech",
+    "diagnostics"
    ],
    "watch": {
     "news_name": "ミズホメディー",

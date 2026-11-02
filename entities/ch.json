@@ -103,6 +103,9 @@
       "ticker": "MOLN",
       "exchange": "SIX",
       "sector": "bio",
+      "tags": [
+        "radiopharm"
+      ],
       "tier": "core",
       "market": "CH",
       "watch": {
@@ -151,6 +154,9 @@
       "ticker": "KARN",
       "exchange": "SIX",
       "sector": "robotics",
+      "tags": [
+        "warehouse_automation"
+      ],
       "tier": "core",
       "market": "CH",
       "watch": {
@@ -173,6 +179,9 @@
       "ticker": "INRN",
       "exchange": "SIX",
       "sector": "robotics",
+      "tags": [
+        "warehouse_automation"
+      ],
       "tier": "core",
       "market": "CH",
       "watch": {

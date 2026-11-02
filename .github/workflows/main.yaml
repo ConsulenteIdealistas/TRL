@@ -72,6 +72,15 @@ jobs:
             echo "::error::Could not check data branch (rc=$rc). Aborting to protect data"
             exit 1
           fi
+          if [ "$rc" -eq 0 ]; then
+            # data ブランチがあるのに trl.sqlite が無い・壊れている状態で進むと、
+            # 空の DB が新規作成されて履歴が上書きされるため、ここで止める
+            if [ ! -f _data/trl.sqlite ]; then
+              echo "::error::data branch exists but trl.sqlite is missing. Aborting to protect data"
+              exit 1
+            fi
+            python3 -c "import sqlite3; r = sqlite3.connect('file:_data/trl.sqlite?mode=ro', uri=True).execute('PRAGMA integrity_check').fetchone()[0]; assert r == 'ok', r" || { echo "::error::trl.sqlite failed the integrity check. Aborting to protect data"; exit 1; }
+          fi
       - name: Run pipeline
         env:
           TRL_LLM_PROVIDER: ${{ vars.TRL_LLM_PROVIDER }}

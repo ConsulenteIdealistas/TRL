@@ -16,7 +16,7 @@ on:
       max_eval:
         description: "Max candidates to evaluate per run"
         type: string
-        default: "6"
+        default: "5"
       retry_failed:
         description: "Retry previously failed evaluations?"
         type: choice

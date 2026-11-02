@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>詳細 — TRL Explorer</title>
 <link rel="stylesheet" href="style.css">
-<script>try{var tt=localStorage.getItem("trl-theme");if(tt==="dark"||tt==="light")document.documentElement.dataset.theme=tt;}catch(e){}</script>
+<script>try{var tt=localStorage.getItem("trl-theme");document.documentElement.dataset.theme=(tt==="light"||tt==="dark")?tt:"dark";}catch(e){document.documentElement.dataset.theme="dark";}</script>
 </head>
 <body>
-<header class="topbar"><a class="brand" href="index.html"><span class="mark">T</span><span>TRL<span class="light"> Explorer</span></span></a><div class="meta"><span class="dot"></span>Research Intelligence<button id="th" class="thbtn" type="button" aria-label="ダーク/ライト切替">🌙</button></div></header>
+<header class="topbar"><a class="brand" href="index.html"><span class="mark">T</span><span>TRL<span class="light"> Explorer</span></span></a><div class="meta"><span class="dot"></span>Research Intelligence</div></header>
 <main class="ws">
 <p style="margin:0 0 12px"><a class="tg" href="index.html">← 一覧に戻る</a> <button id="lt" class="btn quiet" type="button" style="float:right">日本語訳で表示</button></p>
 <section class="panel"><div id="det"><div class="ph"><i>⌕</i><h3>読み込み中…</h3></div></div></section>
@@ -25,11 +25,6 @@ const IL = {technology_readiness: "技術成熟度", technological_advantage: "�
 const $ = s => document.querySelector(s);
 let LANG = "ja";
 try { LANG = localStorage.getItem("trl-lang") || "ja"; } catch (e) { /* 既定のまま */ }
-const effTheme = () => { const t = document.documentElement.dataset.theme; if (t === "dark" || t === "light") return t; return window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"; };
-const thBtn = $("#th");
-const syncTh = () => { if (thBtn) thBtn.textContent = effTheme() === "dark" ? "☀️" : "🌙"; };
-if (thBtn) thBtn.addEventListener("click", () => { const nx = effTheme() === "dark" ? "light" : "dark"; document.documentElement.dataset.theme = nx; try { localStorage.setItem("trl-theme", nx); } catch (e) { /* 保存できなくても切替は効く */ } syncTh(); });
-syncTh();
 const dispT = p => LANG === "ja" && p.title_ja ? p.title_ja : p.title;
 const dispA = p => LANG === "ja" && p.abstract_ja ? p.abstract_ja : p.abstract || "";
 const TR_SRC = {deepl: "DeepL", azure: "Azure", google: "Google", llm: "LLM"};

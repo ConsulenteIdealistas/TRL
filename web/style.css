@@ -122,9 +122,6 @@ a.tg{display:inline-flex;align-items:center;text-decoration:none}
 .sug-t{flex:none;font-size:10px;font-weight:800;letter-spacing:.04em;color:#008e66;background:#e3f2ec;border-radius:6px;padding:2px 6px}
 .sug-x{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
-/* テーマ切替ボタン (ダーク/ライト) */
-.thbtn{margin-left:10px;padding:5px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);font-size:13px;line-height:1.4;cursor:pointer}
-
 /* ダークモードでのバッジ可読性: 濃色文字がダーク背景 (--gs/--cs) に沈むものだけ明色化する。ライトモードは不変 */
 @media(prefers-color-scheme:dark){:root:not([data-theme="light"]) .st-final,:root:not([data-theme="light"]) .dir-positive,:root:not([data-theme="light"]) .org-p{color:#2fdba4}:root:not([data-theme="light"]) .st-review{color:#4cc3e6}}
 :root[data-theme="dark"] .st-final,:root[data-theme="dark"] .dir-positive,:root[data-theme="dark"] .org-p{color:#2fdba4}

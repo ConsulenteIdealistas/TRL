@@ -21,7 +21,7 @@ const SRC_CLASS = {arxiv: "s-arxiv", pubmed: "s-pubmed", gnews: "s-gnews", trial
 const SRC_LABEL = {arxiv: "arXiv", pubmed: "PubMed", gnews: "News", trials: "ClinicalTrials", edinet: "EDINET", yahoo: "Yahoo Finance", openalex: "OpenAlex", prtimes: "PR TIMES", edgar: "SEC EDGAR"};
 const src = s => "badge " + (SRC_CLASS[s] || "");
 const srcName = s => SRC_LABEL[s] || esc(s);
-const stB = s => `<span class="st ${s === "final" ? "" : "st-" + esc(s)}">${SL[s] || esc(s)}</span>`;
+const stB = s => `<span class="st ${s === "final" ? "st-final" : "st-" + esc(s)}">${SL[s] || esc(s)}</span>`;
 const DL = {positive: "ポジティブ", negative: "ネガティブ", mixed: "混在"};
 const ML = {JP: "日本", US: "米国", GB: "英国", CH: "スイス", DE: "ドイツ", DK: "デンマーク", SE: "スウェーデン", IT: "イタリア", CA: "カナダ", AU: "オーストラリア", ES: "スペイン", FR: "フランス", NL: "オランダ", FI: "フィンランド", NO: "ノルウェー", BE: "ベルギー"};
 const MO = ["JP", "US", "GB", "CH", "DE", "DK", "SE", "IT", "CA", "AU", "ES", "FR", "NL", "FI", "NO", "BE"];  // 国・市場別の並び
@@ -149,8 +149,10 @@ function stats() {
   const n = f => P.filter(p => f.includes(p.display_status)).length;
   $("#c0").textContent = P.length;
   $("#c1").textContent = n(["final"]);
-  $("#c2").textContent = n(["review", "hold"]);
-  $("#c3").textContent = n(["pending", "error"]);
+  $("#c2").textContent = n(["review"]);
+  $("#c3").textContent = n(["hold"]);
+  $("#c4").textContent = n(["pending"]);
+  $("#c5").textContent = n(["error"]);
 }
 function showError(msg) {
   $("#list").innerHTML = "";
@@ -256,6 +258,10 @@ $("#q").addEventListener("blur", () => { sugHideTimer = setTimeout(hideSug, 120)
 $("#sf").addEventListener("submit", hideSug);
 ["#fs", "#ft", "#fo", "#fd", "#fm", "#fc", "#fg", "#fst"].forEach(s => $(s).addEventListener("change", render));
 $("#fl").addEventListener("change", () => { LANG = $("#fl").value; try { localStorage.setItem("trl-lang", LANG); } catch (e) { /* 保存できなくても切替は効く */ } render(); });
+const effTheme = () => { const t = document.documentElement.dataset.theme; if (t === "dark" || t === "light") return t; return window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"; };
+const syncTh = () => { $("#th").textContent = effTheme() === "dark" ? "☀️" : "🌙"; };
+$("#th").addEventListener("click", () => { const nx = effTheme() === "dark" ? "light" : "dark"; document.documentElement.dataset.theme = nx; try { localStorage.setItem("trl-theme", nx); } catch (e) { /* 保存できなくても切替は効く */ } syncTh(); });
+syncTh();
 $("#rs").addEventListener("click", () => { $("#q").value = ""; $("#fs").value = "all"; $("#ft").value = "all"; $("#fo").value = "status"; $("#fd").value = "all"; $("#fm").value = "all"; $("#fc").value = "all"; $("#fg").value = "all"; $("#fst").value = "all"; sel = P[0] ? P[0].id : null; render(); });
 $("#list").addEventListener("click", e => { const c = e.target.closest("[data-id]"); if (c) { sel = c.dataset.id; render(); } });
 $("#det").addEventListener("input", e => { if (e.target.id === "note" && sel) noteDrafts[sel] = e.target.value; });

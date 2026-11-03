@@ -113,7 +113,7 @@ function prevDiffTxt(p) {
   const pv = p.long && p.long.prev;
   if (!pv) return "";
   const parts = [], cl = lvl(p);
-  if (pv.trl_level != null && cl != null && pv.trl_level !== cl) parts.push(`TRL ${pv.trl_level}→${cl}`);
+  if (pv.trl_level != null && cl != null && pv.trl_level !== cl) parts.push(`TRL ${pv.trl_level}→${cl}${cl > pv.trl_level ? "↑" : "↓"}`);
   if (pv.total != null && p.long.total != null && pv.total !== p.long.total) parts.push(`総合 ${pv.total}→${p.long.total}`);
   return parts.join(" / ");
 }
@@ -123,12 +123,17 @@ function prevCmp(ev, curTrl) {
   if (!pv) return "";
   const head = [`前回評価: ${jst(pv.evaluated_at)}（${SL[pv.status] || pv.status}）`];
   const parts = [];
-  if (pv.trl_level != null || curTrl != null) parts.push(`TRL ${pv.trl_level ?? "未確定"} → ${curTrl ?? "未確定"}`);
-  if (pv.total != null || ev.total != null) parts.push(`総合点 ${pv.total ?? "未確定"} → ${ev.total ?? "未確定"}`);
+  if (pv.trl_level != null || curTrl != null) {
+    // TRL の昇降だけは色と矢印で示す (総合点は良い悪いの含みを持たせないため無色)
+    const moved = pv.trl_level != null && curTrl != null && pv.trl_level !== curTrl;
+    const cls = moved ? (curTrl > pv.trl_level ? "td-up" : "td-dn") : "";
+    parts.push(`<span class="${cls}">TRL ${pv.trl_level ?? "未確定"} → ${curTrl ?? "未確定"}${moved ? (curTrl > pv.trl_level ? "↑" : "↓") : ""}</span>`);
+  }
+  if (pv.total != null || ev.total != null) parts.push(esc(`総合点 ${pv.total ?? "未確定"} → ${ev.total ?? "未確定"}`));
   const diffs = Object.keys(ev.items).filter(k => k in pv.items && pv.items[k] !== ev.items[k].score)
     .map(k => `${label(k)}: ${pv.items[k] ?? "—"} → ${ev.items[k].score ?? "—"}`);
   return `<p class="hint">${esc(head.join(" "))}</p>`
-    + (parts.length ? `<p>${esc(parts.join(" / "))}</p>` : "")
+    + (parts.length ? `<p>${parts.join(" / ")}</p>` : "")
     + (diffs.length ? `<ul class="pts">${diffs.map(d => `<li><b>→</b><span>${esc(d)}</span></li>`).join("")}</ul>`
       : `<p class="hint">項目点に変化はありません。</p>`);
 }
@@ -164,7 +169,7 @@ function detail() {
   const waitAll = L ? [...new Set(Object.values(L.items).flatMap(i => i.awaiting_info || []))] : [];
   const q = p.queue && p.queue.long;
   const total = L && L.total != null ? `${L.total} / 100(${esc(L.band || "")})` : "未確定";
-  $("#det").innerHTML = `<div class="dc"><header class="dh"><div class="top"><span class="${src(p.source)}">${srcName(p.source)}</span>${stB(p.display_status)}</div><h3>${esc(dispT(p))}</h3><div class="mi"><span>公開日 ${esc(p.published || "—")}</span>${L ? `<span>評価日 ${esc(jst(L.evaluated_at))}</span>` : ""}${LL && LL.llm_model ? `<span>評価モデル ${esc(LL.llm_model)}</span>` : ""}</div></header>
+  $("#det").innerHTML = `<div class="dc"><header class="dh"><div class="top"><span class="${src(p.source)}">${srcName(p.source)}</span>${stB(p.display_status)}</div><h3>${esc(dispT(p))}</h3><div class="mi"><span>公開日 ${esc(p.published || "—")}</span>${L ? `<span>評価日 ${esc(jst(L.evaluated_at))}</span>` : ""}${p.eval_count ? `<span>評価 ${p.eval_count} 回目</span>` : ""}${LL && LL.llm_model ? `<span>評価モデル ${esc(LL.llm_model)}</span>` : ""}</div></header>
 <section class="ds"><h4>研究概要</h4><p>${esc(dispA(p)) || "（要旨なし）"}</p>${LANG === "ja" && srcOf(p) ? `<p class="hint">日本語訳: ${esc(srcOf(p))}</p>` : ""}</section>
 <section class="ds"><h4>技術成熟度（TRL）</h4>${trl(lvl(p), 1)}${tr && tr.reason ? `<p>${esc(tr.reason)}</p>` : ""}${tr && tr.level == null && tr.missing_info.length ? `<p class="hint">不足: ${tr.missing_info.map(esc).join(" / ")}</p>` : ""}${tr && tr.awaiting_info && tr.awaiting_info.length ? `<p class="hint">結果待ち: ${tr.awaiting_info.map(esc).join(" / ")}</p>` : ""}<p class="hint">TRLは資料から根拠付きで判断できた場合のみ表示します。技術成熟度スコアからの換算はしません。</p></section>
 <section class="ds"><h4>技術評価</h4>${L ? G.technology.map(k => scoreRow(k, L.items[k])).join("") : `<p class="hint">未評価です。</p>`}</section>
@@ -192,6 +197,7 @@ function stats() {
   // 混ざっても、1項目の欠けで後続の統計まで止まらないようにするため
   const set = (id, v) => { const el = $(id); if (el) el.textContent = v; };
   set("#c0", P.filter(p => p.display_status !== "rejected").length);
+  set("#c0p", P.filter(p => p.long && p.long.prev).length);
   set("#c1", n(["final"]));
   set("#c2", n(["review"]));
   set("#c3", n(["hold"]));
@@ -208,8 +214,29 @@ function showError(msg) {
   $("#det").innerHTML = "";
   $("#gen").textContent = "データなし";
   $("#empty").textContent = msg;
+  const b = document.createElement("button");
+  b.className = "btn sec"; b.type = "button"; b.textContent = "再読み込み";
+  b.style.marginLeft = "8px";
+  b.addEventListener("click", () => load());
+  $("#empty").appendChild(b);
   $("#empty").hidden = false;
 }
+// 統計の枠を押すと、その状態で絞り込む (同じ枠をもう一度押すと解除)。
+// TRL判定済みの枠は、TRLチップ 1〜9 の全選択への近道として働く
+document.querySelectorAll(".stat[data-st]").forEach(el => el.addEventListener("click", () => {
+  const v = el.dataset.st;
+  if (v === "__trl") {
+    const all = [1, 2, 3, 4, 5, 6, 7, 8, 9].every(x => trlSel.has(x));
+    trlSel.clear();
+    if (!all) for (let i = 1; i <= 9; i++) trlSel.add(i);
+    $("#ftn").value = ""; $("#ftm").value = "";
+    syncTrlUI(); render(); return;
+  }
+  const on = v && stSel.size === 1 && stSel.has(v);
+  stSel.clear();
+  if (v && !on) stSel.add(v);
+  syncChips("fsc", stSel); render();
+}));
 function warn(d) {
   const w = [];
   const run = d.run;
@@ -220,6 +247,9 @@ function warn(d) {
     const age = (Date.now() - new Date(run.as_of + "T00:00:00")) / 86400000;
     if (age > 10) w.push(`直近の実行は ${Math.floor(age)} 日前です。定期実行が止まっている可能性があります。`);
   }
+  // 出典記録の無い旧訳は再翻訳の対象として残っている分。借の見える化
+  const stale = (d.candidates || []).filter(p => p.title_ja && !(p.translation_src && p.translation_src.title)).length;
+  if (stale) w.push(`翻訳の出典記録が無い旧訳が ${stale} 件あります (順次、新しい翻訳に置き換わります)。`);
   const el = $("#warn");
   el.hidden = !w.length;
   el.textContent = w.join(" ");
@@ -241,6 +271,12 @@ async function load() {
   facetChips(); warn(d); stats(); render();
 }
 $("#sf").addEventListener("submit", e => { e.preventDefault(); render(); });
+document.addEventListener("keydown", e => {
+  // "/" で検索欄へ移動 (入力中は邪魔しない)
+  if (e.key === "/" && !/INPUT|TEXTAREA|SELECT/.test((document.activeElement || {}).tagName || "")) {
+    e.preventDefault(); $("#q").focus();
+  }
+});
 $("#q").addEventListener("input", render);
 
 // 検索サジェスト: 企業名・キーワード・タイトルから補完候補を出す (2文字から)

@@ -6,6 +6,7 @@ from pathlib import Path
 from urllib.parse import quote_plus
 from .config import ROOT
 from .dates import parse_date
+from .http import redact
 from .pipeline import select_for_eval
 
 
@@ -78,7 +79,9 @@ def _ev_for_site(ev, cfg):
         "critical_missing": [k for k in required
                              if k in out_items and out_items[k]["score"] is None
                              and not (extra.get("business_stage") == "pre_stage" and k not in TECH_ITEMS)],
-        "errors": json.loads(ev["errors_json"] or "[]") if ev["status"] == "error" else [],
+        # エラー文は公開ページに出るため、収集・評価時の例外文字列に資格情報が
+        # 混ざっていた場合に備えてログと同じ秘匿処理を通す
+        "errors": [redact(str(e)) for e in json.loads(ev["errors_json"] or "[]")] if ev["status"] == "error" else [],
         "trl_level": trl,
         "direction": extra.get("direction") if ev["status"] != "error" else None,  # error 評価の方向性は出さない (一覧・詳細で共通)
         "axes": extra.get("axes"),
@@ -190,6 +193,7 @@ def build_site_data(store, cfg, now=None):
     for cid, kind in store.conn.execute(
             "SELECT candidate_id, kind FROM evaluations GROUP BY candidate_id, kind"):
         ev_kinds.setdefault(cid, set()).add(kind)
+    eval_counts = store.eval_counts_long()
     cands = []
     rows = store.conn.execute("SELECT id, info_type, status FROM candidates ORDER BY published DESC, id").fetchall()
     for cid, info_type, cand_status in rows:
@@ -230,6 +234,7 @@ def build_site_data(store, cfg, now=None):
             "translation_src": _translation_src(c),
             "screen_reason": c.get("screen_reason") or None,
             "display_status": display_status(c, long_ev, store, event_ev),
+            "eval_count": eval_counts.get(cid, 0),
             "next_up": cid in next_ids and long_ev is None and event_ev is None,
             "long": long_ev, "event": event_ev, "entities": ents,
             "related_news": [_news_for_site(n) for n in store.related_news(cid, pool_as_of)] if pool_as_of else [],
@@ -264,6 +269,15 @@ def export_site(store, cfg, out_dir, web_dir=None, now=None):
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
     data = build_site_data(store, cfg, now)
+    # 整合性ガード: 評価済み・除外の候補は必ず出力に含まれるはずで、欠ける
+    # のは生成側の不具合にほかならない。壊れた data.json を静かに公開せず、
+    # export を失敗させて前回の公開を守る
+    base = store.conn.execute(
+        "SELECT COUNT(*) FROM candidates WHERE info_type != 'news' "
+        "AND (status = 'rejected' OR id IN (SELECT candidate_id FROM evaluations))").fetchone()[0]
+    if base and len(data["candidates"]) < base:
+        raise RuntimeError(
+            f"export integrity: evaluated/rejected candidates={base} but output={len(data['candidates'])}")
     (out / "data.json").write_text(json.dumps(data, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     web = Path(web_dir) if web_dir else ROOT / "web"
     if web.is_dir():

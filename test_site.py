@@ -1,12 +1,15 @@
 """追加分のテスト(一時エラーの扱い・抽出再利用・export・Webとの契約)。実行: python -m unittest test_site -v"""
 import copy
 import json
+import os
 import tempfile
 import unittest
 from datetime import date, datetime, timezone
 from pathlib import Path
+from unittest import mock
 
 import trl as T
+from trlcore import site as site_mod
 from test_trl import AS_OF, CFG, EXTRACTION, LONG_KEYS, Mock, assessment, make_llm_fn, raw
 
 
@@ -959,6 +962,114 @@ class ExportTests(unittest.TestCase):
         self.store.upsert_queue(cid, "long", "evaluation_error: HttpError: HTTP 429 for x", [], [], [], "t", {})
         data = T.build_site_data(self.store, cfg)
         self.assertEqual(data["candidates"][0]["queue"], {})
+
+
+class ZeroRiskBatchTests(unittest.TestCase):
+    """ゼロリスク改善バッチ (完全性・機密性・ACID・観測) のテスト。"""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.store = T.Store(Path(self.tmp.name) / "d" / "trl.sqlite")
+
+    def tearDown(self):
+        self.store.close()
+        self.tmp.cleanup()
+
+    def build(self, n=1):
+        cfg = cfg_with()
+        T.run_pipeline(self.store, cfg, Mock(make_llm_fn(long_scores={k: 65 for k in LONG_KEYS})),
+                       as_of=AS_OF, kinds=("long",), fetchers=fetch_n(n), sources=("arxiv",),
+                       today=AS_OF, log=lambda *_: None)
+        return T.build_site_data(self.store, cfg, datetime(2026, 10, 26, tzinfo=timezone.utc))
+
+    def test_export_keys_stay_within_whitelist(self):
+        # 公開 data.json に内部情報が混ざらないよう、候補と評価のキーを固定する。
+        # 新しいキーを足すときはこのホワイトリストも更新し、意図的な追加にする
+        data = self.build()
+        cand_keys = {"id", "title", "source", "published", "url", "abstract", "fields",
+                     "title_ja", "abstract_ja", "translation_src", "screen_reason",
+                     "display_status", "eval_count", "next_up", "long", "event",
+                     "entities", "related_news", "related_financials", "queue"}
+        ev_keys = {"status", "total", "band", "as_of", "evaluated_at", "items",
+                   "critical_missing", "errors", "trl_level", "direction", "axes",
+                   "business_stage", "total_scope", "llm_provider", "llm_model",
+                   "prev", "hold_cause"}
+        for c in data["candidates"]:
+            self.assertLessEqual(set(c), cand_keys)
+            if c["long"]:
+                self.assertLessEqual(set(c["long"]), ev_keys)
+
+    def test_eval_count_counts_scored_long_evaluations(self):
+        data = self.build()
+        cand = data["candidates"][0]
+        self.assertEqual(cand["eval_count"], 1)  # 初回の final が1回分
+        ev2 = {"kind": "long", "as_of": AS_OF.isoformat(), "status": "hold", "total": None, "band": None,
+               "items": {}, "extraction": None, "event": None, "prompt_versions": {},
+               "config_version": "x", "config_hash": "x", "llm_provider": "gemini",
+               "llm_model": "m", "input_hash": "h2", "errors": [], "extra": {}}
+        self.store.add_evaluation("r9", cand["id"], ev2)
+        ev3 = dict(ev2, status="error", errors=["LLMError: invalid JSON"], input_hash="h3")
+        self.store.add_evaluation("r10", cand["id"], ev3)
+        data2 = T.build_site_data(self.store, cfg_with(), datetime(2026, 10, 26, tzinfo=timezone.utc))
+        cand2 = [c for c in data2["candidates"] if c["id"] == cand["id"]][0]
+        self.assertEqual(cand2["eval_count"], 2)  # error は数えない
+
+    def test_error_strings_redacted_in_export(self):
+        row = {"kind": "long", "extra_json": "{}", "status": "error", "total": None,
+               "band": None, "as_of": "2026-10-20", "evaluated_at": "2026-10-20T00:00:00+00:00",
+               "items_json": "{}",
+               "errors_json": json.dumps(["HttpError: https://x.test/?key=ABC12345 secret=SECRET_DUMMY_123"])}
+        with mock.patch.dict(os.environ, {"GEMINI_API_KEY": "SECRET_DUMMY_123"}):
+            out = T._ev_for_site(row, CFG)
+        self.assertEqual(len(out["errors"]), 1)
+        self.assertNotIn("SECRET_DUMMY_123", out["errors"][0])
+        self.assertNotIn("ABC12345", out["errors"][0])
+        self.assertIn("***", out["errors"][0])
+
+    def test_orphan_report_detects_dangling_rows(self):
+        self.store.conn.execute(
+            "INSERT INTO identifiers(key, candidate_id) VALUES ('k1', 'ghost')")
+        self.store.conn.execute(
+            "INSERT INTO evaluations(candidate_id, kind) VALUES ('ghost', 'long')")
+        self.store.conn.commit()
+        self.assertEqual(self.store.orphan_report(), {"identifiers": 1, "evaluations": 1})
+
+    def test_defer_commits_bundles_and_rolls_back(self):
+        rec, _ = T.normalize(raw(sid="2610.7777", title="Tx paper"), T.now_iso())
+        with self.assertRaises(RuntimeError):
+            with self.store.defer_commits():
+                cid, _ = self.store.upsert_candidate(rec, "rX")
+                raise RuntimeError("boom")
+        n = self.store.conn.execute("SELECT COUNT(*) FROM candidates").fetchone()[0]
+        self.assertEqual(n, 0)  # 途中終了では部分的に残らない
+        with self.store.defer_commits():
+            self.store.upsert_candidate(rec, "rX")
+        n = self.store.conn.execute("SELECT COUNT(*) FROM candidates").fetchone()[0]
+        self.assertEqual(n, 1)
+
+    def test_export_guard_blocks_broken_output(self):
+        self.build()
+        out_dir = Path(self.tmp.name) / "site"
+        with mock.patch.object(site_mod, "build_site_data", return_value={"candidates": []}):
+            with self.assertRaises(RuntimeError):
+                T.export_site(self.store, cfg_with(), out_dir)
+        self.assertFalse((out_dir / "data.json").exists())
+
+    def test_quiet_zero_source_recorded(self):
+        cfg = cfg_with()
+        res = T.run_pipeline(self.store, cfg, None, as_of=AS_OF, kinds=("long",),
+                             fetchers={"arxiv": lambda q, k, days, as_of: []}, sources=("arxiv",),
+                             today=AS_OF, log=lambda *_: None)
+        counts = json.loads(self.store.conn.execute(
+            "SELECT counts_json FROM runs WHERE run_id = ?", (res["run_id"],)).fetchone()[0])
+        self.assertEqual(counts.get("quiet_zero_sources"), ["arxiv"])
+        # 取得がある通常の実行では記録されない
+        data = self.build()  # noqa: F841 (実行そのものが目的)
+        rid = self.store.conn.execute(
+            "SELECT run_id FROM runs ORDER BY rowid DESC LIMIT 1").fetchone()[0]
+        counts2 = json.loads(self.store.conn.execute(
+            "SELECT counts_json FROM runs WHERE run_id = ?", (rid,)).fetchone()[0])
+        self.assertNotIn("quiet_zero_sources", counts2)
 
 
 class SiteScoreCoercionTests(unittest.TestCase):

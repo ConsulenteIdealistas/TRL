@@ -1,6 +1,7 @@
 """コマンドライン入口。"""
 
 import argparse
+import hashlib
 import os
 from datetime import datetime, timezone
 from pathlib import Path
@@ -12,6 +13,22 @@ from .llm import configure_llm, get_provider
 from .pipeline import run_pipeline
 from .site import export_site
 from .report import build_report
+
+
+def _verify_db_hash(data_dir):
+    """前回 export が控えたハッシュと DB 実物を照合する。不一致でも止めない
+    (ワークフロー側の integrity_check が本線の防御で、こちらは観測用)。"""
+    db = Path(data_dir) / "trl.sqlite"
+    side = Path(data_dir) / "trl.sqlite.sha256"
+    if not db.is_file() or not side.is_file():
+        return
+    expected = side.read_text(encoding="utf-8").strip()
+    actual = hashlib.sha256(db.read_bytes()).hexdigest()
+    if actual == expected:
+        print("[db] trl.sqlite のハッシュ照合 OK")
+    else:
+        print(f"::warning::[db] trl.sqlite のハッシュが前回 export の記録と一致しません "
+              f"(記録 {expected[:12]}… / 実物 {actual[:12]}…)")
 
 
 def _prune(d, keep=30):
@@ -125,7 +142,18 @@ def main(argv=None):
         data = export_site(store, cfg, a.out, a.web)
         store.close()
         print(f"[export] {len(data['candidates'])}件 -> {Path(a.out) / 'data.json'}")
+        # data.json の複製を data-dir にも置く。ワークフローの Persist は
+        # data-dir を丸ごと data ブランチへ保存するため、Pages 障害時でも
+        # 同じデータがブランチ側から読める (可用性の冗長化)
+        (Path(a.data_dir) / "data.json").write_bytes((Path(a.out) / "data.json").read_bytes())
+        # DB のハッシュを控える。次回 run の開始時に照合し、data ブランチの
+        # DB が化けていないかを実行側でも検出できるようにする
+        digest = hashlib.sha256(db.read_bytes()).hexdigest()
+        (Path(a.data_dir) / "trl.sqlite.sha256").write_text(digest + "\n", encoding="utf-8")
+        print(f"[export] mirror -> {Path(a.data_dir) / 'data.json'}, db sha256={digest[:12]}…")
         return 0
+    if a.cmd == "run":
+        _verify_db_hash(a.data_dir)
     store = Store(Path(a.data_dir) / "trl.sqlite")
     if a.cmd == "prune":
         as_of_p = parse_date(a.as_of) if getattr(a, "as_of", None) else datetime.now(timezone.utc).date()

@@ -10,8 +10,25 @@ import hashlib
 import json
 import re
 import sqlite3
+from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+
+
+class _DeferrableConnection(sqlite3.Connection):
+    """commit() を保留できる接続。評価結果の保存 (評価本体・キュー・候補の
+    状態) を defer_commits() で1トランザクションに束ね、途中終了で
+    「評価はあるが状態が古い」中途半端な書込みが残らないようにする。"""
+
+    _defer = 0
+
+    def commit(self):
+        if self._defer:
+            return
+        super().commit()
+
+    def commit_now(self):
+        super().commit()
 
 
 SCHEMA = """
@@ -83,7 +100,7 @@ def _j(x):
 class Store:
     def __init__(self, path):
         Path(path).parent.mkdir(parents=True, exist_ok=True)
-        self.conn = sqlite3.connect(str(path))
+        self.conn = sqlite3.connect(str(path), factory=_DeferrableConnection)
         self.conn.row_factory = sqlite3.Row
         self.conn.execute("PRAGMA journal_mode=DELETE")  # -wal/-shm を作らない(コミット対象を1ファイルに)
         self.conn.executescript(SCHEMA)
@@ -118,6 +135,51 @@ class Store:
     def close(self):
         self.conn.commit()
         self.conn.close()
+
+    @contextmanager
+    def defer_commits(self):
+        """ブロック内の commit() を保留し、正常終了時にまとめて確定する。
+        例外時はロールバックし、部分的な書込みを残さない。"""
+        conn = self.conn
+        conn._defer += 1
+        try:
+            yield
+        except Exception:
+            conn._defer -= 1
+            if conn._defer == 0:
+                conn.rollback()
+            raise
+        conn._defer -= 1
+        if conn._defer == 0:
+            conn.commit_now()
+
+    def orphan_report(self):
+        """参照先の候補・実行が存在しない行 (孤児) の件数をテーブル別に返す。
+        スキーマに外部キーがあるのは candidate_entities だけで、強制も既定で
+        無効なため、定期的な検査で静かな腐敗を検出する。削除はしない。"""
+        targets = {
+            "identifiers": ("candidate_id", "candidates", "id"),
+            "candidate_entities": ("candidate_id", "candidates", "id"),
+            "evaluations": ("candidate_id", "candidates", "id"),
+            "review_queue": ("candidate_id", "candidates", "id"),
+            "llm_calls": ("candidate_id", "candidates", "id"),
+            "run_sources": ("run_id", "runs", "run_id"),
+        }
+        out = {}
+        for table, (col, ref_table, ref_col) in targets.items():
+            n = self.conn.execute(
+                f"SELECT COUNT(*) FROM {table} WHERE {col} IS NOT NULL "
+                f"AND {col} NOT IN (SELECT {ref_col} FROM {ref_table})").fetchone()[0]
+            if n:
+                out[table] = n
+        return out
+
+    def eval_counts_long(self):
+        """候補ごとの long 評価 (採点が完了した final/hold) の累計回数。
+        サイトの「評価○回目」表示用で、観測の厚みを示す。"""
+        return {cid: n for cid, n in self.conn.execute(
+            "SELECT candidate_id, COUNT(*) FROM evaluations "
+            "WHERE kind = 'long' AND status IN ('final', 'hold') GROUP BY candidate_id")}
 
     # --- candidates ---
     def upsert_candidate(self, rec, run_id=None):

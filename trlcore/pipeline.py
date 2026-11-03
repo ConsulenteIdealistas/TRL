@@ -428,6 +428,13 @@ def run_pipeline(store, cfg, llm, *, as_of, sources=("pubmed", "arxiv"), kinds=(
         _log(msg)
 
     log(f"[run] {run_id} as_of={as_of} config={cfg['config_version']}/{cfg['config_hash']}")
+    # DB の完全性: integrity_check はワークフローの Restore 段でも行うが、
+    # 参照先の無い行 (孤児) はそちらでは検出できないため、開始時に数えて
+    # 記録する (削除はしない。腐敗の早期検知が目的)
+    orphans = store.orphan_report()
+    if orphans:
+        counts["db_orphans"] = sum(orphans.values())
+        log(f"::warning::[db] 参照先の無い行があります: {orphans}")
     # LLM コールの内訳 (目的・実モデル・秒数・成否・トークン) を llm_calls に残す。
     # 後から見返せて、見返す価値があり、コストのかからない記録は全て残すという
     # 方針 (2026-11-03 泰崇)。ただしレコードは評価ワーカースレッドから届くため、
@@ -564,6 +571,13 @@ def run_pipeline(store, cfg, llm, *, as_of, sources=("pubmed", "arxiv"), kinds=(
             related = store.related_news(c["id"], as_of) if c.get("info_type") != "news" else None
             financials = store.related_financials(c["id"], as_of) if c.get("info_type") != "news" else None
             prepared.append((extraction, meta, related, financials, extraction is not None))
+            # プールの充実度の観測 (保留の主因が「根拠なし」に寄る問題の物差し):
+            # 評価対象に財務プール・関連ニュースが付いた割合を数える
+            counts["eval_prepared"] = counts.get("eval_prepared", 0) + 1
+            if financials:
+                counts["eval_pool_financial"] = counts.get("eval_pool_financial", 0) + 1
+            if related:
+                counts["eval_pool_related"] = counts.get("eval_pool_related", 0) + 1
             for kind in kinds:
                 log(f"[eval:start] {c['id']} {kind}")
         if workers > 1:
@@ -576,41 +590,43 @@ def run_pipeline(store, cfg, llm, *, as_of, sources=("pubmed", "arxiv"), kinds=(
         for c, p, per_kind in zip(batch, prepared, batch_results):
             if degraded:
                 break
-            ihash = input_hash(c, as_of)
-            outcomes = []
-            for kind, res, eval_seconds, cached in per_kind:
-                log(f"[eval:time] {c['id']} {kind}: {eval_seconds:.1f}s")
-                if res["extraction"] is not None and not cached and extract_sha:
-                    # キャッシュのキーは抽出を実際に行ったモデル (フォールバック時は代替モデル)
-                    store.put_extraction(ihash, extract_sha, res.get("extraction_model") or model,
-                                         res["extraction"], res["prompt_versions"].get("extract"))
-                if res.get("infra_failure"):
-                    # API側の失敗は評価結果として保存しない(error滞留とキュー汚染を防ぐ)。候補は未評価のまま次回へ
-                    consecutive += 1
-                    counts["llm_infra_failed"] += 1
-                    log(f"::warning::[eval] {c['id']} {kind}: LLM API失敗のため未評価のまま残します: {res['errors'][0]}")
-                    if not res["infra_failure"]["transient"]:
-                        degraded = "llm_fatal_error"
-                    elif consecutive >= st["max_consecutive_failures"]:
-                        degraded = "llm_consecutive_failures"
-                    break
-                consecutive = 0
-                res["extra"].update({"eval_seconds": round(eval_seconds, 2), "extract_cached": cached})
-                store.add_evaluation(run_id, c["id"], res)
-                counts[res["status"]] += 1
-                outcomes.append(res["status"])
-                if res["status"] == "final":
-                    store.resolve_queue(c["id"], kind)
-                else:
-                    store.upsert_queue(c["id"], kind, _queue_reason(res), res["missing"] or res["errors"],
-                                       res["next_sources"], res["reeval_conditions"] or ["追加情報の取得後、または再評価間隔の経過後"],
-                                       datetime.now(timezone.utc).isoformat(timespec="seconds"), res["prompt_versions"])
-                log(f"[eval] {c['id']} {kind}: {res['status']} total={res['total']} errors={res['errors']} "
-                    f"missing={res['missing']} critical_missing={res['critical_missing']}")
-            if outcomes:
-                status = "hold" if "hold" in outcomes else ("error" if "error" in outcomes else "evaluated")
-                store.set_status(c["id"], status, eval_at=datetime.now(timezone.utc).isoformat(timespec="seconds"),
-                                 retry_inc=(status == "error"), retry_reset=(status != "error"))
+            # 評価の保存 (本体・キュー・状態) は1トランザクションに束ねる
+            with store.defer_commits():
+                ihash = input_hash(c, as_of)
+                outcomes = []
+                for kind, res, eval_seconds, cached in per_kind:
+                    log(f"[eval:time] {c['id']} {kind}: {eval_seconds:.1f}s")
+                    if res["extraction"] is not None and not cached and extract_sha:
+                        # キャッシュのキーは抽出を実際に行ったモデル (フォールバック時は代替モデル)
+                        store.put_extraction(ihash, extract_sha, res.get("extraction_model") or model,
+                                             res["extraction"], res["prompt_versions"].get("extract"))
+                    if res.get("infra_failure"):
+                        # API側の失敗は評価結果として保存しない(error滞留とキュー汚染を防ぐ)。候補は未評価のまま次回へ
+                        consecutive += 1
+                        counts["llm_infra_failed"] += 1
+                        log(f"::warning::[eval] {c['id']} {kind}: LLM API失敗のため未評価のまま残します: {res['errors'][0]}")
+                        if not res["infra_failure"]["transient"]:
+                            degraded = "llm_fatal_error"
+                        elif consecutive >= st["max_consecutive_failures"]:
+                            degraded = "llm_consecutive_failures"
+                        break
+                    consecutive = 0
+                    res["extra"].update({"eval_seconds": round(eval_seconds, 2), "extract_cached": cached})
+                    store.add_evaluation(run_id, c["id"], res)
+                    counts[res["status"]] += 1
+                    outcomes.append(res["status"])
+                    if res["status"] == "final":
+                        store.resolve_queue(c["id"], kind)
+                    else:
+                        store.upsert_queue(c["id"], kind, _queue_reason(res), res["missing"] or res["errors"],
+                                           res["next_sources"], res["reeval_conditions"] or ["追加情報の取得後、または再評価間隔の経過後"],
+                                           datetime.now(timezone.utc).isoformat(timespec="seconds"), res["prompt_versions"])
+                    log(f"[eval] {c['id']} {kind}: {res['status']} total={res['total']} errors={res['errors']} "
+                        f"missing={res['missing']} critical_missing={res['critical_missing']}")
+                if outcomes:
+                    status = "hold" if "hold" in outcomes else ("error" if "error" in outcomes else "evaluated")
+                    store.set_status(c["id"], status, eval_at=datetime.now(timezone.utc).isoformat(timespec="seconds"),
+                                     retry_inc=(status == "error"), retry_reset=(status != "error"))
         _flush_llm_records()
     if degraded in ("llm_fatal_error", "llm_consecutive_failures"):
         log(f"::warning::[eval] LLM APIの失敗が続くため評価フェーズを打ち切ります ({degraded})。未評価の候補は次回に回します")
@@ -649,12 +665,21 @@ def run_pipeline(store, cfg, llm, *, as_of, sources=("pubmed", "arxiv"), kinds=(
     # 'ok' で埋もれさせず 'partial' として記録する。一部のクエリ失敗程度では
     # 倒さない (恒常化して意味を失うため、単位はソースと評価全体に取る)
     partial = False
-    if do_collect and not all_failed:
+    if do_collect:
         by_source = {}
         for row in store.run_sources(run_id):
             by_source.setdefault(row["source"], []).append(row)
-        partial = any(rows and all(not r["ok"] for r in rows)
-                      for rows in by_source.values())
+        # 「静かな0件」: 全クエリが成功しているのに取得が0件のソース。
+        # キー未設定のまま成功扱いになる経路や、対象の静かな消滅を検出する
+        quiet = sorted(name for name, rows in by_source.items()
+                       if rows and all(r["ok"] for r in rows)
+                       and sum(r["fetched"] or 0 for r in rows) == 0)
+        if quiet:
+            counts["quiet_zero_sources"] = quiet
+            log(f"::warning::[collect] 取得0件のまま成功したソースがあります: {', '.join(quiet)}")
+        if not all_failed:
+            partial = any(rows and all(not r["ok"] for r in rows)
+                          for rows in by_source.values())
     if counts.get("selected", 0) > 0 and counts.get("error", 0) >= counts["selected"]:
         partial = True
     status = "failed" if all_failed else "partial" if partial else "ok"

@@ -1072,6 +1072,58 @@ class ZeroRiskBatchTests(unittest.TestCase):
         self.assertNotIn("quiet_zero_sources", counts2)
 
 
+class CompareModelsTests(unittest.TestCase):
+    """モデル比較 (compare): 同じ候補・同じ抽出でモデル別の採点を比べる。"""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.store = T.Store(Path(self.tmp.name) / "d" / "trl.sqlite")
+
+    def tearDown(self):
+        self.store.close()
+        self.tmp.cleanup()
+
+    def _baseline(self, n=2):
+        cfg = cfg_with()
+        T.run_pipeline(self.store, cfg, Mock(make_llm_fn(long_scores={k: 65 for k in LONG_KEYS})),
+                       as_of=AS_OF, kinds=("long",), fetchers=fetch_n(n), sources=("arxiv",),
+                       today=AS_OF, log=lambda *_: None)
+        return cfg
+
+    def test_compare_scores_same_candidates_with_each_model(self):
+        cfg = self._baseline(2)
+        hi = Mock(make_llm_fn(long_scores={k: 65 for k in LONG_KEYS}))
+        lo = Mock(make_llm_fn(long_scores={k: 40 for k in LONG_KEYS}))
+        res = T.run_compare(self.store, cfg, [("gemini/hi", hi), ("gemini/lo-lite", lo)],
+                            as_of=AS_OF, log=lambda *_: None)
+        rows = self.store.compare_results(res["batch"])
+        self.assertEqual(len(rows), 4)  # 2候補 × 2モデル
+        for r in rows:
+            self.assertEqual(r["baseline_status"], "final")
+            self.assertEqual(r["baseline_total"], 65)
+        self.assertTrue(all(r["total"] == 65 for r in rows if r["label"] == "gemini/hi"))
+        self.assertTrue(all(r["total"] == 40 for r in rows if r["label"] == "gemini/lo-lite"))
+        # 比較は本体の評価に触れない
+        n_ev = self.store.conn.execute("SELECT COUNT(*) FROM evaluations").fetchone()[0]
+        self.assertEqual(n_ev, 2)
+        report = T.build_compare_report(self.store, res["batch"])
+        self.assertIn("gemini/hi", report)
+        self.assertIn("状態一致", report)
+
+    def test_compare_extracts_for_candidates_without_baseline(self):
+        cfg = self._baseline(1)
+        rec, _ = T.normalize(raw(sid="2610.5555", title="Fresh paper"), T.now_iso())
+        cid, _ = self.store.upsert_candidate(rec, "rX")
+        self.store.set_status(cid, "screened")
+        a = Mock(make_llm_fn(long_scores={k: 60 for k in LONG_KEYS}))
+        lite = Mock(make_llm_fn(long_scores={k: 60 for k in LONG_KEYS}))
+        res = T.run_compare(self.store, cfg, [("gemini/a", a), ("gemini/b-lite", lite)],
+                            as_of=AS_OF, log=lambda *_: None)
+        rows = [r for r in self.store.compare_results(res["batch"]) if r["candidate_id"] == cid]
+        self.assertEqual(len(rows), 2)  # 抽出を共有して両モデルで採点できた
+        self.assertIsNone(rows[0]["baseline_status"])
+
+
 class SiteScoreCoercionTests(unittest.TestCase):
     def test_string_score_is_exported_as_none(self):
         # 旧データ等で items に文字列スコアが残っていても、サイト側へは数値以外を出さない

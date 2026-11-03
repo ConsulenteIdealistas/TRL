@@ -54,6 +54,11 @@ CREATE TABLE IF NOT EXISTS llm_calls(
   id INTEGER PRIMARY KEY AUTOINCREMENT, run_id TEXT, candidate_id TEXT, purpose TEXT,
   provider TEXT, model TEXT, seconds REAL, ok INTEGER, error TEXT,
   chars_in INTEGER, chars_out INTEGER, tokens_in INTEGER, tokens_out INTEGER, created_at TEXT);
+CREATE TABLE IF NOT EXISTS compare_results(
+  id INTEGER PRIMARY KEY AUTOINCREMENT, batch TEXT, candidate_id TEXT, label TEXT,
+  status TEXT, total REAL, band TEXT, trl_level INTEGER, items_json TEXT,
+  seconds REAL, error TEXT, baseline_status TEXT, baseline_total REAL,
+  baseline_trl INTEGER, baseline_model TEXT, created_at TEXT);
 CREATE TABLE IF NOT EXISTS review_queue(
   candidate_id TEXT, kind TEXT, reason TEXT, missing_json TEXT, next_sources_json TEXT,
   reeval_conditions_json TEXT, last_eval_at TEXT, versions_json TEXT, created_at TEXT,
@@ -713,6 +718,33 @@ class Store:
         self.conn.execute("INSERT INTO run_sources VALUES(?,?,?,?,?,?,?,?,?,?)",
                           (run_id, source, query, fetched, new, dups, invalid, 1 if ok else 0, error, round(seconds, 2)))
         self.conn.commit()
+
+    # --- モデル比較 (検証専用。本体の evaluations には一切触れない) ---
+    def add_compare_result(self, row):
+        self.conn.execute(
+            "INSERT INTO compare_results(batch, candidate_id, label, status, total, band,"
+            " trl_level, items_json, seconds, error, baseline_status, baseline_total,"
+            " baseline_trl, baseline_model, created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            (row["batch"], row["candidate_id"], row["label"], row.get("status"), row.get("total"),
+             row.get("band"), row.get("trl_level"), _j(row.get("items") or {}),
+             row.get("seconds"), row.get("error"), row.get("baseline_status"),
+             row.get("baseline_total"), row.get("baseline_trl"), row.get("baseline_model"),
+             now_iso()))
+        self.conn.commit()
+
+    def compare_results(self, batch):
+        rows = self.conn.execute(
+            "SELECT * FROM compare_results WHERE batch = ? ORDER BY candidate_id, label",
+            (batch,)).fetchall()
+        out = []
+        for r in rows:
+            d = dict(r)
+            try:
+                d["items"] = json.loads(d.pop("items_json") or "{}")
+            except ValueError:
+                d["items"] = {}
+            out.append(d)
+        return out
 
     def record_llm_call(self, run_id, rec):
         """LLM コール1回 (モデル試行の単位) の計装レコードを残す。"""

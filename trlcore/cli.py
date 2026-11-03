@@ -9,10 +9,11 @@ from .errors import ConfigError, LLMError
 from .dates import parse_date
 from .config import SOURCE_NAMES, load_config, missing_files, required_files
 from .store import Store
-from .llm import configure_llm, get_provider
+from .llm import Gemini, _cloudflare, configure_llm, get_provider
 from .pipeline import run_pipeline
 from .site import export_site
 from .report import build_report
+from .compare import build_compare_report, run_compare
 
 
 def _verify_db_hash(data_dir):
@@ -29,6 +30,25 @@ def _verify_db_hash(data_dir):
     else:
         print(f"::warning::[db] trl.sqlite のハッシュが前回 export の記録と一致しません "
               f"(記録 {expected[:12]}… / 実物 {actual[:12]}…)")
+
+
+def _compare_clients(cfg):
+    """モデル比較用の、フォールバックを持たない単一モデルクライアント群。
+    本番と同じ環境変数 (TRL_LLM_MODEL / _FALLBACK_MODEL / _FALLBACK_MODEL_2)
+    から組み立て、Cloudflare は資格情報がそろっているときだけ加える。"""
+    clients, seen = [], set()
+    for var in ("TRL_LLM_MODEL", "TRL_LLM_FALLBACK_MODEL", "TRL_LLM_FALLBACK_MODEL_2"):
+        m = os.environ.get(var)
+        if m and m not in seen:
+            seen.add(m)
+            clients.append((f"gemini/{m}", configure_llm(Gemini(m), cfg)))
+    if not clients:
+        g = Gemini()
+        clients.append((f"gemini/{g.model}", configure_llm(g, cfg)))
+    cf = _cloudflare()
+    if cf is not None:
+        clients.append((f"cloudflare/{cf.model}", configure_llm(cf, cfg)))
+    return clients
 
 
 def _prune(d, keep=30):
@@ -62,6 +82,12 @@ def main(argv=None):
                    help="Evaluate only never-evaluated candidates (skip re-evaluations)")
     q = sub.add_parser("queue")
     q.add_argument("--data-dir", default="data")
+    cp = sub.add_parser("compare")
+    cp.add_argument("--data-dir", default="data")
+    cp.add_argument("--limit", type=int, default=100)
+    cp.add_argument("--budget-sec", type=int, default=0,
+                    help="全体の時間予算 (秒)。0 は無制限")
+    cp.add_argument("--as-of")
     ex = sub.add_parser("export")
     ex.add_argument("--data-dir", default="data")
     ex.add_argument("--out", default="_site")
@@ -151,6 +177,38 @@ def main(argv=None):
         digest = hashlib.sha256(db.read_bytes()).hexdigest()
         (Path(a.data_dir) / "trl.sqlite.sha256").write_text(digest + "\n", encoding="utf-8")
         print(f"[export] mirror -> {Path(a.data_dir) / 'data.json'}, db sha256={digest[:12]}…")
+        return 0
+    if a.cmd == "compare":
+        db = Path(a.data_dir) / "trl.sqlite"
+        if not db.is_file():
+            print(f"::error::{db} がありません。先に run を実行してください")
+            return 2
+        store = Store(db)
+        as_of = parse_date(a.as_of) if a.as_of else datetime.now(timezone.utc).date()
+        if as_of is None:
+            print("invalid --as-of (YYYY-MM-DD)")
+            store.close()
+            return 2
+        clients = _compare_clients(cfg)
+        records = []
+        for _label, client in clients:
+            try:
+                client.recorder = records.append
+            except Exception:
+                pass
+        res = run_compare(store, cfg, clients, as_of=as_of, limit=a.limit,
+                          budget_sec=a.budget_sec or None)
+        while records:
+            store.record_llm_call(res["batch"], records.pop(0))
+        text = build_compare_report(store, res["batch"])
+        rep = Path(a.data_dir) / "compare-reports"
+        rep.mkdir(parents=True, exist_ok=True)
+        (rep / f"{res['batch']}.md").write_text(text, encoding="utf-8")
+        store.close()
+        print(text)
+        if os.environ.get("GITHUB_STEP_SUMMARY"):
+            with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as f:
+                f.write(text)
         return 0
     if a.cmd == "run":
         _verify_db_hash(a.data_dir)

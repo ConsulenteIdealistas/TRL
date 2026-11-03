@@ -42,6 +42,7 @@ from trlcore.prompts import PROMPT_DIR, _PH, load_prompt, render  # noqa: F401,E
 from trlcore.llm import SYSTEM, extract_json, Anthropic, Gemini, OpenAICompatible, ProviderChain, Mock, get_provider, llm_settings, configure_llm, _fallback_model  # noqa: F401,E402
 from trlcore.evaluate import EVIDENCE_KINDS, EXTRACT_LISTS, STATEMENT_LISTS, validate_extraction, _nonempty_list, validate_assessment, parse_trl_level, parse_direction, DIRECTIONS, _candidate_block, input_hash, run_extraction, evaluate_one  # noqa: F401,E402
 from trlcore.pipeline import DEFAULT_FETCHERS, new_run_id, screen, collect, select_for_eval, has_demo_signal, _queue_reason, run_pipeline  # noqa: F401,E402
+from trlcore.compare import select_compare_candidates, run_compare, build_compare_report  # noqa: F401,E402
 from trlcore.site import SITE_SCHEMA_VERSION, TECH_ITEMS, LEGACY_INFRA_QUEUE_PREFIX, _ev_for_site, display_status, build_site_data, export_site  # noqa: F401,E402
 from trlcore.report import build_research_links, format_research_links, DISCLAIMER, build_report  # noqa: F401,E402
 from trlcore.cli import _prune, main  # noqa: F401,E402

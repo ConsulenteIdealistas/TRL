@@ -151,9 +151,9 @@ a.tg{display:inline-flex;align-items:center;text-decoration:none}
 :root[data-theme="dark"] .st-final,:root[data-theme="dark"] .dir-positive,:root[data-theme="dark"] .org-p{color:#2fdba4}
 :root[data-theme="dark"] .st-review{color:#4cc3e6}
 
-/* ダークモードのチップ色: 未選択の色文字をバッジと同じ明色に寄せる。選択時の
-   淡色背景 (保留・未評価・エラー・除外・未判定) はライトと同じ固定色で、
-   文字色もライト側のまま。緑と青だけは背景がダーク側の変数色になるため明色化する */
+/* ダークモードのチップ色: 未選択の色文字をバッジと同じ明色に寄せる。選択時は
+   全色とも緑・青と同じく「暗い色味の背景+明るい文字」で光らせる (ライト側の
+   淡色背景はダークでは浮くため、ダーク専用の暗い色味に差し替える) */
 @media(prefers-color-scheme:dark){:root:not([data-theme="light"]) #fsc button[data-v="final"]:not(.on),:root:not([data-theme="light"]) #fdc button[data-v="positive"]:not(.on){color:#2fdba4}:root:not([data-theme="light"]) #fsc button[data-v="review"]:not(.on){color:#4cc3e6}:root:not([data-theme="light"]) #fsc button[data-v="hold"]:not(.on),:root:not([data-theme="light"]) #fdc button[data-v="mixed"]:not(.on){color:#ffd60a}:root:not([data-theme="light"]) #fsc button[data-v="error"]:not(.on),:root:not([data-theme="light"]) #fdc button[data-v="negative"]:not(.on){color:#ff5147}:root:not([data-theme="light"]) #fsc button[data-v="rejected"]:not(.on),:root:not([data-theme="light"]) #fdc button[data-v="none"]:not(.on){color:#94a3b8}:root:not([data-theme="light"]) #fsc button[data-v="final"].on,:root:not([data-theme="light"]) #fdc button[data-v="positive"].on{color:#2fdba4;border-color:#2fdba4}:root:not([data-theme="light"]) #fsc button[data-v="review"].on{color:#4cc3e6;border-color:#4cc3e6}}
 :root[data-theme="dark"] #fsc button[data-v="final"]:not(.on),:root[data-theme="dark"] #fdc button[data-v="positive"]:not(.on){color:#2fdba4}
 :root[data-theme="dark"] #fsc button[data-v="review"]:not(.on){color:#4cc3e6}
@@ -162,3 +162,8 @@ a.tg{display:inline-flex;align-items:center;text-decoration:none}
 :root[data-theme="dark"] #fsc button[data-v="rejected"]:not(.on),:root[data-theme="dark"] #fdc button[data-v="none"]:not(.on){color:#94a3b8}
 :root[data-theme="dark"] #fsc button[data-v="final"].on,:root[data-theme="dark"] #fdc button[data-v="positive"].on{color:#2fdba4;border-color:#2fdba4}
 :root[data-theme="dark"] #fsc button[data-v="review"].on{color:#4cc3e6;border-color:#4cc3e6}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]) #fsc button[data-v="hold"].on,:root:not([data-theme="light"]) #fdc button[data-v="mixed"].on{background:#3a300a;color:#ffd60a;border-color:#ffd60a}:root:not([data-theme="light"]) #fsc button[data-v="pending"].on{background:#3a2606;color:#ffab2e;border-color:#ffab2e}:root:not([data-theme="light"]) #fsc button[data-v="error"].on,:root:not([data-theme="light"]) #fdc button[data-v="negative"].on{background:#3d1420;color:#ff5147;border-color:#ff5147}:root:not([data-theme="light"]) #fsc button[data-v="rejected"].on,:root:not([data-theme="light"]) #fdc button[data-v="none"].on{background:#26313b;color:#94a3b8;border-color:#94a3b8}}
+:root[data-theme="dark"] #fsc button[data-v="hold"].on,:root[data-theme="dark"] #fdc button[data-v="mixed"].on{background:#3a300a;color:#ffd60a;border-color:#ffd60a}
+:root[data-theme="dark"] #fsc button[data-v="pending"].on{background:#3a2606;color:#ffab2e;border-color:#ffab2e}
+:root[data-theme="dark"] #fsc button[data-v="error"].on,:root[data-theme="dark"] #fdc button[data-v="negative"].on{background:#3d1420;color:#ff5147;border-color:#ff5147}
+:root[data-theme="dark"] #fsc button[data-v="rejected"].on,:root[data-theme="dark"] #fdc button[data-v="none"].on{background:#26313b;color:#94a3b8;border-color:#94a3b8}

@@ -927,7 +927,7 @@ class ExportTests(unittest.TestCase):
         self.assertIn('id="c6"', html)  # TRL判定済み
         self.assertIn('id="c7"', html)  # 除外
         app = (T.ROOT / "web" / "app.js").read_text(encoding="utf-8")
-        self.assertIn('$("#c7").textContent = n(["rejected"])', app)
+        self.assertIn('set("#c7", n(["rejected"]))', app)  # 要素欠けに強い set() 経由で書く
         self.assertIn("screen_reason", app)
         self.assertIn("c4n", app)
         self.assertIn("lvl(p) != null", app)

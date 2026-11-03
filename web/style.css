@@ -59,6 +59,11 @@ h2{margin:0;font-size:19px;letter-spacing:-.4px}
 #fsc button[data-v="pending"].on{border-color:#c87a00;background:#fdeed3;color:#c87a00}
 #fsc button[data-v="error"].on,#fdc button[data-v="negative"].on{border-color:#b52f49;background:#ffedf0;color:#b52f49}
 #fsc button[data-v="rejected"].on,#fdc button[data-v="none"].on{border-color:#607080;background:#edf1f4;color:#607080}
+/* TRL の「判定済み」チップは統計の TRL判定済みと同じピンクで示す */
+#ftc button[data-l="all"]{color:var(--pk)}
+#ftc button[data-l="all"].on{border-color:var(--pk);background:#fce7f3;color:var(--pk)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]) #ftc button[data-l="all"].on{background:#3d1428}}
+:root[data-theme="dark"] #ftc button[data-l="all"].on{background:#3d1428}
 .rng{display:flex;align-items:center;gap:6px;font-weight:600}
 .rng input{width:64px;min-height:42px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--field);color:var(--ink);font-weight:400}
 .rh{margin:24px 0 12px}.rh p{margin:2px 0 0;color:var(--muted);font-size:12px}

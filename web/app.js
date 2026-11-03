@@ -188,17 +188,20 @@ function render() {
 }
 function stats() {
   const n = f => P.filter(p => f.includes(p.display_status)).length;
-  $("#c0").textContent = P.filter(p => p.display_status !== "rejected").length;
-  $("#c1").textContent = n(["final"]);
-  $("#c2").textContent = n(["review"]);
-  $("#c3").textContent = n(["hold"]);
-  $("#c3u").textContent = P.filter(p => p.long && p.long.hold_cause === "unidentified").length;
-  $("#c3e").textContent = P.filter(p => p.long && p.long.hold_cause === "no_evidence").length;
-  $("#c4").textContent = n(["pending"]);
-  $("#c4n").textContent = P.filter(p => p.next_up).length;
-  $("#c5").textContent = n(["error"]);
-  $("#c6").textContent = P.filter(p => lvl(p) != null).length;
-  $("#c7").textContent = n(["rejected"]);
+  // 要素が無い場合はその項目だけ飛ばす。HTML と JS の版がキャッシュでずれて
+  // 混ざっても、1項目の欠けで後続の統計まで止まらないようにするため
+  const set = (id, v) => { const el = $(id); if (el) el.textContent = v; };
+  set("#c0", P.filter(p => p.display_status !== "rejected").length);
+  set("#c1", n(["final"]));
+  set("#c2", n(["review"]));
+  set("#c3", n(["hold"]));
+  set("#c3u", P.filter(p => p.long && p.long.hold_cause === "unidentified").length);
+  set("#c3e", P.filter(p => p.long && p.long.hold_cause === "no_evidence").length);
+  set("#c4", n(["pending"]));
+  set("#c4n", P.filter(p => p.next_up).length);
+  set("#c5", n(["error"]));
+  set("#c6", P.filter(p => lvl(p) != null).length);
+  set("#c7", n(["rejected"]));
 }
 function showError(msg) {
   $("#list").innerHTML = "";
@@ -321,13 +324,22 @@ const CHIPG = [["fsc", stSel], ["fdc", dirSel], ["fmc", mkSel], ["fcc", scSel], 
 CHIPG.forEach(([id, set]) => bindChips(id, set));
 bindChips("fgc", tagSel, syncTagN);
 const syncTrlUI = () => document.querySelectorAll("#ftc button").forEach(b => {
-  const on = trlSel.has(b.dataset.l === "u" ? "u" : Number(b.dataset.l));
+  // 「判定済み」チップの選択表示は、1〜9 が全部そろっているかどうかで決まる (近道なので専用の状態は持たない)
+  const on = b.dataset.l === "all" ? [1, 2, 3, 4, 5, 6, 7, 8, 9].every(i => trlSel.has(i))
+    : trlSel.has(b.dataset.l === "u" ? "u" : Number(b.dataset.l));
   b.classList.toggle("on", on); b.setAttribute("aria-pressed", on ? "true" : "false");
 });
 $("#ftc").addEventListener("click", e => {
   const b = e.target.closest("button"); if (!b) return;
-  const k = b.dataset.l === "u" ? "u" : Number(b.dataset.l);
-  if (trlSel.has(k)) trlSel.delete(k); else trlSel.add(k);
+  if (b.dataset.l === "all") {
+    // 判定済み = レベルが確定したもの全部。範囲入力と同じ「チップ状態への近道」で、
+    // 全選択なら全解除、そうでなければ 1〜9 を全選択にする (未確定チップはそのまま)
+    const all = [1, 2, 3, 4, 5, 6, 7, 8, 9].every(i => trlSel.has(i));
+    for (let i = 1; i <= 9; i++) { if (all) trlSel.delete(i); else trlSel.add(i); }
+  } else {
+    const k = b.dataset.l === "u" ? "u" : Number(b.dataset.l);
+    if (trlSel.has(k)) trlSel.delete(k); else trlSel.add(k);
+  }
   $("#ftn").value = ""; $("#ftm").value = "";  // 個別に触ったら範囲入力は空に戻す (表示と選択状態を一致させる)
   syncTrlUI(); render();
 });

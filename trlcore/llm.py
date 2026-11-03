@@ -278,6 +278,193 @@ class Gemini:
         return text
 
 
+# Cloudflare Workers AI の既定モデル。根拠 (2026-11-03 の無料枠調査):
+# 10,000 ニューロン/日の無料枠で、25K入力+1K出力の1コールが約254ニューロン
+# (1日約39コール分) と予算内に収まり、日本語が無料モデルの中で最強の部類で
+# 262K級コンテキスト。モデル名は環境変数 TRL_LLM_CF_MODEL で差し替え可能
+CF_DEFAULT_MODEL = "@cf/google/gemma-4-26b-a4b-it"
+
+
+class OpenAICompatible:
+    """OpenAI 互換の chat/completions を話すプロバイダ。第2プロバイダ
+    (Cloudflare Workers AI) 用で、base_url・キー・モデルを変えれば
+    Mistral / OpenRouter 等も同じ形で足せる。モデル内の階段は持たない
+    単一段だが、計装と last_model の形は Gemini / Anthropic と揃える。"""
+
+    def __init__(self, name, base_url, key, model, http=None):
+        self.name = name
+        self.base_url = base_url.rstrip("/")
+        self.key = key
+        self.model = model
+        self.fallback_models = []  # 段の互換用 (単一段なので常に空)
+        self.http = http or http_fetch
+        self.timeout, self.retries = 120, 2  # configure_llm() で scoring.json の llm 設定に上書き
+        self.call_budget = 240  # 同上
+        self._tls = threading.local()
+        self.recorder = None
+
+    @property
+    def fallback_model(self):
+        return None
+
+    @property
+    def last_model(self):
+        return getattr(self._tls, "model", None)
+
+    def complete(self, prompt, purpose=None, candidate_id=None):
+        out = self._timed(self.model, prompt, purpose, candidate_id)
+        self._tls.model = self.model
+        return out
+
+    def _timed(self, model, prompt, purpose, candidate_id, main_skipped=False):
+        t0 = time.monotonic()
+        try:
+            out = self._complete(model, prompt)
+        except Exception as e:
+            self._emit(purpose, candidate_id, model, time.monotonic() - t0, False, e, prompt, None,
+                       main_skipped)
+            raise
+        self._emit(purpose, candidate_id, model, time.monotonic() - t0, True, None, prompt, out,
+                   main_skipped)
+        return out
+
+    def _emit(self, purpose, candidate_id, model, seconds, ok, err, prompt, out,
+              main_skipped=False):
+        usage = getattr(self._tls, "usage", None)
+        self._tls.usage = None
+        _emit_call(self, {
+            "purpose": purpose, "candidate_id": candidate_id, "provider": self.name,
+            "model": model, "seconds": round(seconds, 3), "ok": ok,
+            "error": f"{type(err).__name__}: {err}"[:300] if err is not None else None,
+            "chars_in": len(prompt), "chars_out": len(out) if out is not None else None,
+            "tokens_in": usage[0] if usage else None,
+            "tokens_out": usage[1] if usage else None,
+            "main_skipped": main_skipped})
+
+    def _complete(self, model, prompt):
+        # response_format は送らない: 対応がモデル依存で、未対応モデルでは
+        # エラーになり得る。JSON の強制はプロンプト側 + extract_json の
+        # 寛容な抽出で担保する (Gemini の responseMimeType との違い)
+        body = json.dumps({
+            "model": model, "temperature": 0,
+            "messages": [{"role": "system", "content": SYSTEM},
+                         {"role": "user", "content": prompt}]}).encode()
+        raw = self.http(f"{self.base_url}/chat/completions", data=body, headers={
+            "authorization": f"Bearer {self.key}", "content-type": "application/json"},
+            timeout=self.timeout, retries=self.retries, deadline=self.call_budget)
+        try:
+            data = json.loads(raw)
+            text = data["choices"][0]["message"]["content"]
+        except (KeyError, IndexError, ValueError, TypeError):
+            raise ResponseShapeError(f"unexpected {self.name} response shape") from None
+        u = data.get("usage") or {}
+        self._tls.usage = (u.get("prompt_tokens"), u.get("completion_tokens"))
+        return text
+
+
+class ProviderChain:
+    """プロバイダの階段。第1プロバイダ (内部にモデル階段を持つ) が一時的失敗で
+    全段尽きたら第2プロバイダへ降りる。恒常的な失敗と時間上限の到達は、段の
+    階段と同じくその場で投げる (設定ミスを別プロバイダで隠さない・締め切りを
+    倍化させない)。recorder と timeout 等の設定は全プロバイダへ行き渡らせる。"""
+
+    def __init__(self, providers):
+        self.providers = list(providers)
+        self._tls = threading.local()
+
+    @property
+    def name(self):
+        return "+".join(p.name for p in self.providers)
+
+    @property
+    def model(self):
+        return self.providers[0].model
+
+    @property
+    def fallback_models(self):
+        return getattr(self.providers[0], "fallback_models", [])
+
+    @property
+    def fallback_model(self):
+        return getattr(self.providers[0], "fallback_model", None)
+
+    @property
+    def last_model(self):
+        """直近の complete() に実際に応答したモデル名 (応答したプロバイダ側の記録)。"""
+        return getattr(self._tls, "model", None)
+
+    @property
+    def recorder(self):
+        return getattr(self.providers[0], "recorder", None)
+
+    @recorder.setter
+    def recorder(self, fn):
+        for p in self.providers:
+            p.recorder = fn
+
+    # configure_llm() は属性代入で設定するため、プロパティで全段へ行き渡らせる
+    @property
+    def timeout(self):
+        return self.providers[0].timeout
+
+    @timeout.setter
+    def timeout(self, v):
+        for p in self.providers:
+            if hasattr(p, "timeout"):
+                p.timeout = v
+
+    @property
+    def retries(self):
+        return self.providers[0].retries
+
+    @retries.setter
+    def retries(self, v):
+        for p in self.providers:
+            if hasattr(p, "retries"):
+                p.retries = v
+
+    @property
+    def call_budget(self):
+        return self.providers[0].call_budget
+
+    @call_budget.setter
+    def call_budget(self, v):
+        for p in self.providers:
+            if hasattr(p, "call_budget"):
+                p.call_budget = v
+
+    def complete(self, prompt, purpose=None, candidate_id=None):
+        last_err = None
+        for p in self.providers:
+            try:
+                out = p.complete(prompt, purpose=purpose, candidate_id=candidate_id)
+            except HttpError as e:
+                last_err = e
+                if not e.transient or e.deadline_exceeded:
+                    raise
+                continue
+            self._tls.model = getattr(p, "last_model", None) or getattr(p, "model", None)
+            return out
+        raise last_err if last_err is not None else LLMError("no LLM provider available")
+
+
+def _cloudflare(http=None):
+    """Cloudflare Workers AI のプロバイダ。資格情報 (CLOUDFLARE_ACCOUNT_ID /
+    CLOUDFLARE_API_TOKEN) が両方そろっているときだけ作り、片方でも欠ければ
+    None (第2プロバイダ無しで従来どおり動く。片方だけの設定ミスも実行は
+    止めず、不在は次回実行の llm_calls に Cloudflare の記録が無いことで
+    気づける形にする)。"""
+    account = os.environ.get("CLOUDFLARE_ACCOUNT_ID") or None
+    token = os.environ.get("CLOUDFLARE_API_TOKEN") or None
+    if not account or not token:
+        return None
+    model = os.environ.get("TRL_LLM_CF_MODEL") or CF_DEFAULT_MODEL
+    return OpenAICompatible(
+        "cloudflare",
+        f"https://api.cloudflare.com/client/v4/accounts/{account}/ai/v1",
+        token, model, http=http)
+
+
 class Mock:
     """テスト用。fn(prompt) -> str。"""
     name = "mock"
@@ -295,11 +482,23 @@ def get_provider(name, model=None, http=None, fallback_model=None, fallback_mode
     name = (name or "none").lower()
     if name == "none":
         return None
+    if name == "cloudflare":
+        cf = _cloudflare(http)
+        if cf is None:
+            raise LLMError("CLOUDFLARE_ACCOUNT_ID / CLOUDFLARE_API_TOKEN is not set")
+        return cf
     if name == "anthropic":
-        return Anthropic(model, http, fallback_model, fallback_model_2)
-    if name == "gemini":
-        return Gemini(model, http, fallback_model, fallback_model_2)
-    raise LLMError(f"unknown provider: {name}")
+        primary = Anthropic(model, http, fallback_model, fallback_model_2)
+    elif name == "gemini":
+        primary = Gemini(model, http, fallback_model, fallback_model_2)
+    else:
+        raise LLMError(f"unknown provider: {name}")
+    # 第2プロバイダ: Cloudflare の資格情報がそろっていれば階段の最終段に足す。
+    # 未設定なら第1プロバイダ単独で従来どおり (段階的に有効化できる)
+    cf = _cloudflare(http)
+    if cf is not None:
+        return ProviderChain([primary, cf])
+    return primary
 
 
 def llm_settings(cfg):

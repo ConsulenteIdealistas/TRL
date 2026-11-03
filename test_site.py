@@ -262,6 +262,162 @@ class FallbackModelTests(unittest.TestCase):
         self.assertEqual(T.Gemini(model="m", http=lambda *a, **k: b"{}").fallback_model, "gemini-sub")
 
 
+class SecondProviderTests(unittest.TestCase):
+    """第2プロバイダ (Cloudflare Workers AI) とプロバイダ階段の検証。"""
+
+    KEYS = ("GEMINI_API_KEY", "CLOUDFLARE_ACCOUNT_ID", "CLOUDFLARE_API_TOKEN", "TRL_LLM_CF_MODEL")
+
+    def setUp(self):
+        import os
+        self._saved = {k: os.environ.get(k) for k in self.KEYS}
+        os.environ["GEMINI_API_KEY"] = "g-key"
+        os.environ["CLOUDFLARE_ACCOUNT_ID"] = "acct-1"
+        os.environ["CLOUDFLARE_API_TOKEN"] = "cf-token"
+
+    def tearDown(self):
+        import os
+        for k, v in self._saved.items():
+            if v is None:
+                os.environ.pop(k, None)
+            else:
+                os.environ[k] = v
+
+    @staticmethod
+    def cf_ok(text="cf-ok"):
+        return json.dumps({"choices": [{"message": {"content": text}}],
+                           "usage": {"prompt_tokens": 31, "completion_tokens": 7}}).encode()
+
+    def test_cloudflare_request_and_parsing(self):
+        seen = {}
+
+        def http(url, **kw):
+            seen.update(url=url, kw=kw)
+            return self.cf_ok()
+        p = T.get_provider("cloudflare", http=http)
+        self.assertEqual(p.name, "cloudflare")
+        self.assertEqual(p.model, "@cf/google/gemma-4-26b-a4b-it")
+        recs = []
+        p.recorder = recs.append
+        self.assertEqual(p.complete("プロンプト", purpose="assess", candidate_id=9), "cf-ok")
+        self.assertEqual(seen["url"],
+                         "https://api.cloudflare.com/client/v4/accounts/acct-1/ai/v1/chat/completions")
+        self.assertEqual(seen["kw"]["headers"]["authorization"], "Bearer cf-token")
+        body = json.loads(seen["kw"]["data"])
+        self.assertEqual(body["model"], "@cf/google/gemma-4-26b-a4b-it")
+        self.assertEqual([m["role"] for m in body["messages"]], ["system", "user"])
+        self.assertEqual(body["messages"][1]["content"], "プロンプト")
+        self.assertEqual(p.last_model, "@cf/google/gemma-4-26b-a4b-it")
+        self.assertEqual(len(recs), 1)
+        self.assertEqual((recs[0]["provider"], recs[0]["tokens_in"], recs[0]["tokens_out"]),
+                         ("cloudflare", 31, 7))
+
+    def test_cloudflare_model_from_env(self):
+        import os
+        os.environ["TRL_LLM_CF_MODEL"] = "@cf/zai-org/glm-4.7-flash"
+        p = T.get_provider("cloudflare", http=lambda *a, **k: self.cf_ok())
+        self.assertEqual(p.model, "@cf/zai-org/glm-4.7-flash")
+
+    def test_cloudflare_requires_both_credentials(self):
+        import os
+        os.environ.pop("CLOUDFLARE_API_TOKEN")
+        with self.assertRaises(T.LLMError):
+            T.get_provider("cloudflare", http=lambda *a, **k: b"{}")
+        os.environ["CLOUDFLARE_API_TOKEN"] = "cf-token"
+        os.environ.pop("CLOUDFLARE_ACCOUNT_ID")
+        with self.assertRaises(T.LLMError):
+            T.get_provider("cloudflare", http=lambda *a, **k: b"{}")
+
+    def test_chain_falls_through_to_cloudflare(self):
+        def http(url, **kw):
+            if "api.cloudflare.com" in url:
+                return self.cf_ok("from-cf")
+            raise T.HttpError("HTTP 503 for x", 503)
+        llm = T.get_provider("gemini", model="gemini-main", http=http)
+        self.assertIsInstance(llm, T.ProviderChain)
+        self.assertEqual(llm.name, "gemini+cloudflare")
+        self.assertEqual(llm.model, "gemini-main")
+        recs = []
+        llm.recorder = recs.append
+        self.assertEqual(llm.complete("p", purpose="extract", candidate_id=3), "from-cf")
+        self.assertEqual(llm.last_model, "@cf/google/gemma-4-26b-a4b-it")
+        self.assertEqual([r["provider"] for r in recs], ["gemini", "cloudflare"])
+        self.assertEqual([r["ok"] for r in recs], [False, True])
+
+    def test_chain_absent_without_cf_env(self):
+        import os
+        os.environ.pop("CLOUDFLARE_ACCOUNT_ID")
+        os.environ.pop("CLOUDFLARE_API_TOKEN")
+        llm = T.get_provider("gemini", model="m", http=lambda *a, **k: b"{}")
+        self.assertIsInstance(llm, T.Gemini)
+        # 片方だけの設定でも階段は組まない (従来どおり第1プロバイダ単独)
+        os.environ["CLOUDFLARE_API_TOKEN"] = "cf-token"
+        llm = T.get_provider("gemini", model="m", http=lambda *a, **k: b"{}")
+        self.assertIsInstance(llm, T.Gemini)
+
+    def test_chain_stops_on_permanent_error(self):
+        cf_calls = []
+
+        def http(url, **kw):
+            if "api.cloudflare.com" in url:
+                cf_calls.append(url)
+                return self.cf_ok()
+            raise T.HttpError("HTTP 404 for x", 404)
+        llm = T.get_provider("gemini", model="gemini-main", http=http)
+        with self.assertRaises(T.HttpError):
+            llm.complete("p")
+        self.assertEqual(cf_calls, [])
+
+    def test_chain_stops_on_deadline_exceeded(self):
+        cf_calls = []
+
+        def http(url, **kw):
+            if "api.cloudflare.com" in url:
+                cf_calls.append(url)
+                return self.cf_ok()
+            raise T.HttpError("deadline", None, deadline_exceeded=True)
+        llm = T.get_provider("gemini", model="gemini-main", http=http)
+        with self.assertRaises(T.HttpError):
+            llm.complete("p")
+        self.assertEqual(cf_calls, [])
+
+    def test_pipeline_evaluates_via_cloudflare_when_gemini_down(self):
+        # Gemini が全段落ちたら Cloudflare で評価が完走し、来歴 (llm_provider /
+        # llm_model) と llm_calls に実際に答えた側が残ることを run 経由で固定する
+        fn = make_llm_fn(long_scores={k: 65 for k in LONG_KEYS})
+
+        def http(url, **kw):
+            if "api.cloudflare.com" in url:
+                prompt = json.loads(kw["data"])["messages"][1]["content"]
+                return self.cf_ok(fn(prompt))
+            raise T.HttpError("HTTP 503 for x", 503)
+        tmp = tempfile.TemporaryDirectory()
+        try:
+            store = T.Store(Path(tmp.name) / "d" / "trl.sqlite")
+            llm = T.get_provider("gemini", model="gemini-main", http=http)
+            r = T.run_pipeline(store, cfg_with(), llm, as_of=AS_OF, kinds=("long",),
+                               fetchers=fetch_n(2), today=AS_OF, log=lambda *_: None)
+            self.assertEqual(r["counts"]["final"], 2)
+            rows = store.llm_calls(r["run_id"])
+            self.assertTrue(any(row["provider"] == "cloudflare" and row["ok"] for row in rows))
+            self.assertTrue(any(row["provider"] == "gemini" and not row["ok"] for row in rows))
+            evs = store.evaluations_for_run(r["run_id"], "long")
+            self.assertTrue(all(e["llm_model"] == "@cf/google/gemma-4-26b-a4b-it" for e in evs))
+            self.assertTrue(all(e["llm_provider"] == "gemini+cloudflare" for e in evs))
+            store.close()
+        finally:
+            tmp.cleanup()
+
+    def test_chain_settings_and_recorder_fanout(self):
+        llm = T.get_provider("gemini", model="m", http=lambda *a, **k: b"{}")
+        T.configure_llm(llm, cfg_with(timeout_sec=77, retries=5, call_budget_sec=99))
+        for p in llm.providers:
+            self.assertEqual((p.timeout, p.retries, p.call_budget), (77, 5, 99))
+        fn = lambda rec: None
+        llm.recorder = fn
+        self.assertTrue(all(p.recorder is fn for p in llm.providers))
+        self.assertIs(llm.recorder, fn)
+
+
 class SiteConsistencyTests(unittest.TestCase):
     def test_error_evaluation_direction_is_dropped(self):
         # error 評価の方向性はサイトに出さない (一覧・詳細の共通ルールを site 側で担保)

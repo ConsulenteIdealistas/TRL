@@ -64,9 +64,14 @@ FINANCIAL_SKIP_DAYS = 20
 # 保存済みの最新決算の期末 +97日 (次の四半期末 + 発表が始まる目安) を過ぎた企業だけを
 # 取りに行く。期末の記録が無い企業は発見のため FINANCIAL_SKIP_DAYS の間隔で試行する
 FINANCIAL_PERIOD_DAYS = 97
+# ゲート通過後に「新しい期間なし」で終わった試行 (空振り) の間引き日数。
+# 発表は次の期末の30〜45日後に集中するため、ゲート (次の期末+5日) から発表まで
+# 毎週空振りするのをやめ、空振りから14日は休む。検出の遅れは最悪でも
+# 間引き+実行間隔に収まる (週次実行で約3週間)
+FINANCIAL_POLL_BACKOFF_DAYS = 14
 
 
-def _yahoo_resting(q, as_of, attempts, periods):
+def _yahoo_resting(q, as_of, attempts, periods, retrievals=None):
     """Yahoo クエリを今回休むかどうか。前回試行が失敗なら間隔の対象にせず再試行する。"""
     att = attempts.get(("yahoo", q["name"]))
     if att is None:
@@ -74,11 +79,21 @@ def _yahoo_resting(q, as_of, attempts, periods):
     started, ok = att
     if not ok:
         return False
-    period = parse_date(periods.get(q["name"].removesuffix("-yahoo")))
+    entity = q["name"].removesuffix("-yahoo")
+    period = parse_date(periods.get(entity))
     if period is None:
         last = parse_date((started or "")[:10])
         return last is not None and (as_of - last).days < FINANCIAL_SKIP_DAYS
-    return as_of < period + timedelta(days=FINANCIAL_PERIOD_DAYS)
+    if as_of < period + timedelta(days=FINANCIAL_PERIOD_DAYS):
+        return True
+    # ゲート通過後: 最新期間を取得した試行より後ろの試行は「新しい期間なし」の
+    # 空振り。その試行から FINANCIAL_POLL_BACKOFF_DAYS 日は休む。期間を取得した
+    # 試行自体 (取得日時と同日) は空振りに数えない
+    att_date = parse_date((started or "")[:10])
+    got = parse_date(((retrievals or {}).get(entity) or "")[:10])
+    if att_date is not None and got is not None and att_date > got:
+        return (as_of - att_date).days < FINANCIAL_POLL_BACKOFF_DAYS
+    return False
 
 
 def _gnews_title_key(rec, entity_links):
@@ -100,10 +115,11 @@ def collect(store, cfg, run_id, as_of, sources, fetchers, counts, log):
     last_ok = store.last_source_successes()
     yahoo_attempts = store.last_source_attempts("yahoo")
     yahoo_periods = store.latest_financial_periods("yahoo")
+    yahoo_retrievals = store.latest_financial_retrievals("yahoo")
     kept, skipped = [], 0
     for sname, q in jobs:
         if sname == "yahoo":
-            resting = _yahoo_resting(q, as_of, yahoo_attempts, yahoo_periods)
+            resting = _yahoo_resting(q, as_of, yahoo_attempts, yahoo_periods, yahoo_retrievals)
         elif sname in FINANCIAL_SOURCES:
             t = parse_date((last_ok.get((sname, q["name"])) or "")[:10])
             resting = t is not None and (as_of - t).days < FINANCIAL_SKIP_DAYS

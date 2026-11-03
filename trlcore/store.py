@@ -555,3 +555,20 @@ class Store:
             "JOIN candidate_entities ce ON ce.candidate_id = c.id "
             "WHERE c.source = ? GROUP BY ce.entity_id", (source,)).fetchall()
         return {eid: p for eid, p in rows if p}
+
+    def latest_financial_retrievals(self, source):
+        """企業ごとの最新財務レコードを取得した日時 (retrieved_at) を返す。
+
+        最新期間を取得した試行と、それより後の空振り試行を区別するために使う。
+        """
+        rows = self.conn.execute(
+            "SELECT ce.entity_id, c.published, c.retrieved_at FROM candidates c "
+            "JOIN candidate_entities ce ON ce.candidate_id = c.id "
+            "WHERE c.source = ?", (source,)).fetchall()
+        best = {}
+        for eid, pub, got in rows:
+            if not pub or not got:
+                continue
+            if eid not in best or pub > best[eid][0]:
+                best[eid] = (pub, got)
+        return {eid: got for eid, (pub, got) in best.items()}

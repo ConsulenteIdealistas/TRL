@@ -2723,6 +2723,42 @@ class FinancialSkipTests(unittest.TestCase):
         store.close()
 
 
+class YahooRestingTests(unittest.TestCase):
+    """_yahoo_resting の空振り間引き (ゲート: 期末 2026-06-30 + 97日 = 2026-10-05)。"""
+
+    def rest(self, as_of, started, ok=True, period="2026-06-30", got="2026-08-10"):
+        from trlcore import pipeline as P
+        q = {"name": "acme-yahoo"}
+        attempts = {("yahoo", "acme-yahoo"): (started, ok)}
+        periods = {"acme": period} if period else {}
+        retrievals = {"acme": got} if got else {}
+        return P._yahoo_resting(q, as_of, attempts, periods, retrievals)
+
+    def test_before_gate_rests(self):
+        self.assertTrue(self.rest(date(2026, 9, 1), "2026-08-10T00:00:00+00:00"))
+
+    def test_discovery_attempt_is_not_an_empty_poll(self):
+        # 最新期間を取得した試行 (取得日と同日) は空振りに数えず、ゲート後は取りに行く
+        self.assertFalse(self.rest(date(2026, 10, 20), "2026-10-06T00:00:00+00:00",
+                                   got="2026-10-06"))
+
+    def test_empty_poll_backs_off_14_days(self):
+        # 期間取得より後の試行 = 空振り。その後14日は休む
+        self.assertTrue(self.rest(date(2026, 10, 20), "2026-10-13T00:00:00+00:00",
+                                  got="2026-10-06"))
+        self.assertFalse(self.rest(date(2026, 10, 28), "2026-10-13T00:00:00+00:00",
+                                   got="2026-10-06"))
+
+    def test_failure_retries_regardless(self):
+        self.assertFalse(self.rest(date(2026, 10, 20), "2026-10-19T00:00:00+00:00",
+                                   ok=False, got="2026-10-06"))
+
+    def test_missing_retrieval_falls_back_to_gate_only(self):
+        # 取得日時が無い旧データでは間引きを判定できないため、従来どおりゲートのみ
+        self.assertFalse(self.rest(date(2026, 10, 20), "2026-10-19T00:00:00+00:00",
+                                   got=None))
+
+
 class YahooThrottleTests(unittest.TestCase):
     def test_throttle_spaces_calls_process_wide(self):
         from trlcore.sources import yahoo as yh

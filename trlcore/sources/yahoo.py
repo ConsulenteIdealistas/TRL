@@ -15,11 +15,13 @@ quoteSummary の財務諸表モジュール
 空リストで握りつぶさず例外として収集側に記録させる (他ソースや評価本体には
 影響しない)。応答は取れたが数値が無い場合は材料なしとして空リストを返す。
 
-429 (レート制限) への対処: http_fetch 内の再試行 (Retry-After 尊重・
-15→30秒) をすり抜けて 429 が上がってきたら、制限がかかっている時間帯に
+429 (レート制限) への対処: http_fetch 内の再試行 (Yahoo 経路は試行2回まで・
+Retry-After 尊重) をすり抜けて 429 が上がってきたら、制限がかかっている時間帯に
 全スレッドが個別に叩き続けないよう、プロセス全体で COOLDOWN_SEC 秒の
 休止を共有する (以降の全リクエストは休止明けまで待つ)。429 のクエリは
-この層では再試行しない (下層で既に3回試しており、二重に燃やさない)。
+この層では再試行しない (下層で既に2回試しており、二重に燃やさない)。
+待っても 429 が解けないことが多いため、間隔を広げて発生を抑えつつ、
+再試行と全体休止は短めにして「応答待ちの絶対数」を減らす方針 (2026-11-03)。
 あわせて、実行開始直後に全スレッドのセッション確立 (cookie + crumb) が
 一斉に集中しないよう、スレッドごとに初回だけ 0〜3秒のジッターを入れる。
 """
@@ -77,7 +79,7 @@ _last_call = [0.0]
 
 _cooldown_lock = threading.Lock()
 _cooldown_until = [0.0]  # monotonic 時刻。429 観測時に全体で共有する休止の期限
-COOLDOWN_SEC = 60.0
+COOLDOWN_SEC = 30.0
 
 
 def _note_429(retry_after=None, now=time.monotonic):
@@ -97,7 +99,7 @@ def _wait_cooldown(sleep, now=time.monotonic):
 # Yahoo 向けリクエストのプロセス全体の最小間隔 (秒)。収集は複数スレッドで並行に
 # 動くため、クエリ単位の sleep ではバーストを抑えられず、非公式 API の制限に
 # 触れやすい。PubMed の全体スロットル (2026-10-29) と同じ方式で全リクエストを直列化する。
-MIN_INTERVAL = 1.0
+MIN_INTERVAL = 1.5
 
 
 def _throttle(interval, sleep=time.sleep, now=time.monotonic):
@@ -262,7 +264,9 @@ def yahoo_fetch(query, max_results, lookback_days, as_of, http=None, sleep=time.
         opener = s["opener"]
 
         def fetch(url, params=None, headers=None):
-            return http_fetch(url, params=params, headers=headers, opener=opener.open)
+            # Yahoo 相手では粘らない: 試行は2回まで (既定は3回)。429 は待っても
+            # 回復しないことが多く、再試行と応答待ちの絶対数を減らす方を取る
+            return http_fetch(url, params=params, headers=headers, opener=opener.open, retries=1)
     else:
         def fetch(url, params=None, headers=None):
             return http(url, params=params, headers=headers)
@@ -295,7 +299,7 @@ def yahoo_fetch(query, max_results, lookback_days, as_of, http=None, sleep=time.
             s["crumb"] = None
             s["ua"] = None
             if getattr(e, "status", None) == 429:
-                # http_fetch が既に Retry-After 尊重で3回試した後の 429。
+                # http_fetch が既に Retry-After 尊重で2回試した後の 429。
                 # ここで二重に再試行せず、全体休止を共有して即座に失敗として残す
                 _note_429(getattr(e, "retry_after", None))
                 raise

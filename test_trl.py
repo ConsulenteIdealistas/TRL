@@ -769,6 +769,44 @@ class YahooFinancialTests(unittest.TestCase):
         finally:
             yh._cooldown_until[0] = 0.0
 
+    def test_rate_limit_constants_widened_and_shortened(self):
+        # 2026-11-03 の方針: 間隔を広げて 429 の発生を抑え、全体休止は短くする
+        from trlcore.sources import yahoo as yh
+        self.assertEqual(yh.MIN_INTERVAL, 1.5)
+        self.assertEqual(yh.COOLDOWN_SEC, 30.0)
+        yh._cooldown_until[0] = 0.0
+        try:
+            yh._note_429(None, now=lambda: 1000.0)
+            self.assertEqual(yh._cooldown_until[0], 1030.0)  # 既定は30秒先まで
+            yh._note_429(120.0, now=lambda: 1000.0)
+            self.assertEqual(yh._cooldown_until[0], 1120.0)  # Retry-After が長ければそちら
+        finally:
+            yh._cooldown_until[0] = 0.0
+
+    def test_fetch_passes_single_retry_to_http_fetch(self):
+        # Yahoo 経路の http 試行は2回まで (retries=1)。他ソースの既定には触らない
+        from trlcore.sources import yahoo as yh
+        seen = []
+        orig = yh.http_fetch
+
+        def stub(url, params=None, headers=None, opener=None, **kw):
+            seen.append(kw.get("retries"))
+            if "getcrumb" in url:
+                return b"crumb123"
+            if "fc.yahoo.com" in url:
+                return b""
+            return json.dumps(YAHOO_SUMMARY).encode()
+
+        yh.http_fetch = stub
+        yh._last_call[0] = 0.0
+        try:
+            out = yahoo.fetch("9348.T", 5, 400, AS_OF, sleep=lambda *_: None)
+        finally:
+            yh.http_fetch = orig
+            yh._last_call[0] = 0.0
+        self.assertEqual(len(out), 1)
+        self.assertTrue(seen and all(r == 1 for r in seen))
+
     def test_fetch_source_id_distinguishes_same_ticker_markets(self):
         # NANO.TO (Nano One) と NANO.PA (Nanobiotix) のように市場違いの同名ティッカーで
         # source_id が衝突すると、一方の財務レコードが他方へ統合されて消える

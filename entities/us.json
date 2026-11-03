@@ -844,6 +844,9 @@
      "lithium-metal"
     ]
    },
+   "tags": [
+    "solid_state_battery"
+   ],
    "stage": "demo"
   },
   {
@@ -866,6 +869,9 @@
      "MOBIUS"
     ]
    },
+   "tags": [
+    "solid_state_battery"
+   ],
    "stage": "demo"
   },
   {

@@ -66,10 +66,7 @@ on:
   schedule:
     - cron: "30 21 * * 1"   # Mondays 21:30 UTC (Tuesday 06:30 JST)
 
-permissions:
-  contents: write
-  pages: write
-  id-token: write
+permissions: {}  # 既定は全拒否。必要な権限だけをジョブ単位で付ける (S-2)
 
 concurrency:
   group: trl-pipeline
@@ -79,8 +76,9 @@ jobs:
   run:
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    env:
-      TOKEN: ${{ github.token }}
+    permissions:
+      contents: write  # チェックアウトと data ブランチへの保存に必要
+      pages: write     # upload-pages-artifact に必要 (id-token は deploy 側だけに残す)
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -89,6 +87,8 @@ jobs:
       - name: Tests
         run: python -m unittest test_trl test_entities test_site -v
       - name: Restore data branch
+        env:
+          TOKEN: ${{ github.token }}
         run: |
           set +e
           git ls-remote --exit-code --heads origin data >/dev/null 2>&1
@@ -186,6 +186,8 @@ jobs:
           path: _site
       - name: Persist data (preserve history)
         if: always()
+        env:
+          TOKEN: ${{ github.token }}
         run: |
           if [ ! -d _data ]; then
             echo "No data directory to persist"
@@ -232,6 +234,9 @@ jobs:
     if: needs.run.result == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

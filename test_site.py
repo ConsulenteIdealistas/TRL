@@ -118,6 +118,44 @@ class FallbackModelTests(unittest.TestCase):
         g.recorder = bad_recorder
         self.assertEqual(g.complete("p"), "ok")
 
+    def test_model_breaker_skips_main_after_3_consecutive_failures(self):
+        # 主モデルが3回連続で失敗したら、以後は主を試さず代替へ直行する
+        main_calls = []
+
+        def http(url, **kw):
+            if "gemini-main" in url:
+                main_calls.append(url)
+                raise T.HttpError("HTTP 503 for x", 503)
+            return json.dumps({"candidates": [{"content": {"parts": [{"text": "fb"}]}}]}).encode()
+        g = T.Gemini(model="gemini-main", http=http, fallback_model="gemini-sub")
+        recs = []
+        g.recorder = recs.append
+        for _ in range(5):
+            self.assertEqual(g.complete("p", purpose="assess"), "fb")
+        self.assertEqual(len(main_calls), 3)  # 4回目以降は主を試していない
+        skipped = [r for r in recs if r.get("main_skipped")]
+        self.assertEqual(len(skipped), 2)
+        self.assertTrue(all(r["model"] == "gemini-sub" for r in skipped))
+        self.assertEqual(g.last_model, "gemini-sub")
+
+    def test_model_breaker_resets_on_main_success(self):
+        # 主モデルが成功すれば連続失敗はリセットされ、ブレーカーは開かない
+        script = ["fail", "fail", "ok", "fail", "fail", "ok"]
+        main_calls = []
+
+        def http(url, **kw):
+            if "gemini-main" in url:
+                main_calls.append(url)
+                if script[len(main_calls) - 1] == "fail":
+                    raise T.HttpError("HTTP 503 for x", 503)
+                return json.dumps({"candidates": [{"content": {"parts": [{"text": "main-ok"}]}}]}).encode()
+            return json.dumps({"candidates": [{"content": {"parts": [{"text": "fb"}]}}]}).encode()
+        g = T.Gemini(model="gemini-main", http=http, fallback_model="gemini-sub")
+        outs = [g.complete("p") for _ in range(6)]
+        self.assertEqual(len(main_calls), 6)  # 全コールで主が試されている
+        self.assertEqual(outs[2], "main-ok")
+        self.assertEqual(outs[5], "main-ok")
+
     def test_last_model_tracking(self):
         def ok_http(url, **kw):
             return json.dumps({"candidates": [{"content": {"parts": [{"text": "ok"}]}}]}).encode()

@@ -381,7 +381,8 @@ def run_pipeline(store, cfg, llm, *, as_of, sources=("pubmed", "arxiv"), kinds=(
             log(f"[llm] {rec.get('purpose') or '-'} model={rec.get('model')} "
                 f"{rec.get('seconds')}s ok={1 if rec.get('ok') else 0}"
                 + (f" cand={rec['candidate_id']}" if rec.get("candidate_id") else "")
-                + (f" error={rec['error']}" if rec.get("error") else ""))
+                + (f" error={rec['error']}" if rec.get("error") else "")
+                + (" main-skipped" if rec.get("main_skipped") else ""))
         llm.recorder = _record_llm
     if cfg["scoring"].get("recalc_on_run"):
         # 重み等の集計変更 (規程の A2 類) を保存済み評価へ反映する。再計算の

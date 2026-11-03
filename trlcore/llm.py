@@ -43,6 +43,12 @@ def _emit_call(provider, rec):
     except Exception:
         pass
 
+# 主モデルの連続失敗がこの回数に達したら、その実行では代替モデルへ直行する
+# (モデル版ブレーカー)。根拠は実測 (2026-11-03): 主モデルが終日不調の日は
+# 成功0件で、抽出・採点の全コールが「主モデルの失敗待ち→代替で再実行」の
+# 通行料を払った。3回連続の失敗は瞬断では起きにくく、成功で即リセットする
+MAIN_FAIL_LIMIT = 3
+
 
 def _fallback_model(model, fallback_model=None):
     """代替モデル名。未指定なら環境変数 TRL_LLM_FALLBACK_MODEL、主モデルと同じなら無効。"""
@@ -64,6 +70,8 @@ class Anthropic:
             raise LLMError("ANTHROPIC_API_KEY is not set")
         self._tls = threading.local()  # last_model はスレッドごとに保持する (評価は並列実行)
         self.recorder = None  # 計装レコーダ (run 側が設定する。None なら記録しない)
+        self._main_fails = [0]  # 主モデルの連続失敗数 (ブレーカー用)
+        self._main_lock = threading.Lock()
 
     @property
     def last_model(self):
@@ -72,11 +80,19 @@ class Anthropic:
         return getattr(self._tls, "model", None)
 
     def complete(self, prompt, purpose=None, candidate_id=None):
+        if self._breaker_open():
+            # ブレーカー作動中: 主モデルの失敗待ち (通行料) を払わず代替へ直行する
+            out = self._timed(self.fallback_model, prompt, purpose, candidate_id,
+                              main_skipped=True)
+            self._tls.model = self.fallback_model
+            return out
         try:
             out = self._timed(self.model, prompt, purpose, candidate_id)
+            self._note_main_result(True)
             self._tls.model = self.model
             return out
         except HttpError as e:
+            self._note_main_result(False)
             # 503/429 等の一時的失敗はモデル側の過負荷であることが多く、同一プロバイダの
             # 別モデルでは応答することがある。恒常的な失敗(404/401等)では切り替えない。
             if not (self.fallback_model and e.transient) or e.deadline_exceeded:
@@ -85,19 +101,29 @@ class Anthropic:
             self._tls.model = self.fallback_model
             return out
 
-    def _timed(self, model, prompt, purpose, candidate_id):
+    def _timed(self, model, prompt, purpose, candidate_id, main_skipped=False):
         """_complete を計測つきで呼ぶ。成否・実モデル・秒数・入出力サイズ・
         トークンをレコーダに残す (後から見返せるものは残す方針)。"""
         t0 = time.monotonic()
         try:
             out = self._complete(model, prompt)
         except Exception as e:
-            self._emit(purpose, candidate_id, model, time.monotonic() - t0, False, e, prompt, None)
+            self._emit(purpose, candidate_id, model, time.monotonic() - t0, False, e, prompt, None,
+                       main_skipped)
             raise
-        self._emit(purpose, candidate_id, model, time.monotonic() - t0, True, None, prompt, out)
+        self._emit(purpose, candidate_id, model, time.monotonic() - t0, True, None, prompt, out,
+                   main_skipped)
         return out
 
-    def _emit(self, purpose, candidate_id, model, seconds, ok, err, prompt, out):
+    def _breaker_open(self):
+        return self.fallback_model is not None and self._main_fails[0] >= MAIN_FAIL_LIMIT
+
+    def _note_main_result(self, ok):
+        with self._main_lock:
+            self._main_fails[0] = 0 if ok else self._main_fails[0] + 1
+
+    def _emit(self, purpose, candidate_id, model, seconds, ok, err, prompt, out,
+              main_skipped=False):
         usage = getattr(self._tls, "usage", None)
         self._tls.usage = None
         _emit_call(self, {
@@ -106,7 +132,8 @@ class Anthropic:
             "error": f"{type(err).__name__}: {err}"[:300] if err is not None else None,
             "chars_in": len(prompt), "chars_out": len(out) if out is not None else None,
             "tokens_in": usage[0] if usage else None,
-            "tokens_out": usage[1] if usage else None})
+            "tokens_out": usage[1] if usage else None,
+            "main_skipped": main_skipped})
 
     def _complete(self, model, prompt):
         body = json.dumps({"model": model, "max_tokens": 3000, "system": SYSTEM,
@@ -138,6 +165,8 @@ class Gemini:
             raise LLMError("GEMINI_API_KEY is not set")
         self._tls = threading.local()  # last_model はスレッドごとに保持する (評価は並列実行)
         self.recorder = None  # 計装レコーダ (run 側が設定する。None なら記録しない)
+        self._main_fails = [0]  # 主モデルの連続失敗数 (ブレーカー用)
+        self._main_lock = threading.Lock()
 
     @property
     def last_model(self):
@@ -146,11 +175,19 @@ class Gemini:
         return getattr(self._tls, "model", None)
 
     def complete(self, prompt, purpose=None, candidate_id=None):
+        if self._breaker_open():
+            # ブレーカー作動中: 主モデルの失敗待ち (通行料) を払わず代替へ直行する
+            out = self._timed(self.fallback_model, prompt, purpose, candidate_id,
+                              main_skipped=True)
+            self._tls.model = self.fallback_model
+            return out
         try:
             out = self._timed(self.model, prompt, purpose, candidate_id)
+            self._note_main_result(True)
             self._tls.model = self.model
             return out
         except HttpError as e:
+            self._note_main_result(False)
             # 503/429 等の一時的失敗はモデル側の過負荷であることが多く、同一プロバイダの
             # 別モデルでは応答することがある。恒常的な失敗(404/401等)では切り替えない。
             if not (self.fallback_model and e.transient) or e.deadline_exceeded:
@@ -159,19 +196,29 @@ class Gemini:
             self._tls.model = self.fallback_model
             return out
 
-    def _timed(self, model, prompt, purpose, candidate_id):
+    def _timed(self, model, prompt, purpose, candidate_id, main_skipped=False):
         """_complete を計測つきで呼ぶ。成否・実モデル・秒数・入出力サイズ・
         トークンをレコーダに残す (後から見返せるものは残す方針)。"""
         t0 = time.monotonic()
         try:
             out = self._complete(model, prompt)
         except Exception as e:
-            self._emit(purpose, candidate_id, model, time.monotonic() - t0, False, e, prompt, None)
+            self._emit(purpose, candidate_id, model, time.monotonic() - t0, False, e, prompt, None,
+                       main_skipped)
             raise
-        self._emit(purpose, candidate_id, model, time.monotonic() - t0, True, None, prompt, out)
+        self._emit(purpose, candidate_id, model, time.monotonic() - t0, True, None, prompt, out,
+                   main_skipped)
         return out
 
-    def _emit(self, purpose, candidate_id, model, seconds, ok, err, prompt, out):
+    def _breaker_open(self):
+        return self.fallback_model is not None and self._main_fails[0] >= MAIN_FAIL_LIMIT
+
+    def _note_main_result(self, ok):
+        with self._main_lock:
+            self._main_fails[0] = 0 if ok else self._main_fails[0] + 1
+
+    def _emit(self, purpose, candidate_id, model, seconds, ok, err, prompt, out,
+              main_skipped=False):
         usage = getattr(self._tls, "usage", None)
         self._tls.usage = None
         _emit_call(self, {
@@ -180,7 +227,8 @@ class Gemini:
             "error": f"{type(err).__name__}: {err}"[:300] if err is not None else None,
             "chars_in": len(prompt), "chars_out": len(out) if out is not None else None,
             "tokens_in": usage[0] if usage else None,
-            "tokens_out": usage[1] if usage else None})
+            "tokens_out": usage[1] if usage else None,
+            "main_skipped": main_skipped})
 
     def _complete(self, model, prompt):
         body = json.dumps({

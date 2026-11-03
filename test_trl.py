@@ -890,19 +890,102 @@ class FinancialPoolTests(unittest.TestCase):
                "url": "https://example.org/fin", "published": "2026-10-15",
                "fields": ["EDINET", "四半期報告書"], "affiliations": ["Astroscale Holdings Inc."],
                "info_type": "disclosure"}
-        self._add(store, fin)
+        fin_id = self._add(store, fin)
         yf = {"source": "yahoo", "source_id": "186A-2026-06-30", "title": "Astroscale Holdings Inc. 財務情報",
               "abstract": "Astroscale Holdings Inc.(186A)の財務数値(Yahoo Finance): 直近四半期 売上高 1,200百万円。",
               "url": "https://example.org/yf", "published": "2026-06-30",
               "fields": ["Yahoo Finance", "財務"], "affiliations": ["Astroscale Holdings Inc."],
               "info_type": "disclosure"}
-        self._add(store, yf)
+        yf_id = self._add(store, yf)
+        # 実際の取得経路では開示はティッカー/提出者から strong で直結される
+        # (本番DBでも開示リンクは全件 strong)。_add の本文照合だと weak に
+        # なるため、本番の付き方に合わせて strong へ揃える (I-3 の条件前提)
+        for fid_ in (fin_id, yf_id):
+            store.conn.execute("UPDATE candidate_entities SET strength='strong' WHERE candidate_id=?", (fid_,))
+        store.conn.commit()
         plain = dict(fin, source_id="S100PLAIN", title="アストロスケール 臨時報告書",
-                     abstract="EDINETに臨時報告書を提出した。")
+                     abstract="EDINETに臨時報告書を提出した。", url="https://example.org/plain")
         self._add(store, plain)
         rel = store.related_financials(paper, AS_OF)
         self.assertEqual(len(rel), 2)  # EDINET と Yahoo の両方が対象。数値マーカーの無い開示は入らない
         self.assertTrue(all("財務数値(" in r["text"] for r in rel))
+        store.close()
+
+    def _bare(self, store, r):
+        rec, _ = normalize(r, "2026-10-20T00:00:00+00:00")
+        cid, _ = store.upsert_candidate(rec, "r0")
+        store.conn.execute("DELETE FROM candidate_entities WHERE candidate_id=?", (cid,))
+        store.conn.commit()
+        return cid
+
+    def _link(self, store, cid, entity_id, strength, link_type="entity"):
+        store.conn.execute(
+            "INSERT INTO candidate_entities(candidate_id, entity_id, strength, matched_by,"
+            " matched_alias, link_type, product_id, product_name) VALUES(?,?,?,'title','x',?,'','')",
+            (cid, entity_id, strength, link_type))
+        store.conn.commit()
+
+    def test_related_pools_link_conditions_and_corrections(self):
+        # I-3: プール側のリンク条件 (財務は strong の企業リンクのみ、ニュースは企業リンクのみ)
+        # I-6: 同一期に訂正版がある元書類は財務プールから外れる
+        store = Store(self.path)
+        paper = self._add(store, raw(sid="2610.7779", title="Debris removal study",
+                                     affiliations=["Astroscale Holdings Inc."]))
+        ent = store.get_entities(paper)[0]["entity_id"]
+        base = {"source": "edinet", "fields": ["EDINET"], "affiliations": [], "info_type": "disclosure"}
+        weak = self._bare(store, dict(base, source_id="S100W", title="弱リンク開示",
+                                      abstract="財務数値(EDINET XBRL): 売上高 1百万円。",
+                                      url="https://example.org/w", published="2026-10-10"))
+        self._link(store, weak, ent, "weak")
+        orig = self._bare(store, dict(base, source_id="S100O", title="アストロスケール 有価証券報告書－第8期(2025/05/01－2026/04/30)",
+                                      abstract="財務数値(EDINET XBRL): 売上高 900百万円。",
+                                      url="https://example.org/o", published="2026-08-01"))
+        self._link(store, orig, ent, "strong")
+        corr = self._bare(store, dict(base, source_id="S100C", title="アストロスケール 訂正有価証券報告書－第8期(2025/05/01－2026/04/30)",
+                                      abstract="財務数値(EDINET XBRL): 売上高 950百万円。",
+                                      url="https://example.org/c", published="2026-09-01"))
+        self._link(store, corr, ent, "strong")
+        titles = [r["title"] for r in store.related_financials(paper, AS_OF)]
+        self.assertNotIn("弱リンク開示", titles)  # weak は入らない
+        self.assertTrue(any("訂正" in t for t in titles))  # 訂正版は入る
+        self.assertFalse(any("訂正" not in t and "第8期" in t for t in titles))  # 元書類は外れる
+        # ニュース: 製品リンクだけのものは入らず、企業リンクのものは入る
+        nbase = {"source": "gnews", "fields": ["媒体"], "affiliations": [], "info_type": "news",
+                 "abstract": "x" * 60}
+        nprod = self._bare(store, dict(nbase, source_id="np1", title="製品名だけのニュース",
+                                       url="https://example.org/np", published="2026-10-15"))
+        self._link(store, nprod, ent, "weak", link_type="product")
+        nent = self._bare(store, dict(nbase, source_id="ne1", title="企業名のニュース",
+                                      url="https://example.org/ne", published="2026-10-16"))
+        self._link(store, nent, ent, "weak")
+        ntitles = [r["title"] for r in store.related_news(paper, AS_OF)]
+        self.assertNotIn("製品名だけのニュース", ntitles)
+        self.assertIn("企業名のニュース", ntitles)
+        store.close()
+
+    def test_disclosure_upsert_refreshes_facts(self):
+        # I-2: 財務開示は再取得で要旨 (財務数値) が変われば取り込む。論文は従来どおり初回保持
+        store = Store(self.path)
+        fin = {"source": "edinet", "source_id": "S100R", "title": "アストロスケール 四半期報告書",
+               "abstract": "財務数値(EDINET XBRL): 売上高 100百万円。",
+               "url": "https://example.org/r", "published": "2026-10-15",
+               "fields": ["EDINET"], "affiliations": [], "info_type": "disclosure"}
+        rec, _ = normalize(fin, "2026-10-20T00:00:00+00:00")
+        cid, is_new = store.upsert_candidate(rec, "r0")
+        self.assertTrue(is_new)
+        rec2, _ = normalize(dict(fin, abstract="財務数値(EDINET XBRL): 売上高 120百万円。"),
+                            "2026-11-09T00:00:00+00:00")
+        cid2, is_new2 = store.upsert_candidate(rec2, "r1")
+        self.assertEqual(cid2, cid)
+        self.assertFalse(is_new2)
+        got = store.get_candidate(cid)
+        self.assertIn("120百万円", got["abstract"])
+        self.assertTrue(got["material_updated_at"])
+        paper, _ = normalize(raw(sid="2610.7780", title="Paper", abstract="A" * 120), "2026-10-20T00:00:00+00:00")
+        pid, _ = store.upsert_candidate(paper, "r0")
+        paper2, _ = normalize(raw(sid="2610.7780", title="Paper", abstract="B" * 120), "2026-11-09T00:00:00+00:00")
+        store.upsert_candidate(paper2, "r1")
+        self.assertTrue(store.get_candidate(pid)["abstract"].startswith("A"))
         store.close()
 
     def test_evaluate_one_includes_financials(self):

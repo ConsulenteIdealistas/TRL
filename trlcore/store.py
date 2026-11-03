@@ -1,7 +1,14 @@
 """SQLite による永続化。重複排除は identifiers テーブルの安定IDで行う。"""
 
+
+def _filing_period_key(title):
+    """EDINET 表題の「第N期(開始－終了)」を取り出す。訂正版と元書類の対応付け用。"""
+    m = re.search(r"第\d+期\([^)]*\)", title or "")
+    return m.group(0) if m else None
+
 import hashlib
 import json
+import re
 import sqlite3
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -135,6 +142,14 @@ class Store:
             # 治験登録はレジストリ側で内容が更新される(結果公表・ステータス変更)。
             # 要旨が変わったら取り込み、材料更新の印を付ける(優先再評価の対象になる)。
             if rec.get("source") == "trials" and rec.get("abstract") and cur["abstract"] != rec["abstract"]:
+                c.execute("UPDATE candidates SET title=?, abstract=?, published=?, material_updated_at=? WHERE id=?",
+                          (rec["title"], rec["abstract"], rec.get("published"), now_iso(), existing))
+            # 財務開示は出典側で数値が訂正され得る (I-2)。開示の要旨は財務数値
+            # テキストそのものなので、再取得で変わっていたら初回の値を残さず
+            # 取り込み、材料更新の印を付ける (治験レコードと同じ扱い)。
+            # 表題が違うものは別書類とみなし、キーが衝突しても上書きしない。
+            if (rec.get("info_type") == "disclosure" and rec.get("abstract")
+                    and cur["title"] == rec.get("title") and cur["abstract"] != rec["abstract"]):
                 c.execute("UPDATE candidates SET title=?, abstract=?, published=?, material_updated_at=? WHERE id=?",
                           (rec["title"], rec["abstract"], rec.get("published"), now_iso(), existing))
             c.commit()
@@ -400,11 +415,16 @@ class Store:
         ニュースは単体では評価せず、論文・治験などの評価に同梱する材料と位置付ける。
         """
         start = (as_of - timedelta(days=window_days)).isoformat()
+        # プール側のリンクは企業リンク (link_type='entity') に限る (I-3)。
+        # 製品名だけが一致したニュースは別文脈の材料になり得るため入れない。
+        # ニュースの strength は本文言及でも weak が通常形で、強さでは絞らない
+        # (strong 限定にするとニュースプールが全滅することを実測で確認済み)。
         rows = self.conn.execute(
             "SELECT DISTINCT n.title, n.published, n.url, n.fields_json, n.source, n.media_url FROM candidates n "
             "JOIN candidate_entities ne ON ne.candidate_id = n.id "
             "JOIN candidate_entities ce ON ce.entity_id = ne.entity_id "
             "WHERE ce.candidate_id = ? AND n.id != ? AND n.info_type = 'news' "
+            "AND ne.link_type = 'entity' "
             "AND n.published IS NOT NULL AND n.published <= ? AND n.published >= ? "
             "ORDER BY n.published DESC, n.id LIMIT ?",
             (cid, cid, as_of.isoformat(), start, limit)).fetchall()
@@ -425,17 +445,30 @@ class Store:
         問わず、数値マーカー「財務数値(」を含む disclosure だけが対象。
         """
         start = (as_of - timedelta(days=window_days)).isoformat()
+        # プール側のリンクは strong の企業リンクに限る (I-3)。開示は企業単位で
+        # 取得され通常は strong で付くため、実測では現行と同件数になる。
+        # I-6 の訂正除外で枠が空く場合に備え、limit より多めに取ってから絞る。
         rows = self.conn.execute(
             "SELECT DISTINCT n.title, n.published, n.url, n.abstract FROM candidates n "
             "JOIN candidate_entities ne ON ne.candidate_id = n.id "
             "JOIN candidate_entities ce ON ce.entity_id = ne.entity_id "
             "WHERE ce.candidate_id = ? AND n.id != ? AND n.info_type = 'disclosure' "
+            "AND ne.strength = 'strong' AND ne.link_type = 'entity' "
             "AND n.abstract LIKE '%財務数値(%' "
             "AND n.published IS NOT NULL AND n.published <= ? AND n.published >= ? "
             "ORDER BY n.published DESC, n.id LIMIT ?",
-            (cid, cid, as_of.isoformat(), start, limit)).fetchall()
-        return [{"title": r["title"], "published": r["published"], "url": r["url"],
-                 "text": r["abstract"]} for r in rows]
+            (cid, cid, as_of.isoformat(), start, limit + 4)).fetchall()
+        out = [{"title": r["title"], "published": r["published"], "url": r["url"],
+                "text": r["abstract"]} for r in rows]
+        # I-6: 訂正報告書は別 docID で別候補になるため、同一企業の同一期に
+        # 訂正版がある元書類はプールから外す (新旧の数値が併記されないように)。
+        # 期の対応は EDINET の表題にある「第N期(開始－終了)」の一致で取る。
+        corrected = {_filing_period_key(r["title"]) for r in out
+                     if "訂正" in (r["title"] or "") and _filing_period_key(r["title"])}
+        if corrected:
+            out = [r for r in out if "訂正" in (r["title"] or "")
+                   or _filing_period_key(r["title"]) not in corrected]
+        return out[:limit]
 
     # --- evaluations ---
     def add_evaluation(self, run_id, cid, ev):

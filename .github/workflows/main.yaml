@@ -5,8 +5,9 @@ on:
     inputs:
       sources:
         description: "Sources"
-        type: choice
-        options: ["pubmed,arxiv,gnews,prtimes,trials,yahoo,openalex,edinet,edgar", "pubmed,arxiv,gnews,prtimes,trials", "pubmed,arxiv", "pubmed", "arxiv"]
+      sources:
+        description: "Sources (カンマ区切りで自由指定)"
+        type: string
         default: "pubmed,arxiv,gnews,prtimes,trials,yahoo,openalex,edinet,edgar"
       kinds:
         description: "Evaluation kinds"

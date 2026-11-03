@@ -166,6 +166,12 @@ def _check_market_maps(market, eid):
                           "YAHOO_SUFFIX/GNEWS_LOCALE in config.py")
 
 
+# gnews の1クエリあたりの取得上限。既定 (20) から絞る根拠は実測 (2026-11-03):
+# 週次実行での新規は1クエリ平均0.34件・最大8件で、取得の64%は重複だった。
+# RSS は新しい順に返すため、週次の新規が10件を超えて埋もれることはまずない
+GNEWS_MAX_RESULTS = 10
+
+
 def build_entity_queries(entities, src):
     """entities.json の watch から企業クエリを生成する。
     生成順は gnews(全社) → trials → edinet → yahoo → prtimes で、各系統内は entities の並び順。
@@ -191,7 +197,8 @@ def build_entity_queries(entities, src):
             if sector not in ks:
                 raise ConfigError(f"entities.json: {eid}.sector {sector!r} has no keyword_sets entry in sources.json")
             words = list(ks[sector]) + list(w.get("extra_keywords") or [])
-            groups["gnews"].append({"name": f"{eid}-news", "gnews": f"{news_name} ({' OR '.join(words)})"})
+            groups["gnews"].append({"name": f"{eid}-news", "gnews": f"{news_name} ({' OR '.join(words)})",
+                                    "max_results": GNEWS_MAX_RESULTS})
         else:
             set_key = KEYWORD_SETS_BY_MARKET.get(market, "keyword_sets_en")
             sets = src.get(set_key) or {}
@@ -200,7 +207,8 @@ def build_entity_queries(entities, src):
             words = list(sets[sector]) + list(w.get("extra_keywords") or [])
             q = {"q": f"{news_name} ({' OR '.join(words)})"}
             q.update(GNEWS_LOCALE[market])
-            groups["gnews"].append({"name": f"{eid}-news", "gnews": q})
+            groups["gnews"].append({"name": f"{eid}-news", "gnews": q,
+                                    "max_results": GNEWS_MAX_RESULTS})
         if w.get("sponsor"):
             groups["trials"].append({"name": f"{eid}-trials", "trials": w["sponsor"],
                                      "lookback_days": params.get("trials", WATCH_LOOKBACK_DEFAULTS["trials"])})

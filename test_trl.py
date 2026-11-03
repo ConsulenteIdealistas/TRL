@@ -1449,6 +1449,33 @@ class NewsPoolTests(unittest.TestCase):
         self.assertEqual(r["counts"].get("cap_reached_queries"), 1)
         store.close()
 
+    def test_collect_processes_each_chunk_before_next_fetch(self):
+        # 後処理の逐次化: 次の波の取得が始まる時点で、前の波のレコードは保存済み
+        tmp = tempfile.TemporaryDirectory()
+        dbpath = Path(tmp.name) / "d.sqlite"
+        store = T.Store(dbpath)
+        queries = [{"name": f"e{i}-news", "gnews": f"Q{i}"} for i in range(12)]
+        cfg = {"sources": {"defaults": {"max_results": 5, "lookback_days": 30}, "queries": queries},
+               "entities": CFG["entities"]}
+        seen = {}
+
+        def fetcher(qstr, max_results, lookback, as_of):
+            if qstr == "Q11":
+                import sqlite3 as sq
+                conn = sq.connect(dbpath)
+                seen["count"] = conn.execute("SELECT COUNT(*) FROM candidates").fetchone()[0]
+                conn.close()
+            i = qstr[1:]
+            return [self.news_raw(f"r{i}", f"アストロスケール関連の事業ニュース第{i}号が報じられた")]
+
+        counts = {k: 0 for k in ("fetched", "new", "duplicates", "invalid", "sources_ok", "sources_failed")}
+        T.collect(store, cfg, "run-x", AS_OF, ("gnews",), {"gnews": fetcher}, counts, lambda *a: None)
+        # 第1波 (10件) は保存済み (第2波の自クエリ分が先に処理されれば 11 になりうる)。
+        # 全取得後にまとめて処理する旧方式では、この時点では 0 件のはず
+        self.assertGreaterEqual(seen.get("count", 0), 10)
+        self.assertEqual(counts["sources_ok"], 12)
+        store.close()
+
     def test_collect_drops_paper_without_entity(self):
         store = Store(self.path)
         cfg = json.loads(json.dumps(CFG))
@@ -1998,26 +2025,32 @@ class EntityQueryGenerationTests(unittest.TestCase):
     },
     {
         "gnews": "アストロスケール (決算 OR 受注 OR 契約 OR 提携 OR 資金調達 OR 業績 OR 採択)",
+        "max_results": 10,
         "name": "astroscale-news"
     },
     {
         "gnews": "ispace (決算 OR 受注 OR 契約 OR 提携 OR 資金調達 OR 業績 OR 採択 OR 月面)",
+        "max_results": 10,
         "name": "ispace-news"
     },
     {
         "gnews": "Synspective (決算 OR 受注 OR 契約 OR 提携 OR 資金調達 OR 業績 OR 採択 OR 衛星)",
+        "max_results": 10,
         "name": "synspective-news"
     },
     {
         "gnews": "オンコリスバイオファーマ (決算 OR 契約 OR 提携 OR 導出 OR 承認 OR 治験 OR 資金調達 OR 採択 OR 助言)",
+        "max_results": 10,
         "name": "oncolys-news"
     },
     {
         "gnews": "リプロセル (決算 OR 契約 OR 提携 OR 導出 OR 承認 OR 治験 OR 資金調達 OR 採択 OR 助言)",
+        "max_results": 10,
         "name": "reprocell-news"
     },
     {
         "gnews": "ペプチドリーム (決算 OR 契約 OR 提携 OR 導出 OR 承認 OR 治験 OR 資金調達 OR 採択 OR 助言)",
+        "max_results": 10,
         "name": "peptidream-news"
     },
     {
@@ -2126,6 +2159,22 @@ class EntityQueryGenerationTests(unittest.TestCase):
         self.assertEqual(by_name["b-prtimes"]["prtimes"], "B|ビー")
         self.assertNotIn("b-edinet", by_name)  # ticker が無い
         self.assertFalse(any(n.startswith("c-") for n in by_name))  # watch が無い企業は生成しない
+
+    def test_gnews_queries_carry_max_results_cap(self):
+        # gnews の取得上限 (10) は生成時に埋め込む。他ソースのクエリには付けない
+        ents = {"entities": [
+            {"id": "a", "sector": "space", "ticker": "1000",
+             "watch": {"news_name": "A社"}},
+            {"id": "u", "sector": "space", "market": "US",
+             "watch": {"news_name": "U Inc"}},
+        ]}
+        src = {"keyword_sets": {"space": ["決算"]},
+               "keyword_sets_en": {"space": ["earnings"]},
+               "entity_watch": {"lookback_days": {}}}
+        by_name = {q["name"]: q for q in T.build_entity_queries(ents, src)}
+        self.assertEqual(by_name["a-news"]["max_results"], 10)
+        self.assertEqual(by_name["u-news"]["max_results"], 10)
+        self.assertNotIn("max_results", by_name["a-edinet"])
 
     def test_yahoo_queries_core_only(self):
         # Yahoo はコア企業のみ生成する (ウォッチは評価対象でなく、取得リクエスト削減のため)

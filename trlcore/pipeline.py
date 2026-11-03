@@ -145,32 +145,13 @@ def collect(store, cfg, run_id, as_of, sources, fetchers, counts, log):
         except Exception as e:
             return None, e, time.monotonic() - t0
 
-    # 収集フェーズ全体の時間予算 (監査 A-1): ジョブのタイムアウトだけが歯止めに
-    # ならないよう、波 (10件) ごとに経過を見て、超過したら未着手のクエリを
-    # 打ち切って評価へ進む。予算 0 は無制限。実行中の取得は止めない (HTTP の
-    # タイムアウトと再試行で上限が付いている)
-    budget = ((cfg.get("scoring") or {}).get("screening") or {}).get("collect_budget_sec", 1200)
-    results = []
-    exceeded = 0
-    collect_t0 = time.monotonic()
-    from concurrent.futures import ThreadPoolExecutor
-    with ThreadPoolExecutor(max_workers=5) as ex:
-        idx = 0
-        while idx < len(jobs):
-            if idx and budget and time.monotonic() - collect_t0 > budget:
-                exceeded = len(jobs) - idx
-                results.extend((None, RuntimeError("collect budget exceeded"), 0.0)
-                               for _ in jobs[idx:])
-                break
-            chunk = jobs[idx:idx + 10]
-            futures = [ex.submit(fetch, j) for j in chunk]
-            results.extend(f.result() for f in futures)
-            idx += len(chunk)
-    if exceeded:
-        counts["collect_budget_exceeded"] = exceeded
-        log(f"::warning::[collect] 収集フェーズの時間予算({budget}秒)を超えたため "
-            f"{exceeded} クエリを打ち切りました")
-    for (sname, q), (raws, exc, elapsed) in zip(jobs, results):
+    def process(job, result):
+        # 取得結果の後処理 (正規化・企業リンク・保存) はメインスレッドでジョブ順に
+        # 行う。波 (10件) の取得が終わるたびに即座に処理するので、後処理の時間は
+        # 後続の波の取得時間に隠れる。処理順は従来 (全取得後にジョブ順) と同じで、
+        # DB への書き込み結果は完全同一
+        sname, q = job
+        raws, exc, elapsed = result
         fetched, new, dups, invalid, err = 0, 0, 0, 0, None
         log(f"[collect:start] {sname}/{q['name']}")
         try:
@@ -217,6 +198,32 @@ def collect(store, cfg, run_id, as_of, sources, fetchers, counts, log):
         counts["sources_ok" if err is None else "sources_failed"] += 1
         log(f"[collect] {sname}/{q['name']}: fetched={fetched} new={new} dup={dups} invalid={invalid}"
             + (f" ERROR={err}" if err else ""))
+
+    # 収集フェーズ全体の時間予算 (監査 A-1): ジョブのタイムアウトだけが歯止めに
+    # ならないよう、波 (10件) ごとに経過を見て、超過したら未着手のクエリを
+    # 打ち切って評価へ進む。予算 0 は無制限。実行中の取得は止めない (HTTP の
+    # タイムアウトと再試行で上限が付いている)
+    budget = ((cfg.get("scoring") or {}).get("screening") or {}).get("collect_budget_sec", 1200)
+    exceeded = 0
+    collect_t0 = time.monotonic()
+    from concurrent.futures import ThreadPoolExecutor
+    with ThreadPoolExecutor(max_workers=5) as ex:
+        idx = 0
+        while idx < len(jobs):
+            if idx and budget and time.monotonic() - collect_t0 > budget:
+                exceeded = len(jobs) - idx
+                for job in jobs[idx:]:
+                    process(job, (None, RuntimeError("collect budget exceeded"), 0.0))
+                break
+            chunk = jobs[idx:idx + 10]
+            futures = [ex.submit(fetch, j) for j in chunk]
+            for job, f in zip(chunk, futures):
+                process(job, f.result())
+            idx += len(chunk)
+    if exceeded:
+        counts["collect_budget_exceeded"] = exceeded
+        log(f"::warning::[collect] 収集フェーズの時間予算({budget}秒)を超えたため "
+            f"{exceeded} クエリを打ち切りました")
 
 
 # 実証・実装の段階を示す語。理論のみの資料には少なく、TRLを決めやすい候補の目印になる

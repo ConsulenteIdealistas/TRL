@@ -193,10 +193,15 @@ def build_site_data(store, cfg, now=None):
                    "finished_at": run["finished_at"], "duration_sec": run["duration_sec"], "counts": counts,
                    "llm_degraded": counts.get("llm_degraded")}
     long_w = cfg["scoring"]["long"]["weights"]
+    # 統計用の総数。除外 (screening で落ちた候補) は掲載候補に含まれないため、
+    # 一覧の母集団からは数えられない。統計枠でのみ別集計として出す
+    summary = {"rejected": store.conn.execute(
+        "SELECT COUNT(*) FROM candidates WHERE status = 'rejected'").fetchone()[0]}
     return {
         "schema_version": SITE_SCHEMA_VERSION,
         "generated_at": (now or datetime.now(timezone.utc)).isoformat(timespec="seconds"),
         "run": run_out,
+        "summary": summary,
         "config": {"version": cfg["config_version"], "hash": cfg["config_hash"],
                    "long_weights": long_w,
                    "item_groups": {"technology": [k for k in long_w if k in TECH_ITEMS],

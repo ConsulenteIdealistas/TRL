@@ -850,6 +850,26 @@ class ExportTests(unittest.TestCase):
         self.assertIn("llm_model", app_js)
         self.assertIn("llm_model", detail)
 
+    def test_stats_eight_boxes_summary_and_next_up(self):
+        # 統計8枠化: 除外は掲載候補に含まれないため summary で別集計し、
+        # 次回評価予定は候補の next_up フラグから数える (表示側)
+        data = self.build(Mock(make_llm_fn(long_scores={k: 65 for k in LONG_KEYS})))
+        self.assertIn("summary", data)
+        self.assertEqual(data["summary"]["rejected"], 0)
+        rec, _ = T.normalize(raw(sid="2610.9999", title="Rejected paper", published="2026-10-19"),
+                             T.now_iso())
+        cid, _ = self.store.upsert_candidate(rec, "rX")
+        self.store.set_status(cid, "rejected")
+        data = T.build_site_data(self.store, cfg_with(), datetime(2026, 10, 26, tzinfo=timezone.utc))
+        self.assertEqual(data["summary"]["rejected"], 1)
+        self.assertTrue(all(c["id"] != cid for c in data["candidates"]))  # 除外は掲載されない
+        html = (T.ROOT / "web" / "index.html").read_text(encoding="utf-8")
+        self.assertIn('id="c6"', html)  # 次回評価予定
+        self.assertIn('id="c7"', html)  # 除外
+        app = (T.ROOT / "web" / "app.js").read_text(encoding="utf-8")
+        self.assertIn("META.summary", app)
+        self.assertIn("next_up", app)
+
     def test_trl_level_flows_to_export_and_not_inferred_from_score(self):
         def fn(p):
             if "根拠抽出」担当" in p:

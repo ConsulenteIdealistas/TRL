@@ -153,6 +153,8 @@ function stats() {
   $("#c3").textContent = n(["hold"]);
   $("#c4").textContent = n(["pending"]);
   $("#c5").textContent = n(["error"]);
+  $("#c6").textContent = P.filter(p => p.next_up).length;
+  $("#c7").textContent = (META.summary && META.summary.rejected) || 0;
 }
 function showError(msg) {
   $("#list").innerHTML = "";

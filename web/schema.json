@@ -6,7 +6,11 @@
     "generated_at",
     "run",
     "config",
-    "candidates"
+    "candidates",
+    "summary"
+  ],
+  "summary": [
+    "rejected"
   ],
   "config": [
     "version",

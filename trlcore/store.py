@@ -581,11 +581,12 @@ class Store:
         self.conn.commit()
 
     def previous_run(self, run_id):
-        """指定した実行の直前に開始した実行 (無ければ None)。引き継ぎの判定に使う。"""
+        """指定した実行の直前に開始した実行 (無ければ None)。引き継ぎの判定に使う。
+        開始時刻は秒精度で同着がありうるため、挿入順 (rowid) で判定する。"""
         row = self.conn.execute(
-            "SELECT * FROM runs WHERE (started_at, run_id) < "
-            "(SELECT started_at, run_id FROM runs WHERE run_id=?) "
-            "ORDER BY started_at DESC, run_id DESC LIMIT 1", (run_id,)).fetchone()
+            "SELECT * FROM runs WHERE rowid < "
+            "(SELECT rowid FROM runs WHERE run_id=?) "
+            "ORDER BY rowid DESC LIMIT 1", (run_id,)).fetchone()
         return dict(row) if row else None
 
     def run_sources(self, run_id):

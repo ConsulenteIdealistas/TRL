@@ -1,0 +1,113 @@
+name: TRL model compare
+
+# 評価モデルの比較検証 (手動実行のみ)。本番のパイプラインとは独立で、
+# 結果は DB の compare_results と compare-reports/ にだけ残る。
+# data ブランチへの書込みが本番と競合しないよう、同時実行グループを共有する。
+on:
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: "Candidates to compare"
+        type: string
+        default: "100"
+      budget_sec:
+        description: "Overall time budget in seconds"
+        type: string
+        default: "9000"
+
+concurrency:
+  group: trl-pipeline
+  cancel-in-progress: false
+
+permissions: {}
+
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Restore data branch
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set +e
+          git ls-remote --exit-code --heads origin data >/dev/null 2>&1
+          rc=$?
+          set -e
+
+          if [ "$rc" -eq 0 ]; then
+            git clone -q --depth 1 --branch data "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git" _data
+          elif [ "$rc" -eq 2 ]; then
+            mkdir -p _data
+          else
+            echo "::error::Could not check data branch (rc=$rc). Aborting to protect data"
+            exit 1
+          fi
+          if [ "$rc" -eq 0 ]; then
+            if [ ! -f _data/trl.sqlite ]; then
+              echo "::error::data branch exists but trl.sqlite is missing. Aborting to protect data"
+              exit 1
+            fi
+            python3 -c "import sqlite3; r = sqlite3.connect('file:_data/trl.sqlite?mode=ro', uri=True).execute('PRAGMA integrity_check').fetchone()[0]; assert r == 'ok', r" || { echo "::error::trl.sqlite failed the integrity check. Aborting to protect data"; exit 1; }
+          fi
+      - name: Compare models
+        env:
+          TRL_LLM_MODEL: ${{ vars.TRL_LLM_MODEL }}
+          TRL_LLM_FALLBACK_MODEL: ${{ vars.TRL_LLM_FALLBACK_MODEL }}
+          TRL_LLM_FALLBACK_MODEL_2: ${{ vars.TRL_LLM_FALLBACK_MODEL_2 }}
+          TRL_LLM_CF_MODEL: ${{ vars.TRL_LLM_CF_MODEL }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          IN_LIMIT: ${{ inputs.limit }}
+          IN_BUDGET: ${{ inputs.budget_sec }}
+        run: |
+          python trl.py compare --data-dir _data --limit "$IN_LIMIT" --budget-sec "$IN_BUDGET"
+      - name: Persist data (preserve history)
+        if: always()
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ ! -d _data ]; then
+            echo "No data directory to persist"
+            exit 0
+          fi
+
+          cd _data
+
+          if [ -z "$(ls -A .)" ]; then
+            echo "No data to persist"
+            exit 0
+          fi
+
+          if [ ! -d .git ]; then
+            git init -q -b data
+            git remote add origin "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          fi
+
+          git config user.name github-actions
+          git config user.email actions@users.noreply.github.com
+
+          git add -A
+
+          if git diff --cached --quiet; then
+            echo "No data changes to commit"
+            exit 0
+          fi
+
+          git commit -q -m "data $(date -u +%FT%TZ)"
+          for i in 1 2 3; do
+            if git push -q origin data; then
+              exit 0
+            fi
+            echo "push failed (attempt $i), retrying..."
+            sleep 5
+          done
+          echo "::error::Could not persist data after 3 attempts"
+          exit 1

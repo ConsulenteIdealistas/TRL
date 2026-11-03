@@ -4,8 +4,6 @@ on:
   workflow_dispatch:
     inputs:
       sources:
-        description: "Sources"
-      sources:
         description: "Sources (カンマ区切りで自由指定)"
         type: string
         default: "pubmed,arxiv,gnews,prtimes,trials,yahoo,openalex,edinet,edgar"

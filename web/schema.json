@@ -47,7 +47,9 @@
     "direction",
     "axes",
     "business_stage",
-    "total_scope"
+    "total_scope",
+    "llm_provider",
+    "llm_model"
   ],
   "item": [
     "score",

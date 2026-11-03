@@ -84,6 +84,9 @@ def _ev_for_site(ev, cfg):
         "axes": extra.get("axes"),
         "business_stage": extra.get("business_stage"),
         "total_scope": extra.get("total_scope"),
+        # 評価の来歴: 実際に採点したプロバイダとモデルをサイトでも判別できるようにする
+        "llm_provider": ev["llm_provider"] if "llm_provider" in ev.keys() else None,
+        "llm_model": ev["llm_model"] if "llm_model" in ev.keys() else None,
     }
 
 

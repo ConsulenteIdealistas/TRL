@@ -837,6 +837,19 @@ class ExportTests(unittest.TestCase):
         self.assertEqual(c["long"]["total_scope"], "technology")
         self.assertEqual(c["long"]["business_stage"], "pre_stage")
 
+    def test_llm_model_flows_to_export(self):
+        # 評価の来歴 (実際に採点したモデル) をサイトでも判別できるよう export に載せる
+        data = self.build(Mock(make_llm_fn(long_scores={k: 65 for k in LONG_KEYS})))
+        evs = [c["long"] for c in data["candidates"] if c["long"]]
+        self.assertTrue(evs)
+        self.assertTrue(all(e["llm_model"] == "mock-1" for e in evs))
+        self.assertTrue(all(e["llm_provider"] == "mock" for e in evs))
+        # 一覧カードと詳細 (ドロワー・専用ページ) の両方がモデル名を表示する
+        app_js = (T.ROOT / "web" / "app.js").read_text(encoding="utf-8")
+        detail = (T.ROOT / "web" / "detail.html").read_text(encoding="utf-8")
+        self.assertIn("llm_model", app_js)
+        self.assertIn("llm_model", detail)
+
     def test_trl_level_flows_to_export_and_not_inferred_from_score(self):
         def fn(p):
             if "根拠抽出」担当" in p:

@@ -31,6 +31,7 @@ const CO = ["space", "bio", "semiconductor", "ai", "robotics", "energy", "quantu
 const TL = {photonics: "フォトニクス", medtech: "医療機器", earth_observation: "地球観測", constellation: "衛星コンステレーション", space_transport: "宇宙輸送", lunar: "月面開発", debris_removal: "デブリ除去", mrna: "mRNA", cell_therapy: "細胞治療", gene_therapy: "遺伝子治療・ゲノム編集", antibody: "抗体医薬", radiopharm: "放射性医薬品", regenerative_medicine: "再生医療", diagnostics: "診断", drug_ai: "創薬AI", surgical_robot: "手術ロボット", power_semi: "パワー半導体", advanced_packaging: "先端パッケージング", memory: "メモリ", semi_equipment: "半導体製造装置", ai_infra: "AIインフラ・データセンター", voice_ai: "音声AI", industrial_robotics: "産業用ロボット・自動化", warehouse_automation: "倉庫・物流自動化", autonomous_mobility: "自律移動・ドローン", humanoid: "ヒューマノイド", hydrogen: "水素・燃料電池", ess: "蓄電・ESS", ev_charging: "EV充電", solid_state_battery: "全固体電池", perovskite: "ペロブスカイト太陽電池", fusion: "核融合", smr: "SMR", quantum_computing: "量子コンピュータ", quantum_comm: "量子通信・暗号", quantum_sensing: "量子センシング"};  // タグ (分野と違い複数付けられる第二の分類)
 const STG = {rd: "研究開発型", demo: "実証型", production: "量産型", commercial: "商業化型"};  // 企業の段階 (表示・分析専用)
 const STGO = ["rd", "demo", "production", "commercial"];
+const TAGO = [...CO, "photonics", "medtech", "earth_observation", "constellation", "space_transport", "lunar", "debris_removal", "mrna", "cell_therapy", "gene_therapy", "antibody", "radiopharm", "regenerative_medicine", "diagnostics", "drug_ai", "surgical_robot", "power_semi", "advanced_packaging", "memory", "semi_equipment", "ai_infra", "voice_ai", "industrial_robotics", "warehouse_automation", "autonomous_mobility", "humanoid", "hydrogen", "ess", "ev_charging", "solid_state_battery", "perovskite", "fusion", "smr", "quantum_computing", "quantum_comm", "quantum_sensing"];  // タグの表示順 (分野の後に固有タグ)
 const tagLabel = t => CL[t] || TL[t] || t;
 const primEnt = p => p.entities.find(e => e.strength === "strong") || p.entities[0] || null;
 const marketOf = p => { const e = primEnt(p); return e ? e.market || "JP" : null; };
@@ -47,6 +48,7 @@ function trl(t, d) {
     Array.from({length: 9}, (_, i) => `<span class="seg ${k && i < t ? "f" : ""}"></span>`).join("")}</div></div>`;
 }
 const trlSel = new Set();  // TRL絞り込みの選択状態: レベル1〜9と "u"(未確定) の集合。空なら絞らない
+const stSel = new Set(), dirSel = new Set(), mkSel = new Set(), scSel = new Set(), tagSel = new Set(), stgSel = new Set();  // 状態・方向性・国・分野・タグ・段階の選択状態 (空なら絞らない)
 function inR(t) {
   if (!trlSel.size) return true;
   return ok(t) ? trlSel.has(t) : trlSel.has("u");
@@ -57,14 +59,15 @@ function haystack(p) {
   return [p.title, p.title_ja || "", p.source, p.abstract, p.abstract_ja || "", ...(p.fields || []), ...p.entities.map(e => e.name), ...facets, ...items].join(" ").toLowerCase();
 }
 function filtered() {
-  const q = $("#q").value.trim().toLowerCase(), s = $("#fs").value, o = $("#fo").value, fd = $("#fd").value;
-  const fm = $("#fm").value, fc = $("#fc").value, fg = $("#fg").value, fst = $("#fst").value;
-  const r = P.filter(p => (!q || haystack(p).includes(q)) && (s === "all" ? p.display_status !== "rejected" : p.display_status === s) && inR(lvl(p))
-    && (fd === "all" || (fd === "none" ? !dirOf(p) : dirOf(p) === fd))
-    && (fm === "all" || p.entities.some(e => (e.market || "JP") === fm))
-    && (fc === "all" || p.entities.some(e => e.sector === fc))
-    && (fg === "all" || p.entities.some(e => (e.tags || []).includes(fg)))
-    && (fst === "all" || p.entities.some(e => e.stage === fst)));
+  const q = $("#q").value.trim().toLowerCase(), o = $("#fo").value;
+  const r = P.filter(p => (!q || haystack(p).includes(q))
+    && (stSel.size ? stSel.has(p.display_status) : p.display_status !== "rejected")  // 除外はチップを明示的に押した時だけ混ざる
+    && inR(lvl(p))
+    && (!dirSel.size || dirSel.has(dirOf(p) || "none"))
+    && (!mkSel.size || p.entities.some(e => mkSel.has(e.market || "JP")))
+    && (!scSel.size || p.entities.some(e => scSel.has(e.sector)))
+    && (!tagSel.size || p.entities.some(e => (e.tags || []).some(t => tagSel.has(t))))
+    && (!stgSel.size || p.entities.some(e => stgSel.has(e.stage))));
   const byStatus = (a, b) => (SO[a.display_status] - SO[b.display_status])
     || ((ok(lvl(b)) ? lvl(b) : -1) - (ok(lvl(a)) ? lvl(a) : -1))
     || String(b.published || "").localeCompare(String(a.published || ""));
@@ -76,19 +79,20 @@ function filtered() {
     : o === "title" ? a.title.localeCompare(b.title, "ja") : String(b.published || "").localeCompare(String(a.published || "")));
   return r;
 }
-function facetOptions() {
-  // 絞り込みの選択肢は、掲載中の候補に実際にある国・分野だけを順序つきで出す
-  const fill = (sel, values, order, labels) => {
-    const el = $(sel), cur = el.value;
+function facetChips() {
+  // 絞り込みのチップは、掲載中の候補に実際にある国・分野・タグ・段階だけを順序つきで出す
+  const fill = (id, set, values, order, labels) => {
     const present = order.filter(v => values.has(v)).concat([...values].filter(v => !order.includes(v)));
-    el.innerHTML = '<option value="all">すべて</option>' + present.map(v => `<option value="${esc(v)}">${esc(labels[v] || v)}</option>`).join("");
-    el.value = present.includes(cur) ? cur : "all";
+    $("#" + id).innerHTML = present.map(v => `<button type="button" data-v="${esc(v)}" aria-pressed="false">${esc(labels[v] || v)}</button>`).join("");
+    [...set].forEach(v => { if (!values.has(v)) set.delete(v); });  // 母集団から消えた値は選択からも落とす
+    syncChips(id, set);
   };
   const base = P.filter(p => p.display_status !== "rejected");  // 選択肢は通常の一覧 (除外を除く) にあるものだけ
-  fill("#fm", new Set(base.flatMap(p => p.entities.map(e => e.market || "JP"))), MO, ML);
-  fill("#fc", new Set(base.flatMap(p => p.entities.map(e => e.sector).filter(Boolean))), CO, CL);
-  fill("#fg", new Set(base.flatMap(p => p.entities.flatMap(e => e.tags || []))), [...CO, "photonics", "medtech", "earth_observation", "constellation", "space_transport", "lunar", "debris_removal", "mrna", "cell_therapy", "gene_therapy", "antibody", "radiopharm", "regenerative_medicine", "diagnostics", "drug_ai", "surgical_robot", "power_semi", "advanced_packaging", "memory", "semi_equipment", "ai_infra", "voice_ai", "industrial_robotics", "warehouse_automation", "autonomous_mobility", "humanoid", "hydrogen", "ess", "ev_charging", "solid_state_battery", "perovskite", "fusion", "smr", "quantum_computing", "quantum_comm", "quantum_sensing"], {...CL, ...TL});
-  fill("#fst", new Set(base.flatMap(p => p.entities.map(e => e.stage).filter(Boolean))), STGO, STG);
+  fill("fmc", mkSel, new Set(base.flatMap(p => p.entities.map(e => e.market || "JP"))), MO, ML);
+  fill("fcc", scSel, new Set(base.flatMap(p => p.entities.map(e => e.sector).filter(Boolean))), CO, CL);
+  fill("fgc", tagSel, new Set(base.flatMap(p => p.entities.flatMap(e => e.tags || []))), TAGO, {...CL, ...TL});
+  fill("fstc", stgSel, new Set(base.flatMap(p => p.entities.map(e => e.stage).filter(Boolean))), STGO, STG);
+  syncTagN();
 }
 function sc(p, k) { const it = p.long && p.long.items[k]; return it ? it.score : null; }
 function fmtScore(v) { return typeof v === "number" && isFinite(v) ? v : "—"; }
@@ -196,7 +200,7 @@ async function load() {
   META = d; P = d.candidates;
   $("#gen").textContent = "更新 " + jst(d.generated_at);
   $("#fl").value = LANG;
-  facetOptions(); warn(d); stats(); render();
+  facetChips(); warn(d); stats(); render();
 }
 $("#sf").addEventListener("submit", e => { e.preventDefault(); render(); });
 $("#q").addEventListener("input", render);
@@ -263,7 +267,24 @@ $("#q").addEventListener("keydown", e => {
 });
 $("#q").addEventListener("blur", () => { sugHideTimer = setTimeout(hideSug, 120); });
 $("#sf").addEventListener("submit", hideSug);
-["#fs", "#fo", "#fd", "#fm", "#fc", "#fg", "#fst"].forEach(s => $(s).addEventListener("change", render));
+$("#fo").addEventListener("change", render);
+function syncChips(id, set) {
+  document.querySelectorAll("#" + id + " button").forEach(b => {
+    const on = set.has(b.dataset.v);
+    b.classList.toggle("on", on); b.setAttribute("aria-pressed", on ? "true" : "false");
+  });
+}
+function bindChips(id, set, after) {
+  $("#" + id).addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b) return;
+    if (set.has(b.dataset.v)) set.delete(b.dataset.v); else set.add(b.dataset.v);
+    syncChips(id, set); if (after) after(); render();
+  });
+}
+const syncTagN = () => { $("#fgn").textContent = tagSel.size ? `（${tagSel.size}件選択中）` : ""; };
+const CHIPG = [["fsc", stSel], ["fdc", dirSel], ["fmc", mkSel], ["fcc", scSel], ["fstc", stgSel]];
+CHIPG.forEach(([id, set]) => bindChips(id, set));
+bindChips("fgc", tagSel, syncTagN);
 const syncTrlUI = () => document.querySelectorAll("#ftc button").forEach(b => {
   const on = trlSel.has(b.dataset.l === "u" ? "u" : Number(b.dataset.l));
   b.classList.toggle("on", on); b.setAttribute("aria-pressed", on ? "true" : "false");
@@ -288,7 +309,7 @@ $("#fl").addEventListener("change", () => { LANG = $("#fl").value; try { localSt
 const syncTh = () => { $("#fth").value = document.documentElement.dataset.theme === "light" ? "light" : "dark"; };
 $("#fth").addEventListener("change", () => { document.documentElement.dataset.theme = $("#fth").value; try { localStorage.setItem("trl-theme", $("#fth").value); } catch (e) { /* 保存できなくても切替は効く */ } });
 syncTh();
-$("#rs").addEventListener("click", () => { $("#q").value = ""; $("#fs").value = "all"; trlSel.clear(); $("#ftn").value = ""; $("#ftm").value = ""; syncTrlUI(); $("#fo").value = "status"; $("#fd").value = "all"; $("#fm").value = "all"; $("#fc").value = "all"; $("#fg").value = "all"; $("#fst").value = "all"; sel = P[0] ? P[0].id : null; render(); });
+$("#rs").addEventListener("click", () => { $("#q").value = ""; [...CHIPG, ["fgc", tagSel]].forEach(([id, set]) => { set.clear(); syncChips(id, set); }); syncTagN(); trlSel.clear(); $("#ftn").value = ""; $("#ftm").value = ""; syncTrlUI(); $("#fo").value = "status"; sel = P[0] ? P[0].id : null; render(); });
 $("#list").addEventListener("click", e => { const c = e.target.closest("[data-id]"); if (c) { sel = c.dataset.id; render(); } });
 $("#det").addEventListener("input", e => { if (e.target.id === "note" && sel) noteDrafts[sel] = e.target.value; });
 $("#det").addEventListener("click", e => {

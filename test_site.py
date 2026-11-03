@@ -864,11 +864,16 @@ class ExportTests(unittest.TestCase):
         self.assertEqual(data["summary"]["rejected"], 1)
         self.assertTrue(all(c["id"] != cid for c in data["candidates"]))  # 除外は掲載されない
         html = (T.ROOT / "web" / "index.html").read_text(encoding="utf-8")
-        self.assertIn('id="c6"', html)  # 次回評価予定
+        # 次回評価予定は独立枠にせず未評価枠の中に併記し、8枠目は TRL判定済み
+        self.assertIn('id="c4n"', html)
+        self.assertIn("うち次回予定", html)
+        self.assertIn("TRL判定済み", html)
+        self.assertIn('id="c6"', html)  # TRL判定済み
         self.assertIn('id="c7"', html)  # 除外
         app = (T.ROOT / "web" / "app.js").read_text(encoding="utf-8")
         self.assertIn("META.summary", app)
-        self.assertIn("next_up", app)
+        self.assertIn("c4n", app)
+        self.assertIn("lvl(p) != null", app)
 
     def test_trl_level_flows_to_export_and_not_inferred_from_score(self):
         def fn(p):

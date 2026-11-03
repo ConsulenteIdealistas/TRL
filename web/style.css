@@ -1,6 +1,6 @@
-:root{--green:#00bd83;--gd:#008e66;--gs:#e4fbf2;--cyan:#00bfe8;--cs:#e5f9ff;--ink:#142d40;--muted:#6b8190;--line:#dce9ee;--surface:#fff;--bg:#f3f8fa;--sub:#536a79;--field:#fbfdfe;--sel:#f2fff9;--yc:#b38600;--rc:#e01e1e;--xc:#64748b;--vc:#7c3aed;--r:18px;--sh:0 8px 28px rgba(24,72,90,.055);color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--gd:#2fdba4;--gs:#0f3a30;--cs:#0d3541;--ink:#e3eef3;--muted:#8da3b0;--line:#27404d;--surface:#14232c;--bg:#0c171d;--sub:#a5bac6;--field:#0f1d25;--sel:#103329;--yc:#ffd60a;--rc:#ff5147;--xc:#94a3b8;--vc:#a78bfa;color-scheme:dark}}
-:root[data-theme="dark"]{--gd:#2fdba4;--gs:#0f3a30;--cs:#0d3541;--ink:#e3eef3;--muted:#8da3b0;--line:#27404d;--surface:#14232c;--bg:#0c171d;--sub:#a5bac6;--field:#0f1d25;--sel:#103329;--yc:#ffd60a;--rc:#ff5147;--xc:#94a3b8;--vc:#a78bfa;color-scheme:dark}
+:root{--green:#00bd83;--gd:#008e66;--gs:#e4fbf2;--cyan:#00bfe8;--cs:#e5f9ff;--ink:#142d40;--muted:#6b8190;--line:#dce9ee;--surface:#fff;--bg:#f3f8fa;--sub:#536a79;--field:#fbfdfe;--sel:#f2fff9;--yc:#b38600;--rc:#e01e1e;--xc:#64748b;--vc:#7c3aed;--pk:#db2777;--r:18px;--sh:0 8px 28px rgba(24,72,90,.055);color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--gd:#2fdba4;--gs:#0f3a30;--cs:#0d3541;--ink:#e3eef3;--muted:#8da3b0;--line:#27404d;--surface:#14232c;--bg:#0c171d;--sub:#a5bac6;--field:#0f1d25;--sel:#103329;--yc:#ffd60a;--rc:#ff5147;--xc:#94a3b8;--vc:#a78bfa;--pk:#f472b6;color-scheme:dark}}
+:root[data-theme="dark"]{--gd:#2fdba4;--gs:#0f3a30;--cs:#0d3541;--ink:#e3eef3;--muted:#8da3b0;--line:#27404d;--surface:#14232c;--bg:#0c171d;--sub:#a5bac6;--field:#0f1d25;--sel:#103329;--yc:#ffd60a;--rc:#ff5147;--xc:#94a3b8;--vc:#a78bfa;--pk:#f472b6;color-scheme:dark}
 html{height:100%}*{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.7 -apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans JP","Hiragino Kaku Gothic ProN",Meiryo,sans-serif}
 button,input,select,textarea{font:inherit;color:inherit}button,select{cursor:pointer}
@@ -30,7 +30,7 @@ a{color:inherit;text-decoration:none}[hidden]{display:none!important}
 .stat{padding:14px 16px;border:1px solid var(--line);border-radius:var(--r);background:var(--surface);box-shadow:var(--sh)}
 .stat small{display:block;color:var(--muted);font-size:12px;font-weight:700}
 .stat strong{font-size:27px;line-height:1.3}.stat em{font-style:normal;margin-left:4px;color:var(--muted);font-size:11px}
-.g strong{color:var(--gd)}.b strong{color:#078dbb}.o strong{color:#c87a00}.y strong{color:var(--yc)}.r strong{color:var(--rc)}.x strong{color:var(--xc)}.v strong{color:var(--vc)}
+.g strong{color:var(--gd)}.b strong{color:#078dbb}.o strong{color:#c87a00}.y strong{color:var(--yc)}.r strong{color:var(--rc)}.x strong{color:var(--xc)}.pk strong{color:var(--pk)}.stat .nx{color:var(--vc);margin-top:3px}
 .panel{padding:18px;border:1px solid var(--line);border-radius:var(--r);background:var(--surface);box-shadow:var(--sh)}
 .row{display:flex;align-items:center;justify-content:space-between;gap:12px}
 h2{margin:0;font-size:19px;letter-spacing:-.4px}

@@ -3,10 +3,42 @@ name: TRL pipeline
 on:
   workflow_dispatch:
     inputs:
-      sources:
-        description: "Sources (カンマ区切りで自由指定)"
-        type: string
-        default: "pubmed,arxiv,gnews,prtimes,trials,yahoo,openalex,edinet,edgar"
+      src_pubmed:
+        description: "Source: PubMed"
+        type: boolean
+        default: true
+      src_arxiv:
+        description: "Source: arXiv"
+        type: boolean
+        default: true
+      src_gnews:
+        description: "Source: Google News"
+        type: boolean
+        default: true
+      src_prtimes:
+        description: "Source: PR TIMES"
+        type: boolean
+        default: true
+      src_trials:
+        description: "Source: ClinicalTrials.gov"
+        type: boolean
+        default: true
+      src_yahoo:
+        description: "Source: Yahoo Finance"
+        type: boolean
+        default: true
+      src_openalex:
+        description: "Source: OpenAlex"
+        type: boolean
+        default: true
+      src_edinet:
+        description: "Source: EDINET"
+        type: boolean
+        default: true
+      src_edgar:
+        description: "Source: SEC EDGAR"
+        type: boolean
+        default: true
       kinds:
         description: "Evaluation kinds"
         type: choice
@@ -99,13 +131,40 @@ jobs:
           AZURE_TRANSLATOR_REGION: ${{ vars.AZURE_TRANSLATOR_REGION }}
           GOOGLE_TRANSLATE_API_KEY: ${{ secrets.GOOGLE_TRANSLATE_API_KEY }}
           # 入力はシェルに直接展開せず環境変数経由で渡す(スクリプトインジェクション対策)
-          IN_SOURCES: ${{ inputs.sources || 'pubmed,arxiv,gnews,prtimes,trials,yahoo,openalex,edinet,edgar' }}
+          SRC_PUBMED: ${{ inputs.src_pubmed }}
+          SRC_ARXIV: ${{ inputs.src_arxiv }}
+          SRC_GNEWS: ${{ inputs.src_gnews }}
+          SRC_PRTIMES: ${{ inputs.src_prtimes }}
+          SRC_TRIALS: ${{ inputs.src_trials }}
+          SRC_YAHOO: ${{ inputs.src_yahoo }}
+          SRC_OPENALEX: ${{ inputs.src_openalex }}
+          SRC_EDINET: ${{ inputs.src_edinet }}
+          SRC_EDGAR: ${{ inputs.src_edgar }}
           IN_KINDS: ${{ inputs.kinds || 'long' }}
           IN_MAX_EVAL: ${{ github.event_name == 'schedule' && '10' || inputs.max_eval || '5' }}
           IN_RETRY: ${{ inputs.retry_failed || 'no' }}
           IN_PURGE: ${{ inputs.purge_evaluations || 'no' }}
           IN_ONLY_NEW: ${{ inputs.only_new || 'no' }}
         run: |
+          if [ "$GITHUB_EVENT_NAME" = "schedule" ]; then
+            IN_SOURCES="pubmed,arxiv,gnews,prtimes,trials,yahoo,openalex,edinet,edgar"
+          else
+            IN_SOURCES=""
+            [ "$SRC_PUBMED" = "true" ] && IN_SOURCES="$IN_SOURCES,pubmed"
+            [ "$SRC_ARXIV" = "true" ] && IN_SOURCES="$IN_SOURCES,arxiv"
+            [ "$SRC_GNEWS" = "true" ] && IN_SOURCES="$IN_SOURCES,gnews"
+            [ "$SRC_PRTIMES" = "true" ] && IN_SOURCES="$IN_SOURCES,prtimes"
+            [ "$SRC_TRIALS" = "true" ] && IN_SOURCES="$IN_SOURCES,trials"
+            [ "$SRC_YAHOO" = "true" ] && IN_SOURCES="$IN_SOURCES,yahoo"
+            [ "$SRC_OPENALEX" = "true" ] && IN_SOURCES="$IN_SOURCES,openalex"
+            [ "$SRC_EDINET" = "true" ] && IN_SOURCES="$IN_SOURCES,edinet"
+            [ "$SRC_EDGAR" = "true" ] && IN_SOURCES="$IN_SOURCES,edgar"
+            IN_SOURCES="${IN_SOURCES#,}"
+          fi
+          if [ -z "$IN_SOURCES" ]; then
+            echo "::error::No sources selected. Check at least one source."
+            exit 1
+          fi
           if [ "$IN_PURGE" = "yes" ]; then
             python trl.py purge --data-dir _data --evaluations
           fi

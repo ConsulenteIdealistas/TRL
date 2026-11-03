@@ -1854,6 +1854,39 @@ class IntegrationTests(unittest.TestCase):
         self.assertIn("投資利益率ではありません", text)
         store.close()
 
+    def test_llm_calls_recorded_from_worker_threads(self):
+        # 計装レコードは評価ワーカースレッドから届く。Store への書き込みが
+        # スレッドをまたぐと sqlite の制約で静かに全件消えるため (2026-11-03 の
+        # live 実行で発生)、実プロバイダ + run 経由で残ることを固定する
+        import os
+        from trlcore.llm import Gemini
+        old_key = os.environ.get("GEMINI_API_KEY")
+        os.environ["GEMINI_API_KEY"] = "test"  # 生成に必要 (値は使われない)
+        try:
+            fn = make_llm_fn(long_scores={k: 65 for k in LONG_KEYS})
+
+            def http(url, **kw):
+                prompt = json.loads(kw["data"])["contents"][0]["parts"][0]["text"]
+                return json.dumps({"candidates": [{"content": {"parts": [{"text": fn(prompt)}]}}],
+                                   "usageMetadata": {"promptTokenCount": 11,
+                                                     "candidatesTokenCount": 22}}).encode()
+            store = Store(self.path)
+            llm = Gemini(model="gemini-main", http=http, fallback_model="gemini-sub")
+            r = run_pipeline(store, self.cfg(), llm, as_of=AS_OF, kinds=("long",), fetchers=self.fetchers(),
+                             today=AS_OF, log=lambda *_: None)
+            self.assertEqual(r["counts"]["final"], 2)
+            rows = store.llm_calls(r["run_id"])
+            self.assertTrue(rows)
+            self.assertEqual({row["purpose"] for row in rows}, {"extract", "assess"})
+            self.assertTrue(all(row["model"] == "gemini-main" for row in rows))
+            self.assertTrue(all(row["tokens_in"] == 11 for row in rows))
+            store.close()
+        finally:
+            if old_key is None:
+                os.environ.pop("GEMINI_API_KEY", None)
+            else:
+                os.environ["GEMINI_API_KEY"] = old_key
+
     def test_handover_from_interrupted_run(self):
         store = Store(self.path)
         llm = Mock(make_llm_fn(long_scores={k: 65 for k in LONG_KEYS}))

@@ -387,18 +387,26 @@ def run_pipeline(store, cfg, llm, *, as_of, sources=("pubmed", "arxiv"), kinds=(
         _log(msg)
 
     log(f"[run] {run_id} as_of={as_of} config={cfg['config_version']}/{cfg['config_hash']}")
+    # LLM コールの内訳 (目的・実モデル・秒数・成否・トークン) を llm_calls に残す。
+    # 後から見返せて、見返す価値があり、コストのかからない記録は全て残すという
+    # 方針 (2026-11-03 泰崇)。ただしレコードは評価ワーカースレッドから届くため、
+    # その場では貯めるだけにし、Store への書き込みはメインスレッドの flush で
+    # 行う。sqlite の接続はスレッドをまたいで使えず、直接書くと ProgrammingError
+    # になり、記録側の握り潰しで静かに全件消える (2026-11-03 の live 実行で発生)
+    llm_records = []
     if llm is not None and hasattr(llm, "recorder"):
-        # LLM コールの内訳 (目的・実モデル・秒数・成否・トークン) を llm_calls に
-        # 残す。後から見返せて、見返す価値があり、コストのかからない記録は
-        # 全て残すという方針 (2026-11-03 泰崇)
         def _record_llm(rec):
-            store.record_llm_call(run_id, rec)
+            llm_records.append(rec)
             log(f"[llm] {rec.get('purpose') or '-'} model={rec.get('model')} "
                 f"{rec.get('seconds')}s ok={1 if rec.get('ok') else 0}"
                 + (f" cand={rec['candidate_id']}" if rec.get("candidate_id") else "")
                 + (f" error={rec['error']}" if rec.get("error") else "")
                 + (" main-skipped" if rec.get("main_skipped") else ""))
         llm.recorder = _record_llm
+
+    def _flush_llm_records():
+        while llm_records:
+            store.record_llm_call(run_id, llm_records.pop(0))
     if cfg["scoring"].get("recalc_on_run"):
         # 重み等の集計変更 (規程の A2 類) を保存済み評価へ反映する。再計算の
         # 来歴は各評価の extra_json に残る (trlcore/recalc)
@@ -562,10 +570,12 @@ def run_pipeline(store, cfg, llm, *, as_of, sources=("pubmed", "arxiv"), kinds=(
                 status = "hold" if "hold" in outcomes else ("error" if "error" in outcomes else "evaluated")
                 store.set_status(c["id"], status, eval_at=datetime.now(timezone.utc).isoformat(timespec="seconds"),
                                  retry_inc=(status == "error"), retry_reset=(status != "error"))
+        _flush_llm_records()
     if degraded in ("llm_fatal_error", "llm_consecutive_failures"):
         log(f"::warning::[eval] LLM APIの失敗が続くため評価フェーズを打ち切ります ({degraded})。未評価の候補は次回に回します")
     if degraded:
         counts["llm_degraded"] = degraded
+    _flush_llm_records()
     # 翻訳は専用 API (Azure → DeepL → Google) で行い、評価用 LLM には任せない
     usage_before = usage_totals(store, today)
     counts["translated"], counts["translation_chars"] = translate_display_set(store, cfg, today, log)

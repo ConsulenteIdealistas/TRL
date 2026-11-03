@@ -46,9 +46,10 @@ function trl(t, d) {
   return `<div class="${d ? "det" : "trl"}"><div class="num ${k ? "" : "u"}"><span>TRL</span><strong>${k ? t : "未確定"}</strong></div><div class="track">${
     Array.from({length: 9}, (_, i) => `<span class="seg ${k && i < t ? "f" : ""}"></span>`).join("")}</div></div>`;
 }
-function inR(t, f) {
-  return f === "known" ? ok(t) : f === "unknown" ? !ok(t) : f === "early" ? ok(t) && t <= 3
-    : f === "middle" ? ok(t) && t >= 4 && t <= 6 : f === "late" ? ok(t) && t >= 7 : true;
+const trlSel = new Set();  // TRL絞り込みの選択状態: レベル1〜9と "u"(未確定) の集合。空なら絞らない
+function inR(t) {
+  if (!trlSel.size) return true;
+  return ok(t) ? trlSel.has(t) : trlSel.has("u");
 }
 function haystack(p) {
   const items = p.long ? Object.values(p.long.items).flatMap(i => i.missing_info) : [];
@@ -56,9 +57,9 @@ function haystack(p) {
   return [p.title, p.title_ja || "", p.source, p.abstract, p.abstract_ja || "", ...(p.fields || []), ...p.entities.map(e => e.name), ...facets, ...items].join(" ").toLowerCase();
 }
 function filtered() {
-  const q = $("#q").value.trim().toLowerCase(), s = $("#fs").value, t = $("#ft").value, o = $("#fo").value, fd = $("#fd").value;
+  const q = $("#q").value.trim().toLowerCase(), s = $("#fs").value, o = $("#fo").value, fd = $("#fd").value;
   const fm = $("#fm").value, fc = $("#fc").value, fg = $("#fg").value, fst = $("#fst").value;
-  const r = P.filter(p => (!q || haystack(p).includes(q)) && (s === "all" ? p.display_status !== "rejected" : p.display_status === s) && inR(lvl(p), t)
+  const r = P.filter(p => (!q || haystack(p).includes(q)) && (s === "all" ? p.display_status !== "rejected" : p.display_status === s) && inR(lvl(p))
     && (fd === "all" || (fd === "none" ? !dirOf(p) : dirOf(p) === fd))
     && (fm === "all" || p.entities.some(e => (e.market || "JP") === fm))
     && (fc === "all" || p.entities.some(e => e.sector === fc))
@@ -262,12 +263,32 @@ $("#q").addEventListener("keydown", e => {
 });
 $("#q").addEventListener("blur", () => { sugHideTimer = setTimeout(hideSug, 120); });
 $("#sf").addEventListener("submit", hideSug);
-["#fs", "#ft", "#fo", "#fd", "#fm", "#fc", "#fg", "#fst"].forEach(s => $(s).addEventListener("change", render));
+["#fs", "#fo", "#fd", "#fm", "#fc", "#fg", "#fst"].forEach(s => $(s).addEventListener("change", render));
+const syncTrlUI = () => document.querySelectorAll("#ftc button").forEach(b => {
+  const on = trlSel.has(b.dataset.l === "u" ? "u" : Number(b.dataset.l));
+  b.classList.toggle("on", on); b.setAttribute("aria-pressed", on ? "true" : "false");
+});
+$("#ftc").addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  const k = b.dataset.l === "u" ? "u" : Number(b.dataset.l);
+  if (trlSel.has(k)) trlSel.delete(k); else trlSel.add(k);
+  $("#ftn").value = ""; $("#ftm").value = "";  // 個別に触ったら範囲入力は空に戻す (表示と選択状態を一致させる)
+  syncTrlUI(); render();
+});
+const applyRange = () => {  // n〜m を入れたら、その範囲のレベルだけを選択状態にする (未確定チップはそのまま)
+  if ($("#ftn").value === "" || $("#ftm").value === "") return;
+  const n = Number($("#ftn").value), m = Number($("#ftm").value);
+  if (!Number.isInteger(n) || !Number.isInteger(m)) return;
+  const lo = Math.min(9, Math.max(1, Math.min(n, m))), hi = Math.min(9, Math.max(1, Math.max(n, m)));
+  for (let i = 1; i <= 9; i++) { if (i >= lo && i <= hi) trlSel.add(i); else trlSel.delete(i); }
+  syncTrlUI(); render();
+};
+["#ftn", "#ftm"].forEach(s => $(s).addEventListener("change", applyRange));
 $("#fl").addEventListener("change", () => { LANG = $("#fl").value; try { localStorage.setItem("trl-lang", LANG); } catch (e) { /* 保存できなくても切替は効く */ } render(); });
 const syncTh = () => { $("#fth").value = document.documentElement.dataset.theme === "light" ? "light" : "dark"; };
 $("#fth").addEventListener("change", () => { document.documentElement.dataset.theme = $("#fth").value; try { localStorage.setItem("trl-theme", $("#fth").value); } catch (e) { /* 保存できなくても切替は効く */ } });
 syncTh();
-$("#rs").addEventListener("click", () => { $("#q").value = ""; $("#fs").value = "all"; $("#ft").value = "all"; $("#fo").value = "status"; $("#fd").value = "all"; $("#fm").value = "all"; $("#fc").value = "all"; $("#fg").value = "all"; $("#fst").value = "all"; sel = P[0] ? P[0].id : null; render(); });
+$("#rs").addEventListener("click", () => { $("#q").value = ""; $("#fs").value = "all"; trlSel.clear(); $("#ftn").value = ""; $("#ftm").value = ""; syncTrlUI(); $("#fo").value = "status"; $("#fd").value = "all"; $("#fm").value = "all"; $("#fc").value = "all"; $("#fg").value = "all"; $("#fst").value = "all"; sel = P[0] ? P[0].id : null; render(); });
 $("#list").addEventListener("click", e => { const c = e.target.closest("[data-id]"); if (c) { sel = c.dataset.id; render(); } });
 $("#det").addEventListener("input", e => { if (e.target.id === "note" && sel) noteDrafts[sel] = e.target.value; });
 $("#det").addEventListener("click", e => {

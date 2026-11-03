@@ -37,6 +37,12 @@ h2{margin:0;font-size:19px;letter-spacing:-.4px}
 .filters{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:14px}
 .filters label{display:grid;gap:5px;color:var(--muted);font-size:12px;font-weight:700}
 .filters select{width:100%;min-height:42px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--field)}
+.filters .trlF{display:grid;gap:5px;color:var(--muted);font-size:12px;font-weight:700;grid-column:span 2}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips button{min-width:40px;min-height:42px;padding:6px 10px;border:1px solid var(--line);border-radius:10px;background:var(--field);color:var(--sub);font-weight:700}
+.chips button.on{border-color:var(--gd);background:var(--gs);color:var(--gd)}
+.rng{display:flex;align-items:center;gap:6px;font-weight:600}
+.rng input{width:64px;min-height:42px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--field);color:var(--ink);font-weight:400}
 .rh{margin:24px 0 12px}.rh p{margin:2px 0 0;color:var(--muted);font-size:12px}
 .pill{display:inline-grid;min-width:26px;height:26px;margin-left:5px;padding:0 7px;place-items:center;border-radius:9px;color:var(--gd);background:var(--gs);font-size:12px;vertical-align:2px}
 .demo{padding:5px 9px;border:1px solid var(--gs);border-radius:8px;color:var(--gd);background:var(--gs);font-size:11px;font-weight:800}
@@ -85,7 +91,7 @@ textarea{width:100%;min-height:90px;resize:vertical;padding:10px;border:1px soli
 .empty{padding:28px;border:1px dashed var(--line);border-radius:var(--r);color:var(--muted);background:var(--surface);text-align:center}
 .ft{display:flex;justify-content:space-between;gap:12px;margin-top:26px;padding-top:16px;border-top:1px solid var(--line);color:var(--muted);font-size:11px}
 @media(max-width:900px){.lay{grid-template-columns:minmax(0,1fr)}.panelD{position:static;max-height:none}.filters{grid-template-columns:1fr 1fr}.stats{grid-template-columns:repeat(4,1fr)}}
-@media(max-width:560px){body{font-size:13px}.stats{grid-template-columns:1fr 1fr;gap:9px}.filters{grid-template-columns:1fr}.sb{flex-wrap:wrap}.sb .btn{width:100%}.main{grid-template-columns:1fr}.side{justify-items:start;grid-auto-flow:column;align-items:center}.ft{flex-direction:column}}
+@media(max-width:560px){body{font-size:13px}.stats{grid-template-columns:1fr 1fr;gap:9px}.filters{grid-template-columns:1fr}.filters .trlF{grid-column:span 1}.sb{flex-wrap:wrap}.sb .btn{width:100%}.main{grid-template-columns:1fr}.side{justify-items:start;grid-auto-flow:column;align-items:center}.ft{flex-direction:column}}
 
 /* v0.2: data.json 連携用 */
 .st-pending{color:#607080;background:#edf1f4}

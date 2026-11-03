@@ -140,7 +140,7 @@ def run_extraction(cand, cfg, llm, as_of, prompt_dir=None):
     p = load_prompt("extract", cfg["scoring"]["prompts"]["extract"], prompt_dir)
     text = render(p["text"], {"as_of": as_of.isoformat(), "candidate": _candidate_block(cand),
                               "freshness": json.dumps(freshness_info(cand["published"], as_of))})
-    obj = extract_json(llm.complete(text))
+    obj = extract_json(llm.complete(text, purpose="extract", candidate_id=cand.get("id")))
     errs = validate_extraction(obj)
     if errs:
         raise LLMError("invalid extraction: " + ",".join(errs[:5]))
@@ -185,7 +185,8 @@ def evaluate_one(cand, kind, cfg, llm, as_of, extraction=None, extract_meta=None
         for attempt in (1, 2):
             result["extra"]["assess_attempts"] = attempt
             try:
-                obj = extract_json(llm.complete(text + feedback))
+                obj = extract_json(llm.complete(text + feedback, purpose="assess",
+                                                candidate_id=cand.get("id")))
             except LLMError as e:
                 obj, errs = None, [f"{type(e).__name__}: {redact(e)}"[:300]]
             if obj is not None:

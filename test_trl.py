@@ -2735,6 +2735,29 @@ class FinancialSkipTests(unittest.TestCase):
         self.assertEqual(counts.get("financial_skipped"), 1)
         store.close()
 
+    def test_llm_call_recording_roundtrip(self):
+        # llm_calls への記録と読み戻し (run 単位の内訳集計の土台)
+        tmp = tempfile.TemporaryDirectory()
+        store = T.Store(Path(tmp.name) / "d.sqlite")
+        store.record_llm_call("run-1", {"candidate_id": "c1", "purpose": "assess",
+                                        "provider": "gemini", "model": "gemini-sub",
+                                        "seconds": 12.5, "ok": True, "error": None,
+                                        "chars_in": 4000, "chars_out": 900,
+                                        "tokens_in": 1000, "tokens_out": 200})
+        store.record_llm_call("run-1", {"candidate_id": "c1", "purpose": "assess",
+                                        "provider": "gemini", "model": "gemini-main",
+                                        "seconds": 120.0, "ok": False,
+                                        "error": "HttpError: HTTP 503",
+                                        "chars_in": 4000, "chars_out": None,
+                                        "tokens_in": None, "tokens_out": None})
+        rows = store.llm_calls("run-1")
+        self.assertEqual(len(rows), 2)
+        self.assertEqual((rows[0]["model"], rows[0]["ok"], rows[0]["tokens_in"]),
+                         ("gemini-sub", 1, 1000))
+        self.assertEqual((rows[1]["model"], rows[1]["ok"]), ("gemini-main", 0))
+        self.assertEqual(store.llm_calls("other-run"), [])
+        store.close()
+
     def test_collect_yahoo_period_gate(self):
         # Yahoo は期末ベース: 最新決算の期末 +97日を過ぎた企業だけ取りに行く
         tmp = tempfile.TemporaryDirectory()

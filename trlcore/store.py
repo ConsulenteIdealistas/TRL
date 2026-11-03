@@ -23,6 +23,10 @@ CREATE TABLE IF NOT EXISTS evaluations(
 CREATE TABLE IF NOT EXISTS extraction_cache(
   input_hash TEXT, prompt_sha TEXT, model TEXT, extraction_json TEXT, meta_json TEXT, created_at TEXT,
   PRIMARY KEY(input_hash, prompt_sha, model));
+CREATE TABLE IF NOT EXISTS llm_calls(
+  id INTEGER PRIMARY KEY AUTOINCREMENT, run_id TEXT, candidate_id TEXT, purpose TEXT,
+  provider TEXT, model TEXT, seconds REAL, ok INTEGER, error TEXT,
+  chars_in INTEGER, chars_out INTEGER, tokens_in INTEGER, tokens_out INTEGER, created_at TEXT);
 CREATE TABLE IF NOT EXISTS review_queue(
   candidate_id TEXT, kind TEXT, reason TEXT, missing_json TEXT, next_sources_json TEXT,
   reeval_conditions_json TEXT, last_eval_at TEXT, versions_json TEXT, created_at TEXT,
@@ -520,6 +524,20 @@ class Store:
         self.conn.execute("INSERT INTO run_sources VALUES(?,?,?,?,?,?,?,?,?,?)",
                           (run_id, source, query, fetched, new, dups, invalid, 1 if ok else 0, error, round(seconds, 2)))
         self.conn.commit()
+
+    def record_llm_call(self, run_id, rec):
+        """LLM コール1回 (モデル試行の単位) の計装レコードを残す。"""
+        self.conn.execute(
+            "INSERT INTO llm_calls(run_id, candidate_id, purpose, provider, model, seconds, ok, error,"
+            " chars_in, chars_out, tokens_in, tokens_out, created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            (run_id, rec.get("candidate_id"), rec.get("purpose"), rec.get("provider"), rec.get("model"),
+             rec.get("seconds"), 1 if rec.get("ok") else 0, rec.get("error"), rec.get("chars_in"),
+             rec.get("chars_out"), rec.get("tokens_in"), rec.get("tokens_out"), now_iso()))
+        self.conn.commit()
+
+    def llm_calls(self, run_id):
+        return [dict(r) for r in self.conn.execute(
+            "SELECT * FROM llm_calls WHERE run_id=? ORDER BY id", (run_id,)).fetchall()]
 
     def get_run(self, run_id):
         r = self.conn.execute("SELECT * FROM runs WHERE run_id=?", (run_id,)).fetchone()

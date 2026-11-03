@@ -372,6 +372,17 @@ def run_pipeline(store, cfg, llm, *, as_of, sources=("pubmed", "arxiv"), kinds=(
         _log(msg)
 
     log(f"[run] {run_id} as_of={as_of} config={cfg['config_version']}/{cfg['config_hash']}")
+    if llm is not None and hasattr(llm, "recorder"):
+        # LLM コールの内訳 (目的・実モデル・秒数・成否・トークン) を llm_calls に
+        # 残す。後から見返せて、見返す価値があり、コストのかからない記録は
+        # 全て残すという方針 (2026-11-03 泰崇)
+        def _record_llm(rec):
+            store.record_llm_call(run_id, rec)
+            log(f"[llm] {rec.get('purpose') or '-'} model={rec.get('model')} "
+                f"{rec.get('seconds')}s ok={1 if rec.get('ok') else 0}"
+                + (f" cand={rec['candidate_id']}" if rec.get("candidate_id") else "")
+                + (f" error={rec['error']}" if rec.get("error") else ""))
+        llm.recorder = _record_llm
     if cfg["scoring"].get("recalc_on_run"):
         # 重み等の集計変更 (規程の A2 類) を保存済み評価へ反映する。再計算の
         # 来歴は各評価の extra_json に残る (trlcore/recalc)

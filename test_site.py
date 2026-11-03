@@ -85,6 +85,39 @@ class FallbackModelTests(unittest.TestCase):
         self.assertEqual(g.complete("p"), "fb-ok")
         self.assertEqual(len(seen), 2)
 
+    def test_llm_call_recorder_captures_each_attempt(self):
+        # 計装: モデル試行ごとに目的・実モデル・成否・トークンが記録される
+        def http(url, **kw):
+            if "gemini-main" in url:
+                raise T.HttpError("HTTP 503 for x", 503)
+            return json.dumps({"candidates": [{"content": {"parts": [{"text": "fb-ok"}]}}],
+                               "usageMetadata": {"promptTokenCount": 111,
+                                                 "candidatesTokenCount": 22}}).encode()
+        g = T.Gemini(model="gemini-main", http=http, fallback_model="gemini-sub")
+        recs = []
+        g.recorder = recs.append
+        out = g.complete("prompt-text", purpose="assess", candidate_id="c_x")
+        self.assertEqual(out, "fb-ok")
+        self.assertEqual(len(recs), 2)
+        self.assertEqual((recs[0]["model"], recs[0]["ok"]), ("gemini-main", False))
+        self.assertIn("HttpError", recs[0]["error"])
+        self.assertEqual((recs[1]["model"], recs[1]["ok"]), ("gemini-sub", True))
+        self.assertEqual((recs[1]["tokens_in"], recs[1]["tokens_out"]), (111, 22))
+        self.assertEqual((recs[1]["purpose"], recs[1]["candidate_id"]), ("assess", "c_x"))
+        self.assertEqual(recs[1]["chars_in"], len("prompt-text"))
+        self.assertEqual(recs[1]["chars_out"], len("fb-ok"))
+        self.assertGreaterEqual(recs[1]["seconds"], 0)
+
+    def test_llm_recorder_failure_does_not_break_call(self):
+        def ok_http(url, **kw):
+            return json.dumps({"candidates": [{"content": {"parts": [{"text": "ok"}]}}]}).encode()
+        g = T.Gemini(model="m", http=ok_http)
+
+        def bad_recorder(rec):
+            raise RuntimeError("recorder down")
+        g.recorder = bad_recorder
+        self.assertEqual(g.complete("p"), "ok")
+
     def test_last_model_tracking(self):
         def ok_http(url, **kw):
             return json.dumps({"candidates": [{"content": {"parts": [{"text": "ok"}]}}]}).encode()

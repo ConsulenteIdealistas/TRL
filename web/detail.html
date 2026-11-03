@@ -18,6 +18,7 @@
 "use strict";
 /* 詳細ページ: data.json から ?id= の候補を1件だけ表示する。一覧(app.js)と同じ値をそのまま表示し、再計算しない。 */
 const SL = {final: "選定可能", review: "要追加調査", hold: "保留", pending: "未評価", error: "エラー", rejected: "除外"};
+const SR = {abstract_too_short: "要旨が短いため評価対象外", published_after_as_of: "実行基準日より後の公表のため対象外"};  // 除外 (screening) の理由
 const IL = {technology_readiness: "技術成熟度", technological_advantage: "技術的優位性", monetization: "収益化能力",
   market_growth: "市場成長性", financial_sustainability: "財務的持続可能性", moat_durability: "競争優位性の持続性",
   catalyst_quality: "触媒の質", expectation_gap: "期待ギャップ", not_priced_in: "未織り込み度",
@@ -111,6 +112,7 @@ ${EV ? `<section class="ds"><h4>イベント評価</h4>${Object.keys(EV.items).m
 <section class="ds"><h4>材料の方向性</h4>${LL && LL.direction ? `<p>${dirB(LL)} ${esc(LL.direction.reason || "")}</p><p class="hint">方向性は点数やTRLとは独立に、資料が示す出来事の追い風・逆風を判定したものです。</p>` : `<p class="hint">未判定です（方向を決める出来事が資料に無いか、旧基準の評価です）。</p>`}</section>
 <section class="ds"><h4>不足している観点</h4>${LL && LL.critical_missing.length ? `<p class="m" style="color:#a96500;font-weight:700">必須項目の不足: ${LL.critical_missing.map(k => esc(label(k))).join("、")}</p>` : ""}${pts(missAll, 1)}${waitAll.length ? `<p class="hint">結果待ち（不足ではなく、治験の結果公表など時間の経過でしか解けないもの）:</p><ul class="pts">${waitAll.map(x => `<li><b>◷</b><span>${esc(x)}</span></li>`).join("")}</ul>` : ""}${q && q.next_sources.length ? `<p class="hint">次に確認する情報源: ${q.next_sources.map(esc).join(" / ")}</p>` : ""}${q && q.reeval_conditions.length ? `<p class="hint">再評価の条件: ${q.reeval_conditions.map(esc).join(" / ")}</p>` : ""}</section>
 ${p.display_status === "error" && p.long && p.long.errors.length ? `<section class="ds"><h4>処理上の注意</h4>${pts(p.long.errors, 1)}</section>` : ""}
+${p.display_status === "rejected" ? `<section class="ds"><h4>除外理由</h4><p>${esc(p.screen_reason ? (SR[p.screen_reason] || p.screen_reason) : "理由は記録されていません")}</p><p class="hint">除外は関連性スクリーニングの機械的な判定で、評価 (採点) は行われていません。</p></section>` : ""}
 <section class="ds"><h4>関連事業ニュース（評価に同梱した根拠プール）</h4>${news ? `<ul class="news">${news}</ul>` : `<p class="hint">同梱されたニュースはありません。</p>`}${(p.related_news || []).some(n => n.via_google_news) ? `<p class="hint">Google News 経由の記事リンクは直接開けないため、タイトルをクリックするとタイトル検索で元記事を開きます。媒体名は媒体のサイトへのリンクです。</p>` : ""}</section>
 <section class="ds"><h4>関連財務根拠（開示資料の財務数値）</h4>${fins ? `<ul class="news">${fins}</ul>` : `<p class="hint">同梱された財務根拠はありません。</p>`}</section>
 <section class="ds"><h4>関連企業</h4>${p.entities.map(e => `<span class="chip">${esc(e.name)}${e.product_name ? "（" + esc(e.product_name) + "）" : ""}${e.market ? "・" + esc(ML[e.market] || e.market) : ""}${e.sector ? "・" + esc(CL[e.sector] || e.sector) : ""}${(e.tags || []).length ? "・" + e.tags.map(t => esc(tagLabel(t))).join("・") : ""}${e.stage ? "・" + esc(STG[e.stage] || e.stage) : ""} ${e.strength === "strong" ? "" : "・弱"}${e.tier === "watch" ? "・ウォッチ" : ""}</span>`).join("") || '<span class="hint">関連企業は未特定です。</span>'}</section>

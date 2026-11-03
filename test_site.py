@@ -862,7 +862,11 @@ class ExportTests(unittest.TestCase):
         self.store.set_status(cid, "rejected")
         data = T.build_site_data(self.store, cfg_with(), datetime(2026, 10, 26, tzinfo=timezone.utc))
         self.assertEqual(data["summary"]["rejected"], 1)
-        self.assertTrue(all(c["id"] != cid for c in data["candidates"]))  # 除外は掲載されない
+        # 除外も理由つきで掲載する (状態フィルタで選んだときだけ一覧に出る)
+        rej = [c for c in data["candidates"] if c["id"] == cid]
+        self.assertEqual(len(rej), 1)
+        self.assertEqual(rej[0]["display_status"], "rejected")
+        self.assertIn("screen_reason", rej[0])
         html = (T.ROOT / "web" / "index.html").read_text(encoding="utf-8")
         # 次回評価予定は独立枠にせず未評価枠の中に併記し、8枠目は TRL判定済み
         self.assertIn('id="c4n"', html)
@@ -871,7 +875,8 @@ class ExportTests(unittest.TestCase):
         self.assertIn('id="c6"', html)  # TRL判定済み
         self.assertIn('id="c7"', html)  # 除外
         app = (T.ROOT / "web" / "app.js").read_text(encoding="utf-8")
-        self.assertIn("META.summary", app)
+        self.assertIn('$("#c7").textContent = n(["rejected"])', app)
+        self.assertIn("screen_reason", app)
         self.assertIn("c4n", app)
         self.assertIn("lvl(p) != null", app)
 

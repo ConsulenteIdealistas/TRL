@@ -153,13 +153,13 @@ def build_site_data(store, cfg, now=None):
             "SELECT candidate_id, kind FROM evaluations GROUP BY candidate_id, kind"):
         ev_kinds.setdefault(cid, set()).add(kind)
     cands = []
-    rows = store.conn.execute("SELECT id, info_type FROM candidates ORDER BY published DESC, id").fetchall()
-    for cid, info_type in rows:
+    rows = store.conn.execute("SELECT id, info_type, status FROM candidates ORDER BY published DESC, id").fetchall()
+    for cid, info_type, cand_status in rows:
         if info_type == "news":
             continue  # ニュースは評価単位ではなく材料。候補一覧には出さない
         kinds_seen = ev_kinds.get(cid) or ()
-        if "long" not in kinds_seen and "event" not in kinds_seen and cid not in next_ids:
-            continue  # 評価済みと、次に評価される上位だけを載せる
+        if "long" not in kinds_seen and "event" not in kinds_seen and cid not in next_ids and cand_status != "rejected":
+            continue  # 評価済みと、次に評価される上位だけを載せる (除外は理由つきで別掲する)
         c = store.get_candidate(cid)
         long_ev = _ev_for_site(store.latest_evaluation(cid, "long"), cfg)
         event_ev = _ev_for_site(store.latest_evaluation(cid, "event"), cfg)
@@ -180,6 +180,7 @@ def build_site_data(store, cfg, now=None):
             "abstract": c["abstract"] or "", "fields": c["fields"],
             "title_ja": c.get("title_ja") or None, "abstract_ja": c.get("abstract_ja") or None,
             "translation_src": _translation_src(c),
+            "screen_reason": c.get("screen_reason") or None,
             "display_status": display_status(c, long_ev, store, event_ev),
             "next_up": cid in next_ids and long_ev is None and event_ev is None,
             "long": long_ev, "event": event_ev, "entities": ents,
@@ -193,8 +194,8 @@ def build_site_data(store, cfg, now=None):
                    "finished_at": run["finished_at"], "duration_sec": run["duration_sec"], "counts": counts,
                    "llm_degraded": counts.get("llm_degraded")}
     long_w = cfg["scoring"]["long"]["weights"]
-    # 統計用の総数。除外 (screening で落ちた候補) は掲載候補に含まれないため、
-    # 一覧の母集団からは数えられない。統計枠でのみ別集計として出す
+    # 除外 (screening で落ちた候補) の総数。一覧にも理由つきで含めるが、
+    # DB 側の総数を参照用に残す
     summary = {"rejected": store.conn.execute(
         "SELECT COUNT(*) FROM candidates WHERE status = 'rejected'").fetchone()[0]}
     return {

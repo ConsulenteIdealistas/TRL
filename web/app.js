@@ -9,6 +9,7 @@ const dispA = p => LANG === "ja" && p.abstract_ja ? p.abstract_ja : p.abstract |
 const TR_SRC = {deepl: "DeepL", azure: "Azure", google: "Google", llm: "LLM"};
 const srcOf = p => { const s = p.translation_src || {}; const used = [...new Set([p.title_ja ? s.title : null, p.abstract_ja ? s.abstract : null].filter(Boolean))]; return used.map(v => TR_SRC[v] || v).join(" / "); };
 const SL = {final: "選定可能", review: "要追加調査", hold: "保留", pending: "未評価", error: "エラー", rejected: "除外"};
+const SR = {abstract_too_short: "要旨が短いため評価対象外", published_after_as_of: "実行基準日より後の公表のため対象外"};  // 除外 (screening) の理由
 const SO = {final: 0, review: 1, hold: 2, pending: 3, error: 4, rejected: 5};  // おすすめ順での状態の優先度
 const IL = {technology_readiness: "技術成熟度", technological_advantage: "技術的優位性", monetization: "収益化能力",
   market_growth: "市場成長性", financial_sustainability: "財務的持続可能性", moat_durability: "競争優位性の持続性"};
@@ -57,7 +58,7 @@ function haystack(p) {
 function filtered() {
   const q = $("#q").value.trim().toLowerCase(), s = $("#fs").value, t = $("#ft").value, o = $("#fo").value, fd = $("#fd").value;
   const fm = $("#fm").value, fc = $("#fc").value, fg = $("#fg").value, fst = $("#fst").value;
-  const r = P.filter(p => (!q || haystack(p).includes(q)) && (s === "all" || p.display_status === s) && inR(lvl(p), t)
+  const r = P.filter(p => (!q || haystack(p).includes(q)) && (s === "all" ? p.display_status !== "rejected" : p.display_status === s) && inR(lvl(p), t)
     && (fd === "all" || (fd === "none" ? !dirOf(p) : dirOf(p) === fd))
     && (fm === "all" || p.entities.some(e => (e.market || "JP") === fm))
     && (fc === "all" || p.entities.some(e => e.sector === fc))
@@ -82,10 +83,11 @@ function facetOptions() {
     el.innerHTML = '<option value="all">すべて</option>' + present.map(v => `<option value="${esc(v)}">${esc(labels[v] || v)}</option>`).join("");
     el.value = present.includes(cur) ? cur : "all";
   };
-  fill("#fm", new Set(P.flatMap(p => p.entities.map(e => e.market || "JP"))), MO, ML);
-  fill("#fc", new Set(P.flatMap(p => p.entities.map(e => e.sector).filter(Boolean))), CO, CL);
-  fill("#fg", new Set(P.flatMap(p => p.entities.flatMap(e => e.tags || []))), [...CO, "photonics", "medtech", "earth_observation", "constellation", "space_transport", "lunar", "debris_removal", "mrna", "cell_therapy", "gene_therapy", "antibody", "radiopharm", "regenerative_medicine", "diagnostics", "drug_ai", "surgical_robot", "power_semi", "advanced_packaging", "memory", "semi_equipment", "ai_infra", "voice_ai", "industrial_robotics", "warehouse_automation", "autonomous_mobility", "humanoid", "hydrogen", "ess", "ev_charging", "solid_state_battery", "perovskite", "fusion", "smr", "quantum_computing", "quantum_comm", "quantum_sensing"], {...CL, ...TL});
-  fill("#fst", new Set(P.flatMap(p => p.entities.map(e => e.stage).filter(Boolean))), STGO, STG);
+  const base = P.filter(p => p.display_status !== "rejected");  // 選択肢は通常の一覧 (除外を除く) にあるものだけ
+  fill("#fm", new Set(base.flatMap(p => p.entities.map(e => e.market || "JP"))), MO, ML);
+  fill("#fc", new Set(base.flatMap(p => p.entities.map(e => e.sector).filter(Boolean))), CO, CL);
+  fill("#fg", new Set(base.flatMap(p => p.entities.flatMap(e => e.tags || []))), [...CO, "photonics", "medtech", "earth_observation", "constellation", "space_transport", "lunar", "debris_removal", "mrna", "cell_therapy", "gene_therapy", "antibody", "radiopharm", "regenerative_medicine", "diagnostics", "drug_ai", "surgical_robot", "power_semi", "advanced_packaging", "memory", "semi_equipment", "ai_infra", "voice_ai", "industrial_robotics", "warehouse_automation", "autonomous_mobility", "humanoid", "hydrogen", "ess", "ev_charging", "solid_state_battery", "perovskite", "fusion", "smr", "quantum_computing", "quantum_comm", "quantum_sensing"], {...CL, ...TL});
+  fill("#fst", new Set(base.flatMap(p => p.entities.map(e => e.stage).filter(Boolean))), STGO, STG);
 }
 function sc(p, k) { const it = p.long && p.long.items[k]; return it ? it.score : null; }
 function fmtScore(v) { return typeof v === "number" && isFinite(v) ? v : "—"; }
@@ -98,7 +100,7 @@ function card(p) {
   const s = p.id === sel;
   const ents = p.entities.filter(e => e.strength === "strong").length;
   const facet = facetText(p);
-  return `<article class="card ${s ? "sel" : ""}" data-id="${esc(p.id)}"><div class="main"><div style="min-width:0"><div class="top"><span class="${src(p.source)}">${srcName(p.source)}</span><span class="date">${esc(p.published || "")}</span>${LANG === "ja" && srcOf(p) ? `<span class="date">訳: ${esc(srcOf(p))}</span>` : ""}${p.long && p.long.llm_model ? `<span class="date">評価: ${esc(p.long.llm_model)}</span>` : ""}</div><h3 class="title">${esc(dispT(p))}</h3><p class="abs">${esc(dispA(p))}</p><div class="tags">${(p.fields || []).slice(0, 4).map(t => `<span class="tag">${esc(t)}</span>`).join("")}</div><div class="mi"><span>技術成熟度 <strong>${fmtScore(sc(p, "technology_readiness"))}</strong></span><span>技術的優位性 <strong>${fmtScore(sc(p, "technological_advantage"))}</strong></span><span>関連企業 <strong>${ents ? ents + "社" : "未特定"}</strong></span>${facet ? `<span>国・分野 <strong>${esc(facet)}</strong></span>` : ""}</div></div><div class="side">${stB(p.display_status)}${dirB(p)}${trl(lvl(p))}</div></div><div class="foot"><span>${p.long && p.long.critical_missing.length ? `必須の不足 ${p.long.critical_missing.length}件` : p.display_status === "pending" ? (p.next_up ? "次回評価予定" : "評価待ち") : ""}</span><a class="tg" href="detail.html?id=${encodeURIComponent(p.id)}">詳細を見る →</a></div></article>`;
+  return `<article class="card ${s ? "sel" : ""}" data-id="${esc(p.id)}"><div class="main"><div style="min-width:0"><div class="top"><span class="${src(p.source)}">${srcName(p.source)}</span><span class="date">${esc(p.published || "")}</span>${LANG === "ja" && srcOf(p) ? `<span class="date">訳: ${esc(srcOf(p))}</span>` : ""}${p.long && p.long.llm_model ? `<span class="date">評価: ${esc(p.long.llm_model)}</span>` : ""}</div><h3 class="title">${esc(dispT(p))}</h3><p class="abs">${esc(dispA(p))}</p><div class="tags">${(p.fields || []).slice(0, 4).map(t => `<span class="tag">${esc(t)}</span>`).join("")}</div><div class="mi"><span>技術成熟度 <strong>${fmtScore(sc(p, "technology_readiness"))}</strong></span><span>技術的優位性 <strong>${fmtScore(sc(p, "technological_advantage"))}</strong></span><span>関連企業 <strong>${ents ? ents + "社" : "未特定"}</strong></span>${facet ? `<span>国・分野 <strong>${esc(facet)}</strong></span>` : ""}</div></div><div class="side">${stB(p.display_status)}${dirB(p)}${trl(lvl(p))}</div></div><div class="foot"><span>${p.long && p.long.critical_missing.length ? `必須の不足 ${p.long.critical_missing.length}件` : p.display_status === "pending" ? (p.next_up ? "次回評価予定" : "評価待ち") : p.display_status === "rejected" ? "除外" + (p.screen_reason ? ": " + (SR[p.screen_reason] || p.screen_reason) : "") : ""}</span><a class="tg" href="detail.html?id=${encodeURIComponent(p.id)}">詳細を見る →</a></div></article>`;
 }
 function scoreRow(k, it) {
   const v = it && typeof it.score === "number" && isFinite(it.score) ? it.score : null;
@@ -134,6 +136,7 @@ function detail() {
 <section class="ds"><h4>材料の方向性</h4>${L && L.direction ? `<p>${dirB(p)} ${esc(L.direction.reason || "")}</p><p class="hint">方向性は点数やTRLとは独立に、資料が示す出来事の追い風・逆風を判定したものです。</p>` : `<p class="hint">未判定です（方向を決める出来事が資料に無いか、旧基準の評価です）。</p>`}</section>
 <section class="ds"><h4>不足している観点</h4>${L && L.critical_missing.length ? `<p class="m" style="color:#a96500;font-weight:700">必須項目の不足: ${L.critical_missing.map(k => esc(label(k))).join("、")}</p>` : ""}${pts(missAll, 1)}${waitAll.length ? `<p class="hint">結果待ち（不足ではなく、治験の結果公表など時間の経過でしか解けないもの）:</p><ul class="pts">${waitAll.map(x => `<li><b>◷</b><span>${esc(x)}</span></li>`).join("")}</ul>` : ""}${q && q.next_sources.length ? `<p class="hint">次に確認する情報源: ${q.next_sources.map(esc).join(" / ")}</p>` : ""}${q && q.reeval_conditions.length ? `<p class="hint">再評価の条件: ${q.reeval_conditions.map(esc).join(" / ")}</p>` : ""}</section>
 ${p.display_status === "error" && LL && LL.errors.length ? `<section class="ds"><h4>処理上の注意</h4>${pts(LL.errors, 1)}</section>` : ""}
+${p.display_status === "rejected" ? `<section class="ds"><h4>除外理由</h4><p>${esc(p.screen_reason ? (SR[p.screen_reason] || p.screen_reason) : "理由は記録されていません")}</p><p class="hint">除外は関連性スクリーニングの機械的な判定で、評価 (採点) は行われていません。</p></section>` : ""}
 <section class="ds"><h4>関連企業</h4>${p.entities.map(e => `<span class="chip">${esc(e.name)}${e.product_name ? "（" + esc(e.product_name) + "）" : ""}${e.market ? "・" + esc(ML[e.market] || e.market) : ""}${e.sector ? "・" + esc(CL[e.sector] || e.sector) : ""}${(e.tags || []).length ? "・" + e.tags.map(t => esc(tagLabel(t))).join("・") : ""}${e.stage ? "・" + esc(STG[e.stage] || e.stage) : ""} ${e.strength === "strong" ? "" : "・弱"}${e.tier === "watch" ? "・ウォッチ" : ""}</span>`).join("") || '<span class="hint">関連企業は未特定です。</span>'}</section>
 <section class="ds"><h4>調査メモ</h4><textarea id="note" aria-label="調査メモ" placeholder="仮説、確認したい点、次の調査などを記録...">${esc(p.id in noteDrafts ? noteDrafts[p.id] : getNote(p.id))}</textarea><div class="acts"><button class="btn sec" type="button" id="save">メモを保存</button><a class="btn src" href="${esc(safeUrl(p.url))}" target="_blank" rel="noopener noreferrer">原文サイトを開く ↗</a></div><p id="msg" class="hint" aria-live="polite">メモはこの端末のブラウザにだけ保存されます。</p></section></div>`;
 }
@@ -147,7 +150,7 @@ function render() {
 }
 function stats() {
   const n = f => P.filter(p => f.includes(p.display_status)).length;
-  $("#c0").textContent = P.length;
+  $("#c0").textContent = P.filter(p => p.display_status !== "rejected").length;
   $("#c1").textContent = n(["final"]);
   $("#c2").textContent = n(["review"]);
   $("#c3").textContent = n(["hold"]);
@@ -155,7 +158,7 @@ function stats() {
   $("#c4n").textContent = P.filter(p => p.next_up).length;
   $("#c5").textContent = n(["error"]);
   $("#c6").textContent = P.filter(p => lvl(p) != null).length;
-  $("#c7").textContent = (META.summary && META.summary.rejected) || 0;
+  $("#c7").textContent = n(["rejected"]);
 }
 function showError(msg) {
   $("#list").innerHTML = "";

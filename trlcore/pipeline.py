@@ -61,6 +61,11 @@ def screen(cand, as_of, cfg):
 # 間隔の対象にならず次回も試行される (障害中の財務ソースは毎週リトライされる)。
 FINANCIAL_SOURCES = frozenset({"edgar", "edinet"})
 FINANCIAL_SKIP_DAYS = 20
+# 公表後は内容が変わらないソース (論文・ニュース・治験登録)。既知の同一アイテムは
+# published が不変なら再照合・再統合を省略できる。開示 (yahoo/edgar/edinet) は
+# 訂正があり得るため含めない。治験は published=最終更新日なので、更新されれば
+# published が変わり、自動的に通常処理へ戻る
+STEADY_SOURCES = frozenset({"pubmed", "arxiv", "openalex", "gnews", "prtimes", "trials"})
 # Yahoo は非公式 API で制限の問題が起きやすいため、決算周期に合わせてさらに絞る:
 # 保存済みの最新決算の期末 +97日 (次の四半期末 + 発表が始まる目安) を過ぎた企業だけを
 # 取りに行く。期末の記録が無い企業は発見のため FINANCIAL_SKIP_DAYS の間隔で試行する
@@ -134,6 +139,14 @@ def collect(store, cfg, run_id, as_of, sources, fetchers, counts, log, budget_ca
         counts["financial_skipped"] = counts.get("financial_skipped", 0) + skipped
         log(f"[collect] financial skip: {skipped} queries (cadence rules)")
     jobs = kept
+    # 後処理の間引き用に、既知アイテムの索引と invalid の記録を先読みする。
+    # 取得のたびに同じ論文・ニュースへ企業リンクの照合 (辞書300社走査) を
+    # 繰り返すのが後処理の主コストだったため、変わっていないものは触らない
+    chash = cfg.get("config_hash")  # collect 単体で呼ばれる場合は無いことがある
+    known = store.identifier_index()
+    neg = store.invalid_keys(chash)
+    neg_seen = set()
+    neg_adds = set()
 
     def fetch(job):
         # 取得だけを並列化する (外部HTTPの待ち時間が支配的)。DB書き込みはメインスレッドで
@@ -171,11 +184,34 @@ def collect(store, cfg, run_id, as_of, sources, fetchers, counts, log, budget_ca
                     if rec is None:
                         invalid += 1
                         continue
+                    if sname in STEADY_SOURCES and rec["info_type"] != "disclosure":
+                        # 既知の同一アイテム (published 不変・要旨あり・リンクが現行
+                        # 世代の辞書で作られたもの) は、再照合も再統合もしない。
+                        # 要旨が空の保存分は補完の余地があるので通常処理に任せる
+                        hit = next((known[k] for k in rec["keys"] if k in known), None)
+                        if (hit is not None and hit[1] == rec["published"] and hit[2]
+                                and hit[3] == chash):
+                            dups += 1
+                            counts["dup_skipped"] = counts.get("dup_skipped", 0) + 1
+                            continue
+                    neg_hit = next((k for k in rec["keys"]
+                                    if (k, rec["published"] or "") in neg), None)
+                    if neg_hit is not None:
+                        # 現行世代の辞書でリンク不成立だった記録済みアイテム。
+                        # published が変われば (治験の更新等) キーが外れて再照合される
+                        invalid += 1
+                        counts["invalid_cached"] = counts.get("invalid_cached", 0) + 1
+                        neg_seen.add((neg_hit, rec["published"] or ""))
+                        continue
                     entity_links = link_entities(rec, cfg.get("entities", {}))
                     if not entity_links:
                         # 評価もプールも企業リンクが前提。対象企業に紐付かない候補は
                         # 種別を問わず残さない (キューに死蔵されるだけになるため)
                         invalid += 1
+                        for k in rec["keys"]:
+                            pair = (k, rec["published"] or "")
+                            neg.add(pair)
+                            neg_adds.add(pair)
                         continue
                     if sname == "gnews":
                         tk = _gnews_title_key(rec, entity_links)
@@ -183,6 +219,9 @@ def collect(store, cfg, run_id, as_of, sources, fetchers, counts, log, budget_ca
                             rec["keys"] = list(rec.get("keys") or []) + [tk]
                     cid, is_new = store.upsert_candidate(rec, run_id)
                     store.set_entities(cid, entity_links)
+                    store.set_links_hash(cid, chash)
+                    for k in rec["keys"]:
+                        known[k] = (cid, rec["published"], bool(rec["abstract"]), chash)
                     new += is_new
                     dups += (not is_new)
                 except Exception as e:
@@ -230,6 +269,8 @@ def collect(store, cfg, run_id, as_of, sources, fetchers, counts, log, budget_ca
         counts["collect_budget_exceeded"] = exceeded
         log(f"::warning::[collect] 収集フェーズの時間予算({budget}秒)を超えたため "
             f"{exceeded} クエリを打ち切りました")
+    store.add_invalid(neg_adds, chash)
+    store.touch_invalids(neg_seen, chash)
 
 
 # 実証・実装の段階を示す語。理論のみの資料には少なく、TRLを決めやすい候補の目印になる

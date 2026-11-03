@@ -30,6 +30,9 @@ CREATE TABLE IF NOT EXISTS evaluations(
 CREATE TABLE IF NOT EXISTS extraction_cache(
   input_hash TEXT, prompt_sha TEXT, model TEXT, extraction_json TEXT, meta_json TEXT, created_at TEXT,
   PRIMARY KEY(input_hash, prompt_sha, model));
+CREATE TABLE IF NOT EXISTS invalid_items(
+  key TEXT NOT NULL, published TEXT NOT NULL DEFAULT '', config_hash TEXT NOT NULL,
+  first_seen TEXT, last_seen TEXT, PRIMARY KEY(key, published, config_hash));
 CREATE TABLE IF NOT EXISTS llm_calls(
   id INTEGER PRIMARY KEY AUTOINCREMENT, run_id TEXT, candidate_id TEXT, purpose TEXT,
   provider TEXT, model TEXT, seconds REAL, ok INTEGER, error TEXT,
@@ -92,7 +95,7 @@ class Store:
         if "extra_json" not in cols:
             self.conn.execute("ALTER TABLE evaluations ADD COLUMN extra_json TEXT")
         ccols = {r[1] for r in self.conn.execute("PRAGMA table_info(candidates)")}
-        for col in ("title_ja", "abstract_ja", "translation_src", "material_updated_at", "media_url"):
+        for col in ("title_ja", "abstract_ja", "translation_src", "material_updated_at", "media_url", "links_hash"):
             if col not in ccols:
                 self.conn.execute(f"ALTER TABLE candidates ADD COLUMN {col} TEXT")
         self.conn.commit()
@@ -345,6 +348,8 @@ class Store:
         cache_cut = (as_of - timedelta(days=cache_days)).isoformat()
         cur = c.execute("DELETE FROM extraction_cache WHERE substr(created_at,1,10) < ?", (cache_cut,))
         counts["extraction_cache"] = cur.rowcount
+        cur = c.execute("DELETE FROM invalid_items WHERE substr(last_seen,1,10) < ?", (cache_cut,))
+        counts["invalid_items"] = cur.rowcount
         counts["total"] = sum(counts[k] for k in ("news", "disclosure", "rejected", "stale_yahoo_keys"))
         c.commit()
         if counts["total"]:
@@ -507,6 +512,57 @@ class Store:
                           (input_hash, prompt_sha, model, _j(extraction), _j(meta), now_iso()))
         self.conn.commit()
 
+    def identifier_index(self):
+        """収集の後処理を速くするための、安定ID -> (候補ID, published, 要旨の有無, リンク世代) の索引。
+
+        既知の同一アイテム (published 不変・リンクが現行の辞書世代で作られた
+        もの) は、企業リンクの再照合と再統合を省略できる。辞書が変われば
+        世代 (config_hash) が変わり、省略は自動で止まる。開示 (訂正があり
+        得る) は呼び出し側で対象外にする。
+        """
+        out = {}
+        for k, cid, pub, has_abs, lh in self.conn.execute(
+                "SELECT i.key, c.id, c.published, (c.abstract IS NOT NULL AND c.abstract != ''), "
+                "c.links_hash FROM identifiers i JOIN candidates c ON c.id = i.candidate_id"):
+            out[k] = (cid, pub, bool(has_abs), lh)
+        return out
+
+    def set_links_hash(self, cid, config_hash):
+        """候補の企業リンクが、どの設定世代 (辞書) で作られたかを記録する。"""
+        self.conn.execute("UPDATE candidates SET links_hash=? WHERE id=?", (config_hash, cid))
+        self.conn.commit()
+
+    def invalid_keys(self, config_hash):
+        """現行の設定世代で「企業リンクが成立しなかった」安定IDの集合 {(key, published)}。
+
+        世代 (config_hash) が変われば辞書も変わり得るため、旧世代の記録は
+        ヒットさせない (安全側: 再照合して作り直す)。
+        """
+        return {(k, p) for k, p in self.conn.execute(
+            "SELECT key, published FROM invalid_items WHERE config_hash=?", (config_hash,))}
+
+    def add_invalid(self, pairs, config_hash):
+        """リンク不成立だった安定IDをまとめて記録する。pairs は (key, published) の列。"""
+        if not pairs:
+            return
+        now = now_iso()
+        self.conn.executemany(
+            "INSERT INTO invalid_items(key, published, config_hash, first_seen, last_seen) "
+            "VALUES(?,?,?,?,?) ON CONFLICT(key, published, config_hash) "
+            "DO UPDATE SET last_seen=excluded.last_seen",
+            [(k, p or "", config_hash, now, now) for k, p in pairs])
+        self.conn.commit()
+
+    def touch_invalids(self, pairs, config_hash):
+        """ヒットした invalid 記録の last_seen をまとめて更新する (prune の生存判定用)。"""
+        if not pairs:
+            return
+        now = now_iso()
+        self.conn.executemany(
+            "UPDATE invalid_items SET last_seen=? WHERE key=? AND published=? AND config_hash=?",
+            [(now, k, p, config_hash) for k, p in pairs])
+        self.conn.commit()
+
     def only_infra_errors(self, cid):
         """最新の評価がすべて HttpError(API側の失敗)だけで終わっているか。旧版が error として保存した分の救済に使う。"""
         rows = self.conn.execute(
@@ -524,6 +580,19 @@ class Store:
         row = self.conn.execute(
             "SELECT * FROM evaluations WHERE candidate_id=? AND kind=? ORDER BY id DESC LIMIT 1",
             (cid, kind)).fetchone()
+        return dict(row) if row else None
+
+    def prev_evaluation(self, cid, kind, latest_id):
+        """表示中の最新評価より前にある、直近の比較可能な (final/hold) 評価。
+
+        差分表示 (前回比) 用。error は採点結果ではないので対象にしない。
+        再計算 (recalc) は行を書き換えるだけで新しい行は作らないため、
+        ここに現れるのは実際に再評価された分だけになる。
+        """
+        row = self.conn.execute(
+            "SELECT * FROM evaluations WHERE candidate_id=? AND kind=? AND id<? "
+            "AND status IN ('final','hold') ORDER BY id DESC LIMIT 1",
+            (cid, kind, latest_id)).fetchone()
         return dict(row) if row else None
 
     def evaluations_for_run(self, run_id, kind=None):

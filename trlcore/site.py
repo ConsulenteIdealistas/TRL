@@ -90,6 +90,25 @@ def _ev_for_site(ev, cfg):
     }
 
 
+def _prev_for_site(ev):
+    """前回評価の要約 (前回比の表示用)。状態・総合点・TRL・項目点だけを持ち、
+    根拠本文は持たない (data.json を太らせないため)。"""
+    if not ev:
+        return None
+    items = json.loads(ev["items_json"] or "{}")
+    extra = json.loads(ev["extra_json"] or "{}") if ev.get("extra_json") else {}
+    trl = extra.get("trl_level") if isinstance(extra.get("trl_level"), dict) else {}
+    return {
+        "evaluated_at": ev["evaluated_at"], "status": ev["status"],
+        "total": ev["total"], "band": ev["band"],
+        "trl_level": trl.get("level"),
+        "items": {k: (v.get("score") if isinstance(v, dict)
+                      and isinstance(v.get("score"), (int, float))
+                      and not isinstance(v.get("score"), bool) else None)
+                  for k, v in items.items()},
+    }
+
+
 def display_status(cand, long_ev, store, event_ev=None):
     """画面表示用の状態。final=選定可能 / review=要追加調査(必須項目は揃っている) / hold=保留(必須項目が不足) /
     pending=未評価(API失敗で未評価のものを含む) / error=内容起因のエラー / rejected=除外。"""
@@ -161,8 +180,16 @@ def build_site_data(store, cfg, now=None):
         if "long" not in kinds_seen and "event" not in kinds_seen and cid not in next_ids and cand_status != "rejected":
             continue  # 評価済みと、次に評価される上位だけを載せる (除外は理由つきで別掲する)
         c = store.get_candidate(cid)
-        long_ev = _ev_for_site(store.latest_evaluation(cid, "long"), cfg)
-        event_ev = _ev_for_site(store.latest_evaluation(cid, "event"), cfg)
+        long_row = store.latest_evaluation(cid, "long")
+        event_row = store.latest_evaluation(cid, "event")
+        long_ev = _ev_for_site(long_row, cfg)
+        event_ev = _ev_for_site(event_row, cfg)
+        # 前回比 (観測の差分): 表示中の評価が採点結果 (final/hold) のときだけ、
+        # 直前の比較可能な評価の要約を付ける。再評価が無い候補には付かない
+        if long_ev is not None and long_row["status"] in ("final", "hold"):
+            long_ev["prev"] = _prev_for_site(store.prev_evaluation(cid, "long", long_row["id"]))
+        if event_ev is not None and event_row["status"] in ("final", "hold"):
+            event_ev["prev"] = _prev_for_site(store.prev_evaluation(cid, "event", event_row["id"]))
         seen, ents = set(), []
         for e in c["entities"]:
             key = (e["entity_id"], e["strength"], e["product_name"])

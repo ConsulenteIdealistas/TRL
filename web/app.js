@@ -101,11 +101,36 @@ function facetText(p) {
   const m = marketOf(p), c = sectorOf(p);
   return [m ? ML[m] || m : "", c ? CL[c] || c : ""].filter(Boolean).join("・");
 }
+function prevDiffTxt(p) {
+  // 一覧カード用の前回比 (TRL と総合点が変わった分だけを短く出す)
+  const pv = p.long && p.long.prev;
+  if (!pv) return "";
+  const parts = [], cl = lvl(p);
+  if (pv.trl_level != null && cl != null && pv.trl_level !== cl) parts.push(`TRL ${pv.trl_level}→${cl}`);
+  if (pv.total != null && p.long.total != null && pv.total !== p.long.total) parts.push(`総合 ${pv.total}→${p.long.total}`);
+  return parts.join(" / ");
+}
+function prevCmp(ev, curTrl) {
+  // 詳細用の前回比較: 前回の日時・状態と、TRL・総合点・項目点の変化
+  const pv = ev.prev;
+  if (!pv) return "";
+  const head = [`前回評価: ${jst(pv.evaluated_at)}（${SL[pv.status] || pv.status}）`];
+  const parts = [];
+  if (pv.trl_level != null || curTrl != null) parts.push(`TRL ${pv.trl_level ?? "未確定"} → ${curTrl ?? "未確定"}`);
+  if (pv.total != null || ev.total != null) parts.push(`総合点 ${pv.total ?? "未確定"} → ${ev.total ?? "未確定"}`);
+  const diffs = Object.keys(ev.items).filter(k => k in pv.items && pv.items[k] !== ev.items[k].score)
+    .map(k => `${label(k)}: ${pv.items[k] ?? "—"} → ${ev.items[k].score ?? "—"}`);
+  return `<p class="hint">${esc(head.join(" "))}</p>`
+    + (parts.length ? `<p>${esc(parts.join(" / "))}</p>` : "")
+    + (diffs.length ? `<ul class="pts">${diffs.map(d => `<li><b>→</b><span>${esc(d)}</span></li>`).join("")}</ul>`
+      : `<p class="hint">項目点に変化はありません。</p>`);
+}
 function card(p) {
   const s = p.id === sel;
   const ents = p.entities.filter(e => e.strength === "strong").length;
   const facet = facetText(p);
-  return `<article class="card ${s ? "sel" : ""}" data-id="${esc(p.id)}"><div class="main"><div style="min-width:0"><div class="top"><span class="${src(p.source)}">${srcName(p.source)}</span><span class="date">${esc(p.published || "")}</span>${LANG === "ja" && srcOf(p) ? `<span class="date">訳: ${esc(srcOf(p))}</span>` : ""}${p.long && p.long.llm_model ? `<span class="date">評価: ${esc(p.long.llm_model)}</span>` : ""}</div><h3 class="title">${esc(dispT(p))}</h3><p class="abs">${esc(dispA(p))}</p><div class="tags">${(p.fields || []).slice(0, 4).map(t => `<span class="tag">${esc(t)}</span>`).join("")}</div><div class="mi"><span>技術成熟度 <strong>${fmtScore(sc(p, "technology_readiness"))}</strong></span><span>技術的優位性 <strong>${fmtScore(sc(p, "technological_advantage"))}</strong></span><span>関連企業 <strong>${ents ? ents + "社" : "未特定"}</strong></span>${facet ? `<span>国・分野 <strong>${esc(facet)}</strong></span>` : ""}</div></div><div class="side">${stB(p.display_status)}${dirB(p)}${trl(lvl(p))}</div></div><div class="foot"><span>${p.long && p.long.critical_missing.length ? `必須の不足 ${p.long.critical_missing.length}件` : p.display_status === "pending" ? (p.next_up ? "次回評価予定" : "評価待ち") : p.display_status === "rejected" ? "除外" + (p.screen_reason ? ": " + (SR[p.screen_reason] || p.screen_reason) : "") : ""}</span><a class="tg" href="detail.html?id=${encodeURIComponent(p.id)}">詳細を見る →</a></div></article>`;
+  const diffTxt = prevDiffTxt(p);
+  return `<article class="card ${s ? "sel" : ""}" data-id="${esc(p.id)}"><div class="main"><div style="min-width:0"><div class="top"><span class="${src(p.source)}">${srcName(p.source)}</span><span class="date">${esc(p.published || "")}</span>${LANG === "ja" && srcOf(p) ? `<span class="date">訳: ${esc(srcOf(p))}</span>` : ""}${p.long && p.long.llm_model ? `<span class="date">評価: ${esc(p.long.llm_model)}</span>` : ""}</div><h3 class="title">${esc(dispT(p))}</h3><p class="abs">${esc(dispA(p))}</p><div class="tags">${(p.fields || []).slice(0, 4).map(t => `<span class="tag">${esc(t)}</span>`).join("")}</div><div class="mi"><span>技術成熟度 <strong>${fmtScore(sc(p, "technology_readiness"))}</strong></span><span>技術的優位性 <strong>${fmtScore(sc(p, "technological_advantage"))}</strong></span><span>関連企業 <strong>${ents ? ents + "社" : "未特定"}</strong></span>${facet ? `<span>国・分野 <strong>${esc(facet)}</strong></span>` : ""}${diffTxt ? `<span>前回比 <strong>${esc(diffTxt)}</strong></span>` : ""}</div></div><div class="side">${stB(p.display_status)}${dirB(p)}${trl(lvl(p))}</div></div><div class="foot"><span>${p.long && p.long.critical_missing.length ? `必須の不足 ${p.long.critical_missing.length}件` : p.display_status === "pending" ? (p.next_up ? "次回評価予定" : "評価待ち") : p.display_status === "rejected" ? "除外" + (p.screen_reason ? ": " + (SR[p.screen_reason] || p.screen_reason) : "") : ""}</span><a class="tg" href="detail.html?id=${encodeURIComponent(p.id)}">詳細を見る →</a></div></article>`;
 }
 function scoreRow(k, it) {
   const v = it && typeof it.score === "number" && isFinite(it.score) ? it.score : null;
@@ -138,6 +163,7 @@ function detail() {
 <section class="ds"><h4>技術評価</h4>${L ? G.technology.map(k => scoreRow(k, L.items[k])).join("") : `<p class="hint">未評価です。</p>`}</section>
 <section class="ds"><h4>事業評価</h4>${L && L.business_stage === "pre_stage" ? `<p class="note">この技術は前商業段階(TRL 3以下)のため、事業項目は「段階未達」として不足とは区別しています。点が付いている項目はそのまま表示します。</p>` : ""}${L ? G.business.map(k => scoreRow(k, L.items[k])).join("") : `<p class="hint">未評価です。</p>`}${L && !strong.length ? `<p class="note">関連企業が特定できていないため、企業固有の項目は算出されません。総合点は6項目すべてが揃うまで確定せず、重みの再配分もしません。</p>` : ""}</section>
 <section class="ds"><h4>総合点</h4><p>${total}</p>${L && L.total_scope === "technology" ? `<p class="note">これは技術評価の総合点です。事業項目は段階未達のため対象外で、技術軸の項目だけで算出しています。</p>` : ""}</section>
+${L && L.prev ? `<section class="ds"><h4>前回評価との比較</h4>${prevCmp(L, lvl(p))}</section>` : ""}
 <section class="ds"><h4>材料の方向性</h4>${L && L.direction ? `<p>${dirB(p)} ${esc(L.direction.reason || "")}</p><p class="hint">方向性は点数やTRLとは独立に、資料が示す出来事の追い風・逆風を判定したものです。</p>` : `<p class="hint">未判定です（方向を決める出来事が資料に無いか、旧基準の評価です）。</p>`}</section>
 <section class="ds"><h4>不足している観点</h4>${L && L.critical_missing.length ? `<p class="m" style="color:#a96500;font-weight:700">必須項目の不足: ${L.critical_missing.map(k => esc(label(k))).join("、")}</p>` : ""}${pts(missAll, 1)}${waitAll.length ? `<p class="hint">結果待ち（不足ではなく、治験の結果公表など時間の経過でしか解けないもの）:</p><ul class="pts">${waitAll.map(x => `<li><b>◷</b><span>${esc(x)}</span></li>`).join("")}</ul>` : ""}${q && q.next_sources.length ? `<p class="hint">次に確認する情報源: ${q.next_sources.map(esc).join(" / ")}</p>` : ""}${q && q.reeval_conditions.length ? `<p class="hint">再評価の条件: ${q.reeval_conditions.map(esc).join(" / ")}</p>` : ""}</section>
 ${p.display_status === "error" && LL && LL.errors.length ? `<section class="ds"><h4>処理上の注意</h4>${pts(LL.errors, 1)}</section>` : ""}

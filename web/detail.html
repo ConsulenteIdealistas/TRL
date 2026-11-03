@@ -44,6 +44,20 @@ const label = k => IL[k] || k;
 const DL = {positive: "ポジティブ", negative: "ネガティブ", mixed: "混在"};
 const dirB = ev => { const d = ev && ev.status !== "error" && ev.direction; return d && d.direction ? `<span class="dir dir-${d.direction}">${DL[d.direction]}</span>` : ""; };  // error 評価の方向性は出さない (一覧側と揃える)
 const jst = iso => { try { return new Date(iso).toLocaleString("ja-JP", {timeZone: "Asia/Tokyo", hour12: false}); } catch (e) { return iso; } };
+function prevCmp(ev, curTrl) {
+  // 前回比較: 前回の日時・状態と、TRL・総合点・項目点の変化 (一覧のドロワーと共通の形)
+  const pv = ev.prev;
+  if (!pv) return "";
+  const parts = [];
+  if (pv.trl_level != null || curTrl != null) parts.push(`TRL ${pv.trl_level ?? "未確定"} → ${curTrl ?? "未確定"}`);
+  if (pv.total != null || ev.total != null) parts.push(`総合点 ${pv.total ?? "未確定"} → ${ev.total ?? "未確定"}`);
+  const diffs = Object.keys(ev.items).filter(k => k in pv.items && pv.items[k] !== ev.items[k].score)
+    .map(k => `${label(k)}: ${pv.items[k] ?? "—"} → ${ev.items[k].score ?? "—"}`);
+  return `<p class="hint">前回評価: ${esc(jst(pv.evaluated_at))}（${esc(SL[pv.status] || pv.status)}）</p>`
+    + (parts.length ? `<p>${esc(parts.join(" / "))}</p>` : "")
+    + (diffs.length ? `<ul class="pts">${diffs.map(d => `<li><b>→</b><span>${esc(d)}</span></li>`).join("")}</ul>`
+      : `<p class="hint">項目点に変化はありません。</p>`);
+}
 
 function trl(t) {
   const k = ok(t);
@@ -107,8 +121,9 @@ async function load() {
 <section class="ds"><h4>技術成熟度（TRL）</h4>${trl(lvl)}${tr && tr.reason ? `<p>${esc(tr.reason)}</p>` : ""}${tr && tr.level == null && tr.missing_info.length ? `<p class="hint">不足: ${tr.missing_info.map(esc).join(" / ")}</p>` : ""}${tr && tr.awaiting_info && tr.awaiting_info.length ? `<p class="hint">結果待ち: ${tr.awaiting_info.map(esc).join(" / ")}</p>` : ""}<p class="hint">TRLは資料から根拠付きで判断できた場合のみ表示します。技術成熟度スコアからの換算はしません。</p></section>
 <section class="ds"><h4>技術評価</h4>${LL ? G.technology.map(k => scoreRow(k, LL.items[k])).join("") : `<p class="hint">未評価です。</p>`}</section>
 <section class="ds"><h4>事業評価</h4>${LL && LL.business_stage === "pre_stage" ? `<p class="note">この技術は前商業段階(TRL 3以下)のため、事業項目は「段階未達」として不足とは区別しています。点が付いている項目はそのまま表示します。</p>` : ""}${LL ? G.business.map(k => scoreRow(k, LL.items[k])).join("") : `<p class="hint">未評価です。</p>`}${LL && !strong.length ? `<p class="note">関連企業が特定できていないため、企業固有の項目は算出されません。総合点は6項目すべてが揃うまで確定せず、重みの再配分もしません。</p>` : ""}</section>
-${EV ? `<section class="ds"><h4>イベント評価</h4>${Object.keys(EV.items).map(k => scoreRow(k, EV.items[k])).join("")}<p>総合点 ${EV.total != null ? EV.total + " / 100(" + esc(EV.band || "") + ")" : "未確定"}</p></section>` : ""}
+${EV ? `<section class="ds"><h4>イベント評価</h4>${Object.keys(EV.items).map(k => scoreRow(k, EV.items[k])).join("")}<p>総合点 ${EV.total != null ? EV.total + " / 100(" + esc(EV.band || "") + ")" : "未確定"}</p>${EV.prev ? prevCmp(EV, null) : ""}</section>` : ""}
 <section class="ds"><h4>総合点（長期）</h4><p>${total}</p>${LL && LL.total_scope === "technology" ? `<p class="note">これは技術評価の総合点です。事業項目は段階未達のため対象外で、技術軸の項目だけで算出しています。</p>` : ""}</section>
+${LL && LL.prev ? `<section class="ds"><h4>前回評価との比較</h4>${prevCmp(LL, lvl)}</section>` : ""}
 <section class="ds"><h4>材料の方向性</h4>${LL && LL.direction ? `<p>${dirB(LL)} ${esc(LL.direction.reason || "")}</p><p class="hint">方向性は点数やTRLとは独立に、資料が示す出来事の追い風・逆風を判定したものです。</p>` : `<p class="hint">未判定です（方向を決める出来事が資料に無いか、旧基準の評価です）。</p>`}</section>
 <section class="ds"><h4>不足している観点</h4>${LL && LL.critical_missing.length ? `<p class="m" style="color:#a96500;font-weight:700">必須項目の不足: ${LL.critical_missing.map(k => esc(label(k))).join("、")}</p>` : ""}${pts(missAll, 1)}${waitAll.length ? `<p class="hint">結果待ち（不足ではなく、治験の結果公表など時間の経過でしか解けないもの）:</p><ul class="pts">${waitAll.map(x => `<li><b>◷</b><span>${esc(x)}</span></li>`).join("")}</ul>` : ""}${q && q.next_sources.length ? `<p class="hint">次に確認する情報源: ${q.next_sources.map(esc).join(" / ")}</p>` : ""}${q && q.reeval_conditions.length ? `<p class="hint">再評価の条件: ${q.reeval_conditions.map(esc).join(" / ")}</p>` : ""}</section>
 ${p.display_status === "error" && p.long && p.long.errors.length ? `<section class="ds"><h4>処理上の注意</h4>${pts(p.long.errors, 1)}</section>` : ""}

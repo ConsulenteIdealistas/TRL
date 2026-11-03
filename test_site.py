@@ -694,6 +694,33 @@ class ExportTests(unittest.TestCase):
         got = sorted(c["display_status"] for c in data["candidates"])
         self.assertEqual(got, ["final", "hold", "review"])
 
+    def test_prev_evaluation_diff_exported(self):
+        # 前回比 (Issue 1): 再評価された候補には直前の比較可能な評価の要約が付く
+        data = self.build(Mock(make_llm_fn(long_scores={k: 65 for k in LONG_KEYS})), n=1)
+        cand = data["candidates"][0]
+        self.assertIsNone(cand["long"]["prev"])  # 初回評価には前回が無い
+        cid = cand["id"]
+        ev2 = {"kind": "long", "as_of": AS_OF.isoformat(), "status": "hold", "total": None, "band": None,
+               "items": {"technology_readiness": {"score": 50, "reason": "", "evidence": [],
+                                                  "counter_evidence": [], "missing_info": []}},
+               "extraction": None, "event": None, "prompt_versions": {}, "config_version": "x",
+               "config_hash": "x", "llm_provider": "gemini", "llm_model": "m", "input_hash": "h2",
+               "errors": [], "extra": {"trl_level": {"level": 5, "reason": "r", "evidence": [], "missing_info": []}}}
+        self.store.add_evaluation("r9", cid, ev2)
+        data2 = T.build_site_data(self.store, cfg_with(), datetime(2026, 10, 26, tzinfo=timezone.utc))
+        cand2 = [c for c in data2["candidates"] if c["id"] == cid][0]
+        prev = cand2["long"]["prev"]
+        self.assertIsNotNone(prev)
+        self.assertEqual(prev["total"], 65)
+        self.assertEqual(prev["status"], "final")
+        self.assertEqual(prev["items"]["technology_readiness"], 65)
+        # 最新が error のときは前回比を付けない (error は採点結果ではない)
+        ev3 = dict(ev2, status="error", errors=["LLMError: invalid JSON"], input_hash="h3")
+        self.store.add_evaluation("r10", cid, ev3)
+        data3 = T.build_site_data(self.store, cfg_with(), datetime(2026, 10, 26, tzinfo=timezone.utc))
+        cand3 = [c for c in data3["candidates"] if c["id"] == cid][0]
+        self.assertNotIn("prev", cand3["long"])
+
     def test_news_candidates_hidden_from_site(self):
         self.build(None, n=1)
         rec, _ = T.normalize({"source": "gnews", "source_id": "z1", "title": "アストロスケール news",

@@ -3206,5 +3206,121 @@ class EdgarTests(unittest.TestCase):
         self.assertEqual(by_name["hutchmed-edgar"], "HCM")
 
 
+class CollectThinningTests(unittest.TestCase):
+    """Issue 3 (収集の間引き): 既知アイテムの再照合省略と invalid のネガティブキャッシュ。
+
+    後処理の主コストは企業リンク照合 (辞書300社の走査) で、取得アイテムの
+    97% は重複か invalid の再処理だった。published が不変の既知アイテムと、
+    現行世代の辞書でリンク不成立だったアイテムは、照合を繰り返さない。
+    """
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.path = Path(self.tmp.name) / "d" / "trl.sqlite"
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def cfg(self, source):
+        cfg = dict(CFG)
+        cfg["sources"] = {"defaults": {"max_results": 5, "lookback_days": 30},
+                          "queries": [{"name": "n", source: "q"}]}
+        return cfg
+
+    def run_collect(self, store, cfg, raws, source, as_of=AS_OF):
+        return run_pipeline(store, cfg, None, as_of=as_of, sources=(source,), kinds=(),
+                            fetchers={source: lambda q, n, d, a: raws}, today=as_of,
+                            log=lambda *_: None)
+
+    def test_known_news_skips_relink(self):
+        from unittest import mock
+        from trlcore import pipeline as PL
+        store = Store(self.path)
+        raws = [raw(source="gnews", sid="n1", title="アストロスケールが防衛案件の大型契約を獲得",
+                    info_type="news")]
+        with mock.patch.object(PL, "link_entities", wraps=PL.link_entities) as spy:
+            self.run_collect(store, self.cfg("gnews"), raws, "gnews")
+            self.assertEqual(spy.call_count, 1)
+            r2 = self.run_collect(store, self.cfg("gnews"), raws, "gnews")
+            self.assertEqual(spy.call_count, 1)  # 2回目は照合しない
+        self.assertEqual(r2["counts"]["duplicates"], 1)
+        self.assertEqual(r2["counts"].get("dup_skipped"), 1)
+        store.close()
+
+    def test_invalid_news_cached_until_dictionary_changes(self):
+        from unittest import mock
+        from trlcore import pipeline as PL
+        store = Store(self.path)
+        raws = [raw(source="gnews", sid="nx", title="人気アニメのポップアップショップが開店",
+                    affiliations=[], info_type="news")]
+        with mock.patch.object(PL, "link_entities", wraps=PL.link_entities) as spy:
+            r1 = self.run_collect(store, self.cfg("gnews"), raws, "gnews")
+            self.assertEqual(r1["counts"]["invalid"], 1)
+            self.assertEqual(spy.call_count, 1)
+            r2 = self.run_collect(store, self.cfg("gnews"), raws, "gnews")
+            self.assertEqual(r2["counts"]["invalid"], 1)
+            self.assertEqual(r2["counts"].get("invalid_cached"), 1)
+            self.assertEqual(spy.call_count, 1)  # キャッシュで照合省略
+            cfg2 = self.cfg("gnews")
+            cfg2["config_hash"] = "another-generation"  # 辞書が変われば世代が変わる
+            r3 = self.run_collect(store, cfg2, raws, "gnews")
+            self.assertEqual(r3["counts"]["invalid"], 1)
+            self.assertEqual(spy.call_count, 2)  # 再照合される
+        store.close()
+
+    def test_trials_update_is_reprocessed(self):
+        # 治験は published=最終更新日。更新されれば published が変わり、省略の
+        # 対象から外れて材料更新として取り込まれる (B2 再評価の契機を守る)
+        store = Store(self.path)
+        kw = dict(source="trials", sid="NCT00000001", info_type="trial",
+                  url="https://clinicaltrials.gov/study/NCT00000001")
+        r1 = self.run_collect(store, self.cfg("trials"),
+                              [raw(title="Astroscale 治験試験", published="2026-10-10", **kw)], "trials")
+        self.assertEqual(r1["counts"]["new"], 1)
+        r2 = self.run_collect(store, self.cfg("trials"),
+                              [raw(title="Astroscale 治験試験", published="2026-10-10", **kw)], "trials")
+        self.assertEqual(r2["counts"].get("dup_skipped"), 1)
+        r3 = self.run_collect(store, self.cfg("trials"),
+                              [raw(title="Astroscale 治験試験", published="2026-10-18",
+                                   abstract="結果が公表された治験の更新テキスト", **kw)], "trials")
+        self.assertFalse(r3["counts"].get("dup_skipped"))
+        self.assertEqual(r3["counts"]["duplicates"], 1)
+        cand = store.get_candidate(store.conn.execute("SELECT id FROM candidates").fetchone()[0])
+        self.assertEqual(cand["abstract"], "結果が公表された治験の更新テキスト")
+        self.assertIsNotNone(cand["material_updated_at"])
+        store.close()
+
+    def test_disclosure_never_skipped(self):
+        # 開示は訂正があり得るため、同一アイテムでも再統合を省略しない (I-2 の保護)
+        store = Store(self.path)
+        kw = dict(source="edgar", sid="ASTRO-2026-06-30", info_type="disclosure",
+                  url="https://www.sec.gov/edgar/browse/?CIK=1")
+
+        def fetch100():
+            return [raw(title="Astroscale 財務情報(2026-06-30 四半期)",
+                        published="2026-06-30", abstract="Astroscaleの財務数値: 売上高 100", **kw)]
+
+        def age_runs():
+            # 財務ソースの20日ゲートは runs.started_at (実時刻) 基準なので、
+            # 過去の実行を古くしてゲートを開ける
+            store.conn.execute("UPDATE runs SET started_at='2026-09-01T00:00:00+00:00'")
+            store.conn.commit()
+
+        r1 = self.run_collect(store, self.cfg("edgar"), fetch100(), "edgar")
+        self.assertEqual(r1["counts"]["new"], 1)
+        age_runs()
+        r2 = self.run_collect(store, self.cfg("edgar"), fetch100(), "edgar")
+        self.assertEqual(r2["counts"]["duplicates"], 1)
+        self.assertFalse(r2["counts"].get("dup_skipped"))
+        age_runs()
+        r3 = self.run_collect(store, self.cfg("edgar"),
+                              [raw(title="Astroscale 財務情報(2026-06-30 四半期)",
+                                   published="2026-06-30", abstract="Astroscaleの財務数値: 売上高 120", **kw)],
+                              "edgar")
+        cand = store.get_candidate(store.conn.execute("SELECT id FROM candidates").fetchone()[0])
+        self.assertIn("120", cand["abstract"])  # 訂正が取り込まれる
+        store.close()
+
+
 if __name__ == "__main__":
     unittest.main()

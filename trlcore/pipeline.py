@@ -1,5 +1,6 @@
 """処理フロー: 収集 → 正規化 → 重複排除 → 検証 → スクリーニング → 評価 → 保存。"""
 
+import json
 import time
 import unicodedata
 import uuid
@@ -108,7 +109,7 @@ def _gnews_title_key(rec, entity_links):
             f"{(rec.get('published') or '')[:10]}")
 
 
-def collect(store, cfg, run_id, as_of, sources, fetchers, counts, log):
+def collect(store, cfg, run_id, as_of, sources, fetchers, counts, log, budget_cap=None):
     d = cfg["sources"]["defaults"]
     now = datetime.now(timezone.utc).isoformat(timespec="seconds")
     jobs = [(sname, q) for q in cfg["sources"]["queries"] for sname in sources if q.get(sname)]
@@ -204,6 +205,11 @@ def collect(store, cfg, run_id, as_of, sources, fetchers, counts, log):
     # 打ち切って評価へ進む。予算 0 は無制限。実行中の取得は止めない (HTTP の
     # タイムアウトと再試行で上限が付いている)
     budget = ((cfg.get("scoring") or {}).get("screening") or {}).get("collect_budget_sec", 1200)
+    if budget_cap is not None:
+        # 実行全体の締め切りから逆算した上限 (評価の最低枠を残した残り時間)。
+        # 厳しい方を採り、締め切り超過なら最初の波で打ち切れるよう 0 にはしない
+        cap = max(0.001, budget_cap)
+        budget = cap if not budget else min(budget, cap)
     exceeded = 0
     collect_t0 = time.monotonic()
     from concurrent.futures import ThreadPoolExecutor
@@ -347,6 +353,15 @@ def _queue_reason(res):
     return "missing_items: " + ",".join(res["missing"]) + (f" (critical: {crit})" if crit else "")
 
 
+# 実行全体の締め切り (scoring.json の llm.run_budget_sec、現在 1320 秒=22 分) の配分。
+# ジョブ上限 30 分から前後の固定費 (テスト・復元・書き出し・保存、実測で約 5 分) と
+# 余裕を引いたもの。収集は評価の最低枠を残して止まり、評価は末尾処理の枠を残して止まる。
+# 根拠: 評価 1 件の最長は実測 262 秒で、評価の最低枠は 1 バッチ分 + 末尾枠。
+# 末尾 (翻訳・保持整理・確定) は通常 1 分以内に収まる
+EVAL_RESERVE_SEC = 420
+TAIL_RESERVE_SEC = 120
+
+
 def run_pipeline(store, cfg, llm, *, as_of, sources=("pubmed", "arxiv"), kinds=("long",), max_eval=None,
                  retry_failed=False, do_collect=True, fetchers=None, today=None, log=print, prompt_dir=None,
                  only_new=False):
@@ -394,8 +409,14 @@ def run_pipeline(store, cfg, llm, *, as_of, sources=("pubmed", "arxiv"), kinds=(
             log(f"[recalc] 保存済み評価 {rc['changed']} 件の総合点を現行設定で再計算しました")
         if rc["anomalies"]:
             log(f"::warning::[recalc] 再計算で final にならない評価が {rc['anomalies']} 件あり、対象外にしました")
+    run_budget = llm_settings(cfg).get("run_budget_sec") or 0
+    run_deadline = (t0 + run_budget) if run_budget else None
     if do_collect:
-        collect(store, cfg, run_id, as_of, sources, {**DEFAULT_FETCHERS, **(fetchers or {})}, counts, log)
+        cap = None
+        if run_deadline is not None:
+            cap = run_deadline - EVAL_RESERVE_SEC - time.monotonic()
+        collect(store, cfg, run_id, as_of, sources, {**DEFAULT_FETCHERS, **(fetchers or {})}, counts, log,
+                budget_cap=cap)
     for c in store.list_by_status(["new"]):
         reason = screen(c, as_of, cfg)
         store.set_status(c["id"], "rejected" if reason else "screened", reason)
@@ -404,7 +425,40 @@ def run_pipeline(store, cfg, llm, *, as_of, sources=("pubmed", "arxiv"), kinds=(
     selected = select_for_eval(
     store, cfg, today, limit, retry_failed=retry_failed, only_new=only_new
 )
+    # 引き継ぎ: 前回の実行が異常終了 (interrupted/partial/error) か、評価フェーズが
+    # 打ち切られて (counts の llm_degraded) 選定が記録されていたら、その未完分を
+    # 今回の選定の先頭に置く。前回の実行で評価が保存された候補は完了扱いで除く
+    # (evaluations の run_id で判定する)
+    handover = []
+    prev = store.previous_run(run_id)
+    prev_cut = bool(prev) and (prev["status"] in ("interrupted", "partial", "error")
+                               or (json.loads(prev.get("counts_json") or "{}")).get("llm_degraded"))
+    if prev_cut:
+        prev_selected = (json.loads(prev.get("params_json") or "{}")).get("selected") or []
+        if prev_selected:
+            done_ids = {e["candidate_id"] for e in store.evaluations_for_run(prev["run_id"])}
+            core_ids = {e["id"] for e in (cfg.get("entities") or {}).get("entities", [])
+                        if (e.get("tier") or "core") == "core"}
+            for cid in prev_selected:
+                if cid in done_ids:
+                    continue
+                c = store.get_candidate(cid)
+                if not c or c["status"] == "rejected" or c.get("info_type") in ("news", "disclosure"):
+                    continue
+                linked = {e["entity_id"] for e in c.get("entities", [])}
+                if not linked or not (linked & core_ids):
+                    continue
+                handover.append(c)
+    if handover:
+        handover_ids = {c["id"] for c in handover}
+        selected = (handover + [c for c in selected if c["id"] not in handover_ids])[:limit]
+        counts["handover"] = len([c for c in selected if c["id"] in handover_ids])
+        log(f"[eval] 前回の未完の選定 {counts['handover']} 件を引き継ぎました")
     counts["selected"] = len(selected)
+    # 選定は実行の途中で死んでも残るよう、この時点で run レコードへ記録する。
+    # 上限で外れた引き継ぎ分も連鎖が切れないよう一緒に入れる
+    store.update_run_params(run_id, selected=list(dict.fromkeys(
+        [c["id"] for c in handover] + [c["id"] for c in selected])))
     if selected and llm is None:
         counts["skipped_no_llm"] = len(selected)
         log("[eval] LLMプロバイダ未設定のため評価をスキップ(収集のみ)。TRL_LLM_PROVIDER を設定してください。")
@@ -445,6 +499,10 @@ def run_pipeline(store, cfg, llm, *, as_of, sources=("pubmed", "arxiv"), kinds=(
         if st["phase_budget_sec"] and time.monotonic() - phase_t0 > st["phase_budget_sec"]:
             degraded = "phase_budget_exceeded"
             log(f"::warning::[eval] 評価フェーズの時間予算({st['phase_budget_sec']}秒)を超えたため打ち切ります")
+            break
+        if run_deadline is not None and time.monotonic() > run_deadline - TAIL_RESERVE_SEC:
+            degraded = "run_budget_exceeded"
+            log(f"::warning::[eval] 実行全体の時間予算({run_budget}秒)の締め切りのため評価を打ち切ります")
             break
         batch = selected[idx:idx + workers]
         idx += len(batch)

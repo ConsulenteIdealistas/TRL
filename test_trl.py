@@ -1080,6 +1080,33 @@ class DedupeStoreTests(unittest.TestCase):
         self.assertEqual(self.store.list_queue(), [])
 
 
+class ListByStatusTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.path = Path(self.tmp.name) / "t.sqlite"
+        self.store = Store(self.path)
+
+    def tearDown(self):
+        self.store.close()
+        self.tmp.cleanup()
+
+    def test_list_by_status_matches_get_candidate(self):
+        def up(**kw):
+            rec, _ = normalize(raw(**kw), "t")
+            cid, _ = self.store.upsert_candidate(rec)
+            return cid
+        cid1 = up(sid="2610.1111")
+        cid2 = up(sid="2610.2222", title="Paper B")
+        self.store.set_entities(cid1, [{"entity_id": "e1", "strength": "strong",
+                                        "matched_by": "title", "matched_alias": "A"}])
+        self.store.set_status(cid1, "screened")
+        self.store.set_status(cid2, "screened")
+        got = self.store.list_by_status(["screened"])
+        want = [self.store.get_candidate(cid1), self.store.get_candidate(cid2)]
+        self.assertEqual([g["id"] for g in got], [cid1, cid2])
+        self.assertEqual(got, want)
+
+
 class PromptTests(unittest.TestCase):
     def test_render(self):
         self.assertEqual(render("a {{x}} b", {"x": "1"}), "a 1 b")
@@ -1825,6 +1852,66 @@ class IntegrationTests(unittest.TestCase):
         text = build_report(store, r3["run_id"])
         self.assertIn("65.0", text)
         self.assertIn("投資利益率ではありません", text)
+        store.close()
+
+    def test_handover_from_interrupted_run(self):
+        store = Store(self.path)
+        llm = Mock(make_llm_fn(long_scores={k: 65 for k in LONG_KEYS}))
+        r1 = run_pipeline(store, self.cfg(), llm, as_of=AS_OF, kinds=("long",), fetchers=self.fetchers(),
+                          today=AS_OF, log=lambda *_: None)
+        cands = store.list_by_status(["evaluated", "hold"])
+        self.assertEqual(len(cands), 2)
+        done_id, todo_id = cands[0]["id"], cands[1]["id"]
+        # 前回の実行 (interrupted) を作り、選定 [done, todo] と done 分の評価を記録する
+        store.start_run("prev-run", CFG["config_version"], CFG["config_hash"], AS_OF.isoformat(), {})
+        store.update_run_params("prev-run", selected=[done_id, todo_id])
+        store.conn.execute(
+            "INSERT INTO evaluations(run_id,candidate_id,kind,as_of,evaluated_at,status,total,band,"
+            "items_json,extraction_json,event_json,prompt_versions_json,config_version,config_hash,"
+            "llm_provider,llm_model,input_hash,errors_json,extra_json) "
+            "SELECT 'prev-run', ?, kind, as_of, evaluated_at, status, total, band, items_json,"
+            "extraction_json, event_json, prompt_versions_json, config_version, config_hash,"
+            "llm_provider, llm_model, input_hash, errors_json, extra_json FROM evaluations LIMIT 1",
+            (done_id,))
+        store.conn.commit()
+        store.finish_run("prev-run", {}, "interrupted", 1)
+        # previous_run の判定を決定的にするため開始時刻を並べ替える (r1 < prev-run < 次の実行)
+        store.conn.execute("UPDATE runs SET started_at='2020-01-01T00:00:00+00:00' WHERE run_id=?", (r1["run_id"],))
+        store.conn.execute("UPDATE runs SET started_at='2020-06-01T00:00:00+00:00' WHERE run_id='prev-run'")
+        store.conn.commit()
+        # 再評価間隔内 (today=AS_OF) なので通常選定では何も選ばれないが、引き継ぎで todo だけが評価される
+        r2 = run_pipeline(store, self.cfg(), llm, as_of=AS_OF, kinds=("long",), do_collect=False,
+                          today=AS_OF, log=lambda *_: None)
+        self.assertEqual(r2["counts"].get("handover"), 1)
+        self.assertEqual(r2["counts"]["selected"], 1)
+        evs = store.evaluations_for_run(r2["run_id"], "long")
+        self.assertEqual([e["candidate_id"] for e in evs], [todo_id])
+        params = json.loads(store.get_run(r2["run_id"])["params_json"])
+        self.assertEqual(params["selected"], [todo_id])
+        store.close()
+
+    def test_run_budget_stops_evaluation(self):
+        store = Store(self.path)
+        llm = Mock(make_llm_fn(long_scores={k: 65 for k in LONG_KEYS}))
+        r1 = run_pipeline(store, self.cfg(), llm, as_of=AS_OF, kinds=("long",), fetchers=self.fetchers(),
+                          today=AS_OF, log=lambda *_: None)
+        self.assertEqual(r1["counts"]["final"], 2)
+        cfg2 = self.cfg()
+        cfg2["scoring"] = json.loads(json.dumps(CFG["scoring"]))
+        cfg2["scoring"]["llm"] = {**(cfg2["scoring"].get("llm") or {}), "run_budget_sec": 1}
+        r2 = run_pipeline(store, cfg2, llm, as_of=AS_OF, kinds=("long",), do_collect=False,
+                          today=date(2026, 11, 20), log=lambda *_: None)
+        # 締め切り (1秒) のため評価は打ち切られる (選定は run レコードに記録される)
+        self.assertEqual(r2["counts"]["selected"], 2)
+        self.assertEqual(r2["counts"]["final"], 0)
+        self.assertEqual(r2["counts"].get("llm_degraded"), "run_budget_exceeded")
+        params = json.loads(store.get_run(r2["run_id"])["params_json"])
+        self.assertEqual(len(params["selected"]), 2)
+        # 次の実行は再評価間隔内でも、打ち切られた選定を引き継いで評価する
+        r3 = run_pipeline(store, self.cfg(), llm, as_of=AS_OF, kinds=("long",), do_collect=False,
+                          today=AS_OF, log=lambda *_: None)
+        self.assertEqual(r3["counts"].get("handover"), 2)
+        self.assertEqual(r3["counts"]["final"], 2)
         store.close()
 
     def test_purge_evaluations_resets_candidates(self):

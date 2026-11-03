@@ -143,16 +143,23 @@ def build_site_data(store, cfg, now=None):
     next_ids = set()
     if pool_as_of is not None:
         next_ids = {c["id"] for c in select_for_eval(store, cfg, pool_as_of, SITE_PENDING_LIMIT)}
+    # 評価の有無は先に一括で引き、掲載する候補だけを本体ごと読み込む
+    # (全候補を1件ずつ読むと候補数×数クエリになり、候補の増加に比例して重くなる)
+    ev_kinds = {}
+    for cid, kind in store.conn.execute(
+            "SELECT candidate_id, kind FROM evaluations GROUP BY candidate_id, kind"):
+        ev_kinds.setdefault(cid, set()).add(kind)
     cands = []
-    rows = store.conn.execute("SELECT id FROM candidates ORDER BY published DESC, id").fetchall()
-    for (cid,) in rows:
-        c = store.get_candidate(cid)
-        if c["info_type"] == "news":
+    rows = store.conn.execute("SELECT id, info_type FROM candidates ORDER BY published DESC, id").fetchall()
+    for cid, info_type in rows:
+        if info_type == "news":
             continue  # ニュースは評価単位ではなく材料。候補一覧には出さない
+        kinds_seen = ev_kinds.get(cid) or ()
+        if "long" not in kinds_seen and "event" not in kinds_seen and cid not in next_ids:
+            continue  # 評価済みと、次に評価される上位だけを載せる
+        c = store.get_candidate(cid)
         long_ev = _ev_for_site(store.latest_evaluation(cid, "long"), cfg)
         event_ev = _ev_for_site(store.latest_evaluation(cid, "event"), cfg)
-        if long_ev is None and event_ev is None and cid not in next_ids:
-            continue  # 評価済みと、次に評価される上位だけを載せる
         seen, ents = set(), []
         for e in c["entities"]:
             key = (e["entity_id"], e["strength"], e["product_name"])

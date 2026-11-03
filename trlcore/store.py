@@ -56,6 +56,9 @@ CREATE TABLE IF NOT EXISTS candidate_entities (
     ),
     FOREIGN KEY (candidate_id) REFERENCES candidates(id)
 );
+-- related_news / related_financials の企業経由ジョイン用。主キーは candidate_id
+-- 先頭のため entity_id 単独の探索が全走査になり、候補の増加に比例して重かった
+CREATE INDEX IF NOT EXISTS idx_candidate_entities_entity ON candidate_entities(entity_id, candidate_id);
 """
 
 
@@ -231,9 +234,31 @@ class Store:
         ]
 
     def list_by_status(self, statuses):
+        # 候補本体と企業リンクを一括で引く (旧実装は候補ごとに2クエリで、
+        # 候補数に比例してクエリが増えた。出力の dict 形状・順序は同一に保つ)
         q = ",".join("?" * len(statuses))
-        rows = self.conn.execute(f"SELECT id FROM candidates WHERE status IN ({q})", statuses).fetchall()
-        return [self.get_candidate(r[0]) for r in rows]
+        rows = self.conn.execute(f"SELECT * FROM candidates WHERE status IN ({q})", statuses).fetchall()
+        ids = [r["id"] for r in rows]
+        links = {}
+        for i in range(0, len(ids), 900):
+            chunk = ids[i:i + 900]
+            qq = ",".join("?" * len(chunk))
+            for lr in self.conn.execute(
+                    "SELECT candidate_id, entity_id, strength, matched_by, matched_alias, "
+                    "link_type, product_id, product_name FROM candidate_entities "
+                    f"WHERE candidate_id IN ({qq}) ORDER BY entity_id, link_type, matched_by", chunk):
+                links.setdefault(lr["candidate_id"], []).append(
+                    {"entity_id": lr["entity_id"], "strength": lr["strength"],
+                     "matched_by": lr["matched_by"], "matched_alias": lr["matched_alias"],
+                     "link_type": lr["link_type"], "product_id": lr["product_id"],
+                     "product_name": lr["product_name"]})
+        out = []
+        for r in rows:
+            d = dict(r)
+            d["fields"] = json.loads(d.pop("fields_json") or "[]")
+            d["entities"] = links.get(d["id"], [])
+            out.append(d)
+        return out
 
     def set_status(self, cid, status, reason=None, eval_at=None, retry_inc=False, retry_reset=False):
         # retry_reset: 成功 (hold/final) で再試行カウンタを戻す。戻さないと過去の失敗が
@@ -381,7 +406,7 @@ class Store:
             "JOIN candidate_entities ce ON ce.entity_id = ne.entity_id "
             "WHERE ce.candidate_id = ? AND n.id != ? AND n.info_type = 'news' "
             "AND n.published IS NOT NULL AND n.published <= ? AND n.published >= ? "
-            "ORDER BY n.published DESC LIMIT ?",
+            "ORDER BY n.published DESC, n.id LIMIT ?",
             (cid, cid, as_of.isoformat(), start, limit)).fetchall()
         out = []
         for r in rows:
@@ -407,7 +432,7 @@ class Store:
             "WHERE ce.candidate_id = ? AND n.id != ? AND n.info_type = 'disclosure' "
             "AND n.abstract LIKE '%財務数値(%' "
             "AND n.published IS NOT NULL AND n.published <= ? AND n.published >= ? "
-            "ORDER BY n.published DESC LIMIT ?",
+            "ORDER BY n.published DESC, n.id LIMIT ?",
             (cid, cid, as_of.isoformat(), start, limit)).fetchall()
         return [{"title": r["title"], "published": r["published"], "url": r["url"],
                  "text": r["abstract"]} for r in rows]
@@ -542,6 +567,26 @@ class Store:
     def get_run(self, run_id):
         r = self.conn.execute("SELECT * FROM runs WHERE run_id=?", (run_id,)).fetchone()
         return dict(r) if r else None
+
+    def update_run_params(self, run_id, **items):
+        """run レコードの params_json に項目をマージ保存する。選定リストのように
+        「実行が途中で死んでも残したい記録」を書くために使う (counts は終了時に
+        しか書かれないため、引き継ぎの手掛かりはここに残す)。"""
+        row = self.conn.execute("SELECT params_json FROM runs WHERE run_id=?", (run_id,)).fetchone()
+        if not row:
+            return
+        params = json.loads(row[0] or "{}")
+        params.update(items)
+        self.conn.execute("UPDATE runs SET params_json=? WHERE run_id=?", (_j(params), run_id))
+        self.conn.commit()
+
+    def previous_run(self, run_id):
+        """指定した実行の直前に開始した実行 (無ければ None)。引き継ぎの判定に使う。"""
+        row = self.conn.execute(
+            "SELECT * FROM runs WHERE (started_at, run_id) < "
+            "(SELECT started_at, run_id FROM runs WHERE run_id=?) "
+            "ORDER BY started_at DESC, run_id DESC LIMIT 1", (run_id,)).fetchone()
+        return dict(row) if row else None
 
     def run_sources(self, run_id):
         return [dict(r) for r in self.conn.execute("SELECT * FROM run_sources WHERE run_id=?", (run_id,)).fetchall()]

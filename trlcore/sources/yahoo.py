@@ -22,6 +22,9 @@ Retry-After 尊重) をすり抜けて 429 が上がってきたら、制限が�
 この層では再試行しない (下層で既に2回試しており、二重に燃やさない)。
 待っても 429 が解けないことが多いため、間隔を広げて発生を抑えつつ、
 再試行と全体休止は短めにして「応答待ちの絶対数」を減らす方針 (2026-11-03)。
+それでも全体休止は、休止明けの一斉再開で次の 429 を誘発し連鎖しうるため、
+429 失敗が CIRCUIT_LIMIT 件に達した実行では Yahoo 自体を打ち切る
+(ブレーカー)。失敗した銘柄は失敗として記録され、次回実行で再試行される。
 あわせて、実行開始直後に全スレッドのセッション確立 (cookie + crumb) が
 一斉に集中しないよう、スレッドごとに初回だけ 0〜3秒のジッターを入れる。
 """
@@ -33,6 +36,7 @@ import time
 import urllib.request
 from http.cookiejar import CookieJar
 from datetime import date, timedelta
+from ..errors import HttpError
 from ..http import http_fetch
 
 
@@ -80,12 +84,19 @@ _last_call = [0.0]
 _cooldown_lock = threading.Lock()
 _cooldown_until = [0.0]  # monotonic 時刻。429 観測時に全体で共有する休止の期限
 COOLDOWN_SEC = 30.0
+# ブレーカー: 1回の実行で 429 失敗がこの件数に達したら、その実行では Yahoo を
+# 見切って残りを即失敗にする (次回実行で再試行)。根拠は実測: 回復した日
+# (2026-11-02) の失敗は5件、全体休止の連鎖で収集が崩壊した日 (2026-11-03) は
+# 51件。その中間に置き、散発的な 429 では作動させない
+CIRCUIT_LIMIT = 8
+_429_count = [0]  # この実行で表面化した 429 失敗の累計
 
 
 def _note_429(retry_after=None, now=time.monotonic):
     """429 を観測したら、全体の休止期限を延ばす (短くはしない)。"""
     until = now() + max(COOLDOWN_SEC, retry_after or 0.0)
     with _cooldown_lock:
+        _429_count[0] += 1
         if until > _cooldown_until[0]:
             _cooldown_until[0] = until
 
@@ -255,6 +266,12 @@ def yahoo_fetch(query, max_results, lookback_days, as_of, http=None, sleep=time.
     symbol = str(query).strip().upper()
     if not symbol:
         return []
+    if _429_count[0] >= CIRCUIT_LIMIT:
+        # ブレーカー作動中は通信も休止待ちもせず即座に失敗として記録させる。
+        # 全体休止の連鎖で収集フェーズ全体を巻き込むのを防ぐための上限
+        raise HttpError(
+            f"Yahoo の 429 失敗が上限 ({CIRCUIT_LIMIT} 件) に達したため、この実行では打ち切りました",
+            429, None)
     ticker = symbol.split(".")[0]  # 表示と source_id 用 (接尾辞なしのティッカー)
     s = _sess()
     if http is None:

@@ -659,6 +659,8 @@ class YahooFinancialTests(unittest.TestCase):
         s["crumb"] = None
         s["opener"] = None
         s["ua"] = None
+        yahoo_mod._429_count[0] = 0
+        yahoo_mod._cooldown_until[0] = 0.0
 
     def test_session_ua_from_pool_and_stable(self):
         from trlcore.sources import yahoo as yahoo_mod
@@ -782,6 +784,33 @@ class YahooFinancialTests(unittest.TestCase):
             self.assertEqual(yh._cooldown_until[0], 1120.0)  # Retry-After が長ければそちら
         finally:
             yh._cooldown_until[0] = 0.0
+
+    def test_circuit_breaker_opens_after_limit(self):
+        # 429 失敗が上限に達したら、その後の Yahoo 取得は通信せず即失敗になる
+        from trlcore.sources import yahoo as yh
+        from trlcore.errors import HttpError
+        calls = []
+
+        def fake_http(url, params=None, headers=None, **kw):
+            if "getcrumb" in url:
+                return b"crumb123"
+            if "fc.yahoo.com" in url:
+                raise RuntimeError("404")
+            calls.append(url)
+            raise HttpError("HTTP 429 for url", 429, None)
+
+        yh._last_call[0] = 0.0
+        try:
+            for _ in range(yh.CIRCUIT_LIMIT):
+                with self.assertRaises(HttpError):
+                    yahoo.fetch("9348.T", 5, 400, AS_OF, http=fake_http, sleep=lambda *_: None)
+            self.assertEqual(yh._429_count[0], yh.CIRCUIT_LIMIT)
+            self.assertEqual(len(calls), yh.CIRCUIT_LIMIT)
+            with self.assertRaises(HttpError):
+                yahoo.fetch("9348.T", 5, 400, AS_OF, http=fake_http, sleep=lambda *_: None)
+            self.assertEqual(len(calls), yh.CIRCUIT_LIMIT)  # 通信していない
+        finally:
+            yh._last_call[0] = 0.0
 
     def test_fetch_passes_single_retry_to_http_fetch(self):
         # Yahoo 経路の http 試行は2回まで (retries=1)。他ソースの既定には触らない

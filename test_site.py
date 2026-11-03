@@ -156,6 +156,75 @@ class FallbackModelTests(unittest.TestCase):
         self.assertEqual(outs[2], "main-ok")
         self.assertEqual(outs[5], "main-ok")
 
+    def test_fallback_chain_reaches_second_fallback(self):
+        # 主 → 代替1 が両方とも一時的失敗なら、代替2 で応答する
+        calls = []
+
+        def http(url, **kw):
+            for name in ("gemini-sub2", "gemini-main", "gemini-sub"):
+                if name in url:
+                    calls.append(name)
+                    if name != "gemini-sub2":
+                        raise T.HttpError("HTTP 503 for x", 503)
+                    return json.dumps({"candidates": [{"content": {"parts": [{"text": "fb2"}]}}]}).encode()
+            raise AssertionError(url)
+        g = T.Gemini(model="gemini-main", http=http, fallback_model="gemini-sub",
+                     fallback_model_2="gemini-sub2")
+        self.assertEqual(g.complete("p"), "fb2")
+        self.assertEqual(calls, ["gemini-main", "gemini-sub", "gemini-sub2"])
+        self.assertEqual(g.last_model, "gemini-sub2")
+        self.assertEqual(g.fallback_models, ["gemini-sub", "gemini-sub2"])
+        self.assertEqual(g.fallback_model, "gemini-sub")  # 互換プロパティは1段目
+
+    def test_fallback_chain_stops_at_first_success(self):
+        # 代替1 が応答すれば代替2 は呼ばない
+        calls = []
+
+        def http(url, **kw):
+            if "gemini-main" in url:
+                calls.append("main")
+                raise T.HttpError("HTTP 503 for x", 503)
+            calls.append("sub2" if "gemini-sub2" in url else "sub")
+            return json.dumps({"candidates": [{"content": {"parts": [{"text": "ok"}]}}]}).encode()
+        g = T.Gemini(model="gemini-main", http=http, fallback_model="gemini-sub",
+                     fallback_model_2="gemini-sub2")
+        self.assertEqual(g.complete("p"), "ok")
+        self.assertEqual(calls, ["main", "sub"])
+
+    def test_stage_breaker_skips_failed_fallback(self):
+        # 主と代替1 が落ち続けると両段ともブレーカーで飛ばされ、代替2 へ直行する
+        counts = {"gemini-main": 0, "gemini-sub": 0, "gemini-sub2": 0}
+
+        def http(url, **kw):
+            for name in ("gemini-sub2", "gemini-main", "gemini-sub"):
+                if name in url:
+                    counts[name] += 1
+                    if name != "gemini-sub2":
+                        raise T.HttpError("HTTP 503 for x", 503)
+                    return json.dumps({"candidates": [{"content": {"parts": [{"text": "fb2"}]}}]}).encode()
+            raise AssertionError(url)
+        g = T.Gemini(model="gemini-main", http=http, fallback_model="gemini-sub",
+                     fallback_model_2="gemini-sub2")
+        for _ in range(5):
+            self.assertEqual(g.complete("p"), "fb2")
+        self.assertEqual(counts["gemini-main"], 3)
+        self.assertEqual(counts["gemini-sub"], 3)
+        self.assertEqual(counts["gemini-sub2"], 5)
+
+    def test_second_fallback_from_env(self):
+        # 環境変数 TRL_LLM_FALLBACK_MODEL_2 からも2段目を読める
+        import os
+        old = os.environ.get("TRL_LLM_FALLBACK_MODEL_2")
+        os.environ["TRL_LLM_FALLBACK_MODEL_2"] = "gemini-env2"
+        try:
+            g = T.Gemini(model="gemini-main", http=lambda *a, **k: b"{}", fallback_model="gemini-sub")
+            self.assertEqual(g.fallback_models, ["gemini-sub", "gemini-env2"])
+        finally:
+            if old is None:
+                os.environ.pop("TRL_LLM_FALLBACK_MODEL_2", None)
+            else:
+                os.environ["TRL_LLM_FALLBACK_MODEL_2"] = old
+
     def test_last_model_tracking(self):
         def ok_http(url, **kw):
             return json.dumps({"candidates": [{"content": {"parts": [{"text": "ok"}]}}]}).encode()

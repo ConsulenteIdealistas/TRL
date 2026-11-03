@@ -43,10 +43,11 @@ def _emit_call(provider, rec):
     except Exception:
         pass
 
-# 主モデルの連続失敗がこの回数に達したら、その実行では代替モデルへ直行する
-# (モデル版ブレーカー)。根拠は実測 (2026-11-03): 主モデルが終日不調の日は
+# 各段の連続失敗がこの回数に達したら、その実行ではその段を飛ばして次段へ
+# 行く (段別ブレーカー)。根拠は実測 (2026-11-03): 主モデルが終日不調の日は
 # 成功0件で、抽出・採点の全コールが「主モデルの失敗待ち→代替で再実行」の
-# 通行料を払った。3回連続の失敗は瞬断では起きにくく、成功で即リセットする
+# 通行料を払った。3回連続の失敗は瞬断では起きにくく、成功で即リセットする。
+# 最終段は飛ばさない (飛ばすと評価が必ず失敗するため)
 MAIN_FAIL_LIMIT = 3
 
 
@@ -56,12 +57,24 @@ def _fallback_model(model, fallback_model=None):
     return fb if fb and fb != model else None
 
 
+def _fallback_models(model, fallback_model=None, fallback_model_2=None):
+    """代替モデルの階段 (近い順、最大2段)。明示指定が無ければ環境変数
+    TRL_LLM_FALLBACK_MODEL → TRL_LLM_FALLBACK_MODEL_2 の順で集める。
+    主モデルと同名・重複は除く (同じ段を二度試す無駄と、ブレーカーの誤作動を防ぐ)。"""
+    out = []
+    for fb in (fallback_model or os.environ.get("TRL_LLM_FALLBACK_MODEL"),
+               fallback_model_2 or os.environ.get("TRL_LLM_FALLBACK_MODEL_2")):
+        if fb and fb != model and fb not in out:
+            out.append(fb)
+    return out
+
+
 class Anthropic:
     name = "anthropic"
 
-    def __init__(self, model=None, http=None, fallback_model=None):
+    def __init__(self, model=None, http=None, fallback_model=None, fallback_model_2=None):
         self.model = model or os.environ.get("TRL_LLM_MODEL") or "claude-haiku-5-5"
-        self.fallback_model = _fallback_model(self.model, fallback_model)
+        self.fallback_models = _fallback_models(self.model, fallback_model, fallback_model_2)
         self.http = http or http_fetch
         self.timeout, self.retries = 120, 2  # configure_llm() で scoring.json の llm 設定に上書き
         self.call_budget = 240  # 同上 (1回の呼び出し全体の時間上限・監査 A-2)
@@ -70,8 +83,13 @@ class Anthropic:
             raise LLMError("ANTHROPIC_API_KEY is not set")
         self._tls = threading.local()  # last_model はスレッドごとに保持する (評価は並列実行)
         self.recorder = None  # 計装レコーダ (run 側が設定する。None なら記録しない)
-        self._main_fails = [0]  # 主モデルの連続失敗数 (ブレーカー用)
-        self._main_lock = threading.Lock()
+        self._stage_fails = [0, 0, 0]  # 段ごとの連続失敗数 (段別ブレーカー用)
+        self._stage_lock = threading.Lock()
+
+    @property
+    def fallback_model(self):
+        """互換用: 代替モデルの1段目 (無ければ None)。階段全体は fallback_models。"""
+        return self.fallback_models[0] if self.fallback_models else None
 
     @property
     def last_model(self):
@@ -80,26 +98,28 @@ class Anthropic:
         return getattr(self._tls, "model", None)
 
     def complete(self, prompt, purpose=None, candidate_id=None):
-        if self._breaker_open():
-            # ブレーカー作動中: 主モデルの失敗待ち (通行料) を払わず代替へ直行する
-            out = self._timed(self.fallback_model, prompt, purpose, candidate_id,
-                              main_skipped=True)
-            self._tls.model = self.fallback_model
+        # 階段: 主モデル → 代替1 → 代替2。一時的失敗 (503/429 等) のときだけ
+        # 次段へ降りる。恒常的な失敗 (404/401 等) と時間上限の到達はその場で
+        # 投げる (従来どおり)。連続失敗中の段はブレーカーで飛ばす
+        stages = [self.model] + self.fallback_models
+        main_skipped = self._stage_open(0)
+        last_err = None
+        for i, stage in enumerate(stages):
+            if i < len(stages) - 1 and self._stage_open(i):
+                continue  # この段は連続失敗中: 失敗待ち (通行料) を払わず次段へ
+            try:
+                out = self._timed(stage, prompt, purpose, candidate_id,
+                                  main_skipped=main_skipped and i > 0)
+            except HttpError as e:
+                self._note_stage_result(i, False)
+                last_err = e
+                if not e.transient or e.deadline_exceeded or i == len(stages) - 1:
+                    raise
+                continue
+            self._note_stage_result(i, True)
+            self._tls.model = stage
             return out
-        try:
-            out = self._timed(self.model, prompt, purpose, candidate_id)
-            self._note_main_result(True)
-            self._tls.model = self.model
-            return out
-        except HttpError as e:
-            self._note_main_result(False)
-            # 503/429 等の一時的失敗はモデル側の過負荷であることが多く、同一プロバイダの
-            # 別モデルでは応答することがある。恒常的な失敗(404/401等)では切り替えない。
-            if not (self.fallback_model and e.transient) or e.deadline_exceeded:
-                raise
-            out = self._timed(self.fallback_model, prompt, purpose, candidate_id)
-            self._tls.model = self.fallback_model
-            return out
+        raise last_err if last_err is not None else LLMError("no LLM stage available")
 
     def _timed(self, model, prompt, purpose, candidate_id, main_skipped=False):
         """_complete を計測つきで呼ぶ。成否・実モデル・秒数・入出力サイズ・
@@ -115,12 +135,13 @@ class Anthropic:
                    main_skipped)
         return out
 
-    def _breaker_open(self):
-        return self.fallback_model is not None and self._main_fails[0] >= MAIN_FAIL_LIMIT
+    def _stage_open(self, i):
+        return i < len(self._stage_fails) and self._stage_fails[i] >= MAIN_FAIL_LIMIT
 
-    def _note_main_result(self, ok):
-        with self._main_lock:
-            self._main_fails[0] = 0 if ok else self._main_fails[0] + 1
+    def _note_stage_result(self, i, ok):
+        with self._stage_lock:
+            if i < len(self._stage_fails):
+                self._stage_fails[i] = 0 if ok else self._stage_fails[i] + 1
 
     def _emit(self, purpose, candidate_id, model, seconds, ok, err, prompt, out,
               main_skipped=False):
@@ -154,9 +175,9 @@ class Anthropic:
 class Gemini:
     name = "gemini"
 
-    def __init__(self, model=None, http=None, fallback_model=None):
+    def __init__(self, model=None, http=None, fallback_model=None, fallback_model_2=None):
         self.model = model or os.environ.get("TRL_LLM_MODEL") or "gemini-3.8-flash"
-        self.fallback_model = _fallback_model(self.model, fallback_model)
+        self.fallback_models = _fallback_models(self.model, fallback_model, fallback_model_2)
         self.http = http or http_fetch
         self.timeout, self.retries = 120, 2  # configure_llm() で scoring.json の llm 設定に上書き
         self.call_budget = 240  # 同上 (1回の呼び出し全体の時間上限・監査 A-2)
@@ -165,8 +186,13 @@ class Gemini:
             raise LLMError("GEMINI_API_KEY is not set")
         self._tls = threading.local()  # last_model はスレッドごとに保持する (評価は並列実行)
         self.recorder = None  # 計装レコーダ (run 側が設定する。None なら記録しない)
-        self._main_fails = [0]  # 主モデルの連続失敗数 (ブレーカー用)
-        self._main_lock = threading.Lock()
+        self._stage_fails = [0, 0, 0]  # 段ごとの連続失敗数 (段別ブレーカー用)
+        self._stage_lock = threading.Lock()
+
+    @property
+    def fallback_model(self):
+        """互換用: 代替モデルの1段目 (無ければ None)。階段全体は fallback_models。"""
+        return self.fallback_models[0] if self.fallback_models else None
 
     @property
     def last_model(self):
@@ -175,26 +201,28 @@ class Gemini:
         return getattr(self._tls, "model", None)
 
     def complete(self, prompt, purpose=None, candidate_id=None):
-        if self._breaker_open():
-            # ブレーカー作動中: 主モデルの失敗待ち (通行料) を払わず代替へ直行する
-            out = self._timed(self.fallback_model, prompt, purpose, candidate_id,
-                              main_skipped=True)
-            self._tls.model = self.fallback_model
+        # 階段: 主モデル → 代替1 → 代替2。一時的失敗 (503/429 等) のときだけ
+        # 次段へ降りる。恒常的な失敗 (404/401 等) と時間上限の到達はその場で
+        # 投げる (従来どおり)。連続失敗中の段はブレーカーで飛ばす
+        stages = [self.model] + self.fallback_models
+        main_skipped = self._stage_open(0)
+        last_err = None
+        for i, stage in enumerate(stages):
+            if i < len(stages) - 1 and self._stage_open(i):
+                continue  # この段は連続失敗中: 失敗待ち (通行料) を払わず次段へ
+            try:
+                out = self._timed(stage, prompt, purpose, candidate_id,
+                                  main_skipped=main_skipped and i > 0)
+            except HttpError as e:
+                self._note_stage_result(i, False)
+                last_err = e
+                if not e.transient or e.deadline_exceeded or i == len(stages) - 1:
+                    raise
+                continue
+            self._note_stage_result(i, True)
+            self._tls.model = stage
             return out
-        try:
-            out = self._timed(self.model, prompt, purpose, candidate_id)
-            self._note_main_result(True)
-            self._tls.model = self.model
-            return out
-        except HttpError as e:
-            self._note_main_result(False)
-            # 503/429 等の一時的失敗はモデル側の過負荷であることが多く、同一プロバイダの
-            # 別モデルでは応答することがある。恒常的な失敗(404/401等)では切り替えない。
-            if not (self.fallback_model and e.transient) or e.deadline_exceeded:
-                raise
-            out = self._timed(self.fallback_model, prompt, purpose, candidate_id)
-            self._tls.model = self.fallback_model
-            return out
+        raise last_err if last_err is not None else LLMError("no LLM stage available")
 
     def _timed(self, model, prompt, purpose, candidate_id, main_skipped=False):
         """_complete を計測つきで呼ぶ。成否・実モデル・秒数・入出力サイズ・
@@ -210,12 +238,13 @@ class Gemini:
                    main_skipped)
         return out
 
-    def _breaker_open(self):
-        return self.fallback_model is not None and self._main_fails[0] >= MAIN_FAIL_LIMIT
+    def _stage_open(self, i):
+        return i < len(self._stage_fails) and self._stage_fails[i] >= MAIN_FAIL_LIMIT
 
-    def _note_main_result(self, ok):
-        with self._main_lock:
-            self._main_fails[0] = 0 if ok else self._main_fails[0] + 1
+    def _note_stage_result(self, i, ok):
+        with self._stage_lock:
+            if i < len(self._stage_fails):
+                self._stage_fails[i] = 0 if ok else self._stage_fails[i] + 1
 
     def _emit(self, purpose, candidate_id, model, seconds, ok, err, prompt, out,
               main_skipped=False):
@@ -262,14 +291,14 @@ class Mock:
         return self.fn(prompt)
 
 
-def get_provider(name, model=None, http=None, fallback_model=None):
+def get_provider(name, model=None, http=None, fallback_model=None, fallback_model_2=None):
     name = (name or "none").lower()
     if name == "none":
         return None
     if name == "anthropic":
-        return Anthropic(model, http, fallback_model)
+        return Anthropic(model, http, fallback_model, fallback_model_2)
     if name == "gemini":
-        return Gemini(model, http, fallback_model)
+        return Gemini(model, http, fallback_model, fallback_model_2)
     raise LLMError(f"unknown provider: {name}")
 
 

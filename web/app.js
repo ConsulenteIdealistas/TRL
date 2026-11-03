@@ -101,6 +101,13 @@ function facetText(p) {
   const m = marketOf(p), c = sectorOf(p);
   return [m ? ML[m] || m : "", c ? CL[c] || c : ""].filter(Boolean).join("・");
 }
+function holdCauseTxt(ev) {
+  // 保留の主因 (export 側で項目の理由文から切り分けたもの) の説明文
+  if (!ev || ev.status !== "hold" || !ev.hold_cause) return "";
+  return ev.hold_cause === "unidentified"
+    ? "保留の主因: 対象企業を資料から一意に特定できないため、企業固有の項目が算出できませんでした。"
+    : "保留の主因: 対象企業は特定できていますが、必須項目の根拠が資料にありませんでした。";
+}
 function prevDiffTxt(p) {
   // 一覧カード用の前回比 (TRL と総合点が変わった分だけを短く出す)
   const pv = p.long && p.long.prev;
@@ -162,7 +169,7 @@ function detail() {
 <section class="ds"><h4>技術成熟度（TRL）</h4>${trl(lvl(p), 1)}${tr && tr.reason ? `<p>${esc(tr.reason)}</p>` : ""}${tr && tr.level == null && tr.missing_info.length ? `<p class="hint">不足: ${tr.missing_info.map(esc).join(" / ")}</p>` : ""}${tr && tr.awaiting_info && tr.awaiting_info.length ? `<p class="hint">結果待ち: ${tr.awaiting_info.map(esc).join(" / ")}</p>` : ""}<p class="hint">TRLは資料から根拠付きで判断できた場合のみ表示します。技術成熟度スコアからの換算はしません。</p></section>
 <section class="ds"><h4>技術評価</h4>${L ? G.technology.map(k => scoreRow(k, L.items[k])).join("") : `<p class="hint">未評価です。</p>`}</section>
 <section class="ds"><h4>事業評価</h4>${L && L.business_stage === "pre_stage" ? `<p class="note">この技術は前商業段階(TRL 3以下)のため、事業項目は「段階未達」として不足とは区別しています。点が付いている項目はそのまま表示します。</p>` : ""}${L ? G.business.map(k => scoreRow(k, L.items[k])).join("") : `<p class="hint">未評価です。</p>`}${L && !strong.length ? `<p class="note">関連企業が特定できていないため、企業固有の項目は算出されません。総合点は6項目すべてが揃うまで確定せず、重みの再配分もしません。</p>` : ""}</section>
-<section class="ds"><h4>総合点</h4><p>${total}</p>${L && L.total_scope === "technology" ? `<p class="note">これは技術評価の総合点です。事業項目は段階未達のため対象外で、技術軸の項目だけで算出しています。</p>` : ""}</section>
+<section class="ds"><h4>総合点</h4><p>${total}</p>${L && L.total_scope === "technology" ? `<p class="note">これは技術評価の総合点です。事業項目は段階未達のため対象外で、技術軸の項目だけで算出しています。</p>` : ""}${holdCauseTxt(L) ? `<p class="note">${esc(holdCauseTxt(L))}</p>` : ""}</section>
 ${L && L.prev ? `<section class="ds"><h4>前回評価との比較</h4>${prevCmp(L, lvl(p))}</section>` : ""}
 <section class="ds"><h4>材料の方向性</h4>${L && L.direction ? `<p>${dirB(p)} ${esc(L.direction.reason || "")}</p><p class="hint">方向性は点数やTRLとは独立に、資料が示す出来事の追い風・逆風を判定したものです。</p>` : `<p class="hint">未判定です（方向を決める出来事が資料に無いか、旧基準の評価です）。</p>`}</section>
 <section class="ds"><h4>不足している観点</h4>${L && L.critical_missing.length ? `<p class="m" style="color:#a96500;font-weight:700">必須項目の不足: ${L.critical_missing.map(k => esc(label(k))).join("、")}</p>` : ""}${pts(missAll, 1)}${waitAll.length ? `<p class="hint">結果待ち（不足ではなく、治験の結果公表など時間の経過でしか解けないもの）:</p><ul class="pts">${waitAll.map(x => `<li><b>◷</b><span>${esc(x)}</span></li>`).join("")}</ul>` : ""}${q && q.next_sources.length ? `<p class="hint">次に確認する情報源: ${q.next_sources.map(esc).join(" / ")}</p>` : ""}${q && q.reeval_conditions.length ? `<p class="hint">再評価の条件: ${q.reeval_conditions.map(esc).join(" / ")}</p>` : ""}</section>
@@ -185,6 +192,8 @@ function stats() {
   $("#c1").textContent = n(["final"]);
   $("#c2").textContent = n(["review"]);
   $("#c3").textContent = n(["hold"]);
+  $("#c3u").textContent = P.filter(p => p.long && p.long.hold_cause === "unidentified").length;
+  $("#c3e").textContent = P.filter(p => p.long && p.long.hold_cause === "no_evidence").length;
   $("#c4").textContent = n(["pending"]);
   $("#c4n").textContent = P.filter(p => p.next_up).length;
   $("#c5").textContent = n(["error"]);

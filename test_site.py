@@ -721,6 +721,31 @@ class ExportTests(unittest.TestCase):
         cand3 = [c for c in data3["candidates"] if c["id"] == cid][0]
         self.assertNotIn("prev", cand3["long"])
 
+    def test_hold_cause_split_exported(self):
+        # 保留の主因の内訳 (Issue 2 の表示策): 企業を特定できないケースと、
+        # 特定できているが根拠が無いケースを、理由文の明記から切り分ける
+        data = self.build(Mock(make_llm_fn(long_scores={k: 65 for k in LONG_KEYS})), n=1)
+        cid = data["candidates"][0]["id"]
+
+        def hold_ev(missing, reason):
+            return {"kind": "long", "as_of": AS_OF.isoformat(), "status": "hold", "total": None, "band": None,
+                    "items": {"monetization": {"score": None, "reason": reason, "evidence": [],
+                                               "counter_evidence": [], "missing_info": [missing]}},
+                    "extraction": None, "event": None, "prompt_versions": {}, "config_version": "x",
+                    "config_hash": "x", "llm_provider": "gemini", "llm_model": "m", "input_hash": "h",
+                    "errors": [], "extra": {}}
+
+        def cause():
+            d = T.build_site_data(self.store, cfg_with(), datetime(2026, 10, 26, tzinfo=timezone.utc))
+            return [c for c in d["candidates"] if c["id"] == cid][0]["long"].get("hold_cause")
+
+        self.store.add_evaluation("r9", cid, hold_ev("対象企業の特定および商用化・収益実績に関する情報",
+                                                     "対象企業が特定されていないため評価不可。"))
+        self.assertEqual(cause(), "unidentified")
+        self.store.add_evaluation("r10", cid, hold_ev("製品化や販売に関する受注・売上実績",
+                                                      "前商業段階であり、商用化実績を示す情報が含まれていない。"))
+        self.assertEqual(cause(), "no_evidence")
+
     def test_news_candidates_hidden_from_site(self):
         self.build(None, n=1)
         rec, _ = T.normalize({"source": "gnews", "source_id": "z1", "title": "アストロスケール news",

@@ -90,6 +90,25 @@ def _ev_for_site(ev, cfg):
     }
 
 
+# 保留の主因の切り分けに使う、LLM が理由文・不足文へ明記する「企業を特定
+# できない」系の言い回し。プロンプトの規則 (企業が一意に特定できない場合は
+# 企業固有の項目を算出しない) に対応する明記だけを見る
+_UNIDENTIFIED_PATTERNS = ("特定できない", "特定されていない", "特定できていない",
+                          "一意に定まらない", "一意に特定できない")
+
+
+def _hold_cause(ev):
+    """保留の主因の内訳 (表示用): 対象企業を資料から一意に特定できないケース
+    (unidentified) と、特定はできるが必須項目の根拠が資料に無いケース
+    (no_evidence) を分ける。どちらが多いかで打ち手が違う (材料の同定か、
+    材料の量か) ため、観測のために切り分ける。"""
+    for v in ev["items"].values():
+        text = (v.get("reason") or "") + " " + " ".join(v.get("missing_info") or [])
+        if any(p in text for p in _UNIDENTIFIED_PATTERNS):
+            return "unidentified"
+    return "no_evidence"
+
+
 def _prev_for_site(ev):
     """前回評価の要約 (前回比の表示用)。状態・総合点・TRL・項目点だけを持ち、
     根拠本文は持たない (data.json を太らせないため)。"""
@@ -190,6 +209,8 @@ def build_site_data(store, cfg, now=None):
             long_ev["prev"] = _prev_for_site(store.prev_evaluation(cid, "long", long_row["id"]))
         if event_ev is not None and event_row["status"] in ("final", "hold"):
             event_ev["prev"] = _prev_for_site(store.prev_evaluation(cid, "event", event_row["id"]))
+        if long_ev is not None and long_row["status"] == "hold":
+            long_ev["hold_cause"] = _hold_cause(long_ev)
         seen, ents = set(), []
         for e in c["entities"]:
             key = (e["entity_id"], e["strength"], e["product_name"])

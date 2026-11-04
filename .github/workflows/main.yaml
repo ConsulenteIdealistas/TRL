@@ -64,7 +64,7 @@ on:
         options: ["no", "yes"]
         default: "no"
   schedule:
-    - cron: "30 21 * * 1"   # Mondays 21:30 UTC (Tuesday 06:30 JST)
+    - cron: "30 21 * * 1-4"   # Mon-Thu 21:30 UTC (Tue-Fri 06:30 JST)
 
 permissions: {}  # 既定は全拒否。必要な権限だけをジョブ単位で付ける (S-2)
 
@@ -141,7 +141,7 @@ jobs:
           SRC_EDINET: ${{ inputs.src_edinet }}
           SRC_EDGAR: ${{ inputs.src_edgar }}
           IN_KINDS: ${{ inputs.kinds || 'long' }}
-          IN_MAX_EVAL: ${{ github.event_name == 'schedule' && '10' || inputs.max_eval || '5' }}
+          IN_MAX_EVAL: ${{ github.event_name == 'schedule' && '5' || inputs.max_eval || '5' }}
           IN_RETRY: ${{ inputs.retry_failed || 'no' }}
           IN_PURGE: ${{ inputs.purge_evaluations || 'no' }}
           IN_ONLY_NEW: ${{ inputs.only_new || 'no' }}
@@ -170,11 +170,18 @@ jobs:
           fi
           ONLY_NEW_FLAG=""
           if [ "$IN_ONLY_NEW" = "yes" ]; then ONLY_NEW_FLAG="--only-new"; fi
+          # 収集の深さ: 定期実行は火曜 (JST) だけ深い日 (全窓) とし、他の曜日は
+          # 浅い日として発見系ソースの窓を数日に切り詰める。手動実行は常に深い
+          IN_DEPTH="deep"
+          if [ "$GITHUB_EVENT_NAME" = "schedule" ] && [ "$(TZ=Asia/Tokyo date +%u)" != "2" ]; then
+            IN_DEPTH="shallow"
+          fi
           python trl.py run --data-dir _data \
             --sources "$IN_SOURCES" \
             --kinds "$IN_KINDS" \
             --max-eval "$IN_MAX_EVAL" \
             --retry-failed "$IN_RETRY" \
+            --depth "$IN_DEPTH" \
             $ONLY_NEW_FLAG
       - name: Export site (data.json + web)
         if: always() && hashFiles('_data/trl.sqlite') != ''

@@ -345,8 +345,11 @@ function stats() {
   set("#c1", n(["final"]));
   set("#c2", n(["review"]));
   set("#c3", n(["hold"]));
-  set("#c3u", P.filter(p => p.long && p.long.hold_cause === "unidentified").length);
-  set("#c3e", P.filter(p => p.long && p.long.hold_cause === "no_evidence").length);
+  // 内訳は見出し (保留 = display_status が hold) と同じ母数を数える。
+  // 評価が hold でも必須の不足が無いものは review (要追加調査) に出るため、
+  // hold_cause だけで数えると見出しと合わなくなる
+  set("#c3u", P.filter(p => p.display_status === "hold" && p.long && p.long.hold_cause === "unidentified").length);
+  set("#c3e", P.filter(p => p.display_status === "hold" && p.long && p.long.hold_cause === "no_evidence").length);
   set("#c4", n(["pending"]));
   set("#c4n", P.filter(p => p.next_up).length);
   set("#c5", n(["error"]));

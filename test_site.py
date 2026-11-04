@@ -1077,6 +1077,11 @@ class ZeroRiskBatchTests(unittest.TestCase):
         self.assertIn("?pins=", app)
         # 新着の基準時刻も同じ共有リンク (?seen=) で持ち運べる (既読の統合)
         self.assertIn("seen=", app)
+        # 保留の内訳は見出しと同じ母数 (display_status が hold のもの) だけを
+        # 数える (評価 hold でも review 表示のものまで数えると内訳が合わない)
+        self.assertIn('p.display_status === "hold" && p.long', app)
+        self.assertIn("企業未特定", index)
+        self.assertIn("根拠不足", index)
         self.assertIn("data-ccite", app)
         self.assertIn("data-clink", app)
         self.assertIn("自分の表示", index)

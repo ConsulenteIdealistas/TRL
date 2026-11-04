@@ -170,6 +170,12 @@ async function copyText(t, btn) {
   }
   if (btn) { const o = btn.textContent; btn.textContent = ok ? "コピーしました" : "コピーできませんでした"; setTimeout(() => { btn.textContent = o; }, 1600); }
 }
+function copyBuilt(build, btn) {
+  // テキスト生成側が例外を投げても無反応にならないよう、生成に失敗したら失敗表示だけは出す
+  let t;
+  try { t = build(); } catch (e) { if (btn) { const o = btn.textContent; btn.textContent = "コピーできませんでした"; setTimeout(() => { btn.textContent = o; }, 1600); } return; }
+  copyText(t, btn);
+}
 function getNote(id) { try { return localStorage.getItem("trl-note:" + id) || ""; } catch (e) { return ""; } }
 const noteDrafts = {};  // 未保存のメモ下書き。再描画で入力途中のメモが消えないように保持する
 function setNote(id, v) { try { localStorage.setItem("trl-note:" + id, v); return true; } catch (e) { return false; } }
@@ -568,11 +574,11 @@ $("#det").addEventListener("click", e => {
   if (co || cj || cs || ce || cm) {
     const p = P.find(x => x.id === sel);
     if (!p) return;
-    if (co) copyText([p.title, p.abstract].filter(Boolean).join("\n\n"), co);
-    else if (cj) copyText([p.title_ja || p.title, p.abstract_ja || p.abstract].filter(Boolean).join("\n\n"), cj);
-    else if (ce) copyText(evalText(p), ce);
-    else if (cm) copyText(mdNote(p), cm);
-    else copyText(citeText(p), cs);
+    if (co) copyBuilt(() => [p.title, p.abstract].filter(Boolean).join("\n\n"), co);
+    else if (cj) copyBuilt(() => [p.title_ja || p.title, p.abstract_ja || p.abstract].filter(Boolean).join("\n\n"), cj);
+    else if (ce) copyBuilt(() => evalText(p), ce);
+    else if (cm) copyBuilt(() => mdNote(p), cm);
+    else copyBuilt(() => citeText(p), cs);
   }
 });
 load();

@@ -3386,5 +3386,32 @@ class CollectThinningTests(unittest.TestCase):
         store.close()
 
 
+class ReportWarningTests(unittest.TestCase):
+    def test_report_surfaces_failed_and_quiet_zero(self):
+        # 「静かな0件」と収集失敗は、レポートの頭で見えることが検知の前提
+        import os, tempfile
+        from trlcore.report import build_report
+        from trlcore.store import Store
+        fd, path = tempfile.mkstemp(suffix=".sqlite")
+        os.close(fd)
+        try:
+            store = Store(path)
+            store.start_run("run-x", "2026.11.0", "hash", "2026-11-04", {})
+            store.finish_run("run-x", {"fetched": 0, "sources_failed": 3,
+                                       "quiet_zero_sources": ["arxiv", "openalex"]},
+                             "partial", 12.3)
+            text = build_report(store, "run-x")
+            self.assertIn("収集に失敗したクエリ 3 件", text)
+            self.assertIn("取得0件のまま成功したソース: arxiv, openalex", text)
+            store.start_run("run-y", "2026.11.0", "hash", "2026-11-04", {})
+            store.finish_run("run-y", {"fetched": 10}, "ok", 9.0)
+            text2 = build_report(store, "run-y")
+            self.assertNotIn("取得0件のまま成功したソース", text2)
+            self.assertNotIn("収集に失敗したクエリ", text2)
+            store.close()
+        finally:
+            os.unlink(path)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -69,6 +69,13 @@ def build_report(store, run_id):
             f"- ⚠ LLM API失敗 {counts.get('llm_infra_failed', 0)}件(評価結果として保存せず未評価のまま残しています)"
             + (f" / 打ち切り理由: {counts['llm_degraded']}" if counts.get("llm_degraded") else "")
         ]
+    if counts.get("sources_failed"):
+        L += [f"- ⚠ 収集に失敗したクエリ {counts['sources_failed']} 件（詳細は「情報源ごとの状況」）"]
+    if counts.get("quiet_zero_sources"):
+        # 「静かな0件」は DB の counts と Actions ログの警告にしか出ていなかった。
+        # レポートの頭にも出す (キー失効・対象消滅が正常に見える事故の防止)
+        L += [f"- ⚠ 取得0件のまま成功したソース: {', '.join(counts['quiet_zero_sources'])}"
+              "（キー失効や対象の消滅の可能性。要確認）"]
     L += [
         "", "## 情報源ごとの状況"
     ]

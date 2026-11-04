@@ -1132,6 +1132,62 @@ class CompareModelsTests(unittest.TestCase):
         self.assertEqual(len(rows), 2)  # 抽出を共有して両モデルで採点できた
         self.assertIsNone(rows[0]["baseline_status"])
 
+    def test_compare_records_actual_model_and_flags_mismatch(self):
+        # 名札と実際に応答したモデルを照合できる (フォールバック混入の検出)
+        cfg = self._baseline(2)
+        good = Mock(make_llm_fn(long_scores={k: 60 for k in LONG_KEYS}))
+        res = T.run_compare(self.store, cfg, [("mock/mock-1", good)],
+                            as_of=AS_OF, log=lambda *_: None)
+        rows = self.store.compare_results(res["batch"])
+        self.assertTrue(rows)
+        self.assertTrue(all(r["actual_model"] == "mock/mock-1" for r in rows))
+        self.assertNotIn("名札と実際に応答したモデルが異なる",
+                         T.build_compare_report(self.store, res["batch"]))
+        bad = Mock(make_llm_fn(long_scores={k: 60 for k in LONG_KEYS}))
+        res2 = T.run_compare(self.store, cfg, [("gemini/not-the-model", bad)],
+                             as_of=AS_OF, log=lambda *_: None)
+        rows2 = self.store.compare_results(res2["batch"])
+        self.assertTrue(all(r["actual_model"] == "mock/mock-1" for r in rows2))
+        self.assertIn("名札と実際に応答したモデルが異なる",
+                      T.build_compare_report(self.store, res2["batch"]))
+
+    def test_compare_budget_is_sliced_per_model(self):
+        # 遅いモデルが全体の予算を食わず、速いモデルは自分の取り分で全件測れる
+        cfg = self._baseline(3)
+        import time as _time
+        base_fn = make_llm_fn(long_scores={k: 60 for k in LONG_KEYS})
+
+        def slow_fn(prompt):
+            _time.sleep(0.5)
+            return base_fn(prompt)
+
+        res = T.run_compare(self.store, cfg,
+                            [("gemini/slow", Mock(slow_fn)), ("gemini/fast", Mock(base_fn))],
+                            as_of=AS_OF, budget_sec=0.6, log=lambda *_: None)
+        rows = self.store.compare_results(res["batch"])
+        n_slow = sum(1 for r in rows if r["label"] == "gemini/slow")
+        n_fast = sum(1 for r in rows if r["label"] == "gemini/fast")
+        self.assertEqual(n_fast, 3)
+        self.assertLessEqual(n_slow, 1)
+
+    def test_compare_clients_have_no_fallback_ladder(self):
+        # 本番の環境変数が残っていても比較クライアントは階段を持たない
+        # (持つと名札と違うモデルが応答し、初回実行のように比較が汚染される)
+        import os
+        from unittest import mock as umock
+        from trlcore import cli as trl_cli
+        env = {"GEMINI_API_KEY": "dummy", "TRL_LLM_MODEL": "gemini-3.6-flash",
+               "TRL_LLM_FALLBACK_MODEL": "gemini-3.5-flash-lite",
+               "TRL_LLM_FALLBACK_MODEL_2": "gemini-3.5-flash",
+               "CLOUDFLARE_ACCOUNT_ID": "", "CLOUDFLARE_API_TOKEN": ""}
+        with umock.patch.dict(os.environ, env):
+            clients = trl_cli._compare_clients(cfg_with())
+        self.assertEqual([label for label, _ in clients],
+                         ["gemini/gemini-3.6-flash", "gemini/gemini-3.5-flash-lite",
+                          "gemini/gemini-3.5-flash"])
+        for _label, client in clients:
+            self.assertEqual(client.fallback_models, [])
+
 
 class SiteScoreCoercionTests(unittest.TestCase):
     def test_string_score_is_exported_as_none(self):

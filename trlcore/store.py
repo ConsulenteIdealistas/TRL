@@ -58,7 +58,7 @@ CREATE TABLE IF NOT EXISTS compare_results(
   id INTEGER PRIMARY KEY AUTOINCREMENT, batch TEXT, candidate_id TEXT, label TEXT,
   status TEXT, total REAL, band TEXT, trl_level INTEGER, items_json TEXT,
   seconds REAL, error TEXT, baseline_status TEXT, baseline_total REAL,
-  baseline_trl INTEGER, baseline_model TEXT, created_at TEXT);
+  baseline_trl INTEGER, baseline_model TEXT, actual_model TEXT, created_at TEXT);
 CREATE TABLE IF NOT EXISTS review_queue(
   candidate_id TEXT, kind TEXT, reason TEXT, missing_json TEXT, next_sources_json TEXT,
   reeval_conditions_json TEXT, last_eval_at TEXT, versions_json TEXT, created_at TEXT,
@@ -120,6 +120,9 @@ class Store:
         for col in ("title_ja", "abstract_ja", "translation_src", "material_updated_at", "media_url", "links_hash"):
             if col not in ccols:
                 self.conn.execute(f"ALTER TABLE candidates ADD COLUMN {col} TEXT")
+        cmpcols = {r[1] for r in self.conn.execute("PRAGMA table_info(compare_results)")}
+        if cmpcols and "actual_model" not in cmpcols:
+            self.conn.execute("ALTER TABLE compare_results ADD COLUMN actual_model TEXT")
         self.conn.commit()
 
     def set_translation(self, cid, title_ja, abstract_ja, title_by=None, abstract_by=None):
@@ -724,12 +727,13 @@ class Store:
         self.conn.execute(
             "INSERT INTO compare_results(batch, candidate_id, label, status, total, band,"
             " trl_level, items_json, seconds, error, baseline_status, baseline_total,"
-            " baseline_trl, baseline_model, created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            " baseline_trl, baseline_model, actual_model, created_at)"
+            " VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
             (row["batch"], row["candidate_id"], row["label"], row.get("status"), row.get("total"),
              row.get("band"), row.get("trl_level"), _j(row.get("items") or {}),
              row.get("seconds"), row.get("error"), row.get("baseline_status"),
              row.get("baseline_total"), row.get("baseline_trl"), row.get("baseline_model"),
-             now_iso()))
+             row.get("actual_model"), now_iso()))
         self.conn.commit()
 
     def compare_results(self, batch):

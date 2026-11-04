@@ -57,16 +57,18 @@ def run_compare(store, cfg, clients, *, as_of, limit=100, batch=None, budget_sec
     """clients は (label, llm) のリスト。label は結果の行にそのまま残る
     モデルの識別名 (例: gemini/gemini-3.6-flash)。"""
     batch = batch or ("cmp-" + datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ"))
-    deadline = time.monotonic() + budget_sec if budget_sec else None
     ids = select_compare_candidates(store, limit)
     log(f"[compare] batch={batch} candidates={len(ids)} models={[label for label, _ in clients]}")
+    # 時間予算はモデルごとに等分し、各モデルの消費時間 (実測の累計) で数える。
+    # 遅い・タイムアウトを繰り返すモデルが全体の予算を食って他のモデルが
+    # 測れなくなる事態を防ぐ (初回実行で Cloudflare が予算の8割超を消費した)
+    slice_sec = budget_sec / len(clients) if budget_sec and clients else None
+    spent = {label: 0.0 for label, _ in clients}
+    skipped = {label: 0 for label, _ in clients}
     # 抽出の土台が無い候補用に、lite と名の付くクライアントを抽出役にする
     extractor = next((c for c in clients if "lite" in c[0]), clients[0] if clients else None)
     done = 0
     for cid in ids:
-        if deadline and time.monotonic() > deadline:
-            log(f"[compare] 時間予算に達したため打ち切ります (完了 {done}/{len(ids)} 件)")
-            break
         cand = store.get_candidate(cid)
         if cand is None:
             continue
@@ -74,19 +76,28 @@ def run_compare(store, cfg, clients, *, as_of, limit=100, batch=None, budget_sec
         if basis is None:
             if extractor is None:
                 continue
+            t0x = time.monotonic()
             try:
                 basis, _meta = run_extraction(cand, cfg, extractor[1], as_of, prompt_dir)
             except Exception as e:  # 抽出できない候補は比較にならない
                 log(f"[compare] {cid}: 抽出に失敗したため除外します ({type(e).__name__})")
                 continue
+            finally:
+                if slice_sec:
+                    spent[extractor[0]] += time.monotonic() - t0x
         related = store.related_news(cid, as_of)
         financials = store.related_financials(cid, as_of)
         for label, llm in clients:
+            if slice_sec and spent[label] > slice_sec:
+                skipped[label] += 1
+                continue
             t0 = time.monotonic()
             res = evaluate_one(cand, "long", cfg, llm, as_of, extraction=basis,
                                extract_meta={"name": "extract", "version": "compare", "sha": None},
                                prompt_dir=prompt_dir, related=related, financials=financials)
             dt = time.monotonic() - t0
+            if slice_sec:
+                spent[label] += dt
             band = res.get("band")
             if isinstance(band, dict):
                 band = band.get("label")
@@ -106,8 +117,14 @@ def run_compare(store, cfg, clients, *, as_of, limit=100, batch=None, budget_sec
                 "baseline_total": baseline["total"] if baseline else None,
                 "baseline_trl": baseline["trl"] if baseline else None,
                 "baseline_model": baseline["model"] if baseline else None,
+                # 実際に応答したモデル (名札との照合用。フォールバック混入の検出)
+                "actual_model": (f"{getattr(llm, 'name', '')}/{res['llm_model']}"
+                                 if res.get("llm_model") else None),
             })
         done += 1
+    for label, n in skipped.items():
+        if n:
+            log(f"[compare] {label}: モデル別の時間予算に達したため {n} 件を未実施")
     log(f"[compare] done candidates={done}")
     return {"batch": batch, "candidates": done, "selected": len(ids)}
 
@@ -166,6 +183,11 @@ def build_compare_report(store, batch):
         secs = [r["seconds"] for r in rs if r["seconds"] is not None]
         lines.append(f"| {label} | {len(rs)} | {ok} | {_pct(ok / len(rs) if rs else None)} "
                      f"| {_num(sum(secs) / len(secs) if secs else None)} |")
+    mism = [r for r in rows if r.get("actual_model") and r["total"] is not None
+            and r["actual_model"] != r["label"]]
+    if mism:
+        lines += ["", f"> ⚠ 名札と実際に応答したモデルが異なる採点行が {len(mism)} 件あります"
+                  " (フォールバック混入の疑い。この比較はそのまま鵜呑みにしないこと)。"]
     # 本番 (baseline) との一致: baseline は候補ごとに実績のある側の値
     lines += ["", "## 本番の評価との一致", "",
               "| モデル | 共通の採点済み | 状態一致 | 総合点の平均差 | TRL一致 |",

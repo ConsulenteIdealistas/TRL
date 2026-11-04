@@ -41,9 +41,14 @@ def _compare_clients(cfg):
         m = os.environ.get(var)
         if m and m not in seen:
             seen.add(m)
-            clients.append((f"gemini/{m}", configure_llm(Gemini(m), cfg)))
+            # 代替に主モデル自身を渡すと _fallback_models が同名を除いて階段が
+            # 空になる。未指定だと環境変数の階段を拾い、名札と違うモデルが
+            # 応答して比較が汚染される (初回実行で実際に発生した)
+            clients.append((f"gemini/{m}", configure_llm(
+                Gemini(m, fallback_model=m, fallback_model_2=m), cfg)))
     if not clients:
         g = Gemini()
+        g.fallback_models = []  # 既定モデルでも階段は持たせない (比較の前提)
         clients.append((f"gemini/{g.model}", configure_llm(g, cfg)))
     cf = _cloudflare()
     if cf is not None:

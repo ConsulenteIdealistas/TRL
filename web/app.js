@@ -154,6 +154,20 @@ function scoreRow(k, it) {
 }
 const pts = (a, w) => a.length ? `<ul class="pts">${a.map(x => `<li><b class="${w ? "w" : ""}">${w ? "!" : "✓"}</b><span>${esc(x)}</span></li>`).join("")}</ul>` : `<p class="hint">登録された情報はありません。</p>`;
 
+async function copyText(t, btn) {
+  // ブラウザ内だけで完結するコピー。Clipboard API が使えない環境では
+  // 一時テキストエリア経由にフォールバックする
+  let ok = false;
+  try { await navigator.clipboard.writeText(t); ok = true; } catch (e) {}
+  if (!ok) {
+    const ta = document.createElement("textarea");
+    ta.value = t; ta.style.position = "fixed"; ta.style.opacity = "0";
+    document.body.appendChild(ta); ta.select();
+    try { ok = document.execCommand("copy"); } catch (e) {}
+    ta.remove();
+  }
+  if (btn) { const o = btn.textContent; btn.textContent = ok ? "コピーしました" : "コピーできませんでした"; setTimeout(() => { btn.textContent = o; }, 1600); }
+}
 function getNote(id) { try { return localStorage.getItem("trl-note:" + id) || ""; } catch (e) { return ""; } }
 const noteDrafts = {};  // 未保存のメモ下書き。再描画で入力途中のメモが消えないように保持する
 function setNote(id, v) { try { localStorage.setItem("trl-note:" + id, v); return true; } catch (e) { return false; } }
@@ -170,7 +184,7 @@ function detail() {
   const q = p.queue && p.queue.long;
   const total = L && L.total != null ? `${L.total} / 100(${esc(L.band || "")})` : "未確定";
   $("#det").innerHTML = `<div class="dc"><header class="dh"><div class="top"><span class="${src(p.source)}">${srcName(p.source)}</span>${stB(p.display_status)}</div><h3>${esc(dispT(p))}</h3><div class="mi"><span>公開日 ${esc(p.published || "—")}</span>${L ? `<span>評価日 ${esc(jst(L.evaluated_at))}</span>` : ""}${p.eval_count ? `<span>評価 ${p.eval_count} 回目</span>` : ""}${LL && LL.llm_model ? `<span>評価モデル ${esc(LL.llm_model)}</span>` : ""}</div></header>
-<section class="ds"><h4>研究概要</h4><p>${esc(dispA(p)) || "（要旨なし）"}</p>${LANG === "ja" && srcOf(p) ? `<p class="hint">日本語訳: ${esc(srcOf(p))}</p>` : ""}</section>
+<section class="ds"><h4>研究概要</h4><p>${esc(dispA(p)) || "（要旨なし）"}</p>${LANG === "ja" && srcOf(p) ? `<p class="hint">日本語訳: ${esc(srcOf(p))}</p>` : ""}<div class="acts"><button class="btn sec" type="button" id="cpyo">原文をコピー</button>${(p.title_ja || p.abstract_ja) ? `<button class="btn sec" type="button" id="cpyj">日本語訳をコピー</button>` : ""}</div></section>
 <section class="ds"><h4>技術成熟度（TRL）</h4>${trl(lvl(p), 1)}${tr && tr.reason ? `<p>${esc(tr.reason)}</p>` : ""}${tr && tr.level == null && tr.missing_info.length ? `<p class="hint">不足: ${tr.missing_info.map(esc).join(" / ")}</p>` : ""}${tr && tr.awaiting_info && tr.awaiting_info.length ? `<p class="hint">結果待ち: ${tr.awaiting_info.map(esc).join(" / ")}</p>` : ""}<p class="hint">TRLは資料から根拠付きで判断できた場合のみ表示します。技術成熟度スコアからの換算はしません。</p></section>
 <section class="ds"><h4>技術評価</h4>${L ? G.technology.map(k => scoreRow(k, L.items[k])).join("") : `<p class="hint">未評価です。</p>`}</section>
 <section class="ds"><h4>事業評価</h4>${L && L.business_stage === "pre_stage" ? `<p class="note">この技術は前商業段階(TRL 3以下)のため、事業項目は「段階未達」として不足とは区別しています。点が付いている項目はそのまま表示します。</p>` : ""}${L ? G.business.map(k => scoreRow(k, L.items[k])).join("") : `<p class="hint">未評価です。</p>`}${L && !strong.length ? `<p class="note">関連企業が特定できていないため、企業固有の項目は算出されません。総合点は6項目すべてが揃うまで確定せず、重みの再配分もしません。</p>` : ""}</section>
@@ -399,6 +413,13 @@ $("#det").addEventListener("click", e => {
   if (e.target.closest("#save")) {
     const saved = setNote(sel, $("#note").value); if (saved) delete noteDrafts[sel];
     $("#msg").textContent = saved ? "この端末のブラウザに保存しました。" : "保存できませんでした(ブラウザの保存機能が無効の可能性があります)。";
+  }
+  const co = e.target.closest("#cpyo"), cj = e.target.closest("#cpyj");
+  if (co || cj) {
+    const p = P.find(x => x.id === sel);
+    if (!p) return;
+    if (co) copyText([p.title, p.abstract].filter(Boolean).join("\n\n"), co);
+    else copyText([p.title_ja || p.title, p.abstract_ja || p.abstract].filter(Boolean).join("\n\n"), cj);
   }
 });
 load();

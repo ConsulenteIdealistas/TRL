@@ -1055,6 +1055,15 @@ class ZeroRiskBatchTests(unittest.TestCase):
                 T.export_site(self.store, cfg_with(), out_dir)
         self.assertFalse((out_dir / "data.json").exists())
 
+    def test_copy_buttons_for_original_and_translation(self):
+        # 原文・日本語訳のコピーはブラウザ内だけで完結する (一覧ドロワーと詳細の両方)
+        app = (T.ROOT / "web" / "app.js").read_text(encoding="utf-8")
+        detail = (T.ROOT / "web" / "detail.html").read_text(encoding="utf-8")
+        for text in (app, detail):
+            self.assertIn("原文をコピー", text)
+            self.assertIn("日本語訳をコピー", text)
+            self.assertIn("navigator.clipboard", text)
+
     def test_quiet_zero_source_recorded(self):
         cfg = cfg_with()
         res = T.run_pipeline(self.store, cfg, None, as_of=AS_OF, kinds=("long",),

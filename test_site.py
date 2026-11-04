@@ -1079,6 +1079,47 @@ class ZeroRiskBatchTests(unittest.TestCase):
         self.assertNotIn("quiet_zero_sources", counts2)
 
 
+class ShallowDepthTests(unittest.TestCase):
+    """浅い日 (depth=shallow): 発見系ソースの取得窓だけを切り詰める。"""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.store = T.Store(Path(self.tmp.name) / "d" / "trl.sqlite")
+
+    def tearDown(self):
+        self.store.close()
+        self.tmp.cleanup()
+
+    def _run(self, depth):
+        cfg = copy.deepcopy(CFG)
+        seen = {}
+
+        def rec(name):
+            def f(q, n, days, as_of):
+                seen.setdefault(name, set()).add(days)
+                return []
+            return f
+        fetchers = {s: rec(s) for s in ("pubmed", "trials", "yahoo", "edgar")}
+        T.run_pipeline(self.store, cfg, Mock(make_llm_fn()), as_of=AS_OF,
+                       sources=("pubmed", "trials", "yahoo", "edgar"),
+                       fetchers=fetchers, today=AS_OF, log=lambda *_: None,
+                       depth=depth)
+        return seen
+
+    def test_shallow_caps_discovery_windows_only(self):
+        seen = self._run("shallow")
+        self.assertEqual(seen.get("pubmed"), {4})
+        self.assertEqual(seen.get("trials"), {4})
+        self.assertEqual(seen.get("yahoo"), {400})  # 財務系は窓を触らない
+        self.assertEqual(seen.get("edgar"), {400})
+
+    def test_deep_keeps_configured_windows(self):
+        seen = self._run("deep")
+        self.assertIn(365, seen.get("pubmed", set()))
+        self.assertNotIn(4, seen.get("pubmed", set()))
+        self.assertEqual(seen.get("trials"), {180})
+
+
 class CompareModelsTests(unittest.TestCase):
     """モデル比較 (compare): 同じ候補・同じ抽出でモデル別の採点を比べる。"""
 

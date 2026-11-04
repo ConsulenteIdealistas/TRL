@@ -74,6 +74,8 @@ def main(argv=None):
     r.add_argument("--sources", default="pubmed,arxiv")
     r.add_argument("--kinds", default="long")
     r.add_argument("--max-eval", type=int)
+    r.add_argument("--depth", choices=["deep", "shallow"], default="deep",
+                   help="収集の深さ。shallow は発見系ソースの取得窓を数日に切り詰める (定期実行の浅い日用)")
     r.add_argument(
     "--retry-failed",
     choices=["no", "yes", "force"],
@@ -258,6 +260,7 @@ def main(argv=None):
     retry_failed=a.retry_failed,
     do_collect=not a.skip_collect,
     only_new=a.only_new,
+    depth=a.depth,
 )
 
     text = build_report(store, res["run_id"])

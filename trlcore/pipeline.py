@@ -114,6 +114,32 @@ def _gnews_title_key(rec, entity_links):
             f"{(rec.get('published') or '')[:10]}")
 
 
+# 浅い日 (深い日以外の曜日の定期実行) の取得窓。浅い日の役割は、深い日
+# (週1回・全窓) までの新規・更新を翌日までに拾うことに限る。窓の長さは
+# 規則で決める: 浅い日の間隔 (1日) + 実行の欠落・遅延の吸収 (1日。
+# スケジューラ遅延の実測最大は約5.5時間) を2倍にした 4日。深い日が週次で
+# 全窓を担保するため、浅い窓から漏れた古い材料も最大で7日遅れで拾われる。
+# 対象は発見系ソースのみ。財務系 (yahoo/edgar) は保存側の間隔ルール
+# (期末+97日・20日) が支配的なので窓は触らない。gnews は窓の概念がない
+SHALLOW_LOOKBACK_DAYS = 4
+SHALLOW_SOURCES = ("pubmed", "trials", "openalex", "prtimes", "edinet")
+
+
+def _apply_shallow_windows(cfg):
+    """浅い日用に、発見系ソースの取得窓を SHALLOW_LOOKBACK_DAYS に切り詰める。
+    クエリ dict を書き換える (プロセス内のみ。設定ファイルは不変)。
+    切り詰めたクエリ数を返す。"""
+    d = cfg["sources"]["defaults"]
+    capped = 0
+    for q in cfg["sources"]["queries"]:
+        if any(s in q for s in SHALLOW_SOURCES):
+            cur = q.get("lookback_days", d["lookback_days"])
+            if cur > SHALLOW_LOOKBACK_DAYS:
+                q["lookback_days"] = SHALLOW_LOOKBACK_DAYS
+                capped += 1
+    return capped
+
+
 def collect(store, cfg, run_id, as_of, sources, fetchers, counts, log, budget_cap=None):
     d = cfg["sources"]["defaults"]
     now = datetime.now(timezone.utc).isoformat(timespec="seconds")
@@ -405,14 +431,14 @@ TAIL_RESERVE_SEC = 120
 
 def run_pipeline(store, cfg, llm, *, as_of, sources=("pubmed", "arxiv"), kinds=("long",), max_eval=None,
                  retry_failed=False, do_collect=True, fetchers=None, today=None, log=print, prompt_dir=None,
-                 only_new=False):
+                 only_new=False, depth="deep"):
     t0 = time.monotonic()
     today = today or datetime.now(timezone.utc).date()
     run_id = new_run_id()
     store.start_run(run_id, cfg["config_version"], cfg["config_hash"], as_of.isoformat(),
                 {"sources": list(sources), "kinds": list(kinds), "max_eval": max_eval,
                  "retry_failed": retry_failed, "collect": do_collect, "only_new": only_new,
-                 "llm": getattr(llm, "name", "none")})
+                 "depth": depth, "llm": getattr(llm, "name", "none")})
     counts = {k: 0 for k in ("fetched", "new", "duplicates", "invalid", "sources_ok", "sources_failed", "screened",
                              "rejected", "selected", "final", "hold", "error", "skipped_no_llm", "llm_infra_failed",
                              "financial_skipped")}
@@ -428,6 +454,10 @@ def run_pipeline(store, cfg, llm, *, as_of, sources=("pubmed", "arxiv"), kinds=(
         _log(msg)
 
     log(f"[run] {run_id} as_of={as_of} config={cfg['config_version']}/{cfg['config_hash']}")
+    if depth == "shallow":
+        capped = _apply_shallow_windows(cfg)
+        counts["shallow_capped_queries"] = capped
+        log(f"[run] depth=shallow: 発見系ソースの取得窓を {SHALLOW_LOOKBACK_DAYS} 日に切り詰め ({capped} クエリ)")
     # DB の完全性: integrity_check はワークフローの Restore 段でも行うが、
     # 参照先の無い行 (孤児) はそちらでは検出できないため、開始時に数えて
     # 記録する (削除はしない。腐敗の早期検知が目的)

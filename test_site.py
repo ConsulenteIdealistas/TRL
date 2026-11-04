@@ -121,8 +121,9 @@ class FallbackModelTests(unittest.TestCase):
         g.recorder = bad_recorder
         self.assertEqual(g.complete("p"), "ok")
 
-    def test_model_breaker_skips_main_after_3_consecutive_failures(self):
-        # 主モデルが3回連続で失敗したら、以後は主を試さず代替へ直行する
+    def test_model_breaker_skips_main_after_first_failure(self):
+        # 主モデルが1回失敗したら、その実行の間は主を試さず代替へ直行する
+        # (実測: 初失敗後の成功は 25回中1回。不調は時間帯で固まるため)
         main_calls = []
 
         def http(url, **kw):
@@ -135,29 +136,26 @@ class FallbackModelTests(unittest.TestCase):
         g.recorder = recs.append
         for _ in range(5):
             self.assertEqual(g.complete("p", purpose="assess"), "fb")
-        self.assertEqual(len(main_calls), 3)  # 4回目以降は主を試していない
+        self.assertEqual(len(main_calls), 1)  # 2回目以降は主を試していない
         skipped = [r for r in recs if r.get("main_skipped")]
-        self.assertEqual(len(skipped), 2)
+        self.assertEqual(len(skipped), 4)
         self.assertTrue(all(r["model"] == "gemini-sub" for r in skipped))
         self.assertEqual(g.last_model, "gemini-sub")
 
-    def test_model_breaker_resets_on_main_success(self):
-        # 主モデルが成功すれば連続失敗はリセットされ、ブレーカーは開かない
-        script = ["fail", "fail", "ok", "fail", "fail", "ok"]
+    def test_model_breaker_keeps_main_while_it_succeeds(self):
+        # 主モデルが成功し続ける限り、ブレーカーは開かず主が使われ続ける
         main_calls = []
 
         def http(url, **kw):
             if "gemini-main" in url:
                 main_calls.append(url)
-                if script[len(main_calls) - 1] == "fail":
-                    raise T.HttpError("HTTP 503 for x", 503)
                 return json.dumps({"candidates": [{"content": {"parts": [{"text": "main-ok"}]}}]}).encode()
             return json.dumps({"candidates": [{"content": {"parts": [{"text": "fb"}]}}]}).encode()
         g = T.Gemini(model="gemini-main", http=http, fallback_model="gemini-sub")
-        outs = [g.complete("p") for _ in range(6)]
-        self.assertEqual(len(main_calls), 6)  # 全コールで主が試されている
-        self.assertEqual(outs[2], "main-ok")
-        self.assertEqual(outs[5], "main-ok")
+        outs = [g.complete("p") for _ in range(4)]
+        self.assertEqual(len(main_calls), 4)  # 全コールで主が試されている
+        self.assertTrue(all(o == "main-ok" for o in outs))
+        self.assertEqual(g.last_model, "gemini-main")
 
     def test_fallback_chain_reaches_second_fallback(self):
         # 主 → 代替1 が両方とも一時的失敗なら、代替2 で応答する
@@ -210,8 +208,8 @@ class FallbackModelTests(unittest.TestCase):
                      fallback_model_2="gemini-sub2")
         for _ in range(5):
             self.assertEqual(g.complete("p"), "fb2")
-        self.assertEqual(counts["gemini-main"], 3)
-        self.assertEqual(counts["gemini-sub"], 3)
+        self.assertEqual(counts["gemini-main"], 1)  # 1回の失敗で見切られる
+        self.assertEqual(counts["gemini-sub"], 1)
         self.assertEqual(counts["gemini-sub2"], 5)
 
     def test_second_fallback_from_env(self):

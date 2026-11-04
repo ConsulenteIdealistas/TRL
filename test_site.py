@@ -1082,6 +1082,10 @@ class ZeroRiskBatchTests(unittest.TestCase):
         self.assertIn('p.display_status === "hold" && p.long', app)
         self.assertIn("企業未特定", index)
         self.assertIn("根拠不足", index)
+        # 採点基準へのリンクはフッターだけでなく上部ヘッダーにも置く
+        # (候補が増えてもスクロールなしで届くように)
+        self.assertIn('<a href="criteria.html">採点基準</a>', index)
+        self.assertIn('<a href="criteria.html">採点基準</a>', detail)
         self.assertIn("data-ccite", app)
         self.assertIn("data-clink", app)
         self.assertIn("自分の表示", index)

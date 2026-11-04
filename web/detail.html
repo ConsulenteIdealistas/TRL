@@ -157,14 +157,15 @@ ${p.display_status === "rejected" ? `<section class="ds"><h4>除外理由</h4><p
 <section class="ds"><h4>関連事業ニュース（評価に同梱した根拠プール）</h4>${news ? `<ul class="news">${news}</ul>` : `<p class="hint">同梱されたニュースはありません。</p>`}${(p.related_news || []).some(n => n.via_google_news) ? `<p class="hint">Google News 経由の記事リンクは直接開けないため、タイトルをクリックするとタイトル検索で元記事を開きます。媒体名は媒体のサイトへのリンクです。</p>` : ""}</section>
 <section class="ds"><h4>関連財務根拠（開示資料の財務数値）</h4>${fins ? `<ul class="news">${fins}</ul>` : `<p class="hint">同梱された財務根拠はありません。</p>`}</section>
 <section class="ds"><h4>関連企業</h4>${p.entities.map(e => `<span class="chip">${esc(e.name)}${e.product_name ? "（" + esc(e.product_name) + "）" : ""}${e.market ? "・" + esc(ML[e.market] || e.market) : ""}${e.sector ? "・" + esc(CL[e.sector] || e.sector) : ""}${(e.tags || []).length ? "・" + e.tags.map(t => esc(tagLabel(t))).join("・") : ""}${e.stage ? "・" + esc(STG[e.stage] || e.stage) : ""} ${e.strength === "strong" ? "" : "・弱"}${e.tier === "watch" ? "・ウォッチ" : ""}</span>`).join("") || '<span class="hint">関連企業は未特定です。</span>'}</section>
-<section class="ds"><h4>調査メモ</h4><textarea id="note" aria-label="調査メモ" placeholder="仮説、確認したい点、次の調査などを記録...">${esc(noteDraft !== null ? noteDraft : getNote(p.id))}</textarea><div class="acts"><button class="btn sec" type="button" id="save">メモを保存</button><a class="btn src" href="${esc(safeUrl(p.url))}" target="_blank" rel="noopener noreferrer">原文サイトを開く ↗</a></div><p id="msg" class="hint" aria-live="polite">メモはこの端末のブラウザにだけ保存されます。</p></section></div>`;
+<section class="ds"><h4>調査メモ</h4><textarea id="note" aria-label="調査メモ" placeholder="仮説、確認したい点、次の調査などを記録...">${esc(noteDraft !== null ? noteDraft : getNote(p.id))}</textarea><div class="acts"><button class="btn sec" type="button" id="save">メモを保存</button><button class="btn sec" type="button" id="cpys">出典をコピー</button><a class="btn src" href="${esc(safeUrl(p.url))}" target="_blank" rel="noopener noreferrer">原文サイトを開く ↗</a></div><p id="msg" class="hint" aria-live="polite">メモはこの端末のブラウザにだけ保存されます。</p></section></div>`;
   $("#save").addEventListener("click", () => {
     const saved = setNote(p.id, $("#note").value); if (saved) noteDraft = null;
     $("#msg").textContent = saved ? "この端末のブラウザに保存しました。" : "保存できませんでした(ブラウザの保存機能が無効の可能性があります)。";
   });
-  const co = $("#cpyo"), cj = $("#cpyj");
+  const co = $("#cpyo"), cj = $("#cpyj"), cs = $("#cpys");
   if (co) co.addEventListener("click", () => copyText([p.title, p.abstract].filter(Boolean).join("\n\n"), co));
   if (cj) cj.addEventListener("click", () => copyText([p.title_ja || p.title, p.abstract_ja || p.abstract].filter(Boolean).join("\n\n"), cj));
+  if (cs) cs.addEventListener("click", () => copyText([p.title, (SRC_LABEL[p.source] || p.source) + (p.published ? " ・ " + p.published : ""), p.url].filter(Boolean).join("\n"), cs));
 }
 load();
 </script>

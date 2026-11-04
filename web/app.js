@@ -195,7 +195,7 @@ ${L && L.prev ? `<section class="ds"><h4>前回評価との比較</h4>${prevCmp(
 ${p.display_status === "error" && LL && LL.errors.length ? `<section class="ds"><h4>処理上の注意</h4>${pts(LL.errors, 1)}</section>` : ""}
 ${p.display_status === "rejected" ? `<section class="ds"><h4>除外理由</h4><p>${esc(p.screen_reason ? (SR[p.screen_reason] || p.screen_reason) : "理由は記録されていません")}</p><p class="hint">除外は関連性スクリーニングの機械的な判定で、評価 (採点) は行われていません。</p></section>` : ""}
 <section class="ds"><h4>関連企業</h4>${p.entities.map(e => `<span class="chip">${esc(e.name)}${e.product_name ? "（" + esc(e.product_name) + "）" : ""}${e.market ? "・" + esc(ML[e.market] || e.market) : ""}${e.sector ? "・" + esc(CL[e.sector] || e.sector) : ""}${(e.tags || []).length ? "・" + e.tags.map(t => esc(tagLabel(t))).join("・") : ""}${e.stage ? "・" + esc(STG[e.stage] || e.stage) : ""} ${e.strength === "strong" ? "" : "・弱"}${e.tier === "watch" ? "・ウォッチ" : ""}</span>`).join("") || '<span class="hint">関連企業は未特定です。</span>'}</section>
-<section class="ds"><h4>調査メモ</h4><textarea id="note" aria-label="調査メモ" placeholder="仮説、確認したい点、次の調査などを記録...">${esc(p.id in noteDrafts ? noteDrafts[p.id] : getNote(p.id))}</textarea><div class="acts"><button class="btn sec" type="button" id="save">メモを保存</button><a class="btn src" href="${esc(safeUrl(p.url))}" target="_blank" rel="noopener noreferrer">原文サイトを開く ↗</a></div><p id="msg" class="hint" aria-live="polite">メモはこの端末のブラウザにだけ保存されます。</p></section></div>`;
+<section class="ds"><h4>調査メモ</h4><textarea id="note" aria-label="調査メモ" placeholder="仮説、確認したい点、次の調査などを記録...">${esc(p.id in noteDrafts ? noteDrafts[p.id] : getNote(p.id))}</textarea><div class="acts"><button class="btn sec" type="button" id="save">メモを保存</button><button class="btn sec" type="button" id="cpys">出典をコピー</button><a class="btn src" href="${esc(safeUrl(p.url))}" target="_blank" rel="noopener noreferrer">原文サイトを開く ↗</a></div><p id="msg" class="hint" aria-live="polite">メモはこの端末のブラウザにだけ保存されます。</p></section></div>`;
 }
 function render() {
   const r = filtered();
@@ -414,12 +414,13 @@ $("#det").addEventListener("click", e => {
     const saved = setNote(sel, $("#note").value); if (saved) delete noteDrafts[sel];
     $("#msg").textContent = saved ? "この端末のブラウザに保存しました。" : "保存できませんでした(ブラウザの保存機能が無効の可能性があります)。";
   }
-  const co = e.target.closest("#cpyo"), cj = e.target.closest("#cpyj");
-  if (co || cj) {
+  const co = e.target.closest("#cpyo"), cj = e.target.closest("#cpyj"), cs = e.target.closest("#cpys");
+  if (co || cj || cs) {
     const p = P.find(x => x.id === sel);
     if (!p) return;
     if (co) copyText([p.title, p.abstract].filter(Boolean).join("\n\n"), co);
-    else copyText([p.title_ja || p.title, p.abstract_ja || p.abstract].filter(Boolean).join("\n\n"), cj);
+    else if (cj) copyText([p.title_ja || p.title, p.abstract_ja || p.abstract].filter(Boolean).join("\n\n"), cj);
+    else copyText([p.title, srcName(p.source) + (p.published ? " ・ " + p.published : ""), p.url].filter(Boolean).join("\n"), cs);
   }
 });
 load();

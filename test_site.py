@@ -1060,6 +1060,7 @@ class ZeroRiskBatchTests(unittest.TestCase):
         for text in (app, detail):
             self.assertIn("原文をコピー", text)
             self.assertIn("日本語訳をコピー", text)
+            self.assertIn("出典をコピー", text)
             self.assertIn("navigator.clipboard", text)
 
     def test_quiet_zero_source_recorded(self):

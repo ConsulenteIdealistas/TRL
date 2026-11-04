@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>採点基準 — TRL Explorer</title>
+<link rel="stylesheet" href="style.css">
+<script>try{var tt=localStorage.getItem("trl-theme");document.documentElement.dataset.theme=(tt==="light"||tt==="dark")?tt:"dark";}catch(e){document.documentElement.dataset.theme="dark";}</script>
+<style>
+.docwrap{max-width:880px;margin:0 auto}
+.doct{font-size:22px;margin:2px 0 8px}
+.doch{font-size:16px;margin:20px 0 6px}
+.doch3{font-size:13.5px;margin:14px 0 4px}
+table.ntbl,.doc table{border-collapse:collapse;margin:8px 0 12px;font-size:12.5px;width:100%}
+table.ntbl th,table.ntbl td,.doc th,.doc td{border:1px solid var(--line);padding:5px 8px;text-align:left;vertical-align:top}
+table.ntbl th,.doc th{background:var(--gs)}
+table.ntbl small,.doc small{color:var(--muted)}
+.doc{font-size:13.5px;line-height:1.85}
+.doc h2{font-size:17px;margin:26px 0 8px;padding-top:16px;border-top:1px solid var(--line)}
+.doc h3{font-size:14.5px;margin:18px 0 6px}
+.doc p{margin:6px 0}
+.doc ul,.doc ol{margin:6px 0 6px 1.3em;padding:0}
+.doc li{margin:3px 0}
+.doc code{background:var(--field);border:1px solid var(--line);border-radius:4px;padding:0 4px;font-size:.92em}
+.doc hr{border:none;border-top:1px solid var(--line);margin:16px 0}
+</style>
+</head>
+<body>
+<header class="topbar"><a class="brand" href="index.html"><span class="mark">T</span><span>TRL<span class="light"> Explorer</span></span></a><div class="meta"><span class="dot"></span>Research Intelligence</div></header>
+<main class="ws">
+<p style="margin:0 0 12px"><a class="tg" href="index.html">← 一覧に戻る</a></p>
+<section class="panel docwrap">
+<h1 class="doct">採点基準</h1>
+<p class="hint">このページでは、評価の規則（評価規程）と、現在使っている数値（重み・帯域）を公開しています。規程は草案 v0.1（2026-11-02 起草、2026-11-04 に第15条4項を追加）で、未確定事項は [要確定] と明記されています。数値の正本は scoring.json です。</p>
+<h2 class="doch">現行の数値（別表 scoring.json、config_version 2026.11.0）</h2>
+<p class="hint">重みは試行中です。導出の考え方は下の規程 第17条にあります。</p>
+<h3 class="doch3">長期評価の重み</h3><table class="ntbl"><thead><tr><th>項目</th><th>重み</th><th>必須</th></tr></thead><tbody><tr><td>技術成熟度<br><small>technology_readiness</small></td><td>30</td><td>必須</td></tr><tr><td>技術的優位性<br><small>technological_advantage</small></td><td>15</td><td></td></tr><tr><td>収益化能力<br><small>monetization</small></td><td>20</td><td>必須</td></tr><tr><td>市場成長性<br><small>market_growth</small></td><td>15</td><td></td></tr><tr><td>財務的持続可能性<br><small>financial_sustainability</small></td><td>10</td><td></td></tr><tr><td>競争優位性の持続性<br><small>moat_durability</small></td><td>10</td><td></td></tr></tbody></table>
+<h3 class="doch3">イベント評価の重み</h3><table class="ntbl"><thead><tr><th>項目</th><th>重み</th><th>必須</th></tr></thead><tbody><tr><td>触媒の質<br><small>catalyst_quality</small></td><td>25</td><td>必須</td></tr><tr><td>期待ギャップ<br><small>expectation_gap</small></td><td>25</td><td>必須</td></tr><tr><td>未織り込み度<br><small>not_priced_in</small></td><td>20</td><td>必須</td></tr><tr><td>タイミングの実現性<br><small>timing_feasibility</small></td><td>10</td><td></td></tr><tr><td>需給<br><small>supply_demand</small></td><td>10</td><td></td></tr><tr><td>下値耐性<br><small>downside_resilience</small></td><td>10</td><td></td></tr></tbody></table>
+<h3 class="doch3">総合点の帯域</h3><table class="ntbl"><thead><tr><th>総合点</th><th>帯域</th><th></th></tr></thead><tbody><tr><td>0–19</td><td>極めて弱い</td><td><small>extremely_weak</small></td></tr><tr><td>20–39</td><td>弱い</td><td><small>weak</small></td></tr><tr><td>40–59</td><td>中程度・不確実</td><td><small>moderate_uncertain</small></td></tr><tr><td>60–79</td><td>強い</td><td><small>strong</small></td></tr><tr><td>80–100</td><td>非常に強い</td><td><small>very_strong</small></td></tr></tbody></table>
+<article class="doc">
+<p>本規程は、TRL 投資分析システム（以下「本システム」）の評価規則の正本である。
+パイプラインが実際に使う規則と、読者が読む規則を同一にする（ホワイト
+ボックス化）ため、評価プロンプト・集計コード・設定ファイルは本規程に
+従い、本規程と食い違う場合は本規程を正とする。</p>
+<ul>
+<li>状態: 草案（2026-11-02 起草）。未確定事項は [要確定] と明記する。</li>
+<li>数値の正本: 重み・帯域・ゲート日数などの数値は <code>scoring.json</code> を別表とし、
+  本規程はその意味と導出のみを定める。ただし第5章の重み表は導出過程を
+  示すためのもので、効力は scoring.json の値が持つ。</li>
+</ul>
+<hr />
+<h2>第1章 総則</h2>
+<h3>第1条（目的）</h3>
+<p>本システムは、公開資料から得られる根拠のみを用いて、企業の技術の立証段階と
+事業化の進展を分けて評価し、その根拠ごと公開する。評価は投資の助言では
+なく、資料の読み解きの記録である。</p>
+<h3>第2条（3原則）</h3>
+<ol>
+<li><strong>商用展開と TRL の分離</strong>: TRL は「技術が実環境で意図通り動作するか」の
+   実証段階のみで測る。販売・課金・顧客数・売上・出荷規模は TRL の根拠に
+   せず、事業軸（収益化）で扱う。</li>
+<li><strong>「複数」「継続」の統一</strong>: 件数・期間は資料に明記されたものだけを使う。
+   TRL 9 には「繰り返し・継続」の証拠を必須とするが、必要な回数・期間は
+   セクターごとに定める（第3章附則）。</li>
+<li><strong>TRL と成長余地の分離</strong>: TRL の高低から収益化・市場成長・競争優位性・
+   成長余地を推論しない。それらは事業軸の各項目で別途の根拠により評価する。</li>
+</ol>
+<h3>第3条（点数の性質）</h3>
+<p>点数および TRL は評価尺度であり、成功確率・株価上昇確率・投資利益率では
+ない。</p>
+<h3>第4条（用語の定義）[要確定: 名称]</h3>
+<ol>
+<li><strong>TRL レベル</strong>: 資料の主題である技術・製品・候補物質について、根拠に
+   基づいて判定する 1〜9 の段階（第3章）。スコアから換算しない。根拠が
+   無い場合は「未確定」とし、数値は置かない。</li>
+<li><strong>技術成熟度スコア</strong>: 長期評価の項目 technology_readiness の 0〜100 点。
+   TRL レベルとは別の指標であり、並記する場合はこの名称で区別する。</li>
+<li><strong>候補</strong>: 評価の単位となる資料（論文・治験登録・ニュース・開示等）。
+   評価は候補に付くが、TRL と項目の対象は候補そのものではなく、候補が
+   証拠となる技術・製品および企業である（第2章）。</li>
+</ol>
+<h2>第2章 評価対象と証拠</h2>
+<h3>第5条（評価対象）</h3>
+<ol>
+<li>TRL の対象は、資料の主題である技術・製品・候補物質そのものとする
+   （企業全体ではない）。主題が複合システムの場合は、主要要素のうち
+   最も未熟な要素に合わせる。</li>
+<li>企業固有の項目（収益化・財務的持続性・堀の持続性）は、対象企業が
+   機械照合で strong（著者所属等）かつ一意に定まる場合にのみ採点する。
+   定まらない場合は null とし、理由を不足情報に書く。</li>
+</ol>
+<h3>第6条（証拠の権威階層）</h3>
+<p>証拠は次の階層で扱い、上位の典拠を優先する。各項目の「根拠の質」は
+この階層を参照する。
+1. 規制当局・公的登録簿（EDINET、SEC EDGAR、治験登録、承認情報）
+2. 査読論文・公的統計
+3. 企業の公式開示・財務数値
+4. 企業発表（PR TIMES 等）
+5. 第三者報道</p>
+<p>運用: 単一の企業発表（階層4）のみを根拠とする項目は 59 点を上限の目安と
+する。同じ事実が企業発表と報道の両方で確認できる場合は強い根拠として
+扱う。関連事業ニュースは見出しレベルの補助根拠であり、数値を推測で
+補わない。関連財務根拠は技術項目の根拠に使わない。</p>
+<h3>第7条（不足の扱い）</h3>
+<ol>
+<li>資料群の性質上、原理的に含まれない種類の情報（第三者機関の市場規模
+   統計、競合との直接の定量比較、特許の明細、企業の将来予測等）が無い
+   ことは、不足として数えず、null の理由にしない。各項目は資料内に
+   ある代理指標で評価する。</li>
+<li>将来の出来事の結果を待つしかない不足（治験結果、承認審査、量産の
+   継続実績等）は「結果待ち：」と明記し、通常の不足と区別する。</li>
+<li>null には2つの意味がある: 根拠が未調査で無い場合と、段階的に
+   存在しない場合（第5章の段階未達）。両者を混同しない。</li>
+</ol>
+<h2>第3章 TRL 判定規程</h2>
+<h3>第8条（共通定義）</h3>
+<p>各レベルは「資料中に実施済みとして書かれている証拠」で決める。
+[典拠: NASA の TRL 定義（Mankins 1995 ほか）を土台とし、本システムの
+運用を加えたもの。補助典拠: EU Horizon Europe の TRL 定義、ISO 16290
+（宇宙）、GAO/DoD の TRA ガイド]</p>
+<ul>
+<li>TRL 1: 基本原理が観察・報告された。</li>
+<li>TRL 2: 技術コンセプト・応用が定式化された。裏付ける実験・試作はまだ無い。</li>
+<li>TRL 3: 重要機能の概念実証（解析的・実験的）。数値や観測を伴う結果がある。</li>
+<li>TRL 4: 実験室環境で要素が検証された。</li>
+<li>TRL 5: 関連環境（実使用に近い条件）で要素が検証された。</li>
+<li>TRL 6: 関連環境でシステム／サブシステムが実証された。</li>
+<li>TRL 7: 運用環境（実使用そのもの）でシステム試作品が実証された。</li>
+<li>TRL 8: 実システムが完成し、試験・実証で認定された。</li>
+<li>TRL 9: 実システムが運用で実証された。実際の任務・事業・診療・サービス
+  として使われ、実績がある。</li>
+</ul>
+<h3>第9条（判定手順）</h3>
+<ol>
+<li>資料の主題の技術・製品・候補物質を特定する（企業全体ではない）。</li>
+<li>主題について、資料に「実施済み」として書かれた最も進んだ行為を特定
+   する。計画・予定の行為は数えない。</li>
+<li>その行為の段階をレベルとする。
+研究論文・治験登録のように研究成果そのものが資料の場合は、主題が特定
+でき研究内容が書かれている以上、原則として 1〜3 のいずれかに位置づける。
+未確定（null）にしてよいのは、主題の技術が特定できない場合と、資料が
+研究内容に触れていない場合に限る。</li>
+</ol>
+<h3>第10条（判定ルール）</h3>
+<ol>
+<li>実施済みだけを数える。「計画」「予定」「目標」は証拠にしない。</li>
+<li>迷ったら切り下げる。上位レベルの証拠が部分的・間接的・曖昧なら
+   下のレベルを取る。</li>
+<li>TRL 3 以上には具体的な結果（数値・観測・症例・測定結果）が要る。
+   主張だけの資料は TRL 2 止まりとする。シミュレーションのみの結果は
+   TRL 3 を上限の目安とする。</li>
+<li>TRL 9 は「繰り返し・継続」の証拠を必須とし、単一の成功だけでは
+   TRL 9 にしない。確認事項はセクター別附則に従う。</li>
+</ol>
+<h3>第11条（セクター別附則）</h3>
+<p>各セクターの段階の読み替えとエッジルールは、評価プロンプト
+（long.v1.md [セクター別の運用]）の現行文を正とし、本条には要点と
+典拠のみを記す。全文の取り込みは起草の次段で行う [要作業]。</p>
+<ul>
+<li><strong>バイオ・医薬</strong> [典拠: FDA / EMA / PMDA の開発フェーズと承認制度]:
+  in vitro=3、in vivo=4、Phase 1=5、Phase 2=6、Phase 3=7、承認取得=8、
+  市販後の実臨床データの蓄積=9。フェーズは記録の明記を根拠とし、推測で
+  決めない。医療機器は臨床評価・承認で読み替える。
+  <strong>観察研究・レジストリの位置づけ</strong>: 市販後観察研究やレジストリは、
+  その対象製品の TRL 9 の証拠になり得る。ただし観察期間と実臨床データ
+  の蓄積が明記されなければ TRL 8 にとどめる。観察研究という研究形式
+  自体が段階を下げることはない（対象は研究ではなく製品であるため）。</li>
+<li><strong>宇宙</strong> [典拠: ISO 16290]: 地上試験=4、耐宇宙環境試験=5、地上統合
+  実証=6、軌道上実証=7、初回飛行成功=8、繰り返しのミッション成功=9。
+  相乗りでの軌道実証は搭載物自身の 7 とし、輸送系の実証にはしない。
+  政府採択・契約はそれ自体では段階を上げない。</li>
+<li><strong>AI・ソフトウェア</strong>: 公開データでの検証=3、実データ検証=4、試行導入
+  =5、複数先・継続試行=6、本番導線での試作運用=7、本番環境での性能
+  実証=8、複数環境・長期間の継続実績=9。リリースや課金の開始自体は
+  8 の根拠にしない。外部基盤モデルの成熟度は算入しない。規制領域では
+  承認／認可が 8 の条件。</li>
+<li><strong>半導体・ハードウェア</strong>: 概念実証=3、試作の評価結果=4、関連環境での
+  動作確認=5、量産試作と信頼性試験=6、顧客製品への搭載実証=7、顧客
+  認定と量産プロセスの再現性=8、量産環境での長期信頼性=9。テープアウト
+  の発表だけでは 4 にしない。デザインウィンは 7 の根拠になるが、量産
+  出荷だけでは 8 にしない（認定と再現性が条件）。</li>
+<li><strong>ロボティクス・産業自動化</strong>: 要素実験=3、実験室検証=4、関連環境での
+  動作=5、現場 PoC と実測=6、実生産ラインでの試行運用=7、量産モデル
+  完成・顧客認定・安全規格適合=8、複数現場・長期間の本番稼働=9。
+  展示会デモ・動画・シミュレーションのみは 5 を上限とする。</li>
+<li><strong>エネルギー・蓄電池</strong> [典拠: UN 38.3 / IEC 62133 等の認証制度]:
+  小型セル実測=3、実用形状セルの試作=4、実使用条件での検証と安全試験
+  =5、パイロットライン工程検証=6、顧客製品での実証=7、量産ライン稼働
+  と顧客認定=8、量産供給の継続とフィールド信頼性=9。実験室性能だけ
+  では 4 を上限とする。「量産ライン建設中」は段階を上げない。</li>
+<li><strong>量子技術</strong>: 要素の概念実証=3、小規模システムの実験室検証=4、外部
+  利用可能な試作システム・実回線試験=5、誤り訂正の実証・顧客課題での
+  試験利用=6、顧客環境での商用トライアル=7、商用システムの定常提供
+  =8、複数顧客・長期間の有償利用継続=9。量子ビット数そのものは根拠に
+  しない。政府契約・助成の採択は段階を上げない。</li>
+</ul>
+<h2>第4章 項目採点規程</h2>
+<h3>第12条（長期評価の項目）</h3>
+<p>長期成長評価は次の6項目を 0〜100 点で採点する。採点アンカー（帯域の
+定義）の全文は評価プロンプト（long.v1.md [採点アンカー]）を正とする。</p>
+<ol>
+<li>technology_readiness（技術成熟度スコア）: TRL 相当の実証段階。</li>
+<li>technological_advantage（技術的優位性）: 既存手段に対する定量比較の
+   具体性で決める。</li>
+<li>monetization（収益化能力）: 収益の実績で決める。TRL とは独立に
+   評価し、TRL が高くても収益化の根拠が無ければ高得点にしない。</li>
+<li>market_growth（市場成長性）: 市場裏付けの質で決める。資料内の代理
+   指標（患者規模・適応の広がり等）でも評価する（第7条）。</li>
+<li>financial_sustainability（財務的持続可能性）: ランウェイ（現預金 ÷
+   年間の純損失または営業 CF マイナス）を目安に数値で決める。財務
+   数値が資料に無い場合は推測で付けず null とする。</li>
+<li>moat_durability（堀の持続性）: 障壁の複合性で決める。</li>
+</ol>
+<h3>第13条（参考項目: 経営陣・実行力）[新設・未実装]</h3>
+<p>Payne スコアカード法で最大の重み（30%）を持つ「経営陣」は、本システム
+の証拠プールでは観測範囲が限られるため、参考項目として新設する。
+- 定義: 経営陣の経歴、過去の事業化・承認取得・提携の実行実績、経営陣の
+  継続性、ガバナンス開示の範囲で採点する。
+- 位置づけ: 採点し表示するが、総合点・軸別点・必須判定・不足判定には
+  含めない。証拠が無ければ null とし、それを理由に hold しない。
+- 格上げ（総合点への算入）は、証拠が実際にどれだけ得られるかを観測
+  したうえで、別途改訂により判断する。</p>
+<h3>第14条（イベント評価の項目）</h3>
+<p>今後1〜6か月のイベント評価は、長期評価と独立に次の6項目を採点する:
+catalyst_quality（材料の質）、expectation_gap（市場予想との乖離）、
+not_priced_in（未織り込み度）、timing_feasibility（時期の実現可能性）、
+supply_demand（需給構造）、downside_resilience（下落耐性）。
+市場予想や株価の裏付けが資料に無い場合、expectation_gap と
+not_priced_in は null とする。アンカー全文は event.v1.md を正とする。</p>
+<h3>第15条（採点の共通ルール）</h3>
+<ol>
+<li>根拠が無い項目は null とし、0 点で埋めない。null でない項目には
+   理由と根拠（1件以上）が必須。反証も記録する。</li>
+<li>帯域に迷ったら、根拠の質が低い側の帯域を取る。</li>
+<li>前商業段階（TRL 3 以下）の技術では、事業項目は未成立が通常である。
+   その場合は null とし「前商業段階のため未成立」と書く（第5章の
+   段階未達として扱い、不足とは区別する）。</li>
+<li>保守的な減点は許容する。ただし減点の理由は、具体的にどの証拠が
+   不足・不十分なのかに紐付けて書く。「証拠が弱い」「情報が限られる」
+   等の漠然とした理由だけでは減点しない。不足の数え方は第7条に従う
+   （原理的に含まれない情報は不足として数えず、結果待ちは区別する）。
+   TRL レベルの判定理由についても同様とする。
+   [2026-11-04 泰崇の指示で追加。プロンプトへの反映は次回改訂時]</li>
+</ol>
+<h2>第5章 集計規程</h2>
+<h3>第16条（二軸集計と段階未達）</h3>
+<ol>
+<li>長期評価の総合点は、技術軸（technology_readiness、
+   technological_advantage）と事業軸（monetization、market_growth、
+   financial_sustainability、moat_durability）に分けて集計する。</li>
+<li>TRL レベルが確定し、かつ 3 以下の場合、事業軸は段階未達
+   （pre_stage）とし、技術軸が揃えば技術軸の総合点で確定（final）
+   とする。このとき段階未達の事業項目は必須の不足に数えない。</li>
+<li>それ以外の場合、総合点は全項目が非 null のときにのみ確定する。
+   1つでも null なら hold とし、重みの再配分はしない。</li>
+</ol>
+<h3>第17条（重み）</h3>
+<p>重みは外部フレームワークを典拠とし、本システムの目的に合わせて
+肉付け（分割・格上げ・新設）したものである。導出は次のとおり。</p>
+<p>典拠（Payne スコアカード法、Angel Capital Association 2019 改訂）:
+経営陣30 / 機会の大きさ25 / 製品・技術15 / 競合環境10 / 販売・提携10 /
+追加投資の必要性5 / その他5。[補助典拠: MacMillan et al. 1985/1987 の
+VC 判断基準研究（経営者・チームが最重要、次いで市場・製品・財務）、
+ファクター投資の実証（収益性・品質・成長）]</p>
+<table>
+<thead>
+<tr>
+<th>本システムの項目</th>
+<th>重み</th>
+<th>Payne 対応</th>
+<th>増減の理由</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>技術成熟度スコア</td>
+<td>30</td>
+<td>製品・技術15 の分割</td>
+<td>技術の立証が本システムの主対象のため最重みとする</td>
+</tr>
+<tr>
+<td>技術的優位性</td>
+<td>15</td>
+<td>製品・技術15 の分割</td>
+<td>同上（分割の他方）</td>
+</tr>
+<tr>
+<td>収益化能力</td>
+<td>20</td>
+<td>販売・提携10</td>
+<td>上場企業では実績で測れるため格上げ</td>
+</tr>
+<tr>
+<td>市場成長性</td>
+<td>15</td>
+<td>機会の大きさ25</td>
+<td>技術と市場は分離する原則と、証拠の質（代理指標中心）に見合う重みへ抑制</td>
+</tr>
+<tr>
+<td>財務的持続性</td>
+<td>10</td>
+<td>追加投資の必要性5</td>
+<td>ランウェイを開示数値で測れるため格上げ</td>
+</tr>
+<tr>
+<td>堀の持続性</td>
+<td>10</td>
+<td>競合環境10</td>
+<td>特許・規制障壁まで具体化し同重み</td>
+</tr>
+<tr>
+<td>経営陣・実行力</td>
+<td>参考項目</td>
+<td>経営陣30</td>
+<td>観測可能性の制約のため総合点には算入しない（第13条）</td>
+</tr>
+</tbody>
+</table>
+<p>[状態: 2026-11-02 泰崇の指示で本番試行中。scoring.json に反映済み
+（config_version 2026.11.0、commit 40318b1）。試行前の実測では、保存済み
+final 12件で帯域変化1件・最大変動2.8点。既存の保存済み評価の総合点は
+旧重みのまま保持され、新しい評価から新重みで計算される（版は各評価の
+config_version で区別できる）。試行の評価は 2026-11-03 定期実行以降の
+観察で行う。]</p>
+<h3>第18条（帯域）</h3>
+<p>総合点の帯域は 0–19 極めて弱い / 20–39 弱い / 40–59 中程度・不確実 /
+60–79 強い / 80–100 非常に強い とする（別表 scoring.json）。</p>
+<h2>第6章 方向性</h2>
+<h3>第19条（direction）</h3>
+<p>direction は資料が示す材料の方向性（positive / negative / mixed）を、
+点数や TRL とは独立に判定する。追い風の出来事（治験の進行・良好な結果、
+承認、受注・提携・資金調達の成立、増収等）と逆風の出来事（中止・未達、
+承認見送り、提携解消、減収等）のどちらが中心かで決める。全項目に点数が
+付いたこと自体は positive を意味しない。</p>
+<h2>第7章 運用規程</h2>
+<h3>第20条（スクリーニングと再評価）</h3>
+<ol>
+<li>評価対象の選定条件（要旨の長さ、資料の鮮度、1実行あたりの評価件数
+   等）は別表 scoring.json の screening に定める。</li>
+<li>再評価は原則として前回評価から14日後とする。ただし治験登録の更新
+   のように、登録簿の変更自体が新しい証拠になる場合はこの限りでない。</li>
+<li>評価の生成に失敗した場合（形式エラー等）は、不足分を明示して1回
+   だけ再生成する。</li>
+</ol>
+<h3>第21条（保持と削除）</h3>
+<p>資料の保持期間と削除（prune）の条件は実装に定める。辞書から外れた
+別名による企業リンクは、実行の末尾で削除する（stale-link pruning）。</p>
+<h3>第22条（収集ソースの拡充方針）</h3>
+<p>収集ソースの追加は、権威のある出典を優先する。候補: 規制当局の承認
+情報（FDA / EMA / PMDA）、EU の治験登録（EU CTR）、特許（J-PlatPat /
+EPO）、公的採択（NEDO / AMED）。追加は実取得による裏取りと承認を
+経て行う。</p>
+<h2>第8章 表示規程</h2>
+<h3>第23条（ラベルの分離）</h3>
+<p>サイトでは TRL レベルと技術成熟度スコアを、名称と単位で区別して表示
+する（例: 「TRL 9（9段階）」「技術成熟度スコア 85（100点満点）」）。
+両者を同じ「技術成熟度」の名で並記しない。[未実装: 起草後に反映]</p>
+<h3>第24条（表示専用の分類）</h3>
+<p>企業のステージ分類（研究開発型／実証型／量産型／商業化型）とタグは、
+表示・分析専用の分類であり、評価・選定には一切使わない。</p>
+<h3>第25条（翻訳の表示）</h3>
+<p>英語資料の日本語訳には、翻訳に使った API の出典を表示する。翻訳は
+専用 API のみで行い、評価用 LLM は翻訳に関与しない。</p>
+<h2>第9章 改訂手続き</h2>
+<h3>第26条（変更の分類）</h3>
+<p>本規程および実装の変更は、次の分類で効力を定める。
+- <strong>A1 類（再評価が必要な変更）</strong>: TRL 定義・判定ルール・項目アンカー・
+  必須項目・集計条件の変更。プロンプトまたは集計コードの変更を伴い、
+  purge と再評価を行う。版を上げる。
+- <strong>A2 類（再計算のみで済む変更）</strong>: 重み・帯域の変更。項目スコアは
+  保存済みのため、LLM を使わず保存済み評価の一括再計算で効かせる。
+  実装は <code>trl.py recalc</code>（既定は報告のみ、<code>--apply</code> で書換え）と、
+  scoring.json の <code>recalc_on_run</code> を有効化した場合の実行時自動適用。
+  再計算した評価には来歴（変更前版・旧総合点・旧帯域・日時）を残す
+  （2026-11-02 実装）。
+- <strong>B 類（明文化）</strong>: 現行運用を文章化するだけの変更。評価は変えない。
+  purge は不要。
+- <strong>C 類（表示変更）</strong>: ラベル・表示のみの変更。purge は不要。</p>
+<h3>第27条（版管理）</h3>
+<p>規程の版は評価の設定版（config_version）と対応づけて記録し、変更履歴を
+本規程の末尾に残す。過去の評価がどの版で生成されたかは、評価レコードの
+設定版と生成ハッシュで追跡できる。</p>
+<hr />
+<h2>附録A 典拠一覧</h2>
+<ul>
+<li>NASA, Technology Readiness Levels（Mankins, J. C. 1995 ほか）</li>
+<li>European Commission, Horizon Europe Work Programme — TRL 定義</li>
+<li>ISO 16290:2013（宇宙システムの TRL）</li>
+<li>U.S. GAO, Technology Readiness Assessment Guide / DoD TRA Guidebook</li>
+<li>Payne, B., Scorecard Valuation Methodology, Angel Capital Association
+  （2019 改訂）</li>
+<li>MacMillan, I. C. et al. (1985, 1987), VC の投資判断基準に関する研究</li>
+<li>FDA / EMA / PMDA の医薬品開発フェーズと承認制度</li>
+<li>UN 38.3、IEC 62133（電池の輸送・安全認証）</li>
+</ul>
+<h2>附録B 対応表（規程と実装）</h2>
+<table>
+<thead>
+<tr>
+<th>規程</th>
+<th>実装の所在</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>第3章 TRL 判定</td>
+<td>long.v1.md [共通定義][判定手順][判定ルール][セクター別の運用]</td>
+</tr>
+<tr>
+<td>第4章 項目・アンカー</td>
+<td>long.v1.md / event.v1.md [採点アンカー]</td>
+</tr>
+<tr>
+<td>第5章 集計・重み・帯域</td>
+<td>trlcore/scoring.py、scoring.json</td>
+</tr>
+<tr>
+<td>第6章 direction</td>
+<td>long.v1.md</td>
+</tr>
+<tr>
+<td>第7章 運用</td>
+<td>scoring.json screening、trlcore/pipeline.py</td>
+</tr>
+<tr>
+<td>第2章 証拠・不足</td>
+<td>long.v1.md [不足の扱い]、trlcore/site.py</td>
+</tr>
+</tbody>
+</table>
+<h2>変更履歴</h2>
+<ul>
+<li>v0.1（2026-11-02）: 初版草案。現行運用の明文化（B 類）を主体とし、
+  第13条（経営陣・実行力の参考項目）と第17条（重みの候補値）は
+  未実装の改訂案として含む。</li>
+</ul>
+</article>
+</section>
+<footer class="ft"><span>TRL Explorer</span><span>技術成熟度と事業化評価は独立した評価軸です。スコアは評価尺度であり、株価上昇確率・成功確率・投資利益率ではありません。</span></footer>
+</main>
+</body>
+</html>

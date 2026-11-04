@@ -1,0 +1,63 @@
+name: TRL vault (Markdown export)
+
+# Markdown Vault を生成して data ブランチの vault/ へ保存するワークフロー。
+# DB は読み取り専用で開き (trl.py vault)、収集・評価・サイトには一切触れない。
+# 本編パイプライン (main.yaml) とは独立で、失敗しても評価やサイトに影響しない。
+# ブランチ側の vault/ は生成ミラー。個人のメモは端末側の Vault で管理する。
+
+on:
+  workflow_dispatch:
+
+permissions: {}  # 既定は全拒否。必要な権限だけをジョブ単位で付ける (S-2)
+
+concurrency:
+  group: trl-vault
+  cancel-in-progress: false
+
+jobs:
+  vault:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write  # data ブランチへの vault/ コミットに必要
+    env:
+      TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Restore data branch
+        run: |
+          set +e
+          git ls-remote --exit-code --heads origin data >/dev/null 2>&1
+          rc=$?
+          set -e
+          if [ "$rc" -ne 0 ]; then
+            echo "::error::data branch not found (rc=$rc). Nothing to export. Aborting"
+            exit 1
+          fi
+          git clone -q --depth 1 --branch data "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git" _data
+          if [ ! -f _data/trl.sqlite ]; then
+            echo "::error::data branch exists but trl.sqlite is missing. Aborting to protect data"
+            exit 1
+          fi
+          python3 -c "import sqlite3; r = sqlite3.connect('file:_data/trl.sqlite?mode=ro', uri=True).execute('PRAGMA integrity_check').fetchone()[0]; assert r == 'ok', r" || { echo "::error::trl.sqlite failed the integrity check. Aborting to protect data"; exit 1; }
+      - name: Generate vault (read-only)
+        run: python trl.py vault --data-dir _data --out _vault
+      - name: Commit vault to data branch
+        run: |
+          cd _data
+          rm -rf vault
+          cp -r ../_vault vault
+          git add vault
+          if git diff --cached --quiet; then
+            echo "vault に変更はありません"
+            exit 0
+          fi
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -m "vault: Markdown 書き出しを更新"
+          for i in 1 2 3; do
+            git push origin data && break
+            echo "push に失敗しました。リトライします ($i/3)"
+            sleep 5
+          done

@@ -1,0 +1,76 @@
+name: TRL site (UI only)
+
+# サイト (ブラウザ UI) だけを更新するワークフロー。収集・評価は行わず、
+# data ブランチの最新 DB から export して Pages へデプロイするだけなので
+# 1〜2 分で終わる。UI の変更を push したあと、これを手動実行すればよい。
+# データ側は読み取りのみで、data ブランチへは書き戻さない。
+
+on:
+  workflow_dispatch:
+
+permissions: {}  # 既定は全拒否。必要な権限だけをジョブ単位で付ける (S-2)
+
+concurrency:
+  group: trl-site
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read   # チェックアウトと data ブランチの読み取りに必要
+      pages: write     # upload-pages-artifact に必要
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Restore data branch
+        env:
+          TOKEN: ${{ github.token }}
+        run: |
+          set +e
+          git ls-remote --exit-code --heads origin data >/dev/null 2>&1
+          rc=$?
+          set -e
+
+          if [ "$rc" -eq 0 ]; then
+            git clone -q --depth 1 --branch data "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git" _data
+          elif [ "$rc" -eq 2 ]; then
+            mkdir -p _data
+          else
+            echo "::error::Could not check data branch (rc=$rc). Aborting to protect data"
+            exit 1
+          fi
+          if [ "$rc" -eq 0 ]; then
+            # data ブランチがあるのに trl.sqlite が無い・壊れている状態で進むと、
+            # 古い/空の内容でサイトを上書きしかねないため、ここで止める
+            if [ ! -f _data/trl.sqlite ]; then
+              echo "::error::data branch exists but trl.sqlite is missing. Aborting to protect data"
+              exit 1
+            fi
+            python3 -c "import sqlite3; r = sqlite3.connect('file:_data/trl.sqlite?mode=ro', uri=True).execute('PRAGMA integrity_check').fetchone()[0]; assert r == 'ok', r" || { echo "::error::trl.sqlite failed the integrity check. Aborting to protect data"; exit 1; }
+          fi
+      - name: Export site (data.json + web)
+        run: python trl.py export --data-dir _data --out _site
+      - name: Upload site artifact
+        if: hashFiles('_site/data.json') != ''
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    if: needs.build.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

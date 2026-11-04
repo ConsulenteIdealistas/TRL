@@ -73,8 +73,11 @@ def _ev_for_site(ev, cfg):
         _m, _w = _split_missing(trl.get("missing_info"))
         trl["missing_info"] = _m
         trl["awaiting_info"] = _w
+    total_orig, band_orig = _as_evaluated(extra, ev)
     return {
         "status": ev["status"], "total": ev["total"], "band": ev["band"], "as_of": ev["as_of"],
+        # 評価当時の総合点・帯域 (重み改訂で再計算されても変わらない非破壊の記録)
+        "total_orig": total_orig, "band_orig": band_orig,
         "evaluated_at": ev["evaluated_at"], "items": out_items,
         "critical_missing": [k for k in required
                              if k in out_items and out_items[k]["score"] is None
@@ -110,6 +113,20 @@ def _hold_cause(ev):
         if any(p in text for p in _UNIDENTIFIED_PATTERNS):
             return "unidentified"
     return "no_evidence"
+
+
+def _as_evaluated(extra, ev):
+    """評価当時の総合点・帯域を返す。保存時の固定 (as_evaluated) があれば
+    それ、無ければ再計算の来歴 (recalculated の旧値)、どちらも無ければ
+    現在の値 (再計算されていない評価では、それが当時の値そのもの)。
+    final 以外 (総合点が無い評価) では (None, None)。"""
+    ae = extra.get("as_evaluated")
+    if isinstance(ae, dict) and ae.get("total") is not None:
+        return ae.get("total"), ae.get("band")
+    rec = extra.get("recalculated")
+    if isinstance(rec, dict) and rec.get("old_total") is not None:
+        return rec.get("old_total"), rec.get("old_band")
+    return ev["total"], ev["band"]
 
 
 def _prev_for_site(ev):

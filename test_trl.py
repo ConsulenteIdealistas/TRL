@@ -981,11 +981,36 @@ class FinancialPoolTests(unittest.TestCase):
         got = store.get_candidate(cid)
         self.assertIn("120百万円", got["abstract"])
         self.assertTrue(got["material_updated_at"])
+        vs = store.candidate_versions(cid)
+        self.assertEqual(len(vs), 1)
+        self.assertIn("100百万円", vs[0]["abstract"])  # 非破壊: 上書き前の版が残る
         paper, _ = normalize(raw(sid="2610.7780", title="Paper", abstract="A" * 120), "2026-10-20T00:00:00+00:00")
         pid, _ = store.upsert_candidate(paper, "r0")
         paper2, _ = normalize(raw(sid="2610.7780", title="Paper", abstract="B" * 120), "2026-11-09T00:00:00+00:00")
         store.upsert_candidate(paper2, "r1")
         self.assertTrue(store.get_candidate(pid)["abstract"].startswith("A"))
+        self.assertEqual(store.candidate_versions(pid), [])  # 論文は上書き自体が無い
+        store.close()
+
+    def test_trials_upsert_keeps_superseded_version(self):
+        # 非破壊: 治験の要旨が更新 (結果公表・ステータス変更) されたら旧版を残す。
+        # 旧版が無いと、評価時点の材料との比較ができなくなるため
+        store = Store(self.path)
+        t1 = {"source": "trials", "source_id": "NCT00000001", "title": "Trial A",
+              "abstract": "Phase 2 recruiting patients for the study.",
+              "url": "https://example.org/t", "published": "2026-10-15",
+              "fields": ["ClinicalTrials"], "affiliations": [], "info_type": "news"}
+        rec, _ = normalize(t1, "2026-10-20T00:00:00+00:00")
+        cid, _ = store.upsert_candidate(rec, "r0")
+        store.upsert_candidate(rec, "r1")  # 変化が無ければ版は増えない
+        self.assertEqual(store.candidate_versions(cid), [])
+        rec2, _ = normalize(dict(t1, abstract="Phase 2 completed. Primary endpoint met."),
+                            "2026-11-09T00:00:00+00:00")
+        store.upsert_candidate(rec2, "r2")
+        vs = store.candidate_versions(cid)
+        self.assertEqual(len(vs), 1)
+        self.assertIn("recruiting", vs[0]["abstract"])
+        self.assertIn("completed", store.get_candidate(cid)["abstract"])
         store.close()
 
     def test_evaluate_one_includes_financials(self):
@@ -2128,6 +2153,45 @@ class IntegrationTests(unittest.TestCase):
         self.assertEqual(extra["recalculated"]["old_total"], 25.0)
         again = recalculate_evaluations(store, CFG, apply=True)
         self.assertEqual(again["changed"], 0)  # 冪等
+        store.close()
+
+    def test_recalc_preserves_as_evaluated_total(self):
+        # 非破壊: 評価当時の総合点は保存時に固定され、重み改訂の再計算を
+        # 何度受けても残る (2回目の改訂で来歴ごと消える事故の防止)
+        from trlcore.recalc import recalculate_evaluations
+        store = Store(self.path)
+        rec, _ = normalize(raw(sid="2401.0002", title="Original total paper"),
+                           "2026-10-20T00:00:00+00:00")
+        cid, _ = store.upsert_candidate(rec, "r0")
+        items = {"technology_readiness": {"score": 100},
+                 **{k: {"score": 0} for k in
+                    ("technological_advantage", "monetization", "market_growth",
+                     "financial_sustainability", "moat_durability")}}
+        ev = {"kind": "long", "as_of": "2026-10-20", "status": "final", "total": 25.0,
+              "band": {"label": "弱い"}, "items": items, "extraction": None, "event": None,
+              "prompt_versions": {}, "config_version": "2026.10.0", "config_hash": "old",
+              "llm_provider": "gemini", "llm_model": "gemini-3.6-flash",
+              "input_hash": "oh", "errors": [],
+              "extra": {"trl_level": {"level": 7, "reason": "r", "evidence": "e"}}}
+        store.add_evaluation("r0", cid, ev)
+        extra = json.loads(store.final_evaluations()[0]["extra_json"])
+        self.assertEqual(extra["as_evaluated"]["total"], 25.0)  # 保存時に固定される
+        self.assertEqual(extra["as_evaluated"]["config_version"], "2026.10.0")
+
+        recalculate_evaluations(store, CFG, apply=True)  # 1回目の改訂 (現行の重み)
+        row = store.final_evaluations()[0]
+        self.assertEqual(row["total"], 30.0)
+        self.assertEqual(json.loads(row["extra_json"])["as_evaluated"]["total"], 25.0)
+
+        cfg2 = copy.deepcopy(CFG)  # 2回目の改訂 (さらに別の重み)
+        cfg2["scoring"]["long"]["weights"]["technology_readiness"] = 40
+        cfg2["scoring"]["long"]["weights"]["monetization"] = 10
+        cfg2["config_version"] = "2026.12.0"
+        cfg2["config_hash"] = "newer"
+        recalculate_evaluations(store, cfg2, apply=True)
+        row = store.final_evaluations()[0]
+        self.assertEqual(row["total"], 40.0)
+        self.assertEqual(json.loads(row["extra_json"])["as_evaluated"]["total"], 25.0)
         store.close()
 
     def test_all_sources_failed_flag(self):

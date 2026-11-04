@@ -991,7 +991,7 @@ class ZeroRiskBatchTests(unittest.TestCase):
         ev_keys = {"status", "total", "band", "as_of", "evaluated_at", "items",
                    "critical_missing", "errors", "trl_level", "direction", "axes",
                    "business_stage", "total_scope", "llm_provider", "llm_model",
-                   "prev", "hold_cause"}
+                   "prev", "hold_cause", "total_orig", "band_orig"}
         for c in data["candidates"]:
             self.assertLessEqual(set(c), cand_keys)
             if c["long"]:

@@ -39,6 +39,9 @@ CREATE TABLE IF NOT EXISTS candidates(
   retry_count INTEGER NOT NULL DEFAULT 0, first_seen_run TEXT,
   title_ja TEXT, abstract_ja TEXT, translation_src TEXT, media_url TEXT);
 CREATE TABLE IF NOT EXISTS identifiers(key TEXT PRIMARY KEY, candidate_id TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS candidate_versions(
+  id INTEGER PRIMARY KEY AUTOINCREMENT, candidate_id TEXT, title TEXT, abstract TEXT,
+  published TEXT, source TEXT, superseded_at TEXT, run_id TEXT);
 CREATE TABLE IF NOT EXISTS evaluations(
   id INTEGER PRIMARY KEY AUTOINCREMENT, run_id TEXT, candidate_id TEXT, kind TEXT, as_of TEXT,
   evaluated_at TEXT, status TEXT, total REAL, band TEXT, items_json TEXT, extraction_json TEXT,
@@ -214,15 +217,19 @@ class Store:
                 c.execute("UPDATE candidates SET media_url=? WHERE id=?", (rec["media_url"], existing))
             # 治験登録はレジストリ側で内容が更新される(結果公表・ステータス変更)。
             # 要旨が変わったら取り込み、材料更新の印を付ける(優先再評価の対象になる)。
+            # 非破壊のため、上書きする前の版は candidate_versions に残す
+            # (旧版が無いと比較ができない。2026-11-04 の非破壊原則)
             if rec.get("source") == "trials" and rec.get("abstract") and cur["abstract"] != rec["abstract"]:
+                self._save_candidate_version(cur, run_id)
                 c.execute("UPDATE candidates SET title=?, abstract=?, published=?, material_updated_at=? WHERE id=?",
                           (rec["title"], rec["abstract"], rec.get("published"), now_iso(), existing))
             # 財務開示は出典側で数値が訂正され得る (I-2)。開示の要旨は財務数値
-            # テキストそのものなので、再取得で変わっていたら初回の値を残さず
-            # 取り込み、材料更新の印を付ける (治験レコードと同じ扱い)。
+            # テキストそのものなので、再取得で変わっていたら取り込む (旧版は
+            # candidate_versions に残る)。材料更新の印を付ける (治験と同じ扱い)。
             # 表題が違うものは別書類とみなし、キーが衝突しても上書きしない。
             if (rec.get("info_type") == "disclosure" and rec.get("abstract")
                     and cur["title"] == rec.get("title") and cur["abstract"] != rec["abstract"]):
+                self._save_candidate_version(cur, run_id)
                 c.execute("UPDATE candidates SET title=?, abstract=?, published=?, material_updated_at=? WHERE id=?",
                           (rec["title"], rec["abstract"], rec.get("published"), now_iso(), existing))
             c.commit()
@@ -238,6 +245,22 @@ class Store:
             c.execute("INSERT OR IGNORE INTO identifiers VALUES(?,?)", (k, cid))
         c.commit()
         return cid, True
+
+    def _save_candidate_version(self, cur, run_id=None):
+        """上書きされる直前の材料 (題名・要旨・公開日) を版として残す。
+        材料の版が残っていれば、評価時点との比較や変更内容の追跡ができる。"""
+        self.conn.execute(
+            "INSERT INTO candidate_versions(candidate_id,title,abstract,published,source,"
+            "superseded_at,run_id) VALUES(?,?,?,?,?,?,?)",
+            (cur["id"], cur["title"], cur["abstract"], cur["published"], cur["source"],
+             now_iso(), run_id))
+
+    def candidate_versions(self, cid):
+        """候補の旧版 (古い順)。材料がどう変わったかを後から比較するための記録。"""
+        rows = self.conn.execute(
+            "SELECT title, abstract, published, source, superseded_at, run_id"
+            " FROM candidate_versions WHERE candidate_id=? ORDER BY id", (cid,)).fetchall()
+        return [dict(r) for r in rows]
 
     def get_candidate(self, cid):
         row = self.conn.execute("SELECT * FROM candidates WHERE id=?", (cid,)).fetchone()
@@ -413,6 +436,7 @@ class Store:
         for cid, reason in targets.items():
             c.execute("DELETE FROM candidate_entities WHERE candidate_id=?", (cid,))
             c.execute("DELETE FROM identifiers WHERE candidate_id=?", (cid,))
+            c.execute("DELETE FROM candidate_versions WHERE candidate_id=?", (cid,))
             c.execute("DELETE FROM candidates WHERE id=?", (cid,))
             counts[reason] += 1
         cache_cut = (as_of - timedelta(days=cache_days)).isoformat()
@@ -547,6 +571,14 @@ class Store:
 
     # --- evaluations ---
     def add_evaluation(self, run_id, cid, ev):
+        extra = dict(ev.get("extra") or {})
+        if ev["status"] == "final" and ev.get("total") is not None:
+            # 非破壊の記録: 評価当時の総合点・帯域・規程版を固定で残す。
+            # 重み改訂の recalc は total 列を現行値に書き換えるが、こちらは
+            # 二度と触らない (当時いくつだったかが後から比較できるように)
+            extra.setdefault("as_evaluated", {
+                "total": ev["total"], "band": (ev["band"] or {}).get("label"),
+                "config_version": ev["config_version"]})
         cur = self.conn.execute(
             "INSERT INTO evaluations(run_id,candidate_id,kind,as_of,evaluated_at,status,total,band,items_json,"
             "extraction_json,event_json,prompt_versions_json,config_version,config_hash,llm_provider,llm_model,"
@@ -554,7 +586,7 @@ class Store:
             (run_id, cid, ev["kind"], ev["as_of"], now_iso(), ev["status"], ev["total"],
              (ev["band"] or {}).get("label"), _j(ev["items"]), _j(ev.get("extraction")), _j(ev.get("event")),
              _j(ev["prompt_versions"]), ev["config_version"], ev["config_hash"], ev["llm_provider"],
-             ev["llm_model"], ev["input_hash"], _j(ev["errors"]), _j(ev.get("extra") or {})))
+             ev["llm_model"], ev["input_hash"], _j(ev["errors"]), _j(extra)))
         self.conn.commit()
         return cur.lastrowid
 

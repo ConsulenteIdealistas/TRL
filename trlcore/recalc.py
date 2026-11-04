@@ -44,6 +44,16 @@ def recalculate_evaluations(store, cfg, apply=False):
                         "old_band": row["band"], "new_band": new_band,
                         "old_version": row["config_version"]})
         if apply:
+            if "as_evaluated" not in extra:
+                # 非破壊の固定が無い旧評価は、既存の来歴 (recalculated) が
+                # あればその旧値から、無ければ現在の値 (= 当時の値) から
+                # 評価当時の総合点を復元して固定する。これをしないと、
+                # 2回目の再計算で当時の値が来歴ごと上書きされて消える
+                prev = extra.get("recalculated") or {}
+                extra["as_evaluated"] = {
+                    "total": prev.get("old_total", row["total"]),
+                    "band": prev.get("old_band", row["band"]),
+                    "config_version": prev.get("from_version", row["config_version"])}
             extra["recalculated"] = {
                 "from_version": row["config_version"], "to_version": cur_version,
                 "old_total": row["total"], "old_band": row["band"],

@@ -22,7 +22,7 @@ from pathlib import Path  # noqa: F401
 from trlcore.errors import ConfigError, HttpError, LLMError, PromptError  # noqa: F401,E402
 from trlcore.dates import _RE, parse_date, days_since, freshness_info  # noqa: F401,E402
 from trlcore.http import SECRET_ENV, _PARAM_RE, redact, _retry_after_seconds, backoff_delay, http_fetch  # noqa: F401,E402
-from trlcore.normalize import clean_text, norm_doi, norm_url, FATAL, normalize  # noqa: F401,E402
+from trlcore.normalize import clean_text, norm_doi, norm_url, gnews_title_norm, FATAL, normalize  # noqa: F401,E402
 from trlcore.sources.pubmed import BASE, MONTHS, _month, _date_from, parse_efetch, pubmed_fetch  # noqa: F401,E402
 from trlcore.sources.arxiv import URL, NS, _last_call, parse_feed, arxiv_fetch  # noqa: F401,E402
 from trlcore.sources.gnews import parse_feed as gnews_parse_feed, gnews_fetch, prtimes_fetch  # noqa: F401,E402

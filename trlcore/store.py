@@ -14,6 +14,9 @@ from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
+from .dates import parse_date
+from .normalize import gnews_title_norm
+
 
 class _DeferrableConnection(sqlite3.Connection):
     """commit() を保留できる接続。評価結果の保存 (評価本体・キュー・候補の
@@ -193,15 +196,51 @@ class Store:
             "WHERE kind = 'long' AND status IN ('final', 'hold') GROUP BY candidate_id")}
 
     # --- candidates ---
-    def upsert_candidate(self, rec, run_id=None):
-        """-> (candidate_id, is_new)。既存IDに一致すれば統合し、欠けた項目だけ補う。"""
+    def _window_owner(self, rec, window_keys, entity_ids, window_days):
+        """窓つき統合の所有者探し。window_keys の所有者のうち、企業リンク
+        集合が entity_ids と一致し、published の日付差が window_days 以内で、
+        rejected でない候補があればその id を返す。published がどちらか
+        空・解釈不能なら窓判定はせず None (従来のキー照合に任せる)。"""
+        rec_date = parse_date((rec.get("published") or "")[:10])
+        if rec_date is None:
+            return None
+        want = set(entity_ids)
+        for wk in window_keys:
+            if not wk:
+                continue
+            row = self.conn.execute(
+                "SELECT candidate_id FROM identifiers WHERE key=?", (wk,)).fetchone()
+            if not row:
+                continue
+            owner = self.get_candidate(row[0])
+            if owner is None or owner.get("status") == "rejected":
+                continue
+            if {l["entity_id"] for l in owner["entities"]} != want:
+                continue
+            own_date = parse_date((owner.get("published") or "")[:10])
+            if own_date is None:
+                continue
+            if abs((rec_date - own_date).days) <= window_days:
+                return owner["id"]
+        return None
+
+    def upsert_candidate(self, rec, run_id=None, window_keys=None, entity_ids=None, window_days=3):
+        """-> (candidate_id, is_new)。既存IDに一致すれば統合し、欠けた項目だけ補う。
+
+        window_keys と entity_ids を渡すと、通常のキー照合の前に窓つき統合を
+        試す (gnews の日付ゆれ対策。pipeline の GNEWS_MERGE_WINDOW_DAYS 参照)。
+        窓で統合された場合も、通常の統合と同じく rec のキーは所有者へ登録され、
+        欠けた項目だけ補われる。"""
         c = self.conn
         existing = None
-        for k in rec["keys"]:
-            row = c.execute("SELECT candidate_id FROM identifiers WHERE key=?", (k,)).fetchone()
-            if row:
-                existing = row[0]
-                break
+        if window_keys and entity_ids:
+            existing = self._window_owner(rec, window_keys, entity_ids, window_days)
+        if existing is None:
+            for k in rec["keys"]:
+                row = c.execute("SELECT candidate_id FROM identifiers WHERE key=?", (k,)).fetchone()
+                if row:
+                    existing = row[0]
+                    break
         if existing:
             cur = self.get_candidate(existing)
             if cur is None:
@@ -245,6 +284,90 @@ class Store:
             c.execute("INSERT OR IGNORE INTO identifiers VALUES(?,?)", (k, cid))
         c.commit()
         return cid, True
+
+    def dedupe_gnews(self, window_days=3):
+        """gnews の重複を統合する保守パス。統合した行数を返す (冪等)。
+
+        gtitle キー導入前の旧行は安定IDを持たず、再配信のたびに双子が
+        生まれていた。また gtitle の日付成分のため、日付をずらした再配信は
+        キー付き同士でも割れる。ここでは (企業リンク集合, 正規化タイトル)
+        でグループ化し、published の広がりが window_days 以内のグループは
+        最古行 (published → retrieved_at → id の順で最小) を survivor と
+        して残し、他の行を rejected にして識別子を survivor へ付け替える。
+        行自体は消さない (非破壊・可逆)。評価が付いた行は、統合される側
+        にも survivor にもしない (対象から外す)。published が解釈できない
+        行も、窓の中にあると確認できないため対象外にする。
+
+        あわせて、生存する全ての gnews 行へ補助キー (gaux) を付与する。
+        これで旧行も含め、将来の再配信が upsert_candidate の窓つき統合で
+        survivor へ吸収されるようになる。"""
+        c = self.conn
+        rows = c.execute(
+            "SELECT id, title, published, retrieved_at, status FROM candidates "
+            "WHERE source='gnews'").fetchall()
+        ent = {}
+        for r in c.execute("SELECT candidate_id, entity_id FROM candidate_entities"):
+            ent.setdefault(r["candidate_id"], set()).add(r["entity_id"])
+        evaluated = {r[0] for r in c.execute(
+            "SELECT DISTINCT candidate_id FROM evaluations")}
+        groups = {}
+        for r in rows:
+            if r["status"] == "rejected" or r["id"] in evaluated:
+                continue
+            es = frozenset(ent.get(r["id"], ()))
+            nt = gnews_title_norm(r["title"])
+            # 企業リンクが無い行と短いタイトルは、gtitle/gaux のキー方針と
+            # 同じく誤統合を避けて対象にしない
+            if not es or len(nt) < 12:
+                continue
+            groups.setdefault((es, nt), []).append(r)
+        merged = 0
+        merged_ids = set()
+        for members in groups.values():
+            if len(members) < 2:
+                continue
+            dated = []
+            for r in members:
+                d = parse_date((r["published"] or "")[:10])
+                if d is not None:
+                    dated.append((d, r))
+            if len(dated) < 2:
+                continue
+            dates = [d for d, _ in dated]
+            if (max(dates) - min(dates)).days > window_days:
+                continue
+            dated.sort(key=lambda x: (x[0], x[1]["retrieved_at"] or "", x[1]["id"]))
+            survivor = dated[0][1]
+            for _, r in dated[1:]:
+                # 識別子を survivor へ付け替える。identifiers.key は主キーで
+                # 所有者は一意なので、他の候補が所有しているキーはあり得ないが、
+                # 念のため survivor 以外が所有者の場合だけ付け替える
+                for (k,) in c.execute(
+                        "SELECT key FROM identifiers WHERE candidate_id=?",
+                        (r["id"],)).fetchall():
+                    row = c.execute(
+                        "SELECT candidate_id FROM identifiers WHERE key=?", (k,)).fetchone()
+                    if row and row[0] != survivor["id"]:
+                        c.execute("UPDATE identifiers SET candidate_id=? WHERE key=?",
+                                  (survivor["id"], k))
+                c.execute(
+                    "UPDATE candidates SET status='rejected', screen_reason=? WHERE id=?",
+                    (f"duplicate_of:{survivor['id']}", r["id"]))
+                merged += 1
+                merged_ids.add(r["id"])
+        # 生存する全 gnews 行へ gaux を付与 (企業ごとに1キー)。今回の統合で
+        # rejected になった行は除く (スナップショットの status は古いため)
+        for r in rows:
+            if r["status"] == "rejected" or r["id"] in merged_ids:
+                continue
+            nt = gnews_title_norm(r["title"])
+            if len(nt) < 12:
+                continue
+            for eid in ent.get(r["id"], ()):
+                c.execute("INSERT OR IGNORE INTO identifiers VALUES(?,?)",
+                          (f"gaux:{eid}:{nt}", r["id"]))
+        c.commit()
+        return merged
 
     def _save_candidate_version(self, cur, run_id=None):
         """上書きされる直前の材料 (題名・要旨・公開日) を版として残す。
@@ -524,6 +647,10 @@ class Store:
             "JOIN candidate_entities ce ON ce.entity_id = ne.entity_id "
             "WHERE ce.candidate_id = ? AND n.id != ? AND n.info_type = 'news' "
             "AND ne.link_type = 'entity' "
+            # 重複統合された行 (rejected かつ理由が duplicate_of:) は同一記事が
+            # survivor 側で代表されるためプールに出さない (二重表示の防止)。
+            # スクリーニング除外 (abstract_too_short 等) は従来どおり材料として残す
+            "AND NOT (n.status = 'rejected' AND n.screen_reason LIKE 'duplicate_of:%') "
             "AND n.published IS NOT NULL AND n.published <= ? AND n.published >= ? "
             "ORDER BY n.published DESC, n.id LIMIT ?",
             (cid, cid, as_of.isoformat(), start, limit)).fetchall()

@@ -2,13 +2,12 @@
 
 import json
 import time
-import unicodedata
 import uuid
 from datetime import datetime, timedelta, timezone
 from .errors import PromptError
 from .dates import days_since, parse_date
 from .http import redact
-from .normalize import normalize
+from .normalize import gnews_title_norm, normalize
 from .sources.pubmed import pubmed_fetch
 from .sources.arxiv import arxiv_fetch
 from .sources.gnews import gnews_fetch, prtimes_fetch
@@ -106,12 +105,32 @@ def _gnews_title_key(rec, entity_links):
     """gnews の同一記事判定キー (監査 I-4)。配信社ごとに URL が違う同じ記事を、
     同一企業・正規化タイトル・同日で統合する。短いタイトルは誤統合を避けて
     キーを作らない。"""
-    title = unicodedata.normalize("NFKC", rec.get("title") or "").casefold()
-    title = "".join(ch for ch in title if ch.isalnum())
+    title = gnews_title_norm(rec.get("title"))
     if len(title) < 12 or not entity_links:
         return None
-    return (f"gtitle:{entity_links[0]['entity_id']}:{title[:80]}:"
+    return (f"gtitle:{entity_links[0]['entity_id']}:{title}:"
             f"{(rec.get('published') or '')[:10]}")
+
+
+# gnews の日付ゆれを吸収する統合の窓 (日)。Google は同じ記事を配信日を
+# 1〜3 日ずらして再配信することがあり、同日キー (gtitle) だけでは割れて
+# 重複が残る。実測根拠: 本番 DB の gnews 重複 199 組のうち 182 組が日付差
+# 3 日以内に収まり、4 日以上は同じ見出しの別記事である可能性が上がる帯
+# だった (2026-11-04 実測)。この窓は store.upsert_candidate の窓つき統合と
+# store.dedupe_gnews の統合パスの両方が使う
+GNEWS_MERGE_WINDOW_DAYS = 3
+
+
+def _gnews_aux_key(rec, entity_links):
+    """gnews の補助キー (日付なし)。窓つき統合 (GNEWS_MERGE_WINDOW_DAYS) の
+    照合専用で、通常の安定ID (rec["keys"]) には混ぜない。日付なしキーだけで
+    無条件に統合すると、期間を置いた同じ見出しの別記事 (続報等) を取り
+    違えるため、統合の可否は store 側で企業集合の一致と日付差を併せて
+    判定する。"""
+    title = gnews_title_norm(rec.get("title"))
+    if len(title) < 12 or not entity_links:
+        return None
+    return f"gaux:{entity_links[0]['entity_id']}:{title}"
 
 
 # 浅い日 (深い日以外の曜日の定期実行) の取得窓。浅い日の役割は、深い日
@@ -243,7 +262,14 @@ def collect(store, cfg, run_id, as_of, sources, fetchers, counts, log, budget_ca
                         tk = _gnews_title_key(rec, entity_links)
                         if tk:
                             rec["keys"] = list(rec.get("keys") or []) + [tk]
-                    cid, is_new = store.upsert_candidate(rec, run_id)
+                        aux = _gnews_aux_key(rec, entity_links)
+                        cid, is_new = store.upsert_candidate(
+                            rec, run_id,
+                            window_keys=[aux] if aux else None,
+                            entity_ids=[l["entity_id"] for l in entity_links],
+                            window_days=GNEWS_MERGE_WINDOW_DAYS)
+                    else:
+                        cid, is_new = store.upsert_candidate(rec, run_id)
                     store.set_entities(cid, entity_links)
                     store.set_links_hash(cid, chash)
                     for k in rec["keys"]:
@@ -503,6 +529,13 @@ def run_pipeline(store, cfg, llm, *, as_of, sources=("pubmed", "arxiv"), kinds=(
             cap = run_deadline - EVAL_RESERVE_SEC - time.monotonic()
         collect(store, cfg, run_id, as_of, sources, {**DEFAULT_FETCHERS, **(fetchers or {})}, counts, log,
                 budget_cap=cap)
+    # gnews の重複統合 (保守パス)。gtitle 導入前の旧行や日付ゆれで割れた
+    # 重複を、収集のたびに可逆な形 (rejected 化 + 識別子の付け替え) で
+    # survivor へ寄せる。冪等で、統合すべき重複が無ければ 0 件になる
+    merged = store.dedupe_gnews(window_days=GNEWS_MERGE_WINDOW_DAYS)
+    counts["dedup_merged"] = merged
+    if merged:
+        log(f"[dedupe] gnews の重複 {merged} 件を survivor へ統合しました")
     for c in store.list_by_status(["new"]):
         reason = screen(c, as_of, cfg)
         store.set_status(c["id"], "rejected" if reason else "screened", reason)

@@ -1188,6 +1188,136 @@ class DedupeStoreTests(unittest.TestCase):
         self.assertEqual(self.store.list_queue(), [])
 
 
+class GnewsDedupeTests(unittest.TestCase):
+    """gnews の重複厳格化: 窓つき統合 (upsert_candidate) と統合パス (dedupe_gnews)。"""
+
+    TITLE = "アストロスケールが防衛案件の大型契約を獲得した"
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.path = Path(self.tmp.name) / "t.sqlite"
+        self.store = Store(self.path)
+
+    def tearDown(self):
+        self.store.close()
+        self.tmp.cleanup()
+
+    def rec(self, sid, published, title=None, retrieved="2026-11-01T00:00:00+00:00"):
+        raw_ = {"source": "gnews", "source_id": sid, "title": title or self.TITLE,
+                "abstract": "ニュース本文のダイジェストです。",
+                "url": f"https://news.example/{sid}", "published": published,
+                "fields": ["媒体"], "affiliations": [], "info_type": "news"}
+        rec, problems = normalize(raw_, retrieved)
+        self.assertIsNotNone(rec, problems)
+        return rec
+
+    def add(self, sid, published, entities=("astroscale",), **kw):
+        cid, is_new = self.store.upsert_candidate(self.rec(sid, published, **kw), "r0")
+        self.store.set_entities(cid, [
+            {"entity_id": e, "strength": "strong", "matched_by": "title",
+             "matched_alias": e} for e in entities])
+        return cid, is_new
+
+    def aux(self, entity="astroscale", title=None):
+        return f"gaux:{entity}:{gnews_title_norm(title or self.TITLE)}"
+
+    def upsert_window(self, sid, published, entities=("astroscale",), **kw):
+        return self.store.upsert_candidate(
+            self.rec(sid, published, **kw), "r1",
+            window_keys=[self.aux(entities[0])],
+            entity_ids=list(entities), window_days=3)
+
+    def owner_of(self, key):
+        row = self.store.conn.execute(
+            "SELECT candidate_id FROM identifiers WHERE key=?", (key,)).fetchone()
+        return row[0] if row else None
+
+    def test_title_norm_unifies_fullwidth_and_symbols(self):
+        self.assertEqual(gnews_title_norm("ＡＢＣニュース！ 第１報"),
+                         gnews_title_norm("abcニュース 第1報"))
+
+    def test_window_merge_within_3_days(self):
+        cid1, _ = self.add("n1", "2026-10-10")
+        self.store.dedupe_gnews()  # 生存行へ gaux を付与する
+        cid2, is_new = self.upsert_window("n2", "2026-10-12")
+        self.assertEqual((cid2, is_new), (cid1, False))
+        self.assertEqual(self.store.count_candidates(), 1)
+        # 今回の通常キー (URL) が所有者へ登録されている
+        self.assertEqual(self.owner_of("url:https://news.example/n2"), cid1)
+
+    def test_window_no_merge_after_4_days(self):
+        cid1, _ = self.add("n1", "2026-10-10")
+        self.store.dedupe_gnews()
+        cid2, is_new = self.upsert_window("n2", "2026-10-14")
+        self.assertTrue(is_new)
+        self.assertNotEqual(cid2, cid1)
+        self.assertEqual(self.store.count_candidates(), 2)
+
+    def test_window_no_merge_when_entity_set_differs(self):
+        cid1, _ = self.add("n1", "2026-10-10", entities=("astroscale", "other"))
+        self.store.dedupe_gnews()
+        # 所有者の企業集合は {astroscale, other}。{astroscale} だけの照合は
+        # 集合が一致しないため、窓の中でも統合しない
+        cid2, is_new = self.upsert_window("n2", "2026-10-11", entities=("astroscale",))
+        self.assertTrue(is_new)
+        self.assertNotEqual(cid2, cid1)
+
+    def test_dedupe_merges_legacy_twins(self):
+        cid_old, _ = self.add("n1", "2026-10-10", retrieved="2026-10-10T00:00:00+00:00")
+        cid_new, _ = self.add("n2", "2026-10-10", retrieved="2026-10-11T00:00:00+00:00")
+        self.assertNotEqual(cid_old, cid_new)
+        self.assertEqual(self.store.dedupe_gnews(), 1)
+        loser = self.store.get_candidate(cid_new)
+        self.assertEqual(loser["status"], "rejected")
+        self.assertEqual(loser["screen_reason"], f"duplicate_of:{cid_old}")
+        # 識別子が survivor へ移り、survivor に gaux が付いている
+        self.assertEqual(self.owner_of("url:https://news.example/n2"), cid_old)
+        self.assertEqual(self.owner_of(self.aux()), cid_old)
+
+    def test_dedupe_leaves_wide_spread_group(self):
+        self.add("n1", "2026-10-10")
+        self.add("n2", "2026-10-14")
+        self.assertEqual(self.store.dedupe_gnews(), 0)
+        self.assertEqual(self.store.count_candidates(), 2)
+        for c in self.store.list_by_status(["new"]):
+            self.assertEqual(c["status"], "new")
+
+    def test_dedupe_skips_evaluated(self):
+        cid1, _ = self.add("n1", "2026-10-10")
+        cid2, _ = self.add("n2", "2026-10-10")
+        self.store.conn.execute(
+            "INSERT INTO evaluations(run_id, candidate_id, kind, status) "
+            "VALUES('r0', ?, 'long', 'final')", (cid1,))
+        self.store.conn.commit()
+        self.assertEqual(self.store.dedupe_gnews(), 0)
+        self.assertEqual(self.store.get_candidate(cid1)["status"], "new")
+        self.assertEqual(self.store.get_candidate(cid2)["status"], "new")
+
+    def test_dedupe_idempotent(self):
+        self.add("n1", "2026-10-10")
+        self.add("n2", "2026-10-11")
+        self.assertEqual(self.store.dedupe_gnews(), 1)
+        self.assertEqual(self.store.dedupe_gnews(), 0)
+
+    def test_merged_duplicate_hidden_from_related_news(self):
+        # 統合された重複行は関連ニュースのプールに出ず、survivor だけが残る。
+        # スクリーニング除外 (duplicate_of 以外) は従来どおりプールに残る。
+        from datetime import date
+        center, _ = self.add("paper1", "2026-10-12", title="アストロスケールの軌道上サービス論文")
+        keep, _ = self.add("n1", "2026-10-10")
+        dupe, _ = self.add("n2", "2026-10-11")
+        other, _ = self.add("n3", "2026-10-11", title="アストロスケールが新しいデブリ観測結果を公表した")
+        self.store.conn.execute(
+            "UPDATE candidates SET status='rejected', screen_reason='abstract_too_short' WHERE id=?",
+            (other,))
+        self.store.conn.commit()
+        self.assertEqual(self.store.dedupe_gnews(), 1)
+        pool = self.store.related_news(center, date(2026, 10, 12))
+        titles = [p["title"] for p in pool]
+        self.assertEqual(titles.count(self.TITLE), 1)
+        self.assertIn("アストロスケールが新しいデブリ観測結果を公表した", titles)
+
+
 class ListByStatusTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()

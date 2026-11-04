@@ -1,6 +1,7 @@
 """正規化と基本検証。重複判定は安定ID(DOI/PMID/arXiv ID/URL/ソース内ID)のみ。タイトル類似では統合しない。"""
 
 import re
+import unicodedata
 from .dates import parse_date
 
 
@@ -21,6 +22,15 @@ def norm_url(u):
     u = u.split("#")[0].rstrip("/")
     m = re.match(r"^(https?)://([^/]+)(.*)$", u, re.I)
     return f"{m.group(1).lower()}://{m.group(2).lower()}{m.group(3)}" if m else u
+
+
+def gnews_title_norm(title):
+    """gnews の同一記事判定に使うタイトル正規化 (監査 I-4)。NFKC で全角・
+    半角を揃え、casefold し、英数字以外 (空白・記号・媒体名の装飾) を落として
+    80 字に切り詰める。pipeline の gtitle / gaux キーと store の重複統合パスで
+    共通に使う (正規化がずれると同じ記事を別物と判定してしまうため一箇所に置く)。"""
+    t = unicodedata.normalize("NFKC", title or "").casefold()
+    return "".join(ch for ch in t if ch.isalnum())[:80]
 
 
 FATAL = {"missing_title", "no_stable_identifier"}

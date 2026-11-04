@@ -240,6 +240,7 @@ long 評価では、点数・TRL とは独立に「その資料が示す出来�
 - 補助ワークフロー: `site.yaml`（サイトだけを最新 DB から書き出してデプロイする。UI の変更を数分で反映するため）、`compare.yaml`（モデル比較専用。評価本体には触れない）。
 - 処理の流れ: テスト → data ブランチから DB 復元（`--depth 1` で取得）→（任意で purge）→ パイプライン実行 → サイト書き出し → DB を data ブランチへ保存 → GitHub Pages へデプロイ。
 - DB は `data` ブランチの `trl.sqlite`（ルート直下）に保存され、実行ごとに通常のコミットで履歴が残ります。レポートは `data` ブランチの `reports/latest.md` と Actions の Summary でも読めます。
+- DB が壊れた・消えた場合の復旧手順は [RECOVERY.md](RECOVERY.md) にあります（data ブランチの履歴から良品を取り出して戻す手順）。
 
 手動実行の入力:
 

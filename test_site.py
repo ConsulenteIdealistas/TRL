@@ -1075,10 +1075,12 @@ class ZeroRiskBatchTests(unittest.TestCase):
         self.assertIn("trl-pins", app)
         self.assertIn("data-pin", app)
         self.assertIn("?pins=", app)
+        # 新着の基準時刻も同じ共有リンク (?seen=) で持ち運べる (既読の統合)
+        self.assertIn("seen=", app)
         self.assertIn("data-ccite", app)
         self.assertIn("data-clink", app)
         self.assertIn("自分の表示", index)
-        self.assertIn("注目の共有リンクをコピー", index)
+        self.assertIn("注目・新着の共有リンクをコピー", index)
         for text in (app, detail):
             self.assertIn("評価をコピー", text)
             self.assertIn("evalText", text)

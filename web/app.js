@@ -175,8 +175,9 @@ const noteDrafts = {};  // 未保存のメモ下書き。再描画で入力途�
 function setNote(id, v) { try { localStorage.setItem("trl-note:" + id, v); return true; } catch (e) { return false; } }
 
 // 端末内の状態 (注目ピンと最終訪問時刻)。サーバを持たない静的サイトなので
-// 端末ごとに保持する (調査メモと同じ)。可用性の担保として、注目ピンは
-// 共有リンク (?pins=候補ID,...) で別端末へ持ち運べるようにする
+// 端末ごとに保持する (調査メモと同じ)。可用性の担保として、注目ピンと
+// 新着の基準時刻 (最終訪問時刻) は共有リンク (?pins=候補ID,...&seen=ISO時刻)
+// で別端末へ持ち運べるようにする
 let pins = new Set();
 try { pins = new Set(JSON.parse(localStorage.getItem("trl-pins") || "[]")); } catch (e) { /* 壊れた保存値は空として扱う */ }
 function savePins() { try { localStorage.setItem("trl-pins", JSON.stringify([...pins])); } catch (e) { /* 保存不可でも表示は続ける */ } }
@@ -196,7 +197,20 @@ function importPinsFromUrl() {
 // バッジが消えないように、判定に使う値は読み込み時のまま固定する)。
 // 初回訪問では基準だけを置いてバッジは付けない (全部が新着になるため)
 let lastVisit = null;
-try { lastVisit = localStorage.getItem("trl-last-visit"); localStorage.setItem("trl-last-visit", new Date().toISOString()); } catch (e) { /* 保存不可なら新着判定は無効 */ }
+try {
+  lastVisit = localStorage.getItem("trl-last-visit");
+  // 共有リンク (?seen=) で届いた基準時刻を取り込む。既読の統合なので、
+  // 保存値と届いた値のうち遅い方を基準にする (ピンの統合と同じ考え方)。
+  // 未来の時刻は「今」で頭打ちにする (まだ見ていない分まで既読にしない)
+  const seenQ = new URLSearchParams(location.search).get("seen");
+  if (seenQ && !Number.isNaN(Date.parse(seenQ))) {
+    const seenIso = new Date(Math.min(Date.parse(seenQ), Date.now())).toISOString();
+    if (!lastVisit || seenIso > lastVisit) lastVisit = seenIso;
+    const u = new URL(location.href); u.searchParams.delete("seen");
+    history.replaceState(null, "", u.pathname + u.search);
+  }
+  localStorage.setItem("trl-last-visit", new Date().toISOString());
+} catch (e) { /* 保存不可なら新着判定は無効 */ }
 const isNewEval = p => !!(lastVisit && p.long && p.long.evaluated_at && p.long.evaluated_at > lastVisit);
 function citeText(p) { return [p.title, srcName(p.source) + (p.published ? " ・ " + p.published : ""), p.url].filter(Boolean).join("\n"); }
 function detailUrl(p) { return location.origin + location.pathname.replace(/[^/]*$/, "") + "detail.html?id=" + encodeURIComponent(p.id); }
@@ -532,8 +546,16 @@ $("#list").addEventListener("click", e => {
 });
 $("#cpypins").addEventListener("click", e => {
   const btn = e.currentTarget;
-  if (!pins.size) { const o = btn.textContent; btn.textContent = "注目がまだありません"; setTimeout(() => { btn.textContent = o; }, 1600); return; }
-  copyText(`${location.origin}${location.pathname}?pins=${[...pins].map(encodeURIComponent).join(",")}`, btn);
+  // 共有リンクには注目ピンと新着の基準時刻 (?seen=) を含める。基準時刻は
+  // コピーの時点 (= ここまで見た) とし、この端末の保存値も同じ時刻へ
+  // 進める (送り先と自分の次回訪問で新着の見え方が揃うように)。
+  // 表示中の判定値 (lastVisit) は変えないので、今見ているバッジは消えない
+  const seen = new Date().toISOString();
+  try { localStorage.setItem("trl-last-visit", seen); } catch (err) { /* 保存不可でもリンクは作る */ }
+  const parts = [];
+  if (pins.size) parts.push(`pins=${[...pins].map(encodeURIComponent).join(",")}`);
+  parts.push(`seen=${encodeURIComponent(seen)}`);
+  copyText(`${location.origin}${location.pathname}?${parts.join("&")}`, btn);
 });
 $("#det").addEventListener("input", e => { if (e.target.id === "note" && sel) noteDrafts[sel] = e.target.value; });
 $("#det").addEventListener("click", e => {

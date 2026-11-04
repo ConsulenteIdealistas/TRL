@@ -3413,5 +3413,66 @@ class ReportWarningTests(unittest.TestCase):
             os.unlink(path)
 
 
+
+class VaultTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.path = Path(self.tmp.name) / "d" / "trl.sqlite"
+        self.out = Path(self.tmp.name) / "vault"
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def _build_db(self):
+        store = Store(self.path)
+        cfg = dict(CFG)
+        cfg["sources"] = {"defaults": {"max_results": 5, "lookback_days": 30},
+                          "queries": [{"name": "q", "arxiv": "a"}]}
+
+        def arx(q, n, days, as_of):
+            return [raw(sid="2610.0001", doi="10.1/a")]
+        run_pipeline(store, cfg, Mock(make_llm_fn(long_scores={k: 65 for k in LONG_KEYS})),
+                     as_of=AS_OF, kinds=("long",), fetchers={"arxiv": arx},
+                     today=AS_OF, log=lambda *_: None)
+        store.close()
+        return cfg
+
+    def test_vault_export_is_readonly_and_complete(self):
+        import hashlib
+        from trlcore.vault import export_vault
+        cfg = self._build_db()
+        before = hashlib.sha256(self.path.read_bytes()).hexdigest()
+        res = export_vault(self.path, cfg, self.out)
+        after = hashlib.sha256(self.path.read_bytes()).hexdigest()
+        self.assertEqual(before, after)  # 読み取り専用: 元データは一切変わらない
+        self.assertEqual(res["evaluations"], 1)
+        notes = list((self.out / "evals").glob("*.md"))
+        self.assertEqual(len(notes), 1)
+        text = notes[0].read_text(encoding="utf-8")
+        self.assertIn("## 要旨（原文）", text)
+        self.assertIn("## 要旨（日本語訳）", text)
+        self.assertIn("未取得（未翻訳）", text)  # 無い情報は捏造せず未取得と書く
+        self.assertIn("https://example.org/2610.0001", text)  # 出典URL
+        self.assertIn("取得:", text)
+        self.assertIn(f"config_version: \"{CFG['config_version']}\"", text)
+        self.assertIn("../companies/", text)  # 標準 Markdown の相対リンク
+        self.assertNotIn("[[", text)  # 特定ツールの固有記法に依存しない
+        comp = list((self.out / "companies").glob("*.md"))
+        self.assertEqual(len(comp), 1)
+        self.assertIn("../evals/", comp[0].read_text(encoding="utf-8"))
+
+    def test_vault_does_not_touch_unmanaged_files(self):
+        from trlcore.vault import export_vault
+        cfg = self._build_db()
+        (self.out / "notes").mkdir(parents=True)
+        mine = self.out / "notes" / "README.md"
+        mine.write_text("自分のメモ", encoding="utf-8")
+        stray = self.out / "stray.txt"
+        stray.write_text("keep", encoding="utf-8")
+        export_vault(self.path, cfg, self.out)
+        self.assertEqual(mine.read_text(encoding="utf-8"), "自分のメモ")
+        self.assertEqual(stray.read_text(encoding="utf-8"), "keep")
+
+
 if __name__ == "__main__":
     unittest.main()

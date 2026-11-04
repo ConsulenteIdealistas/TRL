@@ -98,6 +98,10 @@ def main(argv=None):
     ex = sub.add_parser("export")
     ex.add_argument("--data-dir", default="data")
     ex.add_argument("--out", default="_site")
+    vt = sub.add_parser("vault")
+    vt.add_argument("--data-dir", default="data")
+    vt.add_argument("--out", default="vault",
+                    help="Markdown Vault の出力先 (DB は読み取り専用で開く)")
     ex.add_argument("--web", default=None, help="web/ のパス(既定: リポジトリ内の web)")
     sub.add_parser("check-config")
     sub.add_parser("queries")
@@ -184,6 +188,15 @@ def main(argv=None):
         digest = hashlib.sha256(db.read_bytes()).hexdigest()
         (Path(a.data_dir) / "trl.sqlite.sha256").write_text(digest + "\n", encoding="utf-8")
         print(f"[export] mirror -> {Path(a.data_dir) / 'data.json'}, db sha256={digest[:12]}…")
+        return 0
+    if a.cmd == "vault":
+        db = Path(a.data_dir) / "trl.sqlite"
+        if not db.is_file():
+            print(f"::error::{db} がありません。先に run を実行してください")
+            return 2
+        from .vault import export_vault
+        res = export_vault(db, cfg, a.out)
+        print(f"[vault] evaluations={res['evaluations']} companies={res['companies']} -> {a.out}")
         return 0
     if a.cmd == "compare":
         db = Path(a.data_dir) / "trl.sqlite"

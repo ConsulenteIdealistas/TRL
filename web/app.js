@@ -227,6 +227,61 @@ function evalText(p) {
   return lines.join("\n");
 }
 
+function mdNote(p) {
+  // Obsidian 等へ貼るための Markdown ノート (trlcore/vault.py の評価ノートと同じ形式)
+  const L = p.long && p.long.status !== "error" ? p.long : null;
+  if (!L) return "";
+  const lv = lvl(p);
+  const e0 = (p.entities || [])[0] || {};
+  const ver = (META.config && META.config.version) || "";
+  const fm = ["---", "type: evaluation", `candidate: "${p.id}"`];
+  if (e0.entity_id) fm.push(`company: "${e0.entity_id}"`);
+  fm.push(`status: "${p.display_status}"`);
+  if (L.total != null) fm.push(`total: ${L.total}`);
+  if (L.band) fm.push(`band: "${L.band}"`);
+  if (lv != null) fm.push(`trl: ${lv}`);
+  if (L.direction) fm.push(`direction: "${L.direction.direction}"`);
+  if (L.llm_model) fm.push(`model: "${L.llm_model}"`);
+  fm.push(`evaluated: "${(L.evaluated_at || "").slice(0, 10)}"`);
+  if (ver) fm.push(`config_version: "${ver}"`);
+  fm.push(`source: "${p.source}"`);
+  if (p.published) fm.push(`published: "${String(p.published).slice(0, 10)}"`);
+  if (p.retrieved_at) fm.push(`retrieved: "${String(p.retrieved_at).slice(0, 10)}"`);
+  fm.push("---");
+  const out = [...fm, "", `# ${dispT(p)}`, ""];
+  if (p.title_ja) out.push(`原題: ${p.title}`);
+  for (const e of p.entities || []) out.push(`企業: ${e.name}（${e.market || "JP"} / ${e.sector || "未取得"}）`);
+  out.push(`出典: [${p.url}](${p.url})（${p.source}）`);
+  out.push(`公開: ${p.published ? String(p.published).slice(0, 10) : "未取得"} / 取得: ${p.retrieved_at ? String(p.retrieved_at).slice(0, 10) : "未取得"}`);
+  out.push(`評価日時: ${L.evaluated_at || "未取得"} / 評価モデル: ${L.llm_model || "未取得"} / 評価基準: ${ver || "未取得"}`);
+  out.push("", "## 評価サマリ");
+  if (L.total != null) out.push(`総合点: ${L.total}（${L.band || ""}）`);
+  else out.push("総合点: 未取得（保留のため算出せず）");
+  if (L.total_orig != null && L.total != null && L.total_orig !== L.total) out.push(`評価当時の総合点: ${L.total_orig}（${L.band_orig || ""}）`);
+  out.push(`TRL: ${lv != null ? lv : "未確定"}`);
+  if (L.trl_level && L.trl_level.reason) out.push(`TRL の理由: ${L.trl_level.reason}`);
+  if (L.direction) out.push(`方向性: ${L.direction.direction}${L.direction.reason ? " — " + L.direction.reason : ""}`);
+  if (L.prev) out.push(`前回評価: 総合 ${L.prev.total ?? "未取得"} / TRL ${L.prev.trl_level ?? "未確定"} / 状態 ${L.prev.status}（${L.prev.evaluated_at || ""}）`);
+  out.push("", "## 項目別");
+  const G = META.config.item_groups;
+  const order = [...G.technology, ...G.business, ...Object.keys(L.items)];
+  for (const k of [...new Set(order)]) {
+    const it = L.items[k];
+    if (!it) continue;
+    out.push(`### ${label(k)}: ${it.score != null ? it.score + "点" : "未取得（不足）"}`);
+    if (it.reason) out.push(it.reason);
+    for (const e of it.evidence || []) out.push(`- 根拠: ${e.summary}${e.ref ? `（[${e.ref}](${e.ref})）` : ""}`);
+    for (const ce of it.counter_evidence || []) out.push(`- 反証: ${ce}`);
+    const miss = (it.missing_info || []).filter(m => m && m !== "特になし");
+    if (miss.length) out.push(`- 不足: ${miss.join(" / ")}`);
+    if ((it.awaiting_info || []).length) out.push(`- 結果待ち: ${it.awaiting_info.join(" / ")}`);
+    out.push("");
+  }
+  if (L.critical_missing && L.critical_missing.length) { out.push("## 決定的な不足", ...L.critical_missing.map(k => "- " + label(k)), ""); }
+  out.push("## 要旨（原文）", p.abstract || "未取得", "", "## 要旨（日本語訳）", p.abstract_ja || "未取得（未翻訳）");
+  return out.join("\n");
+}
+
 function detail() {
   const p = P.find(x => x.id === sel);
   if (!p) { $("#det").innerHTML = `<div class="ph"><i>⌕</i><h3>論文が選択されていません</h3><p class="hint">検索条件を変更するか、一覧から論文を選択してください。</p></div>`; return; }
@@ -243,7 +298,7 @@ function detail() {
 <section class="ds"><h4>技術成熟度（TRL）</h4>${trl(lvl(p), 1)}${tr && tr.reason ? `<p>${esc(tr.reason)}</p>` : ""}${tr && tr.level == null && tr.missing_info.length ? `<p class="hint">不足: ${tr.missing_info.map(esc).join(" / ")}</p>` : ""}${tr && tr.awaiting_info && tr.awaiting_info.length ? `<p class="hint">結果待ち: ${tr.awaiting_info.map(esc).join(" / ")}</p>` : ""}<p class="hint">TRLは資料から根拠付きで判断できた場合のみ表示します。技術成熟度スコアからの換算はしません。</p></section>
 <section class="ds"><h4>技術評価</h4>${L ? G.technology.map(k => scoreRow(k, L.items[k])).join("") : `<p class="hint">未評価です。</p>`}</section>
 <section class="ds"><h4>事業評価</h4>${L && L.business_stage === "pre_stage" ? `<p class="note">この技術は前商業段階(TRL 3以下)のため、事業項目は「段階未達」として不足とは区別しています。点が付いている項目はそのまま表示します。</p>` : ""}${L ? G.business.map(k => scoreRow(k, L.items[k])).join("") : `<p class="hint">未評価です。</p>`}${L && !strong.length ? `<p class="note">関連企業が特定できていないため、企業固有の項目は算出されません。総合点は6項目すべてが揃うまで確定せず、重みの再配分もしません。</p>` : ""}</section>
-<section class="ds"><h4>総合点</h4><p>${total}</p>${L && L.total_scope === "technology" ? `<p class="note">これは技術評価の総合点です。事業項目は段階未達のため対象外で、技術軸の項目だけで算出しています。</p>` : ""}${holdCauseTxt(L) ? `<p class="note">${esc(holdCauseTxt(L))}</p>` : ""}${L && L.total_orig != null && L.total != null && L.total_orig !== L.total ? `<p class="note">評価当時の総合点は ${L.total_orig}${L.band_orig ? `（${esc(L.band_orig)}）` : ""} でした。上の総合点は、重みの改訂に合わせて現行の物差しで計算し直した値です。</p>` : ""}${L ? `<div class="acts"><button class="btn sec" type="button" id="cpye">評価をコピー</button></div>` : ""}</section>
+<section class="ds"><h4>総合点</h4><p>${total}</p>${L && L.total_scope === "technology" ? `<p class="note">これは技術評価の総合点です。事業項目は段階未達のため対象外で、技術軸の項目だけで算出しています。</p>` : ""}${holdCauseTxt(L) ? `<p class="note">${esc(holdCauseTxt(L))}</p>` : ""}${L && L.total_orig != null && L.total != null && L.total_orig !== L.total ? `<p class="note">評価当時の総合点は ${L.total_orig}${L.band_orig ? `（${esc(L.band_orig)}）` : ""} でした。上の総合点は、重みの改訂に合わせて現行の物差しで計算し直した値です。</p>` : ""}${L ? `<div class="acts"><button class="btn sec" type="button" id="cpye">評価をコピー</button><button class="btn obsidian" type="button" id="cpym">Markdownでコピー</button></div>` : ""}</section>
 ${L && L.prev ? `<section class="ds"><h4>前回評価との比較</h4>${prevCmp(L, lvl(p))}</section>` : ""}
 <section class="ds"><h4>材料の方向性</h4>${L && L.direction ? `<p>${dirB(p)} ${esc(L.direction.reason || "")}</p><p class="hint">方向性は点数やTRLとは独立に、資料が示す出来事の追い風・逆風を判定したものです。</p>` : `<p class="hint">未判定です（方向を決める出来事が資料に無いか、旧基準の評価です）。</p>`}</section>
 <section class="ds"><h4>不足している観点</h4>${L && L.critical_missing.length ? `<p class="m" style="color:#a96500;font-weight:700">必須項目の不足: ${L.critical_missing.map(k => esc(label(k))).join("、")}</p>` : ""}${pts(missAll, 1)}${waitAll.length ? `<p class="hint">結果待ち（不足ではなく、治験の結果公表など時間の経過でしか解けないもの）:</p><ul class="pts">${waitAll.map(x => `<li><b>◷</b><span>${esc(x)}</span></li>`).join("")}</ul>` : ""}${q && q.next_sources.length ? `<p class="hint">次に確認する情報源: ${q.next_sources.map(esc).join(" / ")}</p>` : ""}${q && q.reeval_conditions.length ? `<p class="hint">再評価の条件: ${q.reeval_conditions.map(esc).join(" / ")}</p>` : ""}</section>
@@ -487,13 +542,14 @@ $("#det").addEventListener("click", e => {
     $("#msg").textContent = saved ? "この端末のブラウザに保存しました。" : "保存できませんでした(ブラウザの保存機能が無効の可能性があります)。";
   }
   if (e.target.closest("#pint")) { togglePin(sel); return; }
-  const co = e.target.closest("#cpyo"), cj = e.target.closest("#cpyj"), cs = e.target.closest("#cpys"), ce = e.target.closest("#cpye");
-  if (co || cj || cs || ce) {
+  const co = e.target.closest("#cpyo"), cj = e.target.closest("#cpyj"), cs = e.target.closest("#cpys"), ce = e.target.closest("#cpye"), cm = e.target.closest("#cpym");
+  if (co || cj || cs || ce || cm) {
     const p = P.find(x => x.id === sel);
     if (!p) return;
     if (co) copyText([p.title, p.abstract].filter(Boolean).join("\n\n"), co);
     else if (cj) copyText([p.title_ja || p.title, p.abstract_ja || p.abstract].filter(Boolean).join("\n\n"), cj);
     else if (ce) copyText(evalText(p), ce);
+    else if (cm) copyText(mdNote(p), cm);
     else copyText(citeText(p), cs);
   }
 });

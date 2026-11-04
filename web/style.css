@@ -108,7 +108,7 @@ h2{margin:0;font-size:19px;letter-spacing:-.4px}
 .chip{display:inline-block;margin:0 6px 6px 0;padding:6px 9px;border:1px solid var(--line);border-radius:8px;color:var(--gd);background:var(--gs);font-size:11px;font-weight:700}
 textarea{width:100%;min-height:90px;resize:vertical;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--field);font-size:12px}
 .acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}.acts .btn{flex:1;font-size:12px}
-.sec{border-color:var(--line);color:var(--gd);background:var(--gs)}.src{color:#fff;background:linear-gradient(110deg,#00a968,#00a7c5)}
+.sec{border-color:var(--line);color:var(--gd);background:var(--gs)}.src{color:#fff;background:linear-gradient(110deg,#00a968,#00a7c5)}.obsidian{color:#fff;background:#7c3aed}
 .ph{display:grid;min-height:280px;padding:28px;place-content:center;justify-items:center;text-align:center}
 .ph i{display:grid;width:48px;height:48px;margin-bottom:12px;place-items:center;border-radius:15px;color:var(--gd);background:var(--gs);font-style:normal;font-size:24px}
 .empty{padding:28px;border:1px dashed var(--line);border-radius:var(--r);color:var(--muted);background:var(--surface);text-align:center}

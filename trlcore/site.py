@@ -250,6 +250,7 @@ def build_site_data(store, cfg, now=None):
             "title_ja": c.get("title_ja") or None, "abstract_ja": c.get("abstract_ja") or None,
             "translation_src": _translation_src(c),
             "screen_reason": c.get("screen_reason") or None,
+            "retrieved_at": c.get("retrieved_at") or None,
             "display_status": display_status(c, long_ev, store, event_ev),
             "eval_count": eval_counts.get(cid, 0),
             "next_up": cid in next_ids and long_ev is None and event_ev is None,

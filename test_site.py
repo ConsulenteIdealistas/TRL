@@ -985,7 +985,7 @@ class ZeroRiskBatchTests(unittest.TestCase):
         # 新しいキーを足すときはこのホワイトリストも更新し、意図的な追加にする
         data = self.build()
         cand_keys = {"id", "title", "source", "published", "url", "abstract", "fields",
-                     "title_ja", "abstract_ja", "translation_src", "screen_reason",
+                     "title_ja", "abstract_ja", "translation_src", "screen_reason", "retrieved_at",
                      "display_status", "eval_count", "next_up", "long", "event",
                      "entities", "related_news", "related_financials", "queue"}
         ev_keys = {"status", "total", "band", "as_of", "evaluated_at", "items",

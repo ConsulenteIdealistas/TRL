@@ -1063,6 +1063,26 @@ class ZeroRiskBatchTests(unittest.TestCase):
             self.assertIn("出典をコピー", text)
             self.assertIn("navigator.clipboard", text)
 
+    def test_personal_view_features(self):
+        # 自分の表示 (新着バッジ・注目ピン・カードからの直接コピー) と
+        # 評価まるごとコピー。状態は端末内 (localStorage) だけで完結し、
+        # 注目ピンは共有リンク (?pins=) で別端末へ持ち運べる
+        app = (T.ROOT / "web" / "app.js").read_text(encoding="utf-8")
+        detail = (T.ROOT / "web" / "detail.html").read_text(encoding="utf-8")
+        index = (T.ROOT / "web" / "index.html").read_text(encoding="utf-8")
+        self.assertIn("trl-last-visit", app)
+        self.assertIn("新着", app)
+        self.assertIn("trl-pins", app)
+        self.assertIn("data-pin", app)
+        self.assertIn("?pins=", app)
+        self.assertIn("data-ccite", app)
+        self.assertIn("data-clink", app)
+        self.assertIn("自分の表示", index)
+        self.assertIn("注目の共有リンクをコピー", index)
+        for text in (app, detail):
+            self.assertIn("評価をコピー", text)
+            self.assertIn("evalText", text)
+
     def test_quiet_zero_source_recorded(self):
         cfg = cfg_with()
         res = T.run_pipeline(self.store, cfg, None, as_of=AS_OF, kinds=("long",),

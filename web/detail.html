@@ -148,7 +148,7 @@ async function load() {
 <section class="ds"><h4>技術評価</h4>${LL ? G.technology.map(k => scoreRow(k, LL.items[k])).join("") : `<p class="hint">未評価です。</p>`}</section>
 <section class="ds"><h4>事業評価</h4>${LL && LL.business_stage === "pre_stage" ? `<p class="note">この技術は前商業段階(TRL 3以下)のため、事業項目は「段階未達」として不足とは区別しています。点が付いている項目はそのまま表示します。</p>` : ""}${LL ? G.business.map(k => scoreRow(k, LL.items[k])).join("") : `<p class="hint">未評価です。</p>`}${LL && !strong.length ? `<p class="note">関連企業が特定できていないため、企業固有の項目は算出されません。総合点は6項目すべてが揃うまで確定せず、重みの再配分もしません。</p>` : ""}</section>
 ${EV ? `<section class="ds"><h4>イベント評価</h4>${Object.keys(EV.items).map(k => scoreRow(k, EV.items[k])).join("")}<p>総合点 ${EV.total != null ? EV.total + " / 100(" + esc(EV.band || "") + ")" : "未確定"}</p>${EV.prev ? prevCmp(EV, null) : ""}</section>` : ""}
-<section class="ds"><h4>総合点（長期）</h4><p>${total}</p>${LL && LL.total_scope === "technology" ? `<p class="note">これは技術評価の総合点です。事業項目は段階未達のため対象外で、技術軸の項目だけで算出しています。</p>` : ""}${holdCauseTxt(LL) ? `<p class="note">${esc(holdCauseTxt(LL))}</p>` : ""}</section>
+<section class="ds"><h4>総合点（長期）</h4><p>${total}</p>${LL && LL.total_scope === "technology" ? `<p class="note">これは技術評価の総合点です。事業項目は段階未達のため対象外で、技術軸の項目だけで算出しています。</p>` : ""}${holdCauseTxt(LL) ? `<p class="note">${esc(holdCauseTxt(LL))}</p>` : ""}${LL ? `<div class="acts"><button class="btn sec" type="button" id="cpye">評価をコピー</button></div>` : ""}</section>
 ${LL && LL.prev ? `<section class="ds"><h4>前回評価との比較</h4>${prevCmp(LL, lvl)}</section>` : ""}
 <section class="ds"><h4>材料の方向性</h4>${LL && LL.direction ? `<p>${dirB(LL)} ${esc(LL.direction.reason || "")}</p><p class="hint">方向性は点数やTRLとは独立に、資料が示す出来事の追い風・逆風を判定したものです。</p>` : `<p class="hint">未判定です（方向を決める出来事が資料に無いか、旧基準の評価です）。</p>`}</section>
 <section class="ds"><h4>不足している観点</h4>${LL && LL.critical_missing.length ? `<p class="m" style="color:#a96500;font-weight:700">必須項目の不足: ${LL.critical_missing.map(k => esc(label(k))).join("、")}</p>` : ""}${pts(missAll, 1)}${waitAll.length ? `<p class="hint">結果待ち（不足ではなく、治験の結果公表など時間の経過でしか解けないもの）:</p><ul class="pts">${waitAll.map(x => `<li><b>◷</b><span>${esc(x)}</span></li>`).join("")}</ul>` : ""}${q && q.next_sources.length ? `<p class="hint">次に確認する情報源: ${q.next_sources.map(esc).join(" / ")}</p>` : ""}${q && q.reeval_conditions.length ? `<p class="hint">再評価の条件: ${q.reeval_conditions.map(esc).join(" / ")}</p>` : ""}</section>
@@ -158,14 +158,37 @@ ${p.display_status === "rejected" ? `<section class="ds"><h4>除外理由</h4><p
 <section class="ds"><h4>関連財務根拠（開示資料の財務数値）</h4>${fins ? `<ul class="news">${fins}</ul>` : `<p class="hint">同梱された財務根拠はありません。</p>`}</section>
 <section class="ds"><h4>関連企業</h4>${p.entities.map(e => `<span class="chip">${esc(e.name)}${e.product_name ? "（" + esc(e.product_name) + "）" : ""}${e.market ? "・" + esc(ML[e.market] || e.market) : ""}${e.sector ? "・" + esc(CL[e.sector] || e.sector) : ""}${(e.tags || []).length ? "・" + e.tags.map(t => esc(tagLabel(t))).join("・") : ""}${e.stage ? "・" + esc(STG[e.stage] || e.stage) : ""} ${e.strength === "strong" ? "" : "・弱"}${e.tier === "watch" ? "・ウォッチ" : ""}</span>`).join("") || '<span class="hint">関連企業は未特定です。</span>'}</section>
 <section class="ds"><h4>調査メモ</h4><textarea id="note" aria-label="調査メモ" placeholder="仮説、確認したい点、次の調査などを記録...">${esc(noteDraft !== null ? noteDraft : getNote(p.id))}</textarea><div class="acts"><button class="btn sec" type="button" id="save">メモを保存</button><button class="btn sec" type="button" id="cpys">出典をコピー</button><a class="btn src" href="${esc(safeUrl(p.url))}" target="_blank" rel="noopener noreferrer">原文サイトを開く ↗</a></div><p id="msg" class="hint" aria-live="polite">メモはこの端末のブラウザにだけ保存されます。</p></section></div>`;
+  const evalText = () => {
+    // 評価まるごとコピー用テキスト (項目点・理由・TRL・不足・前回比)
+    if (!LL) return "";
+    const lines = [dispT(p), [p.title, (SRC_LABEL[p.source] || p.source) + (p.published ? " ・ " + p.published : ""), p.url].filter(Boolean).join("\n")];
+    const ents = p.entities.filter(e => e.strength === "strong").map(e => e.name);
+    if (ents.length) lines.push(`関連企業: ${ents.join("、")}`);
+    lines.push(`TRL: ${lvl != null ? lvl : "未確定"}${LL.trl_level && LL.trl_level.reason ? " — " + LL.trl_level.reason : ""}`);
+    if (LL.total != null) lines.push(`総合点: ${LL.total} / 100${LL.band ? `（${LL.band}）` : ""}${LL.total_scope === "technology" ? " ※技術軸のみで算出" : ""}`);
+    const order = [...G.technology, ...G.business, ...Object.keys(LL.items)];
+    for (const k of [...new Set(order)]) {
+      const it = LL.items[k];
+      if (!it) continue;
+      lines.push(`■ ${label(k)}: ${it.score != null ? it.score + " / 100" : "未算出"}`);
+      if (it.reason) lines.push(it.reason);
+      if (it.score == null && it.missing_info && it.missing_info.length) lines.push(`不足: ${it.missing_info.join(" / ")}`);
+    }
+    if (LL.critical_missing && LL.critical_missing.length) lines.push(`必須項目の不足: ${LL.critical_missing.map(label).join("、")}`);
+    if (LL.direction) lines.push(`材料の方向性: ${DL[LL.direction.direction] || LL.direction.direction}${LL.direction.reason ? " — " + LL.direction.reason : ""}`);
+    if (LL.prev) lines.push(`前回評価: ${jst(LL.prev.evaluated_at)}（${SL[LL.prev.status] || LL.prev.status}） TRL ${LL.prev.trl_level ?? "未確定"} / 総合点 ${LL.prev.total ?? "未確定"}`);
+    lines.push(`評価日: ${jst(LL.evaluated_at)}${LL.llm_model ? ` / 評価モデル: ${LL.llm_model}` : ""}`);
+    return lines.join("\n");
+  };
   $("#save").addEventListener("click", () => {
     const saved = setNote(p.id, $("#note").value); if (saved) noteDraft = null;
     $("#msg").textContent = saved ? "この端末のブラウザに保存しました。" : "保存できませんでした(ブラウザの保存機能が無効の可能性があります)。";
   });
-  const co = $("#cpyo"), cj = $("#cpyj"), cs = $("#cpys");
+  const co = $("#cpyo"), cj = $("#cpyj"), cs = $("#cpys"), ce = $("#cpye");
   if (co) co.addEventListener("click", () => copyText([p.title, p.abstract].filter(Boolean).join("\n\n"), co));
   if (cj) cj.addEventListener("click", () => copyText([p.title_ja || p.title, p.abstract_ja || p.abstract].filter(Boolean).join("\n\n"), cj));
   if (cs) cs.addEventListener("click", () => copyText([p.title, (SRC_LABEL[p.source] || p.source) + (p.published ? " ・ " + p.published : ""), p.url].filter(Boolean).join("\n"), cs));
+  if (ce) ce.addEventListener("click", () => copyText(evalText(), ce));
 }
 load();
 </script>

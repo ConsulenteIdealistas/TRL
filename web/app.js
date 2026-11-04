@@ -49,6 +49,7 @@ function trl(t, d) {
 }
 const trlSel = new Set();  // TRL絞り込みの選択状態: レベル1〜9と "u"(未確定) の集合。空なら絞らない
 const stSel = new Set(), dirSel = new Set(), mkSel = new Set(), scSel = new Set(), tagSel = new Set(), stgSel = new Set();  // 状態・方向性・国・分野・タグ・段階の選択状態 (空なら絞らない)
+const ownSel = new Set();  // 自分の表示 (新着・注目) の選択状態。グループ内は OR で効く
 function inR(t) {
   if (!trlSel.size) return true;
   return ok(t) ? trlSel.has(t) : trlSel.has("u");
@@ -67,7 +68,8 @@ function filtered() {
     && (!mkSel.size || p.entities.some(e => mkSel.has(e.market || "JP")))
     && (!scSel.size || p.entities.some(e => scSel.has(e.sector)))
     && (!tagSel.size || p.entities.some(e => (e.tags || []).some(t => tagSel.has(t))))
-    && (!stgSel.size || p.entities.some(e => stgSel.has(e.stage))));
+    && (!stgSel.size || p.entities.some(e => stgSel.has(e.stage)))
+    && (!ownSel.size || (ownSel.has("new") && isNewEval(p)) || (ownSel.has("pin") && pins.has(p.id))));
   const byStatus = (a, b) => (SO[a.display_status] - SO[b.display_status])
     || ((ok(lvl(b)) ? lvl(b) : -1) - (ok(lvl(a)) ? lvl(a) : -1))
     || String(b.published || "").localeCompare(String(a.published || ""));
@@ -142,7 +144,7 @@ function card(p) {
   const ents = p.entities.filter(e => e.strength === "strong").length;
   const facet = facetText(p);
   const diffTxt = prevDiffTxt(p);
-  return `<article class="card ${s ? "sel" : ""}" data-id="${esc(p.id)}"><div class="main"><div style="min-width:0"><div class="top"><span class="${src(p.source)}">${srcName(p.source)}</span><span class="date">${esc(p.published || "")}</span>${LANG === "ja" && srcOf(p) ? `<span class="date">訳: ${esc(srcOf(p))}</span>` : ""}${p.long && p.long.llm_model ? `<span class="date">評価: ${esc(p.long.llm_model)}</span>` : ""}</div><h3 class="title">${esc(dispT(p))}</h3><p class="abs">${esc(dispA(p))}</p><div class="tags">${(p.fields || []).slice(0, 4).map(t => `<span class="tag">${esc(t)}</span>`).join("")}</div><div class="mi"><span>技術成熟度 <strong>${fmtScore(sc(p, "technology_readiness"))}</strong></span><span>技術的優位性 <strong>${fmtScore(sc(p, "technological_advantage"))}</strong></span><span>関連企業 <strong>${ents ? ents + "社" : "未特定"}</strong></span>${facet ? `<span>国・分野 <strong>${esc(facet)}</strong></span>` : ""}${diffTxt ? `<span>前回比 <strong>${esc(diffTxt)}</strong></span>` : ""}</div></div><div class="side">${stB(p.display_status)}${dirB(p)}${trl(lvl(p))}</div></div><div class="foot"><span>${p.long && p.long.critical_missing.length ? `必須の不足 ${p.long.critical_missing.length}件` : p.display_status === "pending" ? (p.next_up ? "次回評価予定" : "評価待ち") : p.display_status === "rejected" ? "除外" + (p.screen_reason ? ": " + (SR[p.screen_reason] || p.screen_reason) : "") : ""}</span><a class="tg" href="detail.html?id=${encodeURIComponent(p.id)}">詳細を見る →</a></div></article>`;
+  return `<article class="card ${s ? "sel" : ""}" data-id="${esc(p.id)}"><div class="main"><div style="min-width:0"><div class="top"><span class="${src(p.source)}">${srcName(p.source)}</span><span class="date">${esc(p.published || "")}</span>${LANG === "ja" && srcOf(p) ? `<span class="date">訳: ${esc(srcOf(p))}</span>` : ""}${p.long && p.long.llm_model ? `<span class="date">評価: ${esc(p.long.llm_model)}</span>` : ""}${isNewEval(p) ? `<span class="nw">新着</span>` : ""}</div><h3 class="title">${esc(dispT(p))}</h3><p class="abs">${esc(dispA(p))}</p><div class="tags">${(p.fields || []).slice(0, 4).map(t => `<span class="tag">${esc(t)}</span>`).join("")}</div><div class="mi"><span>技術成熟度 <strong>${fmtScore(sc(p, "technology_readiness"))}</strong></span><span>技術的優位性 <strong>${fmtScore(sc(p, "technological_advantage"))}</strong></span><span>関連企業 <strong>${ents ? ents + "社" : "未特定"}</strong></span>${facet ? `<span>国・分野 <strong>${esc(facet)}</strong></span>` : ""}${diffTxt ? `<span>前回比 <strong>${esc(diffTxt)}</strong></span>` : ""}</div></div><div class="side">${stB(p.display_status)}${dirB(p)}${trl(lvl(p))}<button type="button" class="pin ${pins.has(p.id) ? "on" : ""}" data-pin="${esc(p.id)}" aria-pressed="${pins.has(p.id) ? "true" : "false"}" title="注目ピン (この端末に保存)">${pins.has(p.id) ? "★" : "☆"}</button></div></div><div class="foot"><span>${p.long && p.long.critical_missing.length ? `必須の不足 ${p.long.critical_missing.length}件` : p.display_status === "pending" ? (p.next_up ? "次回評価予定" : "評価待ち") : p.display_status === "rejected" ? "除外" + (p.screen_reason ? ": " + (SR[p.screen_reason] || p.screen_reason) : "") : ""}</span><span class="facts"><button type="button" class="clink" data-ccite="${esc(p.id)}">出典コピー</button><button type="button" class="clink" data-clink="${esc(p.id)}">リンクコピー</button><a class="tg" href="detail.html?id=${encodeURIComponent(p.id)}">詳細を見る →</a></span></div></article>`;
 }
 function scoreRow(k, it) {
   const v = it && typeof it.score === "number" && isFinite(it.score) ? it.score : null;
@@ -172,6 +174,58 @@ function getNote(id) { try { return localStorage.getItem("trl-note:" + id) || ""
 const noteDrafts = {};  // 未保存のメモ下書き。再描画で入力途中のメモが消えないように保持する
 function setNote(id, v) { try { localStorage.setItem("trl-note:" + id, v); return true; } catch (e) { return false; } }
 
+// 端末内の状態 (注目ピンと最終訪問時刻)。サーバを持たない静的サイトなので
+// 端末ごとに保持する (調査メモと同じ)。可用性の担保として、注目ピンは
+// 共有リンク (?pins=候補ID,...) で別端末へ持ち運べるようにする
+let pins = new Set();
+try { pins = new Set(JSON.parse(localStorage.getItem("trl-pins") || "[]")); } catch (e) { /* 壊れた保存値は空として扱う */ }
+function savePins() { try { localStorage.setItem("trl-pins", JSON.stringify([...pins])); } catch (e) { /* 保存不可でも表示は続ける */ } }
+function togglePin(id) { if (!id) return; if (pins.has(id)) pins.delete(id); else pins.add(id); savePins(); render(); }
+function importPinsFromUrl() {
+  // 共有リンクで届いた注目ピンを、この端末の保存分へ統合する (上書きはしない)
+  try {
+    const q = new URLSearchParams(location.search).get("pins");
+    if (!q) return;
+    let added = false;
+    for (const id of q.split(",").map(s => s.trim()).filter(Boolean)) if (!pins.has(id)) { pins.add(id); added = true; }
+    if (added) savePins();
+    history.replaceState(null, "", location.pathname);
+  } catch (e) { /* 取り込みに失敗しても通常表示は続ける */ }
+}
+// 最終訪問時刻はページを開いた時点の保存値で判定する (セッション中に
+// バッジが消えないように、判定に使う値は読み込み時のまま固定する)。
+// 初回訪問では基準だけを置いてバッジは付けない (全部が新着になるため)
+let lastVisit = null;
+try { lastVisit = localStorage.getItem("trl-last-visit"); localStorage.setItem("trl-last-visit", new Date().toISOString()); } catch (e) { /* 保存不可なら新着判定は無効 */ }
+const isNewEval = p => !!(lastVisit && p.long && p.long.evaluated_at && p.long.evaluated_at > lastVisit);
+function citeText(p) { return [p.title, srcName(p.source) + (p.published ? " ・ " + p.published : ""), p.url].filter(Boolean).join("\n"); }
+function detailUrl(p) { return location.origin + location.pathname.replace(/[^/]*$/, "") + "detail.html?id=" + encodeURIComponent(p.id); }
+function evalText(p) {
+  // 評価まるごとコピー用テキスト (項目点・理由・TRL・不足・前回比)
+  const L = p.long && p.long.status !== "error" ? p.long : null;
+  if (!L) return "";
+  const lines = [dispT(p), citeText(p)];
+  const ents = p.entities.filter(e => e.strength === "strong").map(e => e.name);
+  if (ents.length) lines.push(`関連企業: ${ents.join("、")}`);
+  const lv = lvl(p);
+  lines.push(`TRL: ${lv != null ? lv : "未確定"}${L.trl_level && L.trl_level.reason ? " — " + L.trl_level.reason : ""}`);
+  if (L.total != null) lines.push(`総合点: ${L.total} / 100${L.band ? `（${L.band}）` : ""}${L.total_scope === "technology" ? " ※技術軸のみで算出" : ""}`);
+  const G = META.config.item_groups;
+  const order = [...G.technology, ...G.business, ...Object.keys(L.items)];
+  for (const k of [...new Set(order)]) {
+    const it = L.items[k];
+    if (!it) continue;
+    lines.push(`■ ${label(k)}: ${it.score != null ? it.score + " / 100" : "未算出"}`);
+    if (it.reason) lines.push(it.reason);
+    if (it.score == null && it.missing_info && it.missing_info.length) lines.push(`不足: ${it.missing_info.join(" / ")}`);
+  }
+  if (L.critical_missing && L.critical_missing.length) lines.push(`必須項目の不足: ${L.critical_missing.map(label).join("、")}`);
+  if (L.direction) lines.push(`材料の方向性: ${DL[L.direction.direction] || L.direction.direction}${L.direction.reason ? " — " + L.direction.reason : ""}`);
+  if (L.prev) lines.push(`前回評価: ${jst(L.prev.evaluated_at)}（${SL[L.prev.status] || L.prev.status}） TRL ${L.prev.trl_level ?? "未確定"} / 総合点 ${L.prev.total ?? "未確定"}`);
+  lines.push(`評価日: ${jst(L.evaluated_at)}${L.llm_model ? ` / 評価モデル: ${L.llm_model}` : ""}`);
+  return lines.join("\n");
+}
+
 function detail() {
   const p = P.find(x => x.id === sel);
   if (!p) { $("#det").innerHTML = `<div class="ph"><i>⌕</i><h3>論文が選択されていません</h3><p class="hint">検索条件を変更するか、一覧から論文を選択してください。</p></div>`; return; }
@@ -183,12 +237,12 @@ function detail() {
   const waitAll = L ? [...new Set(Object.values(L.items).flatMap(i => i.awaiting_info || []))] : [];
   const q = p.queue && p.queue.long;
   const total = L && L.total != null ? `${L.total} / 100(${esc(L.band || "")})` : "未確定";
-  $("#det").innerHTML = `<div class="dc"><header class="dh"><div class="top"><span class="${src(p.source)}">${srcName(p.source)}</span>${stB(p.display_status)}</div><h3>${esc(dispT(p))}</h3><div class="mi"><span>公開日 ${esc(p.published || "—")}</span>${L ? `<span>評価日 ${esc(jst(L.evaluated_at))}</span>` : ""}${p.eval_count ? `<span>評価 ${p.eval_count} 回目</span>` : ""}${LL && LL.llm_model ? `<span>評価モデル ${esc(LL.llm_model)}</span>` : ""}</div></header>
+  $("#det").innerHTML = `<div class="dc"><header class="dh"><div class="top"><span class="${src(p.source)}">${srcName(p.source)}</span>${stB(p.display_status)}${isNewEval(p) ? `<span class="nw">新着</span>` : ""}<button type="button" class="pin ${pins.has(p.id) ? "on" : ""}" id="pint" aria-pressed="${pins.has(p.id) ? "true" : "false"}" title="注目ピン (この端末に保存)">${pins.has(p.id) ? "★" : "☆"}</button></div><h3>${esc(dispT(p))}</h3><div class="mi"><span>公開日 ${esc(p.published || "—")}</span>${L ? `<span>評価日 ${esc(jst(L.evaluated_at))}</span>` : ""}${p.eval_count ? `<span>評価 ${p.eval_count} 回目</span>` : ""}${LL && LL.llm_model ? `<span>評価モデル ${esc(LL.llm_model)}</span>` : ""}</div></header>
 <section class="ds"><h4>研究概要</h4><p>${esc(dispA(p)) || "（要旨なし）"}</p>${LANG === "ja" && srcOf(p) ? `<p class="hint">日本語訳: ${esc(srcOf(p))}</p>` : ""}<div class="acts"><button class="btn sec" type="button" id="cpyo">原文をコピー</button>${(p.title_ja || p.abstract_ja) ? `<button class="btn sec" type="button" id="cpyj">日本語訳をコピー</button>` : ""}</div></section>
 <section class="ds"><h4>技術成熟度（TRL）</h4>${trl(lvl(p), 1)}${tr && tr.reason ? `<p>${esc(tr.reason)}</p>` : ""}${tr && tr.level == null && tr.missing_info.length ? `<p class="hint">不足: ${tr.missing_info.map(esc).join(" / ")}</p>` : ""}${tr && tr.awaiting_info && tr.awaiting_info.length ? `<p class="hint">結果待ち: ${tr.awaiting_info.map(esc).join(" / ")}</p>` : ""}<p class="hint">TRLは資料から根拠付きで判断できた場合のみ表示します。技術成熟度スコアからの換算はしません。</p></section>
 <section class="ds"><h4>技術評価</h4>${L ? G.technology.map(k => scoreRow(k, L.items[k])).join("") : `<p class="hint">未評価です。</p>`}</section>
 <section class="ds"><h4>事業評価</h4>${L && L.business_stage === "pre_stage" ? `<p class="note">この技術は前商業段階(TRL 3以下)のため、事業項目は「段階未達」として不足とは区別しています。点が付いている項目はそのまま表示します。</p>` : ""}${L ? G.business.map(k => scoreRow(k, L.items[k])).join("") : `<p class="hint">未評価です。</p>`}${L && !strong.length ? `<p class="note">関連企業が特定できていないため、企業固有の項目は算出されません。総合点は6項目すべてが揃うまで確定せず、重みの再配分もしません。</p>` : ""}</section>
-<section class="ds"><h4>総合点</h4><p>${total}</p>${L && L.total_scope === "technology" ? `<p class="note">これは技術評価の総合点です。事業項目は段階未達のため対象外で、技術軸の項目だけで算出しています。</p>` : ""}${holdCauseTxt(L) ? `<p class="note">${esc(holdCauseTxt(L))}</p>` : ""}</section>
+<section class="ds"><h4>総合点</h4><p>${total}</p>${L && L.total_scope === "technology" ? `<p class="note">これは技術評価の総合点です。事業項目は段階未達のため対象外で、技術軸の項目だけで算出しています。</p>` : ""}${holdCauseTxt(L) ? `<p class="note">${esc(holdCauseTxt(L))}</p>` : ""}${L ? `<div class="acts"><button class="btn sec" type="button" id="cpye">評価をコピー</button></div>` : ""}</section>
 ${L && L.prev ? `<section class="ds"><h4>前回評価との比較</h4>${prevCmp(L, lvl(p))}</section>` : ""}
 <section class="ds"><h4>材料の方向性</h4>${L && L.direction ? `<p>${dirB(p)} ${esc(L.direction.reason || "")}</p><p class="hint">方向性は点数やTRLとは独立に、資料が示す出来事の追い風・逆風を判定したものです。</p>` : `<p class="hint">未判定です（方向を決める出来事が資料に無いか、旧基準の評価です）。</p>`}</section>
 <section class="ds"><h4>不足している観点</h4>${L && L.critical_missing.length ? `<p class="m" style="color:#a96500;font-weight:700">必須項目の不足: ${L.critical_missing.map(k => esc(label(k))).join("、")}</p>` : ""}${pts(missAll, 1)}${waitAll.length ? `<p class="hint">結果待ち（不足ではなく、治験の結果公表など時間の経過でしか解けないもの）:</p><ul class="pts">${waitAll.map(x => `<li><b>◷</b><span>${esc(x)}</span></li>`).join("")}</ul>` : ""}${q && q.next_sources.length ? `<p class="hint">次に確認する情報源: ${q.next_sources.map(esc).join(" / ")}</p>` : ""}${q && q.reeval_conditions.length ? `<p class="hint">再評価の条件: ${q.reeval_conditions.map(esc).join(" / ")}</p>` : ""}</section>
@@ -280,6 +334,7 @@ async function load() {
   }
   if (d.schema_version !== 3) { showError("data.json の形式(schema_version)がこの画面に対応していません。"); return; }
   META = d; P = d.candidates;
+  importPinsFromUrl();
   $("#gen").textContent = "更新 " + jst(d.generated_at);
   $("#fl").value = LANG;
   facetChips(); warn(d); stats(); render();
@@ -370,7 +425,7 @@ function bindChips(id, set, after) {
   });
 }
 const syncTagN = () => { $("#fgn").textContent = tagSel.size ? `（${tagSel.size}件選択中）` : ""; };
-const CHIPG = [["fsc", stSel], ["fdc", dirSel], ["fmc", mkSel], ["fcc", scSel], ["fstc", stgSel]];
+const CHIPG = [["fsc", stSel], ["fdc", dirSel], ["fmc", mkSel], ["fcc", scSel], ["fstc", stgSel], ["fown", ownSel]];
 CHIPG.forEach(([id, set]) => bindChips(id, set));
 bindChips("fgc", tagSel, syncTagN);
 const syncTrlUI = () => document.querySelectorAll("#ftc button").forEach(b => {
@@ -407,20 +462,38 @@ const syncTh = () => { $("#fth").value = document.documentElement.dataset.theme 
 $("#fth").addEventListener("change", () => { document.documentElement.dataset.theme = $("#fth").value; try { localStorage.setItem("trl-theme", $("#fth").value); } catch (e) { /* 保存できなくても切替は効く */ } });
 syncTh();
 $("#rs").addEventListener("click", () => { $("#q").value = ""; [...CHIPG, ["fgc", tagSel]].forEach(([id, set]) => { set.clear(); syncChips(id, set); }); syncTagN(); trlSel.clear(); $("#ftn").value = ""; $("#ftm").value = ""; syncTrlUI(); $("#fo").value = "status"; sel = P[0] ? P[0].id : null; render(); });
-$("#list").addEventListener("click", e => { const c = e.target.closest("[data-id]"); if (c) { sel = c.dataset.id; render(); } });
+$("#list").addEventListener("click", e => {
+  const pb = e.target.closest("[data-pin]");
+  if (pb) { togglePin(pb.dataset.pin); return; }
+  const cc = e.target.closest("[data-ccite]"), cl = e.target.closest("[data-clink]");
+  if (cc || cl) {
+    const p = P.find(x => x.id === (cc ? cc.dataset.ccite : cl.dataset.clink));
+    if (!p) return;
+    if (cc) copyText(citeText(p), cc); else copyText(detailUrl(p), cl);
+    return;
+  }
+  const c = e.target.closest("[data-id]"); if (c) { sel = c.dataset.id; render(); }
+});
+$("#cpypins").addEventListener("click", e => {
+  const btn = e.currentTarget;
+  if (!pins.size) { const o = btn.textContent; btn.textContent = "注目がまだありません"; setTimeout(() => { btn.textContent = o; }, 1600); return; }
+  copyText(`${location.origin}${location.pathname}?pins=${[...pins].map(encodeURIComponent).join(",")}`, btn);
+});
 $("#det").addEventListener("input", e => { if (e.target.id === "note" && sel) noteDrafts[sel] = e.target.value; });
 $("#det").addEventListener("click", e => {
   if (e.target.closest("#save")) {
     const saved = setNote(sel, $("#note").value); if (saved) delete noteDrafts[sel];
     $("#msg").textContent = saved ? "この端末のブラウザに保存しました。" : "保存できませんでした(ブラウザの保存機能が無効の可能性があります)。";
   }
-  const co = e.target.closest("#cpyo"), cj = e.target.closest("#cpyj"), cs = e.target.closest("#cpys");
-  if (co || cj || cs) {
+  if (e.target.closest("#pint")) { togglePin(sel); return; }
+  const co = e.target.closest("#cpyo"), cj = e.target.closest("#cpyj"), cs = e.target.closest("#cpys"), ce = e.target.closest("#cpye");
+  if (co || cj || cs || ce) {
     const p = P.find(x => x.id === sel);
     if (!p) return;
     if (co) copyText([p.title, p.abstract].filter(Boolean).join("\n\n"), co);
     else if (cj) copyText([p.title_ja || p.title, p.abstract_ja || p.abstract].filter(Boolean).join("\n\n"), cj);
-    else copyText([p.title, srcName(p.source) + (p.published ? " ・ " + p.published : ""), p.url].filter(Boolean).join("\n"), cs);
+    else if (ce) copyText(evalText(p), ce);
+    else copyText(citeText(p), cs);
   }
 });
 load();

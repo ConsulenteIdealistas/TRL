@@ -13,6 +13,7 @@ from .llm import Gemini, _cloudflare, configure_llm, get_provider
 from .pipeline import run_pipeline
 from .site import export_site
 from .report import build_report
+from .audit import build_audit_report, run_audit
 from .compare import build_compare_report, run_compare
 
 
@@ -56,6 +57,19 @@ def _compare_clients(cfg):
     return clients
 
 
+def _audit_client(cfg):
+    """監査役のクライアント。監査は単独モデル (既定は査定の主モデル級) で
+    行い、代替モデルへのフォールバックはしない (どのモデルが監査したかが
+    フラグの解釈に要るため)。モデル名は TRL_AUDIT_MODEL → TRL_LLM_MODEL →
+    Gemini の既定の順。階段を空にする手法は _compare_clients と同じ。"""
+    m = os.environ.get("TRL_AUDIT_MODEL") or os.environ.get("TRL_LLM_MODEL")
+    if m:
+        return configure_llm(Gemini(m, fallback_model=m, fallback_model_2=m), cfg)
+    g = Gemini()
+    g.fallback_models = []  # 既定モデルでも階段は持たせない (監査の前提)
+    return configure_llm(g, cfg)
+
+
 def _prune(d, keep=30):
     for suffix in (".md", ".html"):  # .html は旧版が作った分を古い順に整理するために残す
         files = sorted(
@@ -95,6 +109,11 @@ def main(argv=None):
     cp.add_argument("--budget-sec", type=int, default=0,
                     help="全体の時間予算 (秒)。0 は無制限")
     cp.add_argument("--as-of")
+    au = sub.add_parser("audit")
+    au.add_argument("--data-dir", default="data")
+    au.add_argument("--limit", type=int, default=100)
+    au.add_argument("--budget-sec", type=int, default=9000,
+                    help="監査の時間予算 (秒)。0 は無制限")
     ex = sub.add_parser("export")
     ex.add_argument("--data-dir", default="data")
     ex.add_argument("--out", default="_site")
@@ -222,6 +241,37 @@ def main(argv=None):
             store.record_llm_call(res["batch"], records.pop(0))
         text = build_compare_report(store, res["batch"])
         rep = Path(a.data_dir) / "compare-reports"
+        rep.mkdir(parents=True, exist_ok=True)
+        (rep / f"{res['batch']}.md").write_text(text, encoding="utf-8")
+        store.close()
+        print(text)
+        if os.environ.get("GITHUB_STEP_SUMMARY"):
+            with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as f:
+                f.write(text)
+        return 0
+    if a.cmd == "audit":
+        db = Path(a.data_dir) / "trl.sqlite"
+        if not db.is_file():
+            print(f"::error::database not found: {db}")
+            return 2
+        store = Store(db)
+        try:
+            client = _audit_client(cfg)
+        except LLMError as e:
+            store.close()
+            print(f"::error::{e}")
+            return 2
+        records = []
+        try:
+            client.recorder = records.append  # 計装: 監査コールも llm_calls に残す
+        except Exception:
+            pass
+        res = run_audit(store, cfg, client, limit=a.limit,
+                        budget_sec=a.budget_sec or None)
+        while records:
+            store.record_llm_call(res["batch"], records.pop(0))
+        text = build_audit_report(store, res["batch"])
+        rep = Path(a.data_dir) / "audit-reports"
         rep.mkdir(parents=True, exist_ok=True)
         (rep / f"{res['batch']}.md").write_text(text, encoding="utf-8")
         store.close()

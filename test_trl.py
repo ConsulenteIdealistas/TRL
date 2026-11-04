@@ -3604,5 +3604,176 @@ class VaultTests(unittest.TestCase):
         self.assertEqual(stray.read_text(encoding="utf-8"), "keep")
 
 
+class FakeAuditClient:
+    """監査役のフェイククライアント。complete() の戻り値 (または例外) を順に返す。"""
+
+    name = "gemini"
+    model = "gemini-3.6-flash"
+
+    def __init__(self, replies, delay=0.0):
+        self.replies = list(replies)
+        self.delay = delay
+        self.calls = []
+
+    def complete(self, prompt, purpose=None, candidate_id=None):
+        import time as _time
+        if self.delay:
+            _time.sleep(self.delay)
+        self.calls.append((purpose, candidate_id))
+        r = self.replies.pop(0)
+        if isinstance(r, Exception):
+            raise r
+        return r
+
+
+class AuditTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.store = Store(Path(self.tmp.name) / "trl.sqlite")
+
+    def tearDown(self):
+        self.store.close()
+        self.tmp.cleanup()
+
+    def _mk_eval(self, title="監査対象の論文", trl_level=9, status="final", run_id="r0"):
+        rec, problems = normalize(raw(title=title), "2026-10-20T00:00:00+00:00")
+        self.assertEqual(problems, [])
+        cid, _ = self.store.upsert_candidate(rec, run_id)
+        self.store.set_entities(cid, [{"entity_id": "astroscale", "strength": "strong",
+                                       "matched_by": "title", "matched_alias": "Astroscale"}])
+        ev = {"kind": "long", "as_of": "2026-10-20", "status": status,
+              "total": 72.0, "band": {"label": "順調"},
+              "items": {k: item(70) for k in LONG_KEYS},
+              "extraction": EXTRACTION, "event": None, "prompt_versions": {},
+              "config_version": CFG["config_version"], "config_hash": CFG["config_hash"],
+              "llm_provider": "gemini", "llm_model": "gemini-3.5-flash-lite",
+              "input_hash": f"h-{title}-{run_id}", "errors": [],
+              "extra": {"trl_level": {"level": trl_level, "reason": "運用実績あり",
+                                       "evidence": [], "missing_info": []}}}
+        self.store.add_evaluation(run_id, cid, ev)
+        return cid, self.store.latest_evaluation(cid, "long")["id"]
+
+    def test_audit_prompt_loads_and_renders(self):
+        # 監査は cfg の prompts に依存しない (版は監査側の定数で管理する)
+        self.assertNotIn("audit", CFG["scoring"]["prompts"])
+        p = load_prompt("audit", T.AUDIT_PROMPT_VERSION)
+        self.assertEqual(len(p["sha"]), 12)
+        out = render(p["text"], {"evaluation": '{"title": "X"}'})
+        self.assertNotIn("{{evaluation}}", out)
+        self.assertIn('{"title": "X"}', out)
+
+    def test_config_hash_ignores_audit_prompt(self):
+        # 監査プロンプトは scoring の prompts に登録されず、評価の世代印
+        # (config_hash) は audit.v1.md の有無・内容で一切変わらない
+        with tempfile.TemporaryDirectory() as td:
+            d = Path(td)
+            for name in ("scoring.json", "sources.json", "extract.v1.md",
+                         "long.v1.md", "event.v1.md"):
+                (d / name).write_bytes((T.ROOT / name).read_bytes())
+            h1 = load_config(d)["config_hash"]  # audit.v1.md が無くても読める
+            (d / "audit.v1.md").write_bytes((T.ROOT / "audit.v1.md").read_bytes())
+            self.assertEqual(load_config(d)["config_hash"], h1)  # 置いても不変
+            (d / "audit.v1.md").write_text(
+                (d / "audit.v1.md").read_text(encoding="utf-8") + "\n追記\n", encoding="utf-8")
+            self.assertEqual(load_config(d)["config_hash"], h1)  # 本文の改訂でも不変
+            (d / "long.v1.md").write_text(
+                (d / "long.v1.md").read_text(encoding="utf-8") + "\n追記\n", encoding="utf-8")
+            self.assertNotEqual(load_config(d)["config_hash"], h1)  # 評価側は従来どおり変化
+
+    def test_build_audit_input(self):
+        cid, eid = self._mk_eval()
+        row = dict(self.store.conn.execute(
+            "SELECT * FROM evaluations WHERE id = ?", (eid,)).fetchone())
+        inp = T.build_audit_input(self.store, row, CFG)
+        self.assertEqual(inp["title"], "監査対象の論文")
+        self.assertEqual(inp["sector"], "space")
+        self.assertEqual(inp["companies"][0]["name"], "Astroscale Holdings Inc.")
+        self.assertEqual(inp["items"]["technology_readiness"]["score"], 70)
+        self.assertEqual(inp["trl_level"]["level"], 9)
+        self.assertEqual(inp["status"], "final")
+        self.assertEqual(inp["critical_missing"], [])
+
+    def test_select_unaudited(self):
+        _, eid1 = self._mk_eval(title="論文1")
+        _, eid2 = self._mk_eval(title="論文2")
+        sha = load_prompt("audit", T.AUDIT_PROMPT_VERSION)["sha"]
+        self.assertEqual({r["id"] for r in T.select_unaudited(self.store, sha, "m", 10)},
+                         {eid1, eid2})
+        self.store.add_audit_result({"evaluation_id": eid1, "candidate_id": "c",
+                                     "run_id": "aud-x", "auditor_model": "m",
+                                     "prompt_sha": sha, "flags": [], "summary": ""})
+        # 同じ sha+model では監査済みは外れる。sha かモデルが違えば再び対象になる
+        self.assertEqual([r["id"] for r in T.select_unaudited(self.store, sha, "m", 10)], [eid2])
+        self.assertEqual({r["id"] for r in T.select_unaudited(self.store, "othersha", "m", 10)},
+                         {eid1, eid2})
+        self.assertEqual({r["id"] for r in T.select_unaudited(self.store, sha, "other", 10)},
+                         {eid1, eid2})
+
+    def test_run_audit_records_flags_and_keeps_failures_unaudited(self):
+        self._mk_eval(title="論文1")
+        self._mk_eval(title="論文2")
+        self._mk_eval(title="論文3")
+        good = json.dumps({"flags": [{"check": "A2", "item": "trl_level",
+                                      "detail": "「運用実績あり」とあるが継続の証拠が見当たらない"}],
+                           "summary": "TRL 9 の継続証拠に疑い"})
+        clean = json.dumps({"flags": [], "summary": "問題なし"})
+        client = FakeAuditClient([good, T.LLMError("boom"), clean])
+        res = T.run_audit(self.store, CFG, client, limit=10, log=lambda *_: None)
+        self.assertEqual((res["audited"], res["flagged"], res["failed"]), (2, 1, 1))
+        self.assertEqual(res["checks"], {"A2": 1})
+        self.assertTrue(all(p == "audit" for p, _ in client.calls))
+        rows = self.store.audit_results(res["batch"])
+        self.assertEqual(len(rows), 2)
+        self.assertEqual(rows[0]["flags"][0]["check"], "A2")
+        self.assertEqual(rows[0]["auditor_model"], "gemini-3.6-flash")
+        # 監査の来歴として、プロンプトの版 (定数) とファイルの sha が記録される
+        sha = load_prompt("audit", T.AUDIT_PROMPT_VERSION)["sha"]
+        self.assertEqual(rows[0]["prompt_version"], "v1")
+        self.assertEqual(rows[0]["prompt_sha"], sha)
+        # 失敗した評価は未監査のまま残る
+        self.assertEqual(len(T.select_unaudited(self.store, sha, "gemini-3.6-flash", 10)), 1)
+
+    def test_run_audit_rejects_bad_shape(self):
+        self._mk_eval()
+        bad = json.dumps({"flags": [{"check": "A9", "item": "x", "detail": "y"}], "summary": ""})
+        res = T.run_audit(self.store, CFG, FakeAuditClient([bad]), limit=10, log=lambda *_: None)
+        self.assertEqual((res["audited"], res["failed"]), (0, 1))
+        self.assertEqual(self.store.audit_results(res["batch"]), [])
+
+    def test_run_audit_budget_stops(self):
+        self._mk_eval(title="論文1")
+        self._mk_eval(title="論文2")
+        clean = json.dumps({"flags": [], "summary": ""})
+        client = FakeAuditClient([clean, clean], delay=0.3)
+        res = T.run_audit(self.store, CFG, client, limit=10, budget_sec=0.1,
+                          log=lambda *_: None)
+        self.assertEqual(res["audited"], 1)  # 1件目の消費で予算超過 → 2件目は打切り
+        self.assertEqual(len(client.calls), 1)
+
+    def test_add_audit_result_idempotent(self):
+        _, eid = self._mk_eval()
+        row = {"evaluation_id": eid, "candidate_id": "c", "run_id": "aud-y",
+               "auditor_provider": "gemini", "auditor_model": "m", "prompt_version": "v1",
+               "prompt_sha": "sha1", "flags": [], "summary": "s"}
+        self.assertTrue(self.store.add_audit_result(row))
+        self.assertFalse(self.store.add_audit_result(row))  # 同じ冪等キーは二重記録しない
+        self.assertTrue(self.store.add_audit_result(dict(row, prompt_sha="sha2")))
+        self.assertEqual(len(self.store.audit_results("aud-y")), 2)
+
+    def test_audit_report_smoke(self):
+        cid, eid = self._mk_eval()
+        self.store.add_audit_result(
+            {"evaluation_id": eid, "candidate_id": cid, "run_id": "aud-z",
+             "auditor_provider": "gemini", "auditor_model": "gemini-3.6-flash",
+             "prompt_version": "v1", "prompt_sha": "sha",
+             "flags": [{"check": "A5", "item": "monetization", "detail": "点と理由が食い違う"}],
+             "summary": "整合に疑い"})
+        text = T.build_audit_report(self.store, "aud-z")
+        self.assertIn("# 監査レポート aud-z", text)
+        self.assertIn("監査対象の論文", text)
+        self.assertIn("A5", text)
+        self.assertIn("点と理由が食い違う", text)
+
+
 if __name__ == "__main__":
     unittest.main()

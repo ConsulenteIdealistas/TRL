@@ -65,6 +65,11 @@ CREATE TABLE IF NOT EXISTS compare_results(
   status TEXT, total REAL, band TEXT, trl_level INTEGER, items_json TEXT,
   seconds REAL, error TEXT, baseline_status TEXT, baseline_total REAL,
   baseline_trl INTEGER, baseline_model TEXT, actual_model TEXT, created_at TEXT);
+CREATE TABLE IF NOT EXISTS audit_results(
+  id INTEGER PRIMARY KEY AUTOINCREMENT, evaluation_id INTEGER NOT NULL, candidate_id TEXT,
+  run_id TEXT, auditor_provider TEXT, auditor_model TEXT, prompt_version TEXT, prompt_sha TEXT,
+  flags_json TEXT, summary TEXT, created_at TEXT,
+  UNIQUE(evaluation_id, prompt_sha, auditor_model));
 CREATE TABLE IF NOT EXISTS review_queue(
   candidate_id TEXT, kind TEXT, reason TEXT, missing_json TEXT, next_sources_json TEXT,
   reeval_conditions_json TEXT, last_eval_at TEXT, versions_json TEXT, created_at TEXT,
@@ -906,6 +911,38 @@ class Store:
                 d["items"] = json.loads(d.pop("items_json") or "{}")
             except ValueError:
                 d["items"] = {}
+            out.append(d)
+        return out
+
+    def add_audit_result(self, row):
+        """監査結果を1件記録する (監査役の追加層。評価本体には触れない)。
+        冪等キー (evaluation_id, prompt_sha, auditor_model) が既にあれば
+        何もせず False を返す (同じ評価×同じ監査プロンプト×同じ監査モデルは
+        二重に監査しない)。新規に記録できたら True。"""
+        cur = self.conn.execute(
+            "INSERT OR IGNORE INTO audit_results(evaluation_id, candidate_id, run_id,"
+            " auditor_provider, auditor_model, prompt_version, prompt_sha, flags_json,"
+            " summary, created_at) VALUES(?,?,?,?,?,?,?,?,?,?)",
+            (row["evaluation_id"], row.get("candidate_id"), row.get("run_id"),
+             row.get("auditor_provider"), row.get("auditor_model"), row.get("prompt_version"),
+             row.get("prompt_sha"), _j(row.get("flags") or []), row.get("summary"),
+             now_iso()))
+        self.conn.commit()
+        return cur.rowcount > 0
+
+    def audit_results(self, run_id):
+        """レポート用: バッチ (run_id) の監査結果を候補タイトルつきで返す。"""
+        rows = self.conn.execute(
+            "SELECT a.*, c.title AS candidate_title FROM audit_results a"
+            " LEFT JOIN candidates c ON c.id = a.candidate_id"
+            " WHERE a.run_id = ? ORDER BY a.id", (run_id,)).fetchall()
+        out = []
+        for r in rows:
+            d = dict(r)
+            try:
+                d["flags"] = json.loads(d.pop("flags_json") or "[]")
+            except ValueError:
+                d["flags"] = []
             out.append(d)
         return out
 

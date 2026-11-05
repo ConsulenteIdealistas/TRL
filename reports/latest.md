@@ -1,13 +1,12 @@
-# TRL 実行レポート 20261105T152846Z-61ab00
+# TRL 実行レポート 20261105T162237Z-512b3f
 
 ※ スコアは評価尺度であり、株価上昇確率・成功確率・投資利益率ではありません。売買の自動判定にも使えません。
 
 - 基準日: 2026-11-05 / 設定: 2026.11.0 (9e898307c78da316)
-- 状態: ok / 所要: 1553.76秒
-- 取得 5406 / 新規 385 / 重複 3434 / 不正 1587
-- スクリーニング通過 242 / 除外 143 / 評価対象 10
-- 評価: 確定 2 / 保留 1 / エラー 0 / LLM未設定でスキップ 0
-- ⚠ LLM API失敗 3件(評価結果として保存せず未評価のまま残しています) / 打ち切り理由: llm_consecutive_failures
+- 状態: ok / 所要: 519.9秒
+- 取得 5399 / 新規 176 / 重複 3643 / 不正 1580
+- スクリーニング通過 33 / 除外 143 / 評価対象 2
+- 評価: 確定 0 / 保留 2 / エラー 0 / LLM未設定でスキップ 0
 
 ## 情報源ごとの状況
 - [OK] arxiv / solid-state-battery: 取得5 新規0 重複0 不正5
@@ -15,28 +14,28 @@
 - [OK] pubmed / gene-therapy: 取得0 新規0 重複0 不正0
 - [OK] gnews / astroscale-news: 取得10 新規0 重複9 不正1
 - [OK] gnews / ispace-news: 取得10 新規0 重複10 不正0
-- [OK] gnews / synspective-news: 取得5 新規0 重複5 不正0
-- [OK] gnews / oncolys-news: 取得6 新規0 重複1 不正5
-- [OK] gnews / reprocell-news: 取得6 新規0 重複5 不正1
+- [OK] gnews / synspective-news: 取得6 新規0 重複6 不正0
+- [OK] gnews / oncolys-news: 取得7 新規0 重複1 不正6
+- [OK] gnews / reprocell-news: 取得7 新規0 重複6 不正1
 - [OK] gnews / peptidream-news: 取得6 新規0 重複2 不正4
-- [OK] gnews / qps-news: 取得10 新規1 重複6 不正3
+- [OK] gnews / qps-news: 取得10 新規1 重複7 不正2
 - [OK] gnews / axelspace-news: 取得10 新規0 重複9 不正1
 - [OK] gnews / sanbio-news: 取得10 新規0 重複9 不正1
-- [OK] gnews / healios-news: 取得10 新規1 重複5 不正4
+- [OK] gnews / healios-news: 取得10 新規0 重複6 不正4
 - [OK] gnews / stella_pharma-news: 取得6 新規0 重複3 不正3
 - [OK] gnews / kringle-news: 取得6 新規0 重複3 不正3
 - [OK] gnews / stemrim-news: 取得4 新規0 重複3 不正1
 - [OK] gnews / pksha-news: 取得7 新規0 重複7 不正0
-- [OK] gnews / fronteo-news: 取得9 新規0 重複9 不正0
+- [OK] gnews / fronteo-news: 取得10 新規0 重複10 不正0
 - [OK] gnews / exawizards-news: 取得10 新規0 重複8 不正2
 - [OK] gnews / heroz-news: 取得10 新規0 重複6 不正4
 - [OK] gnews / cyberdyne-news: 取得4 新規0 重複2 不正2
 - [OK] gnews / lasertec-news: 取得10 新規0 重複10 不正0
 - [OK] gnews / socionext-news: 取得10 新規0 重複8 不正2
-- [OK] gnews / thine-news: 取得4 新規3 重複1 不正0
+- [OK] gnews / thine-news: 取得5 新規1 重複4 不正0
 - [OK] gnews / torex-news: 取得0 新規0 重複0 不正0
 - [OK] gnews / harmonic_drive-news: 取得5 新規0 重複3 不正2
-- [OK] gnews / nabtesco-news: 取得7 新規1 重複4 不正2
+- [OK] gnews / nabtesco-news: 取得7 新規0 重複5 不正2
 - [OK] gnews / ckd-news: 取得10 新規0 重複0 不正10
 - [OK] gnews / sanyo_denki-news: 取得10 新規0 重複5 不正5
 - [OK] gnews / nippon_thompson-news: 取得10 新規0 重複4 不正6
@@ -45,119 +44,119 @@
 - [OK] gnews / toyo_kanetsu-news: 取得4 新規0 重複3 不正1
 - [OK] gnews / kuroda_precision-news: 取得10 新規0 重複1 不正9
 - [OK] gnews / nachi_fujikoshi-news: 取得8 新規0 重複8 不正0
-- [OK] gnews / daihen-news: 取得9 新規5 重複4 不正0
+- [OK] gnews / daihen-news: 取得9 新規0 重複9 不正0
 - [OK] gnews / tsubakimoto-news: 取得7 新規0 重複5 不正2
-- [OK] gnews / maxell-news: 取得10 新規1 重複9 不正0
-- [OK] gnews / ohara-news: 取得10 新規0 重複4 不正6
+- [OK] gnews / maxell-news: 取得10 新規0 重複10 不正0
+- [OK] gnews / ohara-news: 取得10 新規0 重複3 不正7
 - [OK] gnews / santec-news: 取得6 新規0 重複5 不正1
 - [OK] gnews / seikoh_giken-news: 取得10 新規0 重複6 不正4
-- [OK] gnews / asahi_intecc-news: 取得8 新規0 重複4 不正4
-- [OK] gnews / japan_lifeline-news: 取得10 新規1 重複2 不正7
-- [OK] gnews / jms-news: 取得4 新規0 重複4 不正0
+- [OK] gnews / asahi_intecc-news: 取得7 新規0 重複3 不正4
+- [OK] gnews / japan_lifeline-news: 取得10 新規0 重複3 不正7
+- [OK] gnews / jms-news: 取得5 新規0 重複5 不正0
 - [OK] gnews / mizuho_medy-news: 取得1 新規0 重複1 不正0
-- [OK] gnews / rocketlab-news: 取得10 新規6 重複3 不正1
+- [OK] gnews / rocketlab-news: 取得10 新規2 重複7 不正1
 - [OK] gnews / ast_spacemobile-news: 取得10 新規0 重複9 不正1
 - [OK] gnews / intuitive_machines-news: 取得5 新規0 重複4 不正1
-- [OK] gnews / planet_labs-news: 取得10 新規2 重複4 不正4
-- [OK] gnews / redwire-news: 取得7 新規2 重複4 不正1
+- [OK] gnews / planet_labs-news: 取得10 新規0 重複6 不正4
+- [OK] gnews / redwire-news: 取得8 新規0 重複7 不正1
 - [OK] gnews / crispr-news: 取得10 新規0 重複3 不正7
-- [OK] gnews / moderna-news: 取得10 新規9 重複1 不正0
-- [OK] gnews / beam-news: 取得10 新規1 重複7 不正2
-- [OK] gnews / arm-news: 取得10 新規3 重複0 不正7
-- [OK] gnews / firefly-news: 取得7 新規0 重複3 不正4
+- [OK] gnews / moderna-news: 取得10 新規0 重複10 不正0
+- [OK] gnews / beam-news: 取得10 新規0 重複8 不正2
+- [OK] gnews / arm-news: 取得10 新規0 重複3 不正7
+- [OK] gnews / firefly-news: 取得6 新規0 重複3 不正3
 - [OK] gnews / tempus-news: 取得10 新規0 重複6 不正4
 - [OK] gnews / recursion-news: 取得10 新規0 重複3 不正7
-- [OK] gnews / intellia-news: 取得10 新規1 重複4 不正5
-- [OK] gnews / sitime-news: 取得10 新規3 重複7 不正0
+- [OK] gnews / intellia-news: 取得10 新規0 重複5 不正5
+- [OK] gnews / sitime-news: 取得10 新規0 重複10 不正0
 - [OK] gnews / blacksky-news: 取得8 新規0 重複7 不正1
 - [OK] gnews / kratos-news: 取得10 新規0 重複8 不正2
-- [OK] gnews / ambarella-news: 取得9 新規0 重複5 不正4
-- [OK] gnews / schrodinger-news: 取得8 新規3 重複4 不正1
+- [OK] gnews / ambarella-news: 取得8 新規0 重複4 不正4
+- [OK] gnews / schrodinger-news: 取得6 新規0 重複5 不正1
 - [OK] gnews / bigbear_ai-news: 取得10 新規0 重複9 不正1
 - [OK] gnews / bridgebio-news: 取得7 新規0 重複3 不正4
 - [OK] gnews / insmed-news: 取得10 新規0 重複9 不正1
-- [OK] gnews / madrigal-news: 取得10 新規4 重複6 不正0
+- [OK] gnews / madrigal-news: 取得10 新規0 重複10 不正0
 - [OK] gnews / kymera-news: 取得10 新規0 重複8 不正2
-- [OK] gnews / cytokinetics-news: 取得9 新規1 重複7 不正1
+- [OK] gnews / cytokinetics-news: 取得9 新規0 重複8 不正1
 - [OK] gnews / axsome-news: 取得10 新規0 重複10 不正0
 - [OK] gnews / viking-news: 取得10 新規0 重複4 不正6
 - [OK] gnews / denali-news: 取得0 新規0 重複0 不正0
 - [OK] gnews / vera-news: 取得6 新規0 重複5 不正1
 - [OK] gnews / apogee-news: 取得8 新規0 重複2 不正6
-- [OK] gnews / nebius-news: 取得10 新規2 重複6 不正2
-- [OK] gnews / uipath-news: 取得10 新規1 重複9 不正0
-- [OK] gnews / soundhound-news: 取得10 新規2 重複7 不正1
-- [OK] gnews / c3ai-news: 取得10 新規2 重複4 不正4
-- [OK] gnews / cognex-news: 取得7 新規1 重複6 不正0
+- [OK] gnews / nebius-news: 取得10 新規0 重複8 不正2
+- [OK] gnews / uipath-news: 取得10 新規0 重複10 不正0
+- [OK] gnews / soundhound-news: 取得10 新規0 重複9 不正1
+- [OK] gnews / c3ai-news: 取得10 新規0 重複6 不正4
+- [OK] gnews / cognex-news: 取得7 新規0 重複7 不正0
 - [OK] gnews / quantumscape-news: 取得10 新規0 重複10 不正0
-- [OK] gnews / solid_power-news: 取得10 新規1 重複9 不正0
-- [OK] gnews / enovix-news: 取得4 新規0 重複3 不正1
-- [OK] gnews / amprius-news: 取得10 新規2 重複6 不正2
-- [OK] gnews / eos_energy-news: 取得10 新規5 重複4 不正1
-- [OK] gnews / ses_ai-news: 取得10 新規0 重複5 不正5
+- [OK] gnews / solid_power-news: 取得10 新規0 重複10 不正0
+- [OK] gnews / enovix-news: 取得5 新規1 重複2 不正2
+- [OK] gnews / amprius-news: 取得10 新規0 重複8 不正2
+- [OK] gnews / eos_energy-news: 取得10 新規0 重複10 不正0
+- [OK] gnews / ses_ai-news: 取得10 新規1 重複5 不正4
 - [OK] gnews / fluence-news: 取得10 新規1 重複9 不正0
-- [OK] gnews / iqm-news: 取得10 新規3 重複4 不正3
+- [OK] gnews / iqm-news: 取得10 新規0 重複7 不正3
 - [OK] gnews / infleqtion-news: 取得10 新規0 重複10 不正0
 - [OK] gnews / rigetti-news: 取得10 新規0 重複7 不正3
-- [OK] gnews / dwave-news: 取得10 新規3 重複7 不正0
+- [OK] gnews / dwave-news: 取得10 新規0 重複10 不正0
 - [OK] gnews / quantinuum-news: 取得4 新規0 重複3 不正1
-- [OK] gnews / ionq-news: 取得9 新規1 重複7 不正1
-- [OK] gnews / quantum_computing_inc-news: 取得10 新規1 重複5 不正4
+- [OK] gnews / ionq-news: 取得9 新規0 重複8 不正1
+- [OK] gnews / quantum_computing_inc-news: 取得10 新規0 重複6 不正4
 - [OK] gnews / arqit-news: 取得7 新規0 重複7 不正0
 - [OK] gnews / applied_optoelectronics-news: 取得10 新規0 重複6 不正4
-- [OK] gnews / poet-news: 取得10 新規0 重複7 不正3
-- [OK] gnews / nlight-news: 取得6 新規1 重複5 不正0
-- [OK] gnews / ipg_photonics-news: 取得5 新規1 重複3 不正1
+- [OK] gnews / poet-news: 取得8 新規1 重複6 不正1
+- [OK] gnews / nlight-news: 取得7 新規1 重複6 不正0
+- [OK] gnews / ipg_photonics-news: 取得5 新規0 重複4 不正1
 - [OK] gnews / lightwave_logic-news: 取得9 新規0 重複5 不正4
 - [OK] gnews / aeluma-news: 取得4 新規0 重複2 不正2
-- [OK] gnews / procept-news: 取得10 新規3 重複7 不正0
-- [OK] gnews / inspire_medical-news: 取得9 新規2 重複5 不正2
+- [OK] gnews / procept-news: 取得10 新規0 重複10 不正0
+- [OK] gnews / inspire_medical-news: 取得9 新規0 重複7 不正2
 - [OK] gnews / atricure-news: 取得5 新規0 重複5 不正0
-- [OK] gnews / lensar-news: 取得3 新規1 重複1 不正1
+- [OK] gnews / lensar-news: 取得3 新規0 重複2 不正1
 - [OK] gnews / nyxoah-news: 取得7 新規0 重複6 不正1
-- [OK] gnews / iovance-news: 取得10 新規4 重複3 不正3
-- [OK] gnews / cogent-news: 取得5 新規0 重複3 不正2
-- [OK] gnews / scholar_rock-news: 取得2 新規1 重複1 不正0
+- [OK] gnews / iovance-news: 取得10 新規2 重複5 不正3
+- [OK] gnews / cogent-news: 取得5 新規1 重複2 不正2
+- [OK] gnews / scholar_rock-news: 取得2 新規0 重複2 不正0
 - [OK] gnews / transmedics-news: 取得6 新規0 重複6 不正0
-- [OK] gnews / moonlake-news: 取得6 新規1 重複5 不正0
-- [OK] gnews / kyverna-news: 取得6 新規0 重複6 不正0
-- [OK] gnews / geron-news: 取得10 新規1 重複9 不正0
+- [OK] gnews / moonlake-news: 取得6 新規0 重複6 不正0
+- [OK] gnews / kyverna-news: 取得8 新規1 重複7 不正0
+- [OK] gnews / geron-news: 取得10 新規0 重複10 不正0
 - [OK] gnews / voyager_technologies-news: 取得10 新規0 重複8 不正2
-- [OK] gnews / satellogic-news: 取得7 新規1 重複6 不正0
-- [OK] gnews / spire_global-news: 取得10 新規1 重複5 不正4
-- [OK] gnews / virgin_galactic-news: 取得10 新規2 重複8 不正0
+- [OK] gnews / satellogic-news: 取得6 新規0 重複6 不正0
+- [OK] gnews / spire_global-news: 取得10 新規0 重複7 不正3
+- [OK] gnews / virgin_galactic-news: 取得10 新規0 重複10 不正0
 - [OK] gnews / semtech-news: 取得5 新規0 重複5 不正0
-- [OK] gnews / formfactor-news: 取得10 新規0 重複7 不正3
-- [OK] gnews / navitas-news: 取得10 新規3 重複7 不正0
-- [OK] gnews / aehr_test-news: 取得10 新規1 重複6 不正3
-- [OK] gnews / veeco-news: 取得5 新規1 重複3 不正1
+- [OK] gnews / formfactor-news: 取得10 新規0 重複8 不正2
+- [OK] gnews / navitas-news: 取得10 新規0 重複10 不正0
+- [OK] gnews / aehr_test-news: 取得10 新規0 重複7 不正3
+- [OK] gnews / veeco-news: 取得5 新規0 重複4 不正1
 - [OK] gnews / applied_digital-news: 取得10 新規0 重複8 不正2
-- [OK] gnews / hut8-news: 取得10 新規2 重複7 不正1
+- [OK] gnews / hut8-news: 取得10 新規1 重複9 不正0
 - [OK] gnews / innodata-news: 取得7 新規0 重複7 不正0
 - [OK] gnews / upstart-news: 取得10 新規0 重複7 不正3
-- [OK] gnews / terawulf-news: 取得10 新規1 重複7 不正2
+- [OK] gnews / terawulf-news: 取得10 新規0 重複8 不正2
 - [OK] gnews / aerovironment-news: 取得10 新規0 重複6 不正4
 - [OK] gnews / oceaneering-news: 取得10 新規0 重複8 不正2
 - [OK] gnews / red_cat-news: 取得10 新規0 重複6 不正4
-- [OK] gnews / serve_robotics-news: 取得10 新規1 重複1 不正8
+- [OK] gnews / serve_robotics-news: 取得10 新規0 重複3 不正7
 - [OK] gnews / richtech_robotics-news: 取得8 新規0 重複2 不正6
-- [OK] gnews / enersys-news: 取得10 新規2 重複7 不正1
-- [OK] gnews / energy_vault-news: 取得10 新規1 重複6 不正3
+- [OK] gnews / enersys-news: 取得10 新規0 重複9 不正1
+- [OK] gnews / energy_vault-news: 取得10 新規0 重複7 不正3
 - [OK] gnews / t1_energy-news: 取得10 新規0 重複9 不正1
 - [OK] gnews / kulr-news: 取得10 新規0 重複4 不正6
 - [OK] gnews / microvast-news: 取得7 新規0 重複2 不正5
-- [OK] gnews / horizon_quantum-news: 取得10 新規5 重複3 不正2
-- [OK] gnews / xanadu-news: 取得7 新規0 重複7 不正0
-- [OK] gnews / btq_technologies-news: 取得8 新規1 重複7 不正0
+- [OK] gnews / horizon_quantum-news: 取得10 新規0 重複8 不正2
+- [OK] gnews / xanadu-news: 取得7 新規1 重複6 不正0
+- [OK] gnews / btq_technologies-news: 取得9 新規1 重複8 不正0
 - [OK] gnews / oxford_nanopore-news: 取得10 新規0 重複7 不正3
-- [OK] gnews / oxford_instruments-news: 取得10 新規1 重複7 不正2
+- [OK] gnews / oxford_instruments-news: 取得10 新規0 重複8 不正2
 - [OK] gnews / genus-news: 取得3 新規0 重複3 不正0
 - [OK] gnews / filtronic-news: 取得10 新規0 重複10 不正0
-- [OK] gnews / qinetiq-news: 取得10 新規2 重複5 不正3
-- [OK] gnews / oxford_biomedica-news: 取得10 新規1 重複5 不正4
+- [OK] gnews / qinetiq-news: 取得10 新規0 重複7 不正3
+- [OK] gnews / oxford_biomedica-news: 取得10 新規0 重複7 不正3
 - [OK] gnews / iqe-news: 取得10 新規0 重複7 不正3
 - [OK] gnews / puretech-news: 取得6 新規0 重複6 不正0
-- [OK] gnews / hutchmed-news: 取得10 新規2 重複6 不正2
+- [OK] gnews / hutchmed-news: 取得10 新規1 重複7 不正2
 - [OK] gnews / avacta-news: 取得9 新規0 重複9 不正0
 - [OK] gnews / scancell-news: 取得6 新規0 重複5 不正1
 - [OK] gnews / kainos-news: 取得8 新規0 重複1 不正7
@@ -166,83 +165,83 @@
 - [OK] gnews / ilika-news: 取得10 新規0 重複1 不正9
 - [OK] gnews / invinity-news: 取得9 新規0 重複7 不正2
 - [OK] gnews / creo_medical-news: 取得7 新規0 重複2 不正5
-- [OK] gnews / ocado-news: 取得8 新規0 重複8 不正0
-- [OK] gnews / ceres_power-news: 取得10 新規1 重複8 不正1
-- [OK] gnews / netcall-news: 取得6 新規1 重複5 不正0
+- [OK] gnews / ocado-news: 取得7 新規0 重複7 不正0
+- [OK] gnews / ceres_power-news: 取得10 新規0 重複9 不正1
+- [OK] gnews / netcall-news: 取得6 新規0 重複6 不正0
 - [OK] gnews / allergy_therapeutics-news: 取得8 新規0 重複1 不正7
 - [OK] gnews / poolbeg-news: 取得6 新規0 重複3 不正3
 - [OK] gnews / idorsia-news: 取得6 新規0 重複5 不正1
-- [OK] gnews / lonza-news: 取得10 新規3 重複7 不正0
+- [OK] gnews / lonza-news: 取得10 新規0 重複10 不正0
 - [OK] gnews / comet-news: 取得4 新規0 重複0 不正4
 - [OK] gnews / basilea-news: 取得6 新規0 重複5 不正1
-- [OK] gnews / molecular_partners-news: 取得10 新規2 重複6 不正2
-- [OK] gnews / newron-news: 取得10 新規2 重複6 不正2
+- [OK] gnews / molecular_partners-news: 取得10 新規0 重複8 不正2
+- [OK] gnews / newron-news: 取得10 新規0 重複8 不正2
 - [OK] gnews / kardex-news: 取得2 新規0 重複0 不正2
 - [OK] gnews / interroll-news: 取得1 新規0 重複0 不正1
 - [OK] gnews / santhera-news: 取得9 新規0 重複5 不正4
 - [OK] gnews / kuros-news: 取得3 新規0 重複2 不正1
-- [OK] gnews / ohb-news: 取得10 新規3 重複7 不正0
-- [OK] gnews / evotec-news: 取得5 新規1 重複4 不正0
-- [OK] gnews / aixtron-news: 取得10 新規3 重複7 不正0
+- [OK] gnews / ohb-news: 取得10 新規2 重複8 不正0
+- [OK] gnews / evotec-news: 取得5 新規0 重複5 不正0
+- [OK] gnews / aixtron-news: 取得10 新規0 重複10 不正0
 - [OK] gnews / siltronic-news: 取得10 新規1 重複9 不正0
-- [OK] gnews / formycon-news: 取得8 新規1 重複7 不正0
-- [OK] gnews / biontech-news: 取得10 新規5 重複5 不正0
-- [OK] gnews / sartorius-news: 取得6 新規1 重複5 不正0
-- [OK] gnews / suss_microtec-news: 取得10 新規4 重複0 不正6
-- [OK] gnews / heidelberg_pharma-news: 取得10 新規0 重複4 不正6
+- [OK] gnews / formycon-news: 取得7 新規0 重複7 不正0
+- [OK] gnews / biontech-news: 取得10 新規0 重複10 不正0
+- [OK] gnews / sartorius-news: 取得7 新規0 重複7 不正0
+- [OK] gnews / suss_microtec-news: 取得10 新規0 重複5 不正5
+- [OK] gnews / heidelberg_pharma-news: 取得10 新規1 重複3 不正6
 - [OK] gnews / gft-news: 取得5 新規0 重複1 不正4
 - [OK] gnews / basler-news: 取得0 新規0 重複0 不正0
-- [OK] gnews / lpkf-news: 取得1 新規1 重複0 不正0
+- [OK] gnews / lpkf-news: 取得1 新規0 重複1 不正0
 - [OK] gnews / durr-news: 取得0 新規0 重複0 不正0
 - [OK] gnews / kion-news: 取得9 新規0 重複1 不正8
 - [OK] gnews / teamviewer-news: 取得10 新規0 重複9 不正1
 - [OK] gnews / jenoptik-news: 取得1 新規0 重複1 不正0
-- [OK] gnews / pva_tepla-news: 取得9 新規3 重複6 不正0
+- [OK] gnews / pva_tepla-news: 取得9 新規1 重複8 不正0
 - [OK] gnews / two_g_energy-news: 取得7 新規0 重複7 不正0
-- [OK] gnews / brain_biotech-news: 取得3 新規1 重複2 不正0
+- [OK] gnews / brain_biotech-news: 取得3 新規0 重複3 不正0
 - [OK] gnews / eckert_ziegler-news: 取得9 新規0 重複7 不正2
-- [OK] gnews / mda_space-news: 取得10 新規7 重複3 不正0
-- [OK] gnews / telesat-news: 取得10 新規0 重複7 不正3
+- [OK] gnews / mda_space-news: 取得10 新規1 重複9 不正0
+- [OK] gnews / telesat-news: 取得10 新規1 重複6 不正3
 - [OK] gnews / coveo-news: 取得3 新規0 重複3 不正0
 - [OK] gnews / celestica-news: 取得10 新規0 重複10 不正0
 - [OK] gnews / satellos-news: 取得7 新規0 重複6 不正1
 - [OK] gnews / eupraxia-news: 取得7 新規0 重複7 不正0
 - [OK] gnews / medicenna-news: 取得4 新規0 重複4 不正0
-- [OK] gnews / healwell-news: 取得8 新規0 重複8 不正0
+- [OK] gnews / healwell-news: 取得8 新規0 重複7 不正1
 - [OK] gnews / ats_corporation-news: 取得10 新規0 重複2 不正8
-- [OK] gnews / nano_one-news: 取得10 新規4 重複6 不正0
-- [OK] gnews / nouveau_monde-news: 取得10 新規2 重複5 不正3
+- [OK] gnews / nano_one-news: 取得10 新規0 重複10 不正0
+- [OK] gnews / nouveau_monde-news: 取得10 新規1 重複6 不正3
 - [OK] gnews / ballard-news: 取得10 新規1 重複7 不正2
 - [OK] gnews / electrovaya-news: 取得8 新規0 重複6 不正2
-- [OK] gnews / profound_medical-news: 取得10 新規1 重複8 不正1
-- [OK] gnews / cardiol-news: 取得10 新規1 重複7 不正2
+- [OK] gnews / profound_medical-news: 取得10 新規0 重複9 不正1
+- [OK] gnews / cardiol-news: 取得10 新規0 重複8 不正2
 - [OK] gnews / spectral_medical-news: 取得10 新規0 重複9 不正1
-- [OK] gnews / kinaxis-news: 取得10 新規2 重複8 不正0
-- [OK] gnews / telix-news: 取得10 新規4 重複6 不正0
-- [OK] gnews / mesoblast-news: 取得10 新規1 重複5 不正4
-- [OK] gnews / eos-news: 取得10 新規0 重複6 不正4
-- [OK] gnews / neuren-news: 取得10 新規2 重複6 不正2
+- [OK] gnews / kinaxis-news: 取得10 新規0 重複10 不正0
+- [OK] gnews / telix-news: 取得10 新規0 重複10 不正0
+- [OK] gnews / mesoblast-news: 取得10 新規0 重複6 不正4
+- [OK] gnews / eos-news: 取得10 新規0 重複5 不正5
+- [OK] gnews / neuren-news: 取得10 新規0 重複8 不正2
 - [OK] gnews / weebit_nano-news: 取得10 新規0 重複10 不正0
-- [OK] gnews / brainchip-news: 取得10 新規1 重複8 不正1
-- [OK] gnews / clarity-news: 取得10 新規2 重複8 不正0
+- [OK] gnews / brainchip-news: 取得10 新規0 重複9 不正1
+- [OK] gnews / clarity-news: 取得10 新規0 重複10 不正0
 - [OK] gnews / racura-news: 取得0 新規0 重複0 不正0
 - [OK] gnews / paradigm-news: 取得6 新規0 重複3 不正3
-- [OK] gnews / appen-news: 取得8 新規1 重複5 不正2
+- [OK] gnews / appen-news: 取得8 新規0 重複6 不正2
 - [OK] gnews / novonix-news: 取得9 新規0 重複9 不正0
-- [OK] gnews / polynovo-news: 取得10 新規1 重複7 不正2
-- [OK] gnews / nanosonics-news: 取得10 新規2 重複5 不正3
+- [OK] gnews / polynovo-news: 取得10 新規0 重複8 不正2
+- [OK] gnews / nanosonics-news: 取得10 新規0 重複7 不正3
 - [OK] gnews / droneshield-news: 取得10 新規0 重複10 不正0
 - [OK] gnews / silex-news: 取得7 新規0 重複6 不正1
 - [OK] gnews / archer_materials-news: 取得10 新規0 重複4 不正6
-- [OK] gnews / talga-news: 取得10 新規1 重複5 不正4
-- [OK] gnews / vulcan_energy-news: 取得8 新規0 重複7 不正1
-- [OK] gnews / avio-news: 取得10 新規1 重複7 不正2
+- [OK] gnews / talga-news: 取得10 新規0 重複6 不正4
+- [OK] gnews / vulcan_energy-news: 取得9 新規0 重複7 不正2
+- [OK] gnews / avio-news: 取得10 新規0 重複8 不正2
 - [OK] gnews / diasorin-news: 取得3 新規0 重複3 不正0
 - [OK] gnews / technoprobe-news: 取得2 新規0 重複2 不正0
 - [OK] gnews / philogen-news: 取得0 新規0 重複0 不正0
 - [OK] gnews / bioarctic-news: 取得5 新規0 重複3 不正2
-- [OK] gnews / aac_clyde-news: 取得3 新規1 重複2 不正0
-- [OK] gnews / camurus-news: 取得9 新規7 重複0 不正2
+- [OK] gnews / aac_clyde-news: 取得3 新規0 重複3 不正0
+- [OK] gnews / camurus-news: 取得8 新規0 重複7 不正1
 - [OK] gnews / hansa-news: 取得1 新規0 重複1 不正0
 - [OK] gnews / vicore-news: 取得0 新規0 重複0 不正0
 - [OK] gnews / sivers-news: 取得0 新規0 重複0 不正0
@@ -250,52 +249,52 @@
 - [OK] gnews / ependion-news: 取得2 新規0 重複2 不正0
 - [OK] gnews / powercell-news: 取得1 新規0 重複1 不正0
 - [OK] gnews / sectra-news: 取得0 新規0 重複0 不正0
-- [OK] gnews / xbrane-news: 取得5 新規0 重複5 不正0
+- [OK] gnews / xbrane-news: 取得4 新規0 重複4 不正0
 - [OK] gnews / saniona-news: 取得0 新規0 重複0 不正0
 - [OK] gnews / bioinvent-news: 取得0 新規0 重複0 不正0
-- [OK] gnews / egetis-news: 取得2 新規1 重複1 不正0
+- [OK] gnews / egetis-news: 取得2 新規0 重複2 不正0
 - [OK] gnews / genmab-news: 取得10 新規0 重複10 不正0
 - [OK] gnews / bavarian_nordic-news: 取得7 新規0 重複7 不正0
-- [OK] gnews / zealand_pharma-news: 取得10 新規0 重複6 不正4
-- [OK] gnews / gubra-news: 取得4 新規0 重複2 不正2
+- [OK] gnews / zealand_pharma-news: 取得10 新規0 重複5 不正5
+- [OK] gnews / gubra-news: 取得3 新規0 重複1 不正2
 - [OK] gnews / alk_abello-news: 取得7 新規0 重複1 不正6
 - [OK] gnews / bioporto-news: 取得1 新規0 重複0 不正1
 - [OK] gnews / curasight-news: 取得2 新規0 重複0 不正2
-- [OK] gnews / pharmamar-news: 取得9 新規1 重複7 不正1
-- [OK] gnews / almirall-news: 取得9 新規1 重複3 不正5
+- [OK] gnews / pharmamar-news: 取得9 新規0 重複8 不正1
+- [OK] gnews / almirall-news: 取得9 新規0 重複4 不正5
 - [OK] gnews / oryzon-news: 取得5 新規0 重複5 不正0
 - [OK] gnews / indra-news: 取得10 新規1 重複8 不正1
 - [OK] gnews / grifols-news: 取得10 新規0 重複10 不正0
 - [OK] gnews / atrys-news: 取得0 新規0 重複0 不正0
-- [OK] gnews / soitec-news: 取得8 新規1 重複5 不正2
-- [OK] gnews / ipsen-news: 取得10 新規1 重複9 不正0
-- [OK] gnews / innate_pharma-news: 取得9 新規5 重複4 不正0
+- [OK] gnews / soitec-news: 取得8 新規0 重複6 不正2
+- [OK] gnews / ipsen-news: 取得9 新規0 重複9 不正0
+- [OK] gnews / innate_pharma-news: 取得9 新規0 重複9 不正0
 - [OK] gnews / valneva-news: 取得8 新規0 重複7 不正1
 - [OK] gnews / eutelsat-news: 取得10 新規0 重複9 不正1
 - [OK] gnews / abivax-news: 取得5 新規0 重複4 不正1
 - [OK] gnews / genfit-news: 取得2 新規0 重複1 不正1
 - [OK] gnews / inventiva-news: 取得7 新規0 重複5 不正2
-- [OK] gnews / nanobiotix-news: 取得4 新規1 重複1 不正2
-- [OK] gnews / ose_immunotherapeutics-news: 取得9 新規1 重複2 不正6
+- [OK] gnews / nanobiotix-news: 取得4 新規0 重複2 不正2
+- [OK] gnews / ose_immunotherapeutics-news: 取得9 新規0 重複4 不正5
 - [OK] gnews / medincell-news: 取得5 新規0 重複4 不正1
-- [OK] gnews / lighton-news: 取得3 新規0 重複0 不正3
+- [OK] gnews / lighton-news: 取得4 新規0 重複0 不正4
 - [OK] gnews / lumibird-news: 取得6 新規0 重複5 不正1
 - [OK] gnews / cellectis-news: 取得4 新規0 重複2 不正2
 - [OK] gnews / sensorion-news: 取得1 新規0 重複1 不正0
 - [OK] gnews / crossject-news: 取得2 新規0 重複1 不正1
 - [OK] gnews / planisware-news: 取得7 新規0 重複7 不正0
-- [OK] gnews / xfab-news: 取得9 新規1 重複4 不正4
-- [OK] gnews / asm_international-news: 取得8 新規1 重複6 不正1
-- [OK] gnews / be_semiconductor-news: 取得10 新規2 重複2 不正6
+- [OK] gnews / xfab-news: 取得10 新規2 重複4 不正4
+- [OK] gnews / asm_international-news: 取得6 新規0 重複6 不正0
+- [OK] gnews / be_semiconductor-news: 取得10 新規0 重複4 不正6
 - [OK] gnews / pharming-news: 取得10 新規0 重複10 不正0
 - [OK] gnews / lakefront-news: 取得6 新規0 重複5 不正1
-- [OK] gnews / vivoryon-news: 取得6 新規3 重複3 不正0
+- [OK] gnews / vivoryon-news: 取得6 新規0 重複6 不正0
 - [OK] gnews / alfen-news: 取得4 新規0 重複3 不正1
 - [OK] gnews / fastned-news: 取得5 新規0 重複5 不正0
-- [OK] gnews / orion-news: 取得10 新規3 重複2 不正5
-- [OK] gnews / herantis-news: 取得9 新規1 重複0 不正8
+- [OK] gnews / orion-news: 取得10 新規1 重複4 不正5
+- [OK] gnews / herantis-news: 取得9 新規0 重複1 不正8
 - [OK] gnews / faron-news: 取得6 新規0 重複4 不正2
-- [OK] gnews / nanoform-news: 取得1 新規1 重複0 不正0
+- [OK] gnews / nanoform-news: 取得1 新規0 重複1 不正0
 - [OK] gnews / kalmar-news: 取得7 新規0 重複7 不正0
 - [OK] gnews / hiab-news: 取得2 新規0 重複1 不正1
 - [OK] gnews / detection_technology-news: 取得6 新規0 重複6 不正0
@@ -305,14 +304,14 @@
 - [OK] gnews / kongsberg-news: 取得10 新規0 重複8 不正2
 - [OK] gnews / photocure-news: 取得3 新規0 重複3 不正0
 - [OK] gnews / nykode-news: 取得1 新規0 重複0 不正1
-- [OK] gnews / autostore-news: 取得4 新規2 重複1 不正1
+- [OK] gnews / autostore-news: 取得4 新規0 重複3 不正1
 - [OK] gnews / tomra-news: 取得6 新規0 重複6 不正0
 - [OK] gnews / zaptec-news: 取得2 新規0 重複2 不正0
-- [OK] gnews / ucb-news: 取得10 新規4 重複6 不正0
-- [OK] gnews / argenx-news: 取得10 新規2 重複7 不正1
+- [OK] gnews / ucb-news: 取得10 新規1 重複9 不正0
+- [OK] gnews / argenx-news: 取得10 新規0 重複9 不正1
 - [OK] gnews / hyloris-news: 取得0 新規0 重複0 不正0
 - [OK] gnews / onward_medical-news: 取得4 新規0 重複3 不正1
-- [OK] gnews / melexis-news: 取得7 新規1 重複6 不正0
+- [OK] gnews / melexis-news: 取得7 新規0 重複7 不正0
 - [OK] trials / oncolys-trials: 取得0 新規0 重複0 不正0
 - [OK] trials / reprocell-trials: 取得1 新規0 重複0 不正1
 - [OK] trials / peptidream-trials: 取得1 新規0 重複1 不正0
@@ -341,7 +340,7 @@
 - [OK] trials / apogee-trials: 取得10 新規0 重複4 不正6
 - [OK] trials / procept-trials: 取得3 新規0 重複2 不正1
 - [OK] trials / inspire_medical-trials: 取得41 新規0 重複2 不正39
-- [OK] trials / atricure-trials: 取得14 新規1 重複6 不正7
+- [OK] trials / atricure-trials: 取得14 新規0 重複7 不正7
 - [OK] trials / lensar-trials: 取得2 新規0 重複1 不正1
 - [OK] trials / nyxoah-trials: 取得1 新規0 重複1 不正0
 - [OK] trials / iovance-trials: 取得18 新規0 重複11 不正7
@@ -359,7 +358,7 @@
 - [OK] trials / scancell-trials: 取得1 新規0 重複1 不正0
 - [OK] trials / renishaw-trials: 取得0 新規0 重複0 不正0
 - [OK] trials / creo_medical-trials: 取得4 新規0 重複1 不正3
-- [OK] trials / allergy_therapeutics-trials: 取得60 新規1 重複0 不正59
+- [OK] trials / allergy_therapeutics-trials: 取得60 新規0 重複1 不正59
 - [OK] trials / poolbeg-trials: 取得0 新規0 重複0 不正0
 - [OK] trials / idorsia-trials: 取得14 新規0 重複6 不正8
 - [OK] trials / basilea-trials: 取得10 新規0 重複9 不正1
@@ -445,7 +444,7 @@
 - [OK] prtimes / kringle-prtimes: 取得0 新規0 重複0 不正0
 - [OK] prtimes / stemrim-prtimes: 取得0 新規0 重複0 不正0
 - [OK] prtimes / pksha-prtimes: 取得4 新規0 重複4 不正0
-- [OK] prtimes / fronteo-prtimes: 取得15 新規1 重複14 不正0
+- [OK] prtimes / fronteo-prtimes: 取得15 新規0 重複15 不正0
 - [OK] prtimes / exawizards-prtimes: 取得3 新規0 重複3 不正0
 - [OK] prtimes / heroz-prtimes: 取得3 新規0 重複3 不正0
 - [OK] prtimes / cyberdyne-prtimes: 取得0 新規0 重複0 不正0
@@ -575,7 +574,7 @@
 - [OK] pubmed / herantis-pubmed: 取得1 新規0 重複1 不正0
 - [OK] pubmed / faron-pubmed: 取得11 新規0 重複11 不正0
 - [OK] pubmed / nanoform-pubmed: 取得1 新規0 重複1 不正0
-- [OK] pubmed / ucb-pubmed: 取得100 新規1 重複99 不正0
+- [OK] pubmed / ucb-pubmed: 取得100 新規0 重複100 不正0
 - [OK] pubmed / argenx-pubmed: 取得73 新規9 重複64 不正0
 - [OK] pubmed / melexis-pubmed: 取得1 新規0 重複1 不正0
 - [OK] openalex / ispace-openalex: 取得3 新規0 重複3 不正0
@@ -583,48 +582,55 @@
 - [OK] openalex / cyberdyne-openalex: 取得4 新規0 重複4 不正0
 - [OK] openalex / lasertec-openalex: 取得5 新規0 重複5 不正0
 - [OK] openalex / socionext-openalex: 取得4 新規0 重複4 不正0
-- [OK] openalex / planet_labs-openalex: 取得53 新規9 重複44 不正0
+- [OK] openalex / planet_labs-openalex: 取得53 新規6 重複47 不正0
 - [OK] openalex / ohb-openalex: 取得36 新規2 重複34 不正0
-- [OK] openalex / evotec-openalex: 取得37 新規2 重複35 不正0
+- [OK] openalex / evotec-openalex: 取得37 新規1 重複36 不正0
 - [OK] openalex / aixtron-openalex: 取得20 新規0 重複20 不正0
 - [OK] openalex / sartorius-openalex: 取得50 新規12 重複38 不正0
 - [OK] openalex / suss_microtec-openalex: 取得4 新規0 重複4 不正0
 - [OK] openalex / aac_clyde-openalex: 取得2 新規0 重複2 不正0
 - [OK] openalex / bavarian_nordic-openalex: 取得6 新規0 重複6 不正0
 - [OK] openalex / zealand_pharma-openalex: 取得10 新規0 重複10 不正0
-- [OK] roic / oxford_biomedica-roic: 取得0 新規0 重複0 不正0
-- [OK] roic / basilea-roic: 取得1 新規1 重複0 不正0
-- [OK] roic / kardex-roic: 取得1 新規1 重複0 不正0
-- [OK] roic / heidelberg_pharma-roic: 取得1 新規1 重複0 不正0
-- [OK] roic / racura-roic: 取得1 新規1 重複0 不正0
-- [OK] roic / polynovo-roic: 取得1 新規1 重複0 不正0
-- [OK] roic / saniona-roic: 取得1 新規1 重複0 不正0
-- [OK] roic / ucb-roic: 取得1 新規1 重複0 不正0
-- [OK] roic / apogee-roic: 取得1 新規1 重複0 不正0
-- [OK] roic / iqm-roic: 取得1 新規1 重複0 不正0
+- [OK] roic / poet-roic: 取得1 新規1 重複0 不正0
+- [OK] roic / oxford_nanopore-roic: 取得0 新規0 重複0 不正0
+- [OK] roic / oxford_instruments-roic: 取得0 新規0 重複0 不正0
+- [OK] roic / genus-roic: 取得0 新規0 重複0 不正0
+- [OK] roic / filtronic-roic: 取得0 新規0 重複0 不正0
+- [OK] roic / qinetiq-roic: 取得0 新規0 重複0 不正0
+- [OK] roic / puretech-roic: 取得0 新規0 重複0 不正0
+- [OK] roic / renishaw-roic: 取得0 新規0 重複0 不正0
+- [OK] roic / ceres_power-roic: 取得0 新規0 重複0 不正0
+- [OK] roic / idorsia-roic: 取得1 新規1 重複0 不正0
 
 ## 長期成長評価(確定)
-- **59.8** (moderate_uncertain) MAGNITUDE-2: A Phase 3, Multinational, Randomized, Double-Blind, Placebo-Controlled Study to Evaluate the Efficacy and Safety of NTLA-2001 in Participants With Hereditary Transthyretin Amyloidosis With Polyneuropathy (ATTRv-PN)
-  論文・原資料: https://clinicaltrials.gov/study/NCT06672237
-  - [IR・決算資料 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=%22MAGNITUDE-2%3A+A+Phase+3%2C+Multinational%2C+Randomized%2C+Double-Blind%2C+Placebo-Controlled+Study+to+Evaluate+the+Efficacy+and+Safety+of+NTLA-2001+in+Participants+With+Hereditary+Transthyretin+Amyloidosis+With+Polyneuropathy+%28ATTRv-PN%29%22+IR)
-  - [特許 [論文タイトル等（企業名未特定）]](https://patents.google.com/?q=MAGNITUDE-2%3A+A+Phase+3%2C+Multinational%2C+Randomized%2C+Double-Blind%2C+Placebo-Controlled+Study+to+Evaluate+the+Efficacy+and+Safety+of+NTLA-2001+in+Participants+With+Hereditary+Transthyretin+Amyloidosis+With+Polyneuropathy+%28ATTRv-PN%29)
-  - [臨床試験登録 [論文タイトル等（企業名未特定）]](https://clinicaltrials.gov/search?term=MAGNITUDE-2%3A+A+Phase+3%2C+Multinational%2C+Randomized%2C+Double-Blind%2C+Placebo-Controlled+Study+to+Evaluate+the+Efficacy+and+Safety+of+NTLA-2001+in+Participants+With+Hereditary+Transthyretin+Amyloidosis+With+Polyneuropathy+%28ATTRv-PN%29)
-  - [企業・技術情報 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=MAGNITUDE-2%3A+A+Phase+3%2C+Multinational%2C+Randomized%2C+Double-Blind%2C+Placebo-Controlled+Study+to+Evaluate+the+Efficacy+and+Safety+of+NTLA-2001+in+Participants+With+Hereditary+Transthyretin+Amyloidosis+With+Polyneuropathy+%28ATTRv-PN%29)
-- **57.2** (moderate_uncertain) A Multi-center, Double-blind, Randomized, Placebo-controlled, Parallel-group Trial to Assess the Efficacy of Daridorexant on Nighttime Symptoms and Daytime Functioning in Adult and Elderly Participants With Insomnia Disorder
-  論文・原資料: https://clinicaltrials.gov/study/NCT07843329
-  - [IR・決算資料 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=%22A+Multi-center%2C+Double-blind%2C+Randomized%2C+Placebo-controlled%2C+Parallel-group+Trial+to+Assess+the+Efficacy+of+Daridorexant+on+Nighttime+Symptoms+and+Daytime+Functioning+in+Adult+and+Elderly+Participants+With+Insomnia+Disorder%22+IR)
-  - [特許 [論文タイトル等（企業名未特定）]](https://patents.google.com/?q=A+Multi-center%2C+Double-blind%2C+Randomized%2C+Placebo-controlled%2C+Parallel-group+Trial+to+Assess+the+Efficacy+of+Daridorexant+on+Nighttime+Symptoms+and+Daytime+Functioning+in+Adult+and+Elderly+Participants+With+Insomnia+Disorder)
-  - [臨床試験登録 [論文タイトル等（企業名未特定）]](https://clinicaltrials.gov/search?term=A+Multi-center%2C+Double-blind%2C+Randomized%2C+Placebo-controlled%2C+Parallel-group+Trial+to+Assess+the+Efficacy+of+Daridorexant+on+Nighttime+Symptoms+and+Daytime+Functioning+in+Adult+and+Elderly+Participants+With+Insomnia+Disorder)
-  - [企業・技術情報 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=A+Multi-center%2C+Double-blind%2C+Randomized%2C+Placebo-controlled%2C+Parallel-group+Trial+to+Assess+the+Efficacy+of+Daridorexant+on+Nighttime+Symptoms+and+Daytime+Functioning+in+Adult+and+Elderly+Participants+With+Insomnia+Disorder)
+- 該当なし
 
 ## イベント評価(確定)
 - 該当なし
 
-## レビューキュー（未解消 45件）
-- 情報不足・保留: 43件
+## レビューキュー（未解消 47件）
+- 情報不足・保留: 45件
 - 評価エラー: 2件
 
-### 情報不足・保留（43件）
+### 情報不足・保留（45件）
+- [event] A Phase 1/2, Open-label, Multicenter, Dose Escalation and Cohort Expansion Study of the Safety and Efficacy of Anti-CD70 Allogeneic CRISPR-Cas9-Engineered T Cells (CTX131) in Adult Subjects With Relapsed or Refractory Solid Tumors
+  理由: missing_items: expectation_gap,not_priced_in,supply_demand (critical: expectation_gap,not_priced_in)
+  確認先: NCT05795595の学会・論文等における詳細な有効性・安全性データの公表資料, CRISPR TherapeuticsによるCTX131の次相試験（Phase 2）計画に関する公式プレスリリース
+  再評価条件: CTX131の具体的有効性数値（ORR、PFS等）および安全性データの開示, CTX131の今後の開発ロードマップおよび市場アナリストによる評価レポートの公表
+  関連情報の検索:
+  - [IR・決算資料 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=%22A+Phase+1%2F2%2C+Open-label%2C+Multicenter%2C+Dose+Escalation+and+Cohort+Expansion+Study+of+the+Safety+and+Efficacy+of+Anti-CD70+Allogeneic+CRISPR-Cas9-Engineered+T+Cells+%28CTX131%29+in+Adult+Subjects+With+Relapsed+or+Refractory+Solid+Tumors%22+IR)
+  - [特許 [論文タイトル等（企業名未特定）]](https://patents.google.com/?q=A+Phase+1%2F2%2C+Open-label%2C+Multicenter%2C+Dose+Escalation+and+Cohort+Expansion+Study+of+the+Safety+and+Efficacy+of+Anti-CD70+Allogeneic+CRISPR-Cas9-Engineered+T+Cells+%28CTX131%29+in+Adult+Subjects+With+Relapsed+or+Refractory+Solid+Tumors)
+  - [臨床試験登録 [論文タイトル等（企業名未特定）]](https://clinicaltrials.gov/search?term=A+Phase+1%2F2%2C+Open-label%2C+Multicenter%2C+Dose+Escalation+and+Cohort+Expansion+Study+of+the+Safety+and+Efficacy+of+Anti-CD70+Allogeneic+CRISPR-Cas9-Engineered+T+Cells+%28CTX131%29+in+Adult+Subjects+With+Relapsed+or+Refractory+Solid+Tumors)
+  - [企業・技術情報 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=A+Phase+1%2F2%2C+Open-label%2C+Multicenter%2C+Dose+Escalation+and+Cohort+Expansion+Study+of+the+Safety+and+Efficacy+of+Anti-CD70+Allogeneic+CRISPR-Cas9-Engineered+T+Cells+%28CTX131%29+in+Adult+Subjects+With+Relapsed+or+Refractory+Solid+Tumors)
+- [event] Hybrid Epicardial and Endocardial Sinus Node Sparing Ablation Therapy for Inappropriate Sinus Tachycardia
+  理由: missing_items: expectation_gap,not_priced_in,supply_demand,downside_resilience (critical: expectation_gap,not_priced_in)
+  確認先: https://clinicaltrials.gov/study/NCT05280093, AtriCure, Inc. 投資家向け広報資料(IR発表・決算資料)
+  再評価条件: 治験の完了予定日または主要評価項目データ（主要結果）の発表, FDA等の規制当局への申請ステータスや承認時期の確定, 本治験に関するアナリスト予想や定量的市場評価の公表
+  関連情報の検索:
+  - [IR・決算資料 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=%22Hybrid+Epicardial+and+Endocardial+Sinus+Node+Sparing+Ablation+Therapy+for+Inappropriate+Sinus+Tachycardia%22+IR)
+  - [特許 [論文タイトル等（企業名未特定）]](https://patents.google.com/?q=Hybrid+Epicardial+and+Endocardial+Sinus+Node+Sparing+Ablation+Therapy+for+Inappropriate+Sinus+Tachycardia)
+  - [臨床試験登録 [論文タイトル等（企業名未特定）]](https://clinicaltrials.gov/search?term=Hybrid+Epicardial+and+Endocardial+Sinus+Node+Sparing+Ablation+Therapy+for+Inappropriate+Sinus+Tachycardia)
+  - [企業・技術情報 [論文タイトル等（企業名未特定）]](https://www.google.com/search?q=Hybrid+Epicardial+and+Endocardial+Sinus+Node+Sparing+Ablation+Therapy+for+Inappropriate+Sinus+Tachycardia)
 - [long] Multicenter, Multinational, Natural History Study in Participants With Congenital Myasthenic Syndromes Due to Mutations in DOK7, MUSK, AGRN, or LRP4
   理由: missing_items: technological_advantage,moat_durability
   確認先: argenx SE 決算説明会資料および有価証券報告書（10-Q/10-K相当）, NCT06078553 自然史研究の最終解析論文・発表データ, CMSおよび自己免疫疾患領域における第三者市場調査レポート

@@ -13,7 +13,7 @@ from .llm import Gemini, _cloudflare, configure_llm, get_provider
 from .pipeline import run_pipeline
 from .site import export_site
 from .report import build_report
-from .audit import build_audit_report, run_audit
+from .audit import build_audit_report, run_audit, run_audit_rules
 from .compare import build_compare_report, run_compare
 
 
@@ -58,7 +58,9 @@ def _compare_clients(cfg):
 
 
 def _audit_client(cfg):
-    """監査役のクライアント。監査は単独モデル (既定は査定の主モデル級) で
+    """【休眠】LLM 監査役のクライアント。監査の既定エンジンが規則ベースに
+    なったため現在は使われていない (LLM 経路を戻す余地として残す)。
+    監査は単独モデル (既定は査定の主モデル級) で
     行い、代替モデルへのフォールバックはしない (どのモデルが監査したかが
     フラグの解釈に要るため)。モデル名は TRL_AUDIT_MODEL → TRL_LLM_MODEL →
     Gemini の既定の順。階段を空にする手法は _compare_clients と同じ。"""
@@ -113,7 +115,7 @@ def main(argv=None):
     au.add_argument("--data-dir", default="data")
     au.add_argument("--limit", type=int, default=100)
     au.add_argument("--budget-sec", type=int, default=9000,
-                    help="監査の時間予算 (秒)。0 は無制限")
+                    help="互換のため残す引数 (規則エンジンでは未使用。旧 LLM 監査の時間予算)")
     ex = sub.add_parser("export")
     ex.add_argument("--data-dir", default="data")
     ex.add_argument("--out", default="_site")
@@ -255,21 +257,9 @@ def main(argv=None):
             print(f"::error::database not found: {db}")
             return 2
         store = Store(db)
-        try:
-            client = _audit_client(cfg)
-        except LLMError as e:
-            store.close()
-            print(f"::error::{e}")
-            return 2
-        records = []
-        try:
-            client.recorder = records.append  # 計装: 監査コールも llm_calls に残す
-        except Exception:
-            pass
-        res = run_audit(store, cfg, client, limit=a.limit,
-                        budget_sec=a.budget_sec or None)
-        while records:
-            store.record_llm_call(res["batch"], records.pop(0))
+        # 既定は規則エンジン (audit_rules.json の照合のみで、API を呼ばず
+        # LLM クライアントも構築しない)。LLM 監査は休眠 (trlcore/audit.py)。
+        res = run_audit_rules(store, cfg, limit=a.limit)
         text = build_audit_report(store, res["batch"])
         rep = Path(a.data_dir) / "audit-reports"
         rep.mkdir(parents=True, exist_ok=True)

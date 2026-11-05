@@ -3775,5 +3775,210 @@ class AuditTests(unittest.TestCase):
         self.assertIn("点と理由が食い違う", text)
 
 
+class AuditRulesTests(unittest.TestCase):
+    """規則エンジン (既定の監査) の単体テスト。実レコードの形は AuditTests と同じ流儀。"""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.store = Store(Path(self.tmp.name) / "trl.sqlite")
+        self.rules = T.load_rules()["rules"]
+        self.n = 0
+
+    def tearDown(self):
+        self.store.close()
+        self.tmp.cleanup()
+
+    def _item(self, score=70, reason="理由", evidence=None, missing=None):
+        return {"score": score, "reason": reason,
+                "evidence": evidence if evidence is not None else
+                [{"ref": "https://example.org/x", "summary": "要約", "kind": "fact"}],
+                "counter_evidence": [], "missing_info": missing or []}
+
+    def _mk_eval(self, title, entity_id="astroscale", items=None, trl=None,
+                 extraction=None):
+        self.n += 1
+        sid = f"2610.200{self.n:02d}"
+        rec, problems = normalize(raw(source="arxiv", sid=sid, title=title),
+                                  "2026-10-20T00:00:00+00:00")
+        self.assertEqual(problems, [])
+        cid, _ = self.store.upsert_candidate(rec, "r0")
+        self.store.set_entities(cid, [{"entity_id": entity_id, "strength": "strong",
+                                       "matched_by": "title", "matched_alias": "x"}])
+        full = {k: item(70) for k in LONG_KEYS}
+        for k, v in (items or {}).items():
+            full[k] = v
+        ev = {"kind": "long", "as_of": "2026-10-20", "status": "final",
+              "total": 72.0, "band": {"label": "順調"}, "items": full,
+              "extraction": extraction if extraction is not None else EXTRACTION,
+              "event": None, "prompt_versions": {},
+              "config_version": CFG["config_version"], "config_hash": CFG["config_hash"],
+              "llm_provider": "gemini", "llm_model": "gemini-3.5-flash-lite",
+              "input_hash": f"h-{sid}", "errors": [],
+              "extra": {"trl_level": trl if trl is not None else
+                        {"level": 8, "reason": "実証段階", "evidence": [], "missing_info": []}}}
+        self.store.add_evaluation("r0", cid, ev)
+        return cid, self.store.latest_evaluation(cid, "long")["id"]
+
+    def _audit_one(self, eid):
+        row = dict(self.store.conn.execute(
+            "SELECT * FROM evaluations WHERE id = ?", (eid,)).fetchone())
+        inp = T.build_audit_input(self.store, row, CFG)
+        return T.audit_evaluation_rules(inp, self.rules)
+
+    @staticmethod
+    def _only(entries, check):
+        return [e for e in entries if e["check"] == check]
+
+    def test_load_rules(self):
+        r = T.load_rules()
+        self.assertEqual(r["version"], "v1")
+        self.assertEqual(len(r["sha"]), 12)
+        self.assertEqual(r["sha"], T.load_rules()["sha"])  # 同じファイルでは安定
+        # A5 は規則化しない (対象外)。それ以外が載っている
+        self.assertEqual(set(r["rules"]["checks"]), {"A1", "A2", "A3", "A4", "A6", "A7"})
+
+    def test_a1_flag(self):
+        _, eid = self._mk_eval("A1フラグ", items={
+            "technology_readiness": self._item(
+                reason="複数のミッションで継続的に使用されている")})
+        a1 = self._only(self._audit_one(eid), "A1")
+        self.assertEqual(len(a1), 1)
+        self.assertEqual(a1[0]["verdict"], "flag")
+        self.assertEqual(a1[0]["item"], "technology_readiness")
+        self.assertIn("rule", a1[0])
+
+    def test_a1_white_rescue(self):
+        ext = {"facts": [{"statement": "過去3回の打上げで運用し、2年間継続した",
+                          "source": "u"}],
+               "inferences": [], "forecasts": [], "hypotheses": [],
+               "counter_points": [], "missing_info": []}
+        _, eid = self._mk_eval("A1救済", extraction=ext, items={
+            "technology_readiness": self._item(
+                reason="複数のミッションで継続的に使用されている")})
+        # 根拠側に回数・期間の明記があるため、フラグにもグレーにもならない
+        self.assertEqual(self._only(self._audit_one(eid), "A1"), [])
+
+    def test_a1_gray_for_generic_claim(self):
+        _, eid = self._mk_eval("A1グレー", items={
+            "technology_readiness": self._item(
+                reason="複数のコホートで評価が進んでいる")})
+        a1 = self._only(self._audit_one(eid), "A1")
+        self.assertEqual(len(a1), 1)
+        self.assertEqual(a1[0]["verdict"], "gray")  # 治験デザイン語は確定違反にしない
+
+    def test_a2_flag_pass_and_out_of_scope(self):
+        trl9 = {"level": 9, "reason": "実用化済み", "evidence": [], "missing_info": []}
+        _, eid = self._mk_eval("A2フラグ", trl=trl9)
+        a2 = self._only(self._audit_one(eid), "A2")
+        self.assertEqual(len(a2), 1)
+        self.assertEqual(a2[0]["verdict"], "flag")
+
+        ext = {"facts": [{"statement": "複数ミッション成功の実績がある", "source": "u"}],
+               "inferences": [], "forecasts": [], "hypotheses": [],
+               "counter_points": [], "missing_info": []}
+        _, eid2 = self._mk_eval("A2通過", trl=trl9, extraction=ext)
+        self.assertEqual(self._only(self._audit_one(eid2), "A2"), [])
+
+        _, eid3 = self._mk_eval("A2対象外", trl={"level": 8, "reason": "実証段階",
+                                                "evidence": [], "missing_info": []})
+        self.assertEqual(self._only(self._audit_one(eid3), "A2"), [])
+
+    def test_a4_recorded_as_gray(self):
+        _, eid = self._mk_eval("A4グレー", items={
+            "technology_readiness": self._item(
+                reason="承認を取得し販売を開始した",
+                evidence=[{"ref": "https://example.org/x", "summary": "売上が伸びている",
+                           "kind": "fact"}])})
+        a4 = self._only(self._audit_one(eid), "A4")
+        self.assertEqual(len(a4), 1)
+        self.assertEqual(a4[0]["verdict"], "gray")  # 初版はフラグにしない (mode=gray)
+
+        _, eid2 = self._mk_eval("A4救済", items={
+            "technology_readiness": self._item(
+                reason="臨床試験で有効性を確認し承認を取得した",
+                evidence=[{"ref": "https://example.org/x", "summary": "症例データあり",
+                           "kind": "fact"}])})
+        self.assertEqual(self._only(self._audit_one(eid2), "A4"), [])
+
+    def test_a6_flag(self):
+        _, eid = self._mk_eval("A6フラグ", items={
+            "monetization": self._item(missing=["株価の推移が不明"])})
+        a6 = self._only(self._audit_one(eid), "A6")
+        self.assertEqual(len(a6), 1)
+        self.assertEqual(a6[0]["verdict"], "flag")
+        self.assertEqual(a6[0]["item"], "monetization")
+
+    def test_a7_flag_gray_and_none(self):
+        _, eid = self._mk_eval("A7フラグ", items={
+            "moat_durability": self._item(score=30, reason="根拠が乏しい")})
+        a7 = self._only(self._audit_one(eid), "A7")
+        self.assertEqual(len(a7), 1)
+        self.assertEqual(a7[0]["verdict"], "flag")
+
+        # 本文に具体的な名指し (特許・期間) があれば確定形にはならずグレー
+        _, eid2 = self._mk_eval("A7名指し", items={
+            "moat_durability": self._item(
+                score=30, reason="根拠が乏しいが、特許の残存期間には言及がある")})
+        a7b = self._only(self._audit_one(eid2), "A7")
+        self.assertEqual(len(a7b), 1)
+        self.assertEqual(a7b[0]["verdict"], "gray")
+
+        # missing_info があれば確定形にはならずグレー
+        _, eid3 = self._mk_eval("A7不足あり", items={
+            "moat_durability": self._item(score=30, reason="証拠が弱い",
+                                          missing=["追加の比較データ"])})
+        a7c = self._only(self._audit_one(eid3), "A7")
+        self.assertEqual(len(a7c), 1)
+        self.assertEqual(a7c[0]["verdict"], "gray")
+
+        # 漠然フレーズが無ければ低得点でも何も付かない
+        _, eid4 = self._mk_eval("A7なし", items={
+            "moat_durability": self._item(score=30, reason="競合との差別化が弱い")})
+        self.assertEqual(self._only(self._audit_one(eid4), "A7"), [])
+
+    def test_run_audit_rules_idempotent_and_rerun_on_change(self):
+        self._mk_eval("規則対象1", items={
+            "monetization": self._item(missing=["株価の推移が不明"])})
+        self._mk_eval("規則対象2")
+        res1 = T.run_audit_rules(self.store, CFG, limit=10, log=lambda *_: None)
+        self.assertEqual(res1["audited"], 2)
+        self.assertGreaterEqual(res1["flags"], 1)
+        rows = self.store.audit_results(res1["batch"])
+        self.assertEqual(len(rows), 2)
+        self.assertEqual(rows[0]["auditor_model"], "rules/v1")
+        self.assertEqual(rows[0]["prompt_sha"], T.load_rules()["sha"])
+        # 同じ規則 (同じ sha) では再監査しない
+        res2 = T.run_audit_rules(self.store, CFG, limit=10, log=lambda *_: None)
+        self.assertEqual(res2["audited"], 0)
+        # 規則ファイルが変われば (sha が変われば) 再び対象になる
+        with tempfile.TemporaryDirectory() as td:
+            d = Path(td)
+            data = json.loads((T.ROOT / "audit_rules.json").read_text(encoding="utf-8"))
+            data["checks"]["A6"]["black"][0]["note"] += " (改訂)"
+            (d / "audit_rules.json").write_text(
+                json.dumps(data, ensure_ascii=False), encoding="utf-8")
+            res3 = T.run_audit_rules(self.store, CFG, limit=10,
+                                     log=lambda *_: None, rules_dir=d)
+            self.assertEqual(res3["audited"], 2)
+
+    def test_rules_report(self):
+        self._mk_eval("報告フラグ", items={
+            "monetization": self._item(missing=["株価の推移が不明"])})
+        self._mk_eval("報告グレー", items={
+            "technology_readiness": self._item(
+                reason="承認を取得し販売を開始した",
+                evidence=[{"ref": "https://example.org/x", "summary": "売上が伸びている",
+                           "kind": "fact"}])})
+        res = T.run_audit_rules(self.store, CFG, limit=10, log=lambda *_: None)
+        text = T.build_audit_report(self.store, res["batch"])
+        self.assertIn("# 監査レポート", text)
+        self.assertIn("フラグあり 1件", text)
+        self.assertIn("グレーあり 1件", text)
+        self.assertIn("## グレー一覧", text)
+        self.assertIn("報告フラグ", text)
+        self.assertIn("A6", text)
+        self.assertIn("A4", text)
+
+
 if __name__ == "__main__":
     unittest.main()

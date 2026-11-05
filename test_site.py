@@ -961,6 +961,101 @@ class ExportTests(unittest.TestCase):
         data = T.build_site_data(self.store, cfg)
         self.assertEqual(data["candidates"][0]["queue"], {})
 
+    def test_audit_attached_to_latest_long_evaluation(self):
+        # 監査レビュー (段階A): 最新の long 評価に紐づく監査 (規則版・LLM 版)
+        # が候補の audit キーに同梱され、監査の無い候補には付かない
+        data = self.build(Mock(make_llm_fn(long_scores={k: 65 for k in LONG_KEYS})))
+        target = next(c for c in data["candidates"] if c["long"])
+        cid = target["id"]
+        eid = self.store.latest_evaluation(cid, "long")["id"]
+        self.store.add_audit_result({
+            "evaluation_id": eid, "candidate_id": cid, "run_id": "aud-r1",
+            "auditor_provider": "rules", "auditor_model": "rules/v1",
+            "prompt_version": "v1", "prompt_sha": "rulesha",
+            "flags": [
+                {"check": "A1", "item": "technology_readiness", "verdict": "flag",
+                 "rule": "tech_continuation_claim", "detail": "技術項目で継続の使用実績を主張"},
+                {"check": "A7", "item": "monetization", "verdict": "gray",
+                 "rule": None, "detail": "減点理由が漠然としている"}],
+            "summary": "要確認1件・グレー1件"})
+        self.store.add_audit_result({
+            "evaluation_id": eid, "candidate_id": cid, "run_id": "aud-l1",
+            "auditor_provider": "gemini", "auditor_model": "gemini-3.6-flash",
+            "prompt_version": "v1", "prompt_sha": "llmsha",
+            "flags": [{"check": "A5", "item": "monetization", "detail": "点と理由が食い違う"}],
+            "summary": "整合に疑い"})
+        data = T.build_site_data(self.store, cfg_with(), datetime(2026, 10, 26, tzinfo=timezone.utc))
+        self.assertEqual(data["schema_version"], 3)  # 追加キーのみで版は上げない
+        c = next(x for x in data["candidates"] if x["id"] == cid)
+        schema = json.loads((T.ROOT / "web" / "schema.json").read_text(encoding="utf-8"))
+        by_auditor = {a["auditor"]: a for a in c["audit"]}
+        rules = by_auditor["rules/v1"]
+        for k in schema["audit"]:
+            self.assertIn(k, rules)
+        self.assertEqual(rules["evaluation_id"], eid)
+        self.assertEqual(rules["provider"], "rules")
+        self.assertEqual(rules["version"], "v1")
+        self.assertEqual(rules["summary"], "要確認1件・グレー1件")
+        e0 = rules["entries"][0]
+        for k in schema["audit_entry"]:
+            self.assertIn(k, e0)
+        self.assertEqual((e0["check"], e0["item"], e0["verdict"], e0["rule"]),
+                         ("A1", "technology_readiness", "flag", "tech_continuation_claim"))
+        self.assertEqual(rules["entries"][1]["verdict"], "gray")
+        llm = by_auditor["gemini-3.6-flash"]
+        # LLM 版の entries は verdict/rule を持たない → verdict は flag (要確認) 扱い、rule は None
+        self.assertEqual(llm["entries"][0]["verdict"], "flag")
+        self.assertIsNone(llm["entries"][0]["rule"])
+        others = [x for x in data["candidates"] if x["id"] != cid]
+        self.assertTrue(others)
+        self.assertTrue(all("audit" not in x for x in others))
+
+    def test_audit_on_superseded_evaluation_not_exported(self):
+        # 監査が付いた評価より新しい long 評価が付いたら、その監査は
+        # 最新評価への監査ではないので同梱しない (処分は表示中の評価へのもの)
+        data = self.build(Mock(make_llm_fn(long_scores={k: 65 for k in LONG_KEYS})), n=1)
+        cid = data["candidates"][0]["id"]
+        eid = self.store.latest_evaluation(cid, "long")["id"]
+        self.store.add_audit_result({
+            "evaluation_id": eid, "candidate_id": cid, "run_id": "aud-r1",
+            "auditor_provider": "rules", "auditor_model": "rules/v1",
+            "prompt_version": "v1", "prompt_sha": "rulesha",
+            "flags": [{"check": "A2", "item": "trl_level", "verdict": "flag",
+                       "rule": "trl9_no_recurrence", "detail": "継続の証拠が見当たらない"}],
+            "summary": ""})
+        ev = {"kind": "long", "as_of": "2026-10-25", "status": "final",
+              "total": 66.0, "band": {"label": "順調"},
+              "items": assessment(LONG_KEYS, {k: 66 for k in LONG_KEYS})["items"],
+              "extraction": EXTRACTION, "event": None, "prompt_versions": {},
+              "config_version": CFG["config_version"], "config_hash": CFG["config_hash"],
+              "llm_provider": "mock", "llm_model": "mock-1",
+              "input_hash": "h-newer", "errors": [], "extra": {}}
+        self.store.add_evaluation("r-new", cid, ev)
+        data = T.build_site_data(self.store, cfg_with(), datetime(2026, 10, 26, tzinfo=timezone.utc))
+        c = next(x for x in data["candidates"] if x["id"] == cid)
+        self.assertNotIn("audit", c)
+
+    def test_audit_review_page_exists_and_linked(self):
+        # 監査ページの存在と、一覧・詳細からの導線 (採点基準リンクと同格)
+        web = T.ROOT / "web"
+        page = (web / "audit.html").read_text(encoding="utf-8")
+        js = (web / "audit.js").read_text(encoding="utf-8")
+        self.assertIn("audit.js", page)
+        self.assertIn("反映用 JSON をコピー", page)
+        self.assertIn("trl-review", js)
+        self.assertIn("review_inbox", js + page)
+        for name in ("index.html", "detail.html"):
+            html = (web / name).read_text(encoding="utf-8")
+            self.assertIn('<a href="audit.html">監査</a>', html)
+            self.assertIn('<a href="audit.html">監査（要確認の処分）</a>', html)
+        # export でページ一式 (HTML/JS) も配布される
+        self.build(Mock(make_llm_fn()))
+        out = Path(self.tmp.name) / "site"
+        T.export_site(self.store, cfg_with(), out)
+        names = {p.name for p in out.iterdir()}
+        self.assertIn("audit.html", names)
+        self.assertIn("audit.js", names)
+
 
 class ZeroRiskBatchTests(unittest.TestCase):
     """ゼロリスク改善バッチ (完全性・機密性・ACID・観測) のテスト。"""

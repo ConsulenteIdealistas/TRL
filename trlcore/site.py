@@ -180,6 +180,55 @@ def _translation_src(c):
     return d if isinstance(d, dict) and d else None
 
 
+def _audit_entries(flags):
+    """監査エントリ (flags_json の中身) を表示用に整形する。
+
+    規則版は verdict ("flag"=要確認 / "gray") と rule (当たった規則名) を
+    持つ。LLM 版 (休眠) はどちらも持たないため、build_audit_report の
+    規約どおり verdict は "flag" (要確認) として扱い、rule は None にする。
+    """
+    out = []
+    for f in flags or []:
+        if not isinstance(f, dict):
+            continue
+        v = f.get("verdict")
+        out.append({"check": f.get("check"), "item": f.get("item"),
+                    "detail": f.get("detail") or "",
+                    "verdict": v if v in ("flag", "gray") else "flag",
+                    "rule": f.get("rule")})
+    return out
+
+
+def _audits_by_eval(store):
+    """最新の long 評価に紐づく監査結果を {evaluation_id: [監査, ...]} で返す。
+
+    監査は evaluation_id 単位で記録される (規則版・LLM 版の双方)。
+    評価が更新されて最新でなくなった評価への監査は含めない
+    (レビューページの処分・調整は常に表示中の評価に対するものにする)。
+    """
+    rows = store.conn.execute(
+        "SELECT a.* FROM audit_results a JOIN evaluations e ON e.id = a.evaluation_id "
+        "WHERE e.kind = 'long' AND e.id = (SELECT MAX(e2.id) FROM evaluations e2 "
+        "WHERE e2.candidate_id = e.candidate_id AND e2.kind = 'long') "
+        "ORDER BY a.id").fetchall()
+    out = {}
+    for r in rows:
+        d = dict(r)
+        try:
+            flags = json.loads(d.get("flags_json") or "[]")
+        except json.JSONDecodeError:
+            flags = []
+        out.setdefault(d["evaluation_id"], []).append({
+            "evaluation_id": d["evaluation_id"],
+            "auditor": d.get("auditor_model") or "",
+            "provider": d.get("auditor_provider") or "",
+            "version": d.get("prompt_version") or "",
+            "entries": _audit_entries(flags),
+            "summary": d.get("summary") or "",
+            "created_at": d.get("created_at") or ""})
+    return out
+
+
 def build_site_data(store, cfg, now=None):
     ent_names = {e["id"]: e["name"] for e in (cfg.get("entities") or {}).get("entities", [])}
     ent_tiers = {e["id"]: e.get("tier") or "core" for e in (cfg.get("entities") or {}).get("entities", [])}
@@ -211,6 +260,7 @@ def build_site_data(store, cfg, now=None):
             "SELECT candidate_id, kind FROM evaluations GROUP BY candidate_id, kind"):
         ev_kinds.setdefault(cid, set()).add(kind)
     eval_counts = store.eval_counts_long()
+    audits = _audits_by_eval(store)
     cands = []
     rows = store.conn.execute("SELECT id, info_type, status FROM candidates ORDER BY published DESC, id").fetchall()
     for cid, info_type, cand_status in rows:
@@ -244,7 +294,7 @@ def build_site_data(store, cfg, now=None):
                              "sector": ent_sectors.get(e["entity_id"]),
                              "tags": ent_tags.get(e["entity_id"], []),
                              "stage": ent_stages.get(e["entity_id"])})
-        cands.append({
+        cand = {
             "id": cid, "title": c["title"], "source": c["source"], "published": c["published"], "url": c["url"],
             "abstract": c["abstract"] or "", "fields": c["fields"],
             "title_ja": c.get("title_ja") or None, "abstract_ja": c.get("abstract_ja") or None,
@@ -257,7 +307,14 @@ def build_site_data(store, cfg, now=None):
             "long": long_ev, "event": event_ev, "entities": ents,
             "related_news": [_news_for_site(n) for n in store.related_news(cid, pool_as_of)] if pool_as_of else [],
             "related_financials": store.related_financials(cid, pool_as_of) if pool_as_of else [],
-            "queue": {k: queue[(cid, k)] for k in ("long", "event") if (cid, k) in queue}})
+            "queue": {k: queue[(cid, k)] for k in ("long", "event") if (cid, k) in queue}}
+        # 最新の long 評価への監査 (規則版・LLM 版) があれば同梱する
+        # (監査レビューページ用)。監査が無い候補には付けない
+        if long_row is not None:
+            au = audits.get(long_row["id"])
+            if au:
+                cand["audit"] = au
+        cands.append(cand)
     run_out = None
     if run:
         counts = json.loads(run["counts_json"] or "{}")

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>監査 — TRL Explorer</title>
+<link rel="stylesheet" href="style.css">
+<script>try{var tt=localStorage.getItem("trl-theme");document.documentElement.dataset.theme=(tt==="light"||tt==="dark")?tt:"dark";}catch(e){document.documentElement.dataset.theme="dark";}</script>
+<style>
+.awrap{max-width:980px;margin:0 auto}
+.ptitle{font-size:22px;margin:2px 0 8px}
+.acard{margin:0 0 16px}
+.ahead{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.atitle{font-size:16px;font-weight:800;line-height:1.5}
+.ameta{color:var(--sub);font-size:12px;line-height:1.8;margin-top:4px}
+.ablk{margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
+.ablkhead{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:12.5px;font-weight:800}
+.asum{color:var(--sub);font-size:12px;line-height:1.7;margin-top:4px}
+.eentry{margin-top:10px;padding:11px 12px;border:1px solid var(--line);border-radius:12px;background:var(--field)}
+.erow{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.chk{font-weight:850;font-size:12px}
+.vb{padding:2px 8px;border-radius:999px;font-size:11px;font-weight:800}
+.vb.flag{color:var(--yc);background:color-mix(in srgb,var(--yc) 16%,transparent)}
+.vb.gray{color:var(--muted);background:color-mix(in srgb,var(--muted) 14%,transparent)}
+.eitem{font-size:12px;font-weight:700;color:var(--sub)}
+.edetail{font-size:12.5px;line-height:1.75;margin:6px 0 0;white-space:pre-wrap;word-break:break-word}
+.erule{font-size:11px;color:var(--muted);margin-top:4px}
+.edisp{margin-top:9px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.dchip{padding:6px 11px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--sub);font-size:12px;font-weight:750;cursor:pointer}
+.dchip[aria-pressed="true"]{color:#fff;border-color:transparent}
+.dchip[data-disp="confirmed"][aria-pressed="true"]{background:var(--rc)}
+.dchip[data-disp="false_positive"][aria-pressed="true"]{background:var(--green)}
+.dchip[data-disp="watch"][aria-pressed="true"]{background:#c87a00}
+.tin{flex:1;min-width:180px;padding:8px 11px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:inherit;font:inherit;font-size:13px}
+.aops{margin-top:14px;padding-top:12px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:14px}
+.adjrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.adjnow{color:var(--vc);font-weight:800;font-size:13px}
+select.tsel{padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:inherit;font:inherit;font-size:13px}
+.btn.resv[aria-pressed="true"]{color:var(--gd);border-color:var(--green);background:var(--gs)}
+.copybar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:14px 0 4px}
+</style>
+</head>
+<body>
+<header class="topbar"><a class="brand" href="index.html"><span class="mark">T</span><span>TRL<span class="light"> Explorer</span></span></a><div class="meta"><a href="criteria.html">採点基準</a><span class="dot"></span><a href="audit.html">監査</a><span class="dot"></span>Research Intelligence</div></header>
+<main class="ws">
+<div class="awrap">
+<p style="margin:0 0 12px"><a class="tg" href="index.html">← 一覧に戻る</a></p>
+<h1 class="ptitle">監査レビュー</h1>
+<p class="hint">監査は、確定した評価を規則で照合し直し、疑わしい箇所を「要確認」として挙げる仕組みです。要確認は誤りの確定ではなく、人間の確認待ちを意味します。グレーは、違反とまでは言えないが記録しておくもの（将来のルール育成の材料）です。</p>
+<p class="hint">ここでの処分・再評価の予約・TRL の読み替え（調整）は、すべてこの端末の中だけに記録され、元の評価や監査の記録は変更されません。調整はこのページ内だけの表示で、一覧・詳細の通常表示には影響しません。</p>
+<section class="stats" id="cov" aria-label="監査の進み具合"></section>
+<div class="copybar">
+<button class="btn pri" id="copyBtn" type="button">反映用 JSON をコピー</button>
+<span class="hint" id="copyMsg">記録した処分・予約・調整を review_inbox.json の形で書き出します（取り込みは段階B）。</span>
+</div>
+<div id="list"><div class="empty">読み込み中…</div></div>
+</div>
+</main>
+<footer class="ft"><span>TRL Explorer</span><span><a href="criteria.html">採点基準（評価規程と重み）</a></span><span><a href="audit.html">監査（要確認の処分）</a></span><span>技術成熟度と事業化評価は独立した評価軸です。スコアは評価尺度であり、株価上昇確率・成功確率・投資利益率ではありません。</span></footer>
+<script src="audit.js"></script>
+</body>
+</html>

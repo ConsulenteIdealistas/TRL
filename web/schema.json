@@ -39,6 +39,25 @@
     "related_financials",
     "queue"
   ],
+  "candidate_optional": [
+    "audit"
+  ],
+  "audit": [
+    "evaluation_id",
+    "auditor",
+    "provider",
+    "version",
+    "entries",
+    "summary",
+    "created_at"
+  ],
+  "audit_entry": [
+    "check",
+    "item",
+    "detail",
+    "verdict",
+    "rule"
+  ],
   "evaluation": [
     "status",
     "total",

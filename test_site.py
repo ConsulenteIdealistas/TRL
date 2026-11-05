@@ -853,29 +853,15 @@ class ExportTests(unittest.TestCase):
         self.assertNotIn("schema.json", names)
         self.assertEqual(json.loads((out / "data.json").read_text(encoding="utf-8"))["schema_version"], 3)
 
-    def test_export_injects_summary_key_only_into_detail(self):
-        # AI要約のキーはリポジトリに置かず、公開 (export) 時に Secret 由来の環境変数
-        # から detail.html のトークンへ差し込む。環境変数が無ければトークンのまま
-        # (ページ側で無効扱いになりボタンは出ない)。
-        import os
+    def test_export_has_no_browser_summary_key(self):
+        # 旧ブラウザ方式 (公開ページへのキー差し込み) の残骸が無いこと。
+        # 要点は抽出型 (trlcore/summarize) に置き換えた。
         self.build(Mock(make_llm_fn()))
-        out = Path(self.tmp.name) / "site-nokey"
+        out = Path(self.tmp.name) / "site"
         T.export_site(self.store, cfg_with(), out)
-        self.assertIn("__TRL_SUM_KEY__", (out / "detail.html").read_text(encoding="utf-8"))
-        old = os.environ.get("GEMINI_SUMMARY_API_KEY")
-        os.environ["GEMINI_SUMMARY_API_KEY"] = "TESTKEY123"
-        try:
-            out2 = Path(self.tmp.name) / "site-key"
-            T.export_site(self.store, cfg_with(), out2)
-        finally:
-            if old is None:
-                os.environ.pop("GEMINI_SUMMARY_API_KEY", None)
-            else:
-                os.environ["GEMINI_SUMMARY_API_KEY"] = old
-        detail = (out2 / "detail.html").read_text(encoding="utf-8")
-        self.assertIn("TESTKEY123", detail)
+        detail = (out / "detail.html").read_text(encoding="utf-8")
         self.assertNotIn("__TRL_SUM_KEY__", detail)
-        self.assertNotIn("TESTKEY123", (out2 / "index.html").read_text(encoding="utf-8"))
+        self.assertNotIn("generativelanguage", detail)
 
     def test_search_suggest_is_touch_friendly(self):
         # スマホでサジェストが効くための配線: タップは pointerdown、候補は入力欄の直下、
@@ -1111,7 +1097,7 @@ class ZeroRiskBatchTests(unittest.TestCase):
         cand_keys = {"id", "title", "source", "published", "url", "abstract", "fields",
                      "title_ja", "abstract_ja", "translation_src", "screen_reason", "retrieved_at",
                      "display_status", "eval_count", "next_up", "long", "event",
-                     "entities", "related_news", "related_financials", "queue"}
+                     "entities", "related_news", "related_financials", "queue", "summary"}
         ev_keys = {"status", "total", "band", "as_of", "evaluated_at", "items",
                    "critical_missing", "errors", "trl_level", "direction", "axes",
                    "business_stage", "total_scope", "llm_provider", "llm_model",
@@ -1399,3 +1385,49 @@ class SiteScoreCoercionTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class SummaryExtractTests(unittest.TestCase):
+    """抽出型の要点 (trlcore/summarize) の単体テスト。決定的であることが前提。"""
+
+    STRUCTURED = (
+        "BACKGROUND: Cancer therapy remains challenging for many patients worldwide today. "
+        "METHODS: We enrolled 120 patients and administered the drug daily for six months. "
+        "RESULTS: The response rate was 68 percent compared with 31 percent in the control group. "
+        "RESULTS: Median survival improved from 8 months to 14 months with treatment. "
+        "CONCLUSIONS: The drug significantly improves survival and response in this population.")
+
+    def test_short_abstract_gets_no_summary(self):
+        from trlcore import summarize
+        self.assertIsNone(summarize.extract_summary(
+            "T", "One sentence is here now. Two sentences follow this one. Three at this point. Four at last."))
+
+    def test_structured_results_preferred(self):
+        from trlcore import summarize
+        got = summarize.extract_summary("Drug trial", self.STRUCTURED)
+        self.assertIsNotNone(got)
+        self.assertIn("68 percent", got)
+        self.assertIn("significantly improves", got)
+
+    def test_deterministic_and_from_original(self):
+        from trlcore import summarize
+        a = summarize.extract_summary("Drug trial", self.STRUCTURED)
+        b = summarize.extract_summary("Drug trial", self.STRUCTURED)
+        self.assertEqual(a, b)
+        original = set()
+        for _lab, body in summarize._split_sections(self.STRUCTURED):
+            original.update(summarize._split_sentences(body, False))
+        for s in summarize._split_sentences(a, False):
+            self.assertIn(s, original)
+
+    def test_japanese_abstract(self):
+        from trlcore import summarize
+        ja = ("本研究は固形がん患者に対する新薬の効果を検証した。"
+              "対象は120名の患者で、6か月間毎日投与を行った。"
+              "奏効率は68%であり、対照群の31%を大きく上回った。"
+              "生存期間の中央値は8か月から14か月に延長した。"
+              "副作用は概ね軽度であり、重篤な有害事象は認められなかった。"
+              "以上より、本薬剤は有効な治療選択肢であると考えられる。")
+        got = summarize.extract_summary("新薬の試験", ja)
+        self.assertIsNotNone(got)
+        self.assertIn("68%", got)

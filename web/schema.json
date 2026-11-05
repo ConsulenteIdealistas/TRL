@@ -40,7 +40,8 @@
     "queue"
   ],
   "candidate_optional": [
-    "audit"
+    "audit",
+    "summary"
   ],
   "audit": [
     "evaluation_id",

@@ -1044,10 +1044,15 @@ class ExportTests(unittest.TestCase):
         self.assertIn("反映用 JSON をコピー", page)
         self.assertIn("trl-review", js)
         self.assertIn("review_inbox", js + page)
-        for name in ("index.html", "detail.html"):
-            html = (web / name).read_text(encoding="utf-8")
-            self.assertIn('<a href="audit.html">監査</a>', html)
-            self.assertIn('<a href="audit.html">監査（要確認の処分）</a>', html)
+        # 一覧は検索と統計の間の .pagelinks に短いリンク、詳細はフッター
+        # のみ (ヘッダーは両ページともリンクなしで揃える)
+        index = (web / "index.html").read_text(encoding="utf-8")
+        self.assertIn('<nav class="pagelinks"><a href="criteria.html">採点基準</a>'
+                      '<a href="audit.html">監査</a></nav>', index)
+        self.assertIn('<a href="audit.html">監査（要確認の処分）</a>', index)
+        detail = (web / "detail.html").read_text(encoding="utf-8")
+        self.assertIn('<a href="audit.html">監査（要確認の処分）</a>', detail)
+        self.assertNotIn('<a href="audit.html">監査</a>', detail)
         # export でページ一式 (HTML/JS) も配布される
         self.build(Mock(make_llm_fn()))
         out = Path(self.tmp.name) / "site"
@@ -1177,10 +1182,10 @@ class ZeroRiskBatchTests(unittest.TestCase):
         self.assertIn('p.display_status === "hold" && p.long', app)
         self.assertIn("企業未特定", index)
         self.assertIn("根拠不足", index)
-        # 採点基準へのリンクはフッターだけでなく上部ヘッダーにも置く
-        # (候補が増えてもスクロールなしで届くように)
+        # 採点基準へのリンクは一覧では検索と統計の間 (.pagelinks) に、
+        # 詳細ではフッターに置く (ヘッダーはタイトル周りを空ける)
         self.assertIn('<a href="criteria.html">採点基準</a>', index)
-        self.assertIn('<a href="criteria.html">採点基準</a>', detail)
+        self.assertIn('<a href="criteria.html">採点基準（評価規程と重み）</a>', detail)
         self.assertIn("data-ccite", app)
         self.assertIn("data-clink", app)
         self.assertIn("自分の表示", index)

@@ -149,7 +149,7 @@ jobs:
           SRC_EDINET: ${{ inputs.src_edinet }}
           SRC_EDGAR: ${{ inputs.src_edgar }}
           IN_KINDS: ${{ inputs.kinds || 'long' }}
-          IN_MAX_EVAL: ${{ github.event_name == 'schedule' && '10' || inputs.max_eval || '5' }}
+          IN_MAX_EVAL: ${{ github.event_name == 'schedule' && '5' || inputs.max_eval || '5' }}
           IN_RETRY: ${{ inputs.retry_failed || 'no' }}
           IN_PURGE: ${{ inputs.purge_evaluations || 'no' }}
           IN_ONLY_NEW: ${{ inputs.only_new || 'no' }}

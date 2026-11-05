@@ -11,6 +11,9 @@
       "market": "BE",
       "name": "UCB S.A.",
       "sector": "bio",
+      "tags": [
+        "antibody"
+      ],
       "ticker": "UCB",
       "tier": "core",
       "watch": {
@@ -110,6 +113,9 @@
       "ticker": "MELE",
       "exchange": "Euronext Brussels",
       "sector": "semiconductor",
+      "tags": [
+        "semiconductor"
+      ],
       "tier": "core",
       "market": "BE",
       "watch": {

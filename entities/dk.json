@@ -37,6 +37,9 @@
    "ticker": "BAVA",
    "exchange": "Nasdaq Copenhagen",
    "sector": "bio",
+   "tags": [
+    "vaccine"
+   ],
    "market": "DK",
    "tier": "core",
    "watch": {
@@ -130,6 +133,9 @@
    "ticker": "BIOPOR",
    "exchange": "Nasdaq Copenhagen",
    "sector": "bio",
+   "tags": [
+    "diagnostics"
+   ],
    "tier": "watch",
    "market": "DK",
    "watch": {
@@ -153,6 +159,9 @@
    "ticker": "CURAS",
    "exchange": "Nasdaq Copenhagen",
    "sector": "bio",
+   "tags": [
+    "radiopharm"
+   ],
    "tier": "watch",
    "market": "DK",
    "watch": {

@@ -62,6 +62,9 @@
       "ticker": "GNS",
       "exchange": "LSE",
       "sector": "bio",
+      "tags": [
+        "gene_therapy"
+      ],
       "tier": "core",
       "market": "GB",
       "watch": {
@@ -253,6 +256,9 @@
       "ticker": "SCLP",
       "exchange": "LSE",
       "sector": "bio",
+      "tags": [
+        "vaccine"
+      ],
       "tier": "watch",
       "market": "GB",
       "watch": {
@@ -494,6 +500,9 @@
       "ticker": "AGY",
       "exchange": "LSE",
       "sector": "bio",
+      "tags": [
+        "vaccine"
+      ],
       "tier": "watch",
       "market": "GB",
       "watch": {

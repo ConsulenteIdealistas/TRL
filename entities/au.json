@@ -39,6 +39,7 @@
       "exchange": "ASX",
       "sector": "bio",
       "tags": [
+        "cell_therapy",
         "regenerative_medicine"
       ],
       "tier": "core",
@@ -134,6 +135,9 @@
       "ticker": "BRN",
       "exchange": "ASX",
       "sector": "ai",
+      "tags": [
+        "semiconductor"
+      ],
       "tier": "watch",
       "market": "AU",
       "watch": {
@@ -155,6 +159,9 @@
       "ticker": "CU6",
       "exchange": "ASX",
       "sector": "bio",
+      "tags": [
+        "radiopharm"
+      ],
       "tier": "core",
       "market": "AU",
       "watch": {
@@ -247,6 +254,9 @@
       "ticker": "NVX",
       "exchange": "ASX",
       "sector": "energy",
+      "tags": [
+        "battery_materials"
+      ],
       "tier": "watch",
       "market": "AU",
       "watch": {
@@ -389,6 +399,9 @@
       "ticker": "TLG",
       "exchange": "ASX",
       "sector": "energy",
+      "tags": [
+        "battery_materials"
+      ],
       "tier": "watch",
       "market": "AU",
       "watch": {
@@ -411,6 +424,9 @@
       "ticker": "VUL",
       "exchange": "ASX",
       "sector": "energy",
+      "tags": [
+        "battery_materials"
+      ],
       "tier": "core",
       "market": "AU",
       "watch": {

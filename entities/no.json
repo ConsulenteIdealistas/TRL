@@ -10,6 +10,9 @@
       "market": "NO",
       "name": "Nordic Semiconductor ASA",
       "sector": "semiconductor",
+      "tags": [
+        "semiconductor"
+      ],
       "ticker": "NOD",
       "tier": "core",
       "watch": {
@@ -55,6 +58,9 @@
       "market": "NO",
       "name": "Photocure ASA",
       "sector": "bio",
+      "tags": [
+        "diagnostics"
+      ],
       "ticker": "PHO",
       "tier": "core",
       "watch": {
@@ -78,6 +84,9 @@
       "market": "NO",
       "name": "Nykode Therapeutics ASA",
       "sector": "bio",
+      "tags": [
+        "vaccine"
+      ],
       "ticker": "NYKD",
       "tier": "watch",
       "watch": {

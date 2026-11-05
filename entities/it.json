@@ -86,6 +86,9 @@
       "ticker": "PHIL",
       "exchange": "BIT",
       "sector": "bio",
+      "tags": [
+        "antibody"
+      ],
       "tier": "core",
       "market": "IT",
       "watch": {

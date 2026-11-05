@@ -65,6 +65,7 @@
    "exchange": "TSE",
    "sector": "space",
    "tags": [
+    "space_transport",
     "lunar"
    ],
    "tier": "core",
@@ -210,6 +211,7 @@
    "exchange": "TSE",
    "sector": "bio",
    "tags": [
+    "cell_therapy",
     "regenerative_medicine"
    ],
    "tier": "watch",
@@ -410,6 +412,7 @@
    "exchange": "TSE",
    "sector": "bio",
    "tags": [
+    "cell_therapy",
     "regenerative_medicine"
    ],
    "tier": "watch",
@@ -446,6 +449,10 @@
    "ticker": "4593",
    "exchange": "TSE",
    "sector": "bio",
+   "tags": [
+    "cell_therapy",
+    "regenerative_medicine"
+   ],
    "tier": "watch",
    "watch": {
     "news_name": "ヘリオス",
@@ -777,6 +784,9 @@
    "ticker": "6526",
    "exchange": "TSE",
    "sector": "semiconductor",
+   "tags": [
+    "semiconductor"
+   ],
    "tier": "core",
    "watch": {
     "news_name": "ソシオネクスト",
@@ -809,6 +819,9 @@
    "ticker": "6769",
    "exchange": "TSE",
    "sector": "semiconductor",
+   "tags": [
+    "semiconductor"
+   ],
    "tier": "watch",
    "watch": {
     "news_name": "ザインエレクトロニクス",
@@ -839,6 +852,9 @@
    "ticker": "6616",
    "exchange": "TSE",
    "sector": "semiconductor",
+   "tags": [
+    "semiconductor"
+   ],
    "tier": "watch",
    "watch": {
     "news_name": "トレックス・セミコンダクター",
@@ -1013,6 +1029,7 @@
    "tier": "core",
    "tags": [
     "semiconductor",
+    "semi_equipment",
     "industrial_robotics"
    ],
    "watch": {

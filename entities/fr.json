@@ -10,6 +10,9 @@
       "market": "FR",
       "name": "Soitec SA",
       "sector": "semiconductor",
+      "tags": [
+        "semiconductor"
+      ],
       "ticker": "SOI",
       "tier": "core",
       "watch": {
@@ -56,6 +59,9 @@
       "market": "FR",
       "name": "Innate Pharma S.A.",
       "sector": "bio",
+      "tags": [
+        "antibody"
+      ],
       "ticker": "IPH",
       "edgar_ticker": "IPHA",
       "tier": "core",
@@ -81,6 +87,9 @@
       "market": "FR",
       "name": "Valneva SE",
       "sector": "bio",
+      "tags": [
+        "vaccine"
+      ],
       "ticker": "VLA",
       "tier": "core",
       "watch": {
@@ -223,6 +232,9 @@
       "market": "FR",
       "name": "OSE Immunotherapeutics SA",
       "sector": "bio",
+      "tags": [
+        "antibody"
+      ],
       "ticker": "OSE",
       "tier": "core",
       "watch": {

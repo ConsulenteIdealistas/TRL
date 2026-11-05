@@ -58,6 +58,9 @@
       "ticker": "COTN",
       "exchange": "SIX",
       "sector": "semiconductor",
+      "tags": [
+        "semi_equipment"
+      ],
       "tier": "core",
       "market": "CH",
       "watch": {

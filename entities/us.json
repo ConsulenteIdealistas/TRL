@@ -189,6 +189,9 @@
    "ticker": "BEAM",
    "exchange": "NASDAQ",
    "sector": "bio",
+   "tags": [
+    "gene_therapy"
+   ],
    "tier": "core",
    "market": "US",
    "watch": {
@@ -212,6 +215,9 @@
    "ticker": "ARM",
    "exchange": "NASDAQ",
    "sector": "semiconductor",
+   "tags": [
+    "semiconductor"
+   ],
    "tier": "watch",
    "market": "US",
    "watch": {
@@ -260,6 +266,9 @@
    "ticker": "TEM",
    "exchange": "NASDAQ",
    "sector": "bio",
+   "tags": [
+    "diagnostics"
+   ],
    "tier": "core",
    "market": "US",
    "watch": {
@@ -336,6 +345,9 @@
    "ticker": "SITM",
    "exchange": "NASDAQ",
    "sector": "semiconductor",
+   "tags": [
+    "semiconductor"
+   ],
    "tier": "core",
    "market": "US",
    "watch": {
@@ -384,6 +396,9 @@
    "ticker": "KTOS",
    "exchange": "NASDAQ",
    "sector": "space",
+   "tags": [
+    "autonomous_mobility"
+   ],
    "tier": "core",
    "market": "US",
    "watch": {
@@ -406,6 +421,9 @@
    "ticker": "AMBA",
    "exchange": "NASDAQ",
    "sector": "semiconductor",
+   "tags": [
+    "semiconductor"
+   ],
    "tier": "core",
    "market": "US",
    "watch": {
@@ -812,6 +830,9 @@
    "ticker": "CGNX",
    "exchange": "NASDAQ",
    "sector": "robotics",
+   "tags": [
+    "industrial_robotics"
+   ],
    "tier": "core",
    "market": "US",
    "watch": {
@@ -1133,7 +1154,8 @@
    "exchange": "NYSE",
    "sector": "quantum",
    "tags": [
-    "quantum_computing"
+    "quantum_computing",
+    "quantum_comm"
    ],
    "tier": "watch",
    "market": "US",
@@ -1489,6 +1511,9 @@
    "ticker": "IOVA",
    "exchange": "NASDAQ",
    "sector": "bio",
+   "tags": [
+    "cell_therapy"
+   ],
    "tier": "core",
    "market": "US",
    "watch": {
@@ -1535,6 +1560,9 @@
    "ticker": "SRRK",
    "exchange": "NASDAQ",
    "sector": "bio",
+   "tags": [
+    "antibody"
+   ],
    "tier": "core",
    "market": "US",
    "watch": {
@@ -1584,6 +1612,9 @@
    "ticker": "MLTX",
    "exchange": "NASDAQ",
    "sector": "bio",
+   "tags": [
+    "antibody"
+   ],
    "tier": "core",
    "market": "US",
    "watch": {
@@ -1753,6 +1784,9 @@
    "ticker": "SMTC",
    "exchange": "NASDAQ",
    "sector": "semiconductor",
+   "tags": [
+    "semiconductor"
+   ],
    "tier": "watch",
    "market": "US",
    "watch": {
@@ -2099,6 +2133,9 @@
    "ticker": "RR",
    "exchange": "NASDAQ",
    "sector": "robotics",
+   "tags": [
+    "autonomous_mobility"
+   ],
    "tier": "watch",
    "market": "US",
    "watch": {
@@ -2216,6 +2253,9 @@
    "ticker": "MVST",
    "exchange": "NASDAQ",
    "sector": "energy",
+   "tags": [
+    "ess"
+   ],
    "tier": "watch",
    "market": "US",
    "watch": {

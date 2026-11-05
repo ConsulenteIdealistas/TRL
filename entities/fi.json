@@ -59,6 +59,9 @@
       "market": "FI",
       "name": "Faron Pharmaceuticals Oy",
       "sector": "bio",
+      "tags": [
+        "antibody"
+      ],
       "ticker": "FARON",
       "tier": "watch",
       "watch": {
@@ -153,7 +156,8 @@
       "tier": "watch",
       "market": "FI",
       "tags": [
-        "photonics"
+        "photonics",
+        "medtech"
       ],
       "watch": {
         "news_name": "Detection Technology Oyj",

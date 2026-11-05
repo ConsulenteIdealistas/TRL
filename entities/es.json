@@ -134,7 +134,8 @@
       "tier": "core",
       "market": "ES",
       "tags": [
-        "medtech"
+        "medtech",
+        "diagnostics"
       ],
       "watch": {
         "news_name": "Atrys Health, S.A.",

@@ -10,6 +10,9 @@
    "ticker": "OHB",
    "exchange": "XETRA",
    "sector": "space",
+   "tags": [
+    "earth_observation"
+   ],
    "tier": "core",
    "market": "DE",
    "watch": {
@@ -83,6 +86,9 @@
    "ticker": "WAF",
    "exchange": "XETRA",
    "sector": "semiconductor",
+   "tags": [
+    "semiconductor"
+   ],
    "tier": "watch",
    "market": "DE",
    "watch": {
@@ -105,6 +111,9 @@
    "ticker": "FYB",
    "exchange": "XETRA",
    "sector": "bio",
+   "tags": [
+    "antibody"
+   ],
    "tier": "watch",
    "market": "DE",
    "watch": {
@@ -204,6 +213,9 @@
    "ticker": "HPHA",
    "exchange": "Xetra",
    "sector": "bio",
+   "tags": [
+    "antibody"
+   ],
    "tier": "core",
    "market": "DE",
    "watch": {
@@ -250,6 +262,9 @@
    "ticker": "BSL",
    "exchange": "Xetra",
    "sector": "robotics",
+   "tags": [
+    "industrial_robotics"
+   ],
    "tier": "core",
    "market": "DE",
    "watch": {

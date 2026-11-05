@@ -10,6 +10,9 @@
    "ticker": "BIOA-B",
    "exchange": "Nasdaq Stockholm",
    "sector": "bio",
+   "tags": [
+    "antibody"
+   ],
    "tier": "watch",
    "market": "SE",
    "watch": {
@@ -251,6 +254,9 @@
    "ticker": "XBRANE",
    "exchange": "Nasdaq Stockholm",
    "sector": "bio",
+   "tags": [
+    "antibody"
+   ],
    "tier": "watch",
    "market": "SE",
    "watch": {

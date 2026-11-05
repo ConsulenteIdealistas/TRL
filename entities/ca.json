@@ -9,6 +9,9 @@
       "ticker": "MDA",
       "exchange": "TSX",
       "sector": "space",
+      "tags": [
+        "earth_observation"
+      ],
       "tier": "core",
       "market": "CA",
       "watch": {
@@ -178,6 +181,9 @@
       "ticker": "AIDX",
       "exchange": "TSX",
       "sector": "ai",
+      "tags": [
+        "medtech"
+      ],
       "tier": "watch",
       "market": "CA",
       "watch": {
@@ -223,6 +229,9 @@
       "ticker": "NANO",
       "exchange": "TSX",
       "sector": "energy",
+      "tags": [
+        "battery_materials"
+      ],
       "tier": "watch",
       "market": "CA",
       "watch": {
@@ -245,6 +254,9 @@
       "ticker": "NOU",
       "exchange": "TSX",
       "sector": "energy",
+      "tags": [
+        "battery_materials"
+      ],
       "tier": "core",
       "market": "CA",
       "watch": {
@@ -367,7 +379,8 @@
       "tier": "watch",
       "market": "CA",
       "tags": [
-        "medtech"
+        "medtech",
+        "diagnostics"
       ],
       "watch": {
         "news_name": "Spectral Medical Inc.",

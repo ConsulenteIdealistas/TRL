@@ -16,6 +16,7 @@ from .sources.edinet import edinet_fetch
 from .sources.edgar import edgar_fetch
 from .sources.yahoo import yahoo_fetch
 from .sources.openalex import openalex_fetch
+from .sources.roic import fetch_roic, roic_enabled, roic_symbol
 from .translate import crossed_thresholds, translate_display_set, usage_totals
 from .entities import entity_screen, link_entities
 from .prompts import load_prompt
@@ -74,6 +75,18 @@ FINANCIAL_PERIOD_DAYS = 97
 # 毎週空振りするのをやめ、空振りから14日は休む。検出の遅れは最悪でも
 # 間引き+実行間隔に収まる (週次実行で約3週間)
 FINANCIAL_POLL_BACKOFF_DAYS = 14
+# ROIC.ai 補完収集 (財務ゼロ / Yahoo のみの企業が対象。詳細は _collect_roic)。
+# 成功したら30日休む: 年次財務は年1回しか変わらず、EDGAR/EDINET の20日より
+# 長くてよい。それでも決算発表の集中期 (期末の30〜45日後) をまたぐ間隔に収まる
+ROIC_SKIP_DAYS = 30
+# 1回の実行で ROIC が対象にする社数の上限。1社あたり3〜4リクエスト ×
+# 12.5秒間隔で約40〜50秒かかるため、10社でも最大で約8分に収まり、収集予算
+# (既定1200秒) の中で主収集を圧迫しない。財務ゼロの企業が先に処理される
+# ため、上限で切れても穴埋めの優先順位は保たれる
+ROIC_MAX_PER_RUN = 10
+# 取得する期間の下限は財務プールの窓 (related_financials の400日) に合わせる。
+# それより古い年次はプールに入らないため、取っても材料にならない
+ROIC_LOOKBACK_DAYS = 400
 
 
 def _yahoo_resting(q, as_of, attempts, periods, retrievals=None):
@@ -159,7 +172,8 @@ def _apply_shallow_windows(cfg):
     return capped
 
 
-def collect(store, cfg, run_id, as_of, sources, fetchers, counts, log, budget_cap=None):
+def collect(store, cfg, run_id, as_of, sources, fetchers, counts, log, budget_cap=None,
+            roic_fetcher=None):
     d = cfg["sources"]["defaults"]
     now = datetime.now(timezone.utc).isoformat(timespec="seconds")
     jobs = [(sname, q) for q in cfg["sources"]["queries"] for sname in sources if q.get(sname)]
@@ -323,6 +337,91 @@ def collect(store, cfg, run_id, as_of, sources, fetchers, counts, log, budget_ca
             f"{exceeded} クエリを打ち切りました")
     store.add_invalid(neg_adds, chash)
     store.touch_invalids(neg_seen, chash)
+    # 財務補完 (ROIC.ai): キーがある場合だけ、主収集の残り予算で回す。
+    # 補完ソースなので主収集を圧迫しない (予算超過時は対象を次回へ回す)
+    if roic_enabled():
+        _collect_roic(store, cfg, run_id, as_of, counts, log, budget, collect_t0,
+                      roic_fetcher or fetch_roic)
+
+
+def _collect_roic(store, cfg, run_id, as_of, counts, log, budget, collect_t0, fetcher):
+    """ROIC.ai による財務補完収集 (有効条件は環境変数 ROIC_API_KEY の存在)。
+
+    対象は (a) 財務レコードが1件も無いコア企業、(b) Yahoo のみで裏取りが
+    無いコア企業 の順。通常収集 (collect の process) と違い、クエリは企業
+    辞書から生成するため、企業リンクは推測でなく生成元そのものを strong で
+    付ける。記録の流儀 (run_sources / counts) は process に揃え、「静かな
+    0件」の検知にもそのまま乗る。新テーブルは作らず、取得した財務は既存の
+    財務プールと候補バージョン保全 (upsert_candidate の開示更新) に乗る。
+    """
+    coverage = store.financial_sources_by_entity()
+    successes = store.last_source_successes()
+    targets, n_rest, n_unmapped = [], 0, 0
+    for e in cfg.get("entities", {}).get("entities", []):
+        if e.get("tier") != "core" or not e.get("ticker"):
+            continue
+        have = coverage.get(e["id"]) or set()
+        if have and have != {"yahoo"}:
+            continue  # 公式ソース等の裏取りがある企業は補完の対象外
+        symbol = roic_symbol(e)
+        if symbol is None:
+            n_unmapped += 1
+            continue
+        last = parse_date((successes.get(("roic", f"{e['id']}-roic")) or "")[:10])
+        if last is not None and (as_of - last).days < ROIC_SKIP_DAYS:
+            n_rest += 1
+            continue
+        targets.append((1 if have else 0, e, symbol))
+    targets.sort(key=lambda t: t[0])  # 安定ソート: 財務ゼロ (0) を先に、同群は辞書順
+    counts["roic_targets"] = len(targets)
+    counts["roic_skipped_rest"] = n_rest
+    counts["roic_skipped_unmapped"] = n_unmapped
+    if n_unmapped:
+        log(f"[collect] roic: 市場変換できないため {n_unmapped} 社を対象外にしました")
+    now = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    chash = cfg.get("config_hash")
+    done = 0
+    for _prio, e, symbol in targets:
+        if done >= ROIC_MAX_PER_RUN or (budget and time.monotonic() - collect_t0 > budget):
+            counts["roic_deferred"] = len(targets) - done
+            log(f"[collect] roic: 上限/予算のため {len(targets) - done} 社を次回へ回します")
+            break
+        done += 1
+        qname = f"{e['id']}-roic"
+        t0 = time.monotonic()
+        err, raws = None, []
+        try:
+            raws = fetcher(symbol, 5, ROIC_LOOKBACK_DAYS, as_of) or []
+        except Exception as ex:
+            err = redact(f"{type(ex).__name__}: {ex}")[:300]
+            log(f"::warning::source roic / {qname} failed: {err}")
+        fetched = len(raws) if err is None else 0
+        new = dups = invalid = 0
+        if err is None:
+            for raw in raws:
+                try:
+                    rec, _problems = normalize(raw, now)
+                    if rec is None:
+                        invalid += 1
+                        continue
+                    cid, is_new = store.upsert_candidate(rec, run_id)
+                    store.set_entities(cid, [{"entity_id": e["id"], "strength": "strong",
+                                              "matched_by": "roic", "matched_alias": symbol}])
+                    store.set_links_hash(cid, chash)
+                    new += is_new
+                    dups += (not is_new)
+                except Exception as ex:
+                    invalid += 1
+                    log(f"::warning::source roic / {qname}: record skipped: "
+                        f"{redact(f'{type(ex).__name__}: {ex}')[:200]}")
+        elapsed = round(time.monotonic() - t0, 3)
+        store.add_run_source(run_id, "roic", qname, fetched, new, dups, invalid,
+                             err is None, err, elapsed)
+        for k, v in (("fetched", fetched), ("new", new), ("duplicates", dups), ("invalid", invalid)):
+            counts[k] += v
+        counts["sources_ok" if err is None else "sources_failed"] += 1
+        log(f"[collect] roic/{qname}: fetched={fetched} new={new} dup={dups} invalid={invalid}"
+            + (f" ERROR={err}" if err else ""))
 
 
 # 実証・実装の段階を示す語。理論のみの資料には少なく、TRLを決めやすい候補の目印になる

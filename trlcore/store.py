@@ -1016,6 +1016,20 @@ class Store:
             "WHERE c.source = ? GROUP BY ce.entity_id", (source,)).fetchall()
         return {eid: p for eid, p in rows if p}
 
+    def financial_sources_by_entity(self):
+        """企業ごとに、財務プール (related_financials) の条件を満たす財務
+        レコードを持つソースの集合を返す。補完ソース (ROIC) の対象選定
+        (財務ゼロの企業 / Yahoo のみで裏取りが無い企業) に使う。"""
+        rows = self.conn.execute(
+            "SELECT ce.entity_id, c.source FROM candidates c "
+            "JOIN candidate_entities ce ON ce.candidate_id = c.id "
+            "WHERE ce.link_type='entity' AND ce.strength='strong' "
+            "AND c.info_type='disclosure' AND c.abstract LIKE '%財務数値(%'").fetchall()
+        out = {}
+        for r in rows:
+            out.setdefault(r["entity_id"], set()).add(r["source"])
+        return out
+
     def latest_financial_retrievals(self, source):
         """企業ごとの最新財務レコードを取得した日時 (retrieved_at) を返す。
 

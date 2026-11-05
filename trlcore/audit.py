@@ -10,35 +10,23 @@ run_audit_rules)。ブラックリスト (確定違反) → ホワイトリス�
 ため全件・即時・再現可能に監査できる。規則は監査側だけで管理し、評価の
 世代印 (config_hash) には含めない。
 
-旧 LLM 経路 (run_audit、監査プロンプト audit.v1.md) は **休眠**: コードは
-残すが既定では使わない。パイロット実測で 3.6 Flash は 429 により完走率
-約1.6% に留まり、常時回るべき点検には使えなかったため。監査プロンプトは
-scoring.json の prompts には登録せず、版は AUDIT_PROMPT_VERSION で管理
-する (そのため config_hash に一切関与しない)。設計:
+旧 LLM 経路は 2026-11-06 に廃止した (パイロット実測で 3.6 Flash は 429
+により完走率約1.6% に留まり、常時回るべき点検には使えなかったため)。
+監査のエンジンは規則ベースのみ。過去の LLM 監査の記録 (audit_results)
+はそのまま残り、レポートとサイトは表示互換として読み続ける。設計:
 ~/workspace/trl-audit/DESIGN.md (v2 規則ベース版)。
 """
 import hashlib
 import json
 import re
-import time
 import unicodedata
 from datetime import datetime, timezone
 from pathlib import Path
 
 from .config import ROOT
-from .evaluate import _used_model
-from .llm import extract_json
-from .prompts import load_prompt, render
 from .scoring import TECH_ITEMS
 
 AUDIT_CHECKS = ("A1", "A2", "A3", "A4", "A5", "A6", "A7")
-
-# 監査プロンプトの版。scoring.json の prompts には入れず (入れると評価の
-# 世代印 config_hash に混ざるため)、監査側だけで管理する。版を上げるときは
-# audit.v<N>.md を用意してこの値を変える。過去の版で監査済みの評価は、
-# 冪等キー (prompt_sha) が変わるため新しい版で再び監査対象になる。
-AUDIT_PROMPT_VERSION = "v1"
-
 
 def _loads(s, default):
     if s is None:
@@ -120,73 +108,6 @@ def select_unaudited(store, prompt_sha, model, limit=100):
         " ORDER BY e.evaluated_at ASC, e.id ASC LIMIT ?",
         (prompt_sha, model, int(limit))).fetchall()
     return [dict(r) for r in rows]
-
-
-def _valid_flags(obj):
-    """監査応答の形を検証する。通過すれば flags のリスト、駄目なら None。
-    flags の要素が1つでも不正なら応答全体を不正として扱う (一部だけ
-    黙って捨てると、パイロットで測りたいプロンプトの質が見えなくなる)。"""
-    if not isinstance(obj, dict) or not isinstance(obj.get("flags"), list):
-        return None
-    for f in obj["flags"]:
-        if not isinstance(f, dict) or f.get("check") not in AUDIT_CHECKS:
-            return None
-        if not isinstance(f.get("item"), str) or not isinstance(f.get("detail"), str):
-            return None
-    return obj["flags"]
-
-
-def run_audit(store, cfg, client, *, limit=100, budget_sec=None, batch=None,
-              log=print, prompt_dir=None):
-    """【休眠】LLM 経路: 未監査の long 評価を順に監査し、結果を audit_results に記録する。
-    既定エンジンは規則ベース (run_audit_rules) で、本関数は将来グレー判定の
-    最上層に LLM を戻す余地として残してある (通常は呼ばれない)。
-    API 失敗・形式不正の評価は記録せず未監査のまま残し、処理は続ける
-    (1件の失敗で全体を落とさない)。budget_sec はモデル消費時間の累計で
-    判定し、到達したら打ち切る (None/0 は無制限)。"""
-    batch = batch or "aud-" + datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-    p = load_prompt("audit", AUDIT_PROMPT_VERSION, prompt_dir)
-    model_key = getattr(client, "model", None)
-    rows = select_unaudited(store, p["sha"], model_key, limit)
-    audited = flagged = failed = 0
-    checks = {}
-    spent = 0.0
-    for row in rows:
-        if budget_sec and spent > budget_sec:
-            log(f"audit time budget reached ({spent:.0f}s > {budget_sec}s); stopping")
-            break
-        cid = row["candidate_id"]
-        inp = build_audit_input(store, row, cfg)
-        text = render(p["text"], {"evaluation": json.dumps(inp, ensure_ascii=False, indent=1)})
-        t0 = time.monotonic()
-        try:
-            out = client.complete(text, purpose="audit", candidate_id=cid)
-            obj = extract_json(out)
-            flags = _valid_flags(obj)
-            if flags is None:
-                raise ValueError("audit response failed shape validation")
-        except Exception as e:  # API 失敗・形式不正: 記録せず未監査のまま次へ
-            failed += 1
-            log(f"audit skipped (ev {row['id']}): {type(e).__name__}: {e}")
-            continue
-        finally:
-            spent += time.monotonic() - t0
-        store.add_audit_result({
-            "evaluation_id": row["id"], "candidate_id": cid, "run_id": batch,
-            "auditor_provider": getattr(client, "name", None),
-            "auditor_model": _used_model(client) or model_key,
-            "prompt_version": p["version"], "prompt_sha": p["sha"],
-            "flags": flags, "summary": obj.get("summary") if isinstance(obj.get("summary"), str) else ""})
-        audited += 1
-        if flags:
-            flagged += 1
-        for f in flags:
-            checks[f["check"]] = checks.get(f["check"], 0) + 1
-    res = {"batch": batch, "selected": len(rows), "audited": audited,
-           "flagged": flagged, "checks": checks, "failed": failed}
-    log(f"audited {audited}/{len(rows)} evaluations ({flagged} flagged, "
-        f"{failed} failed) as {batch}")
-    return res
 
 
 # ---------------------------------------------------------------------------
@@ -474,7 +395,7 @@ def run_audit_rules(store, cfg, *, limit=100, log=print, rules_dir=None):
     """規則エンジンで未監査の long 評価を監査し、audit_results に記録する。
     API を呼ばないため失敗は基本的に起きないが、想定外のレコード形で
     1件が落ちても全体は止めない (落ちた評価は未監査のまま残る)。冪等判定は
-    LLM 経路と同じく (evaluation_id, prompt_sha, auditor_model) で、規則の
+    (evaluation_id, prompt_sha, auditor_model) で、規則の
     版・内容が変われば (sha が変われば) 過去の評価も再び対象になる。"""
     batch = "aud-" + datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     r = load_rules(rules_dir)

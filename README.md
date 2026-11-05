@@ -170,8 +170,8 @@ long 評価では、点数・TRL とは独立に「その資料が示す出来�
 
 ### LLM 設定
 
-- プロバイダは `gemini` / `anthropic` / 未設定（収集のみ）。呼び出しはタイムアウト120秒、再試行3回（指数バックオフ 5→15→30→60秒、Retry-After 優先）。
-- 主モデルが一時的な失敗（503/429 等）を返したときだけ、代替モデルへ降ります。階段は Gemini 内の3段（主 → `TRL_LLM_FALLBACK_MODEL` → `TRL_LLM_FALLBACK_MODEL_2`）で、資格情報（`CLOUDFLARE_ACCOUNT_ID` / `CLOUDFLARE_API_TOKEN`）が揃っている場合は第2プロバイダ（Cloudflare Workers AI、モデルは `TRL_LLM_CF_MODEL`）まで続きます。恒常的な失敗と時間上限では降りません。段ごとに連続失敗の見切り（ブレーカー）があり、主と代替1は1回失敗した時点でその実行中はその段を飛ばします（最終段は飛ばしません）。モデルが廃止・変更されたときは、コードを触らず Variable の書き換えだけで切り替えられます。
+- プロバイダは `gemini` / 未設定（収集のみ）。呼び出しはタイムアウト120秒、再試行1回。429 は再試行せず、次の段へ進みます（枯れた枠への聞き直しは時間と枠の両方を無駄にするため）。
+- 主モデルが一時的な失敗（503/429 等）を返したときだけ、代替モデルへ降ります。階段は Gemini 内の3段（主 → `TRL_LLM_FALLBACK_MODEL` → `TRL_LLM_FALLBACK_MODEL_2`）です。恒常的な失敗と時間上限では降りません。段ごとに連続失敗の見切り（ブレーカー）があり、主と代替1は1回失敗した時点でその実行中はその段を飛ばします（最終段は飛ばしません）。候補1件あたりの総時間予算は300秒（`llm.candidate_budget_sec`）で、失敗の連鎖が1件を際限なく長引かせることはありません。モデルが廃止・変更されたときは、コードを触らず Variable の書き換えだけで切り替えられます。
 - 呼び出しは試行単位で `llm_calls` に記録します（候補・目的・実際に答えたモデル・所要秒数・成否・トークン数）。どのモデルが評価したかはサイトにも表示します。
 - プロンプト: `extract.v1.md`（抽出）/ `long.v1.md`（長期）/ `event.v1.md`（イベント）。
 
@@ -261,14 +261,11 @@ long 評価では、点数・TRL とは独立に「その資料が示す出来�
 
 | 名前 | 種別 | 用途 |
 |---|---|---|
-| TRL_LLM_PROVIDER | Variable | `gemini` または `anthropic` |
+| TRL_LLM_PROVIDER | Variable | `gemini` |
 | TRL_LLM_MODEL | Variable | モデル名（未設定時のコード既定は Gemini `gemini-3.8-flash`） |
 | TRL_LLM_FALLBACK_MODEL | Variable | 代替モデル名（任意） |
 | TRL_LLM_FALLBACK_MODEL_2 | Variable | 代替モデル名・第2段（任意） |
-| CLOUDFLARE_ACCOUNT_ID | Variable | 第2プロバイダ Cloudflare Workers AI のアカウントID（任意） |
-| CLOUDFLARE_API_TOKEN | Secret | 第2プロバイダの API トークン（任意） |
-| TRL_LLM_CF_MODEL | Variable | 第2プロバイダのモデル名（任意） |
-| GEMINI_API_KEY / ANTHROPIC_API_KEY | Secret | LLM のキー |
+| GEMINI_API_KEY | Secret | LLM のキー |
 | OPENALEX_API_KEY | Secret | OpenAlex（推奨） |
 | NCBI_API_KEY | Secret | PubMed（任意、レート上限が上がる） |
 | AZURE_TRANSLATOR_KEY | Secret | 翻訳・第1段 |

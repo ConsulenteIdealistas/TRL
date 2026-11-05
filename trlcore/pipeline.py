@@ -693,23 +693,32 @@ def run_pipeline(store, cfg, llm, *, as_of, sources=("pubmed", "arxiv"), kinds=(
     def eval_candidate(c, extraction, meta, related, financials, was_cached):
         # ワーカースレッドで動く。Store には触らず LLM 評価だけを行い、結果を返す。
         # 系統(long/event)は抽出を共有するため候補内では従来どおり直列に処理する
-        per_kind = []
-        entry_cached = was_cached
-        extraction_model = None
-        for kind in kinds:
-            eval_t0 = time.monotonic()
-            res = evaluate_one(c, kind, cfg, llm, as_of, extraction, meta, prompt_dir,
-                               related=related, financials=financials)
-            per_kind.append((kind, res, time.monotonic() - eval_t0, entry_cached))
-            if res.get("infra_failure"):
-                break  # この候補の残りの系統は打ち切る (従来どおり)
-            extraction, meta = res["extraction"], res["prompt_versions"].get("extract")
-            if res.get("extraction_model"):
-                extraction_model = res["extraction_model"]
-            elif extraction_model:
-                res["extraction_model"] = extraction_model  # 2系統目にも抽出の実モデルを引き継ぐ
-            entry_cached = False
-        return per_kind
+        # 候補1件の総時間予算 (llm.candidate_budget_sec): 失敗の連鎖で1件が
+        # フェーズ予算を食い潰さないようにする (Mock 等の予算非対応は素通り)
+        set_budget = getattr(llm, "set_candidate_budget", None)
+        if set_budget is not None:
+            set_budget(st.get("candidate_budget_sec") or None)
+        try:
+            per_kind = []
+            entry_cached = was_cached
+            extraction_model = None
+            for kind in kinds:
+                eval_t0 = time.monotonic()
+                res = evaluate_one(c, kind, cfg, llm, as_of, extraction, meta, prompt_dir,
+                                   related=related, financials=financials)
+                per_kind.append((kind, res, time.monotonic() - eval_t0, entry_cached))
+                if res.get("infra_failure"):
+                    break  # この候補の残りの系統は打ち切る (従来どおり)
+                extraction, meta = res["extraction"], res["prompt_versions"].get("extract")
+                if res.get("extraction_model"):
+                    extraction_model = res["extraction_model"]
+                elif extraction_model:
+                    res["extraction_model"] = extraction_model  # 2系統目にも抽出の実モデルを引き継ぐ
+                entry_cached = False
+            return per_kind
+        finally:
+            if set_budget is not None:
+                set_budget(None)
 
     from concurrent.futures import ThreadPoolExecutor
     idx = 0

@@ -252,8 +252,8 @@ CONFIG_FILES = ("scoring.json", "sources.json")
 ENTITY_FILE_ORDER = ("jp", "us", "gb", "ch", "de", "ca", "au", "it", "se", "dk", "es", "fr", "nl", "fi", "no", "be")
 
 
-LLM_DEFAULTS = {"timeout_sec": 120, "retries": 3, "max_consecutive_failures": 2, "phase_budget_sec": 1200,
-                "eval_workers": 1, "call_budget_sec": 240, "run_budget_sec": 0}
+LLM_DEFAULTS = {"timeout_sec": 120, "retries": 1, "max_consecutive_failures": 2, "phase_budget_sec": 1200,
+                "eval_workers": 1, "call_budget_sec": 240, "run_budget_sec": 0, "candidate_budget_sec": 300}
 
 
 def required_files(config_dir=None):

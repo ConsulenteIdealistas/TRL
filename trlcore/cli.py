@@ -9,11 +9,11 @@ from .errors import ConfigError, LLMError
 from .dates import parse_date
 from .config import SOURCE_NAMES, load_config, missing_files, required_files
 from .store import Store
-from .llm import Gemini, _cloudflare, configure_llm, get_provider
+from .llm import Gemini, configure_llm, get_provider
 from .pipeline import run_pipeline
 from .site import export_site
 from .report import build_report
-from .audit import build_audit_report, run_audit, run_audit_rules
+from .audit import build_audit_report, run_audit_rules
 from .compare import build_compare_report, run_compare
 
 
@@ -36,7 +36,7 @@ def _verify_db_hash(data_dir):
 def _compare_clients(cfg):
     """モデル比較用の、フォールバックを持たない単一モデルクライアント群。
     本番と同じ環境変数 (TRL_LLM_MODEL / _FALLBACK_MODEL / _FALLBACK_MODEL_2)
-    から組み立て、Cloudflare は資格情報がそろっているときだけ加える。"""
+    から組み立てる。"""
     clients, seen = [], set()
     for var in ("TRL_LLM_MODEL", "TRL_LLM_FALLBACK_MODEL", "TRL_LLM_FALLBACK_MODEL_2"):
         m = os.environ.get(var)
@@ -51,25 +51,7 @@ def _compare_clients(cfg):
         g = Gemini()
         g.fallback_models = []  # 既定モデルでも階段は持たせない (比較の前提)
         clients.append((f"gemini/{g.model}", configure_llm(g, cfg)))
-    cf = _cloudflare()
-    if cf is not None:
-        clients.append((f"cloudflare/{cf.model}", configure_llm(cf, cfg)))
     return clients
-
-
-def _audit_client(cfg):
-    """【休眠】LLM 監査役のクライアント。監査の既定エンジンが規則ベースに
-    なったため現在は使われていない (LLM 経路を戻す余地として残す)。
-    監査は単独モデル (既定は査定の主モデル級) で
-    行い、代替モデルへのフォールバックはしない (どのモデルが監査したかが
-    フラグの解釈に要るため)。モデル名は TRL_AUDIT_MODEL → TRL_LLM_MODEL →
-    Gemini の既定の順。階段を空にする手法は _compare_clients と同じ。"""
-    m = os.environ.get("TRL_AUDIT_MODEL") or os.environ.get("TRL_LLM_MODEL")
-    if m:
-        return configure_llm(Gemini(m, fallback_model=m, fallback_model_2=m), cfg)
-    g = Gemini()
-    g.fallback_models = []  # 既定モデルでも階段は持たせない (監査の前提)
-    return configure_llm(g, cfg)
 
 
 def _prune(d, keep=30):
@@ -115,7 +97,7 @@ def main(argv=None):
     au.add_argument("--data-dir", default="data")
     au.add_argument("--limit", type=int, default=100)
     au.add_argument("--budget-sec", type=int, default=9000,
-                    help="互換のため残す引数 (規則エンジンでは未使用。旧 LLM 監査の時間予算)")
+                    help="互換のため残す引数 (規則エンジンでは未使用)")
     ex = sub.add_parser("export")
     ex.add_argument("--data-dir", default="data")
     ex.add_argument("--out", default="_site")
@@ -257,8 +239,8 @@ def main(argv=None):
             print(f"::error::database not found: {db}")
             return 2
         store = Store(db)
-        # 既定は規則エンジン (audit_rules.json の照合のみで、API を呼ばず
-        # LLM クライアントも構築しない)。LLM 監査は休眠 (trlcore/audit.py)。
+        # 規則エンジンのみ (audit_rules.json の照合だけで、API を呼ばず
+        # LLM クライアントも構築しない)。LLM 監査は 2026-11-06 に廃止。
         res = run_audit_rules(store, cfg, limit=a.limit)
         text = build_audit_report(store, res["batch"])
         rep = Path(a.data_dir) / "audit-reports"

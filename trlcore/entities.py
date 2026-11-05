@@ -14,7 +14,8 @@ ENTITY_MODES = ("off", "strong", "any")
 
 # 上場市場。未指定は JP とみなす。EDINET / PR TIMES は JP のみ、Yahoo シンボルと
 # Google News のロケールは市場で切り替える (trlcore/config.py の生成規則)。
-MARKETS = ("JP", "US", "GB", "CH", "DE", "CA", "AU", "IT", "SE", "DK", "ES", "FR", "NL", "FI", "NO", "BE")
+MARKETS = ("JP", "US", "GB", "CH", "DE", "CA", "AU", "IT", "SE", "DK", "ES", "FR", "NL", "FI", "NO", "BE",
+           "IN", "SG", "NZ", "PL", "AT")
 
 # 監視の層。core は評価予算を使う対象、watch は収集とプール専用 (評価しない)。
 # 評価選定はコア企業のリンクがある候補だけを対象にする (trlcore/pipeline.py)。
@@ -101,7 +102,7 @@ def validate_entities(data):
 
         ticker = entity.get("ticker")
         if ticker is not None and (not isinstance(ticker, str)
-                                    or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9.\-]*", ticker)):
+                                    or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9.\-&]*", ticker)):  # & は NSE の ARE&M 等の正規表記
             raise ConfigError(f"entities[{i}].ticker is invalid: {ticker!r}")
 
         edgar_ticker = entity.get("edgar_ticker")

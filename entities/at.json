@@ -1,0 +1,203 @@
+{
+  "entities": [
+    {
+      "id": "at_and_s",
+      "name": "AT&S Austria Technologie & Systemtechnik Aktiengesellschaft",
+      "aliases": [
+        "AT&S",
+        "AT & S"
+      ],
+      "ticker": "ATS",
+      "exchange": "Wiener Börse",
+      "sector": "semiconductor",
+      "tags": [
+        "advanced_packaging"
+      ],
+      "tier": "watch",
+      "market": "AT",
+      "watch": {
+        "news_name": "AT&S",
+        "extra_keywords": [
+          "IC substrates",
+          "printed circuit boards",
+          "high-density interconnect"
+        ]
+      },
+      "stage": "commercial"
+    },
+    {
+      "id": "frequentis",
+      "name": "Frequentis AG",
+      "aliases": [
+        "Frequentis"
+      ],
+      "ticker": "FQT",
+      "exchange": "Wiener Börse",
+      "sector": "space",
+      "tier": "watch",
+      "market": "AT",
+      "watch": {
+        "news_name": "Frequentis",
+        "extra_keywords": [
+          "air traffic management",
+          "mission-critical communication",
+          "defence communication"
+        ]
+      },
+      "stage": "commercial"
+    },
+    {
+      "id": "facc",
+      "name": "FACC AG",
+      "aliases": [
+        "FACC"
+      ],
+      "ticker": "FACC",
+      "exchange": "Wiener Börse",
+      "sector": "space",
+      "tier": "watch",
+      "market": "AT",
+      "watch": {
+        "news_name": "FACC",
+        "extra_keywords": [
+          "composite components",
+          "aerostructures",
+          "aircraft interiors"
+        ]
+      },
+      "stage": "commercial"
+    },
+    {
+      "id": "asta_energy",
+      "name": "ASTA Energy Solutions AG",
+      "aliases": [
+        "ASTA Energy Solutions",
+        "ASTA Energy"
+      ],
+      "ticker": "1AST",
+      "exchange": "Wiener Börse",
+      "sector": "energy",
+      "tier": "watch",
+      "market": "AT",
+      "watch": {
+        "news_name": "ASTA Energy Solutions",
+        "extra_keywords": [
+          "transformer windings",
+          "copper conductors",
+          "generator components"
+        ]
+      },
+      "stage": "commercial"
+    },
+    {
+      "id": "andritz",
+      "name": "Andritz AG",
+      "aliases": [
+        "Andritz"
+      ],
+      "ticker": "ANDR",
+      "exchange": "Wiener Börse",
+      "sector": "energy",
+      "tier": "watch",
+      "market": "AT",
+      "watch": {
+        "news_name": "Andritz",
+        "extra_keywords": [
+          "hydropower equipment",
+          "turbines",
+          "industrial plants"
+        ]
+      },
+      "stage": "commercial"
+    },
+    {
+      "id": "sbo",
+      "name": "SBO AG",
+      "aliases": [
+        "SBO",
+        "Schoeller-Bleckmann Oilfield Equipment"
+      ],
+      "ticker": "SBO",
+      "exchange": "Wiener Börse",
+      "sector": "energy",
+      "tier": "watch",
+      "market": "AT",
+      "watch": {
+        "news_name": "SBO",
+        "extra_keywords": [
+          "oilfield equipment",
+          "drilling components",
+          "precision components"
+        ]
+      },
+      "stage": "commercial"
+    },
+    {
+      "id": "wolftank",
+      "name": "Wolftank Group AG",
+      "aliases": [
+        "Wolftank Group",
+        "Wolftank"
+      ],
+      "ticker": "WOLF",
+      "exchange": "Wiener Börse",
+      "sector": "energy",
+      "tags": [
+        "hydrogen"
+      ],
+      "tier": "watch",
+      "market": "AT",
+      "watch": {
+        "news_name": "Wolftank",
+        "extra_keywords": [
+          "hydrogen refueling",
+          "LNG fueling",
+          "environmental remediation"
+        ]
+      },
+      "stage": "production"
+    },
+    {
+      "id": "kontron",
+      "name": "Kontron AG",
+      "aliases": [
+        "Kontron"
+      ],
+      "ticker": "KTN",
+      "exchange": "Wiener Börse",
+      "sector": "robotics",
+      "tier": "watch",
+      "market": "AT",
+      "watch": {
+        "news_name": "Kontron",
+        "extra_keywords": [
+          "embedded computing",
+          "IoT solutions",
+          "industrial automation"
+        ]
+      },
+      "stage": "commercial"
+    },
+    {
+      "id": "palfinger",
+      "name": "Palfinger AG",
+      "aliases": [
+        "Palfinger"
+      ],
+      "ticker": "PAL",
+      "exchange": "Wiener Börse",
+      "sector": "robotics",
+      "tier": "watch",
+      "market": "AT",
+      "watch": {
+        "news_name": "Palfinger",
+        "extra_keywords": [
+          "loader cranes",
+          "lifting solutions",
+          "access platforms"
+        ]
+      },
+      "stage": "commercial"
+    }
+  ]
+}

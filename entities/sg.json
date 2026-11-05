@@ -1,0 +1,125 @@
+{
+  "entities": [
+    {
+      "id": "aem_holdings",
+      "name": "AEM Holdings Ltd.",
+      "aliases": [
+        "AEM Holdings",
+        "AEM"
+      ],
+      "ticker": "AWX",
+      "exchange": "SGX",
+      "sector": "semiconductor",
+      "tags": [
+        "semi_equipment"
+      ],
+      "tier": "watch",
+      "market": "SG",
+      "watch": {
+        "news_name": "AEM Holdings",
+        "extra_keywords": [
+          "test handlers",
+          "system-level test",
+          "semiconductor testing"
+        ]
+      },
+      "stage": "commercial"
+    },
+    {
+      "id": "ums_integration",
+      "name": "UMS Integration Limited",
+      "aliases": [
+        "UMS Integration",
+        "UMS Holdings"
+      ],
+      "ticker": "558",
+      "exchange": "SGX",
+      "sector": "semiconductor",
+      "tags": [
+        "semi_equipment"
+      ],
+      "tier": "watch",
+      "market": "SG",
+      "watch": {
+        "news_name": "UMS Integration",
+        "extra_keywords": [
+          "precision machining",
+          "semiconductor equipment components"
+        ]
+      },
+      "stage": "commercial"
+    },
+    {
+      "id": "frencken",
+      "name": "Frencken Group Limited",
+      "aliases": [
+        "Frencken Group",
+        "Frencken"
+      ],
+      "ticker": "E28",
+      "exchange": "SGX",
+      "sector": "semiconductor",
+      "tags": [
+        "semi_equipment"
+      ],
+      "tier": "watch",
+      "market": "SG",
+      "watch": {
+        "news_name": "Frencken Group",
+        "extra_keywords": [
+          "precision engineering",
+          "mechatronics",
+          "semiconductor equipment"
+        ]
+      },
+      "stage": "commercial"
+    },
+    {
+      "id": "micro_mechanics",
+      "name": "Micro-Mechanics (Holdings) Ltd.",
+      "aliases": [
+        "Micro-Mechanics",
+        "Micro-Mechanics Holdings"
+      ],
+      "ticker": "5DD",
+      "exchange": "SGX",
+      "sector": "semiconductor",
+      "tags": [
+        "semi_equipment"
+      ],
+      "tier": "watch",
+      "market": "SG",
+      "watch": {
+        "news_name": "Micro-Mechanics",
+        "extra_keywords": [
+          "assembly tools",
+          "wafer fabrication tools",
+          "consumables"
+        ]
+      },
+      "stage": "commercial"
+    },
+    {
+      "id": "venture_corporation",
+      "name": "Venture Corporation Limited",
+      "aliases": [
+        "Venture Corporation",
+        "Venture Corp"
+      ],
+      "ticker": "V03",
+      "exchange": "SGX",
+      "sector": "semiconductor",
+      "tier": "watch",
+      "market": "SG",
+      "watch": {
+        "news_name": "Venture Corporation",
+        "extra_keywords": [
+          "electronics manufacturing services",
+          "EMS",
+          "ODM"
+        ]
+      },
+      "stage": "commercial"
+    }
+  ]
+}

@@ -138,7 +138,8 @@ WATCH_LOOKBACK_DEFAULTS = {"prtimes": 90, "trials": 365, "edinet": 60, "yahoo": 
 # 市場ごとの Yahoo シンボル接尾辞と Google News ロケール。market 未指定は JP。
 YAHOO_SUFFIX = {"JP": ".T", "US": "", "GB": ".L", "CH": ".SW", "DE": ".DE", "CA": ".TO", "AU": ".AX",
                 "IT": ".MI", "SE": ".ST", "DK": ".CO", "ES": ".MC",
-                "FR": ".PA", "NL": ".AS", "FI": ".HE", "NO": ".OL", "BE": ".BR"}
+                "FR": ".PA", "NL": ".AS", "FI": ".HE", "NO": ".OL", "BE": ".BR",
+                "IN": ".NS", "SG": ".SI", "NZ": ".NZ", "PL": ".WA", "AT": ".VI"}
 GNEWS_LOCALE = {"US": {"hl": "en", "gl": "US", "ceid": "US:en"},
                 "GB": {"hl": "en", "gl": "GB", "ceid": "GB:en"},
                 "CH": {"hl": "en", "gl": "CH", "ceid": "CH:en"},
@@ -153,11 +154,17 @@ GNEWS_LOCALE = {"US": {"hl": "en", "gl": "US", "ceid": "US:en"},
                 "NL": {"hl": "en", "gl": "NL", "ceid": "NL:en"},
                 "FI": {"hl": "en", "gl": "FI", "ceid": "FI:en"},
                 "NO": {"hl": "en", "gl": "NO", "ceid": "NO:en"},
-                "BE": {"hl": "en", "gl": "BE", "ceid": "BE:en"}}
+                "BE": {"hl": "en", "gl": "BE", "ceid": "BE:en"},
+                "IN": {"hl": "en", "gl": "IN", "ceid": "IN:en"},
+                "SG": {"hl": "en", "gl": "SG", "ceid": "SG:en"},
+                "NZ": {"hl": "en", "gl": "NZ", "ceid": "NZ:en"},
+                "PL": {"hl": "pl", "gl": "PL", "ceid": "PL:pl"},
+                "AT": {"hl": "de", "gl": "AT", "ceid": "AT:de"}}
 # 市場ごとのキーワード集合の置き場所 (JP は日本語、それ以外は市場言語。未指定の市場は英語)
 # デンマークは Google News のデンマーク語圏の収載が薄いため英語集合を使う (ロケールは DK)
 KEYWORD_SETS_BY_MARKET = {"JP": "keyword_sets", "DE": "keyword_sets_de",
-                          "IT": "keyword_sets_it", "SE": "keyword_sets_sv"}
+                          "IT": "keyword_sets_it", "SE": "keyword_sets_sv",
+                          "AT": "keyword_sets_de"}  # オーストリアはドイツ語圏のため DE の集合を使う。PL は英語集合 (ポーランド語集合は未整備で、企業名+英語キーワードで拾う)
 
 
 def _check_market_maps(market, eid):
@@ -249,7 +256,8 @@ def build_entity_queries(entities, src):
 CONFIG_FILES = ("scoring.json", "sources.json")
 
 # entities/ ディレクトリ内の市場別ファイルの合体順 (辞書の並び = クエリ生成順を決める)
-ENTITY_FILE_ORDER = ("jp", "us", "gb", "ch", "de", "ca", "au", "it", "se", "dk", "es", "fr", "nl", "fi", "no", "be")
+ENTITY_FILE_ORDER = ("jp", "us", "gb", "ch", "de", "ca", "au", "it", "se", "dk", "es", "fr", "nl", "fi", "no", "be",
+                     "in", "sg", "nz", "pl", "at")
 
 
 LLM_DEFAULTS = {"timeout_sec": 120, "retries": 1, "max_consecutive_failures": 2, "phase_budget_sec": 1200,

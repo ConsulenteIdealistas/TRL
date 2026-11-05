@@ -1,0 +1,804 @@
+{
+  "entities": [
+    {
+      "id": "biocon",
+      "name": "Biocon Limited",
+      "aliases": [
+        "Biocon",
+        "バイオコン"
+      ],
+      "ticker": "BIOCON",
+      "exchange": "NSE",
+      "sector": "bio",
+      "tags": [
+        "antibody"
+      ],
+      "tier": "watch",
+      "market": "IN",
+      "watch": {
+        "news_name": "Biocon",
+        "sponsor": "Biocon",
+        "extra_keywords": [
+          "biosimilars",
+          "insulin",
+          "monoclonal antibodies"
+        ],
+        "pubmed": "Biocon[Affiliation]"
+      },
+      "stage": "commercial"
+    },
+    {
+      "id": "syngene",
+      "name": "Syngene International Limited",
+      "aliases": [
+        "Syngene",
+        "Syngene International"
+      ],
+      "ticker": "SYNGENE",
+      "exchange": "NSE",
+      "sector": "bio",
+      "tier": "watch",
+      "market": "IN",
+      "watch": {
+        "news_name": "Syngene International",
+        "extra_keywords": [
+          "CRDMO",
+          "drug discovery services",
+          "contract research"
+        ]
+      },
+      "stage": "commercial"
+    },
+    {
+      "id": "sparc",
+      "name": "Sun Pharma Advanced Research Company Limited",
+      "aliases": [
+        "SPARC",
+        "Sun Pharma Advanced Research"
+      ],
+      "ticker": "SPARC",
+      "exchange": "NSE",
+      "sector": "bio",
+      "tier": "watch",
+      "market": "IN",
+      "watch": {
+        "news_name": "Sun Pharma Advanced Research",
+        "sponsor": "Sun Pharma Advanced Research Company",
+        "extra_keywords": [
+          "drug discovery",
+          "clinical pipeline",
+          "neurodegeneration"
+        ],
+        "pubmed": "Sun Pharma Advanced Research Company[Affiliation]"
+      },
+      "stage": "demo"
+    },
+    {
+      "id": "suven",
+      "name": "Suven Life Sciences Limited",
+      "aliases": [
+        "Suven Life Sciences",
+        "Suven"
+      ],
+      "ticker": "SUVEN",
+      "exchange": "NSE",
+      "sector": "bio",
+      "tier": "watch",
+      "market": "IN",
+      "watch": {
+        "news_name": "Suven Life Sciences",
+        "sponsor": "Suven Life Sciences",
+        "extra_keywords": [
+          "CNS drug discovery",
+          "masupirdine",
+          "clinical pipeline"
+        ],
+        "pubmed": "Suven Life Sciences[Affiliation]"
+      },
+      "stage": "demo"
+    },
+    {
+      "id": "panacea_biotec",
+      "name": "Panacea Biotec Limited",
+      "aliases": [
+        "Panacea Biotec"
+      ],
+      "ticker": "PANACEABIO",
+      "exchange": "NSE",
+      "sector": "bio",
+      "tags": [
+        "vaccine"
+      ],
+      "tier": "watch",
+      "market": "IN",
+      "watch": {
+        "news_name": "Panacea Biotec",
+        "sponsor": "Panacea Biotec",
+        "extra_keywords": [
+          "vaccines",
+          "pentavalent vaccine",
+          "hepatitis B vaccine"
+        ],
+        "pubmed": "Panacea Biotec[Affiliation]"
+      },
+      "stage": "commercial"
+    },
+    {
+      "id": "concord_biotech",
+      "name": "Concord Biotech Limited",
+      "aliases": [
+        "Concord Biotech"
+      ],
+      "ticker": "CONCORDBIO",
+      "exchange": "NSE",
+      "sector": "bio",
+      "tier": "watch",
+      "market": "IN",
+      "watch": {
+        "news_name": "Concord Biotech",
+        "extra_keywords": [
+          "fermentation-based API",
+          "immunosuppressant API"
+        ]
+      },
+      "stage": "commercial"
+    },
+    {
+      "id": "laurus_labs",
+      "name": "Laurus Labs Limited",
+      "aliases": [
+        "Laurus Labs"
+      ],
+      "ticker": "LAURUSLABS",
+      "exchange": "NSE",
+      "sector": "bio",
+      "tier": "watch",
+      "market": "IN",
+      "watch": {
+        "news_name": "Laurus Labs",
+        "extra_keywords": [
+          "antiretroviral API",
+          "CDMO",
+          "fermentation"
+        ]
+      },
+      "stage": "commercial"
+    },
+    {
+      "id": "poly_medicure",
+      "name": "Poly Medicure Limited",
+      "aliases": [
+        "Poly Medicure",
+        "PolyMed"
+      ],
+      "ticker": "POLYMED",
+      "exchange": "NSE",
+      "sector": "bio",
+      "tags": [
+        "medtech"
+      ],
+      "tier": "watch",
+      "market": "IN",
+      "watch": {
+        "news_name": "Poly Medicure",
+        "extra_keywords": [
+          "medical consumables",
+          "catheters",
+          "infusion therapy"
+        ]
+      },
+      "stage": "commercial"
+    },
+    {
+      "id": "dr_lal_pathlabs",
+      "name": "Dr. Lal PathLabs Limited",
+      "aliases": [
+        "Dr Lal PathLabs",
+        "Lal PathLabs"
+      ],
+      "ticker": "LALPATHLAB",
+      "exchange": "NSE",
+      "sector": "bio",
+      "tags": [
+        "diagnostics"
+      ],
+      "tier": "watch",
+      "market": "IN",
+      "watch": {
+        "news_name": "Dr Lal PathLabs",
+        "extra_keywords": [
+          "clinical diagnostics",
+          "pathology labs",
+          "health packages"
+        ]
+      },
+      "stage": "commercial"
+    },
+    {
+      "id": "metropolis_healthcare",
+      "name": "Metropolis Healthcare Limited",
+      "aliases": [
+        "Metropolis Healthcare"
+      ],
+      "ticker": "METROPOLIS",
+      "exchange": "NSE",
+      "sector": "bio",
+      "tags": [
+        "diagnostics"
+      ],
+      "tier": "watch",
+      "market": "IN",
+      "watch": {
+        "news_name": "Metropolis Healthcare",
+        "extra_keywords": [
+          "clinical diagnostics",
+          "pathology labs",
+          "specialty tests"
+        ]
+      },
+      "stage": "commercial"
+    },
+    {
+      "id": "thyrocare",
+      "name": "Thyrocare Technologies Limited",
+      "aliases": [
+        "Thyrocare"
+      ],
+      "ticker": "THYROCARE",
+      "exchange": "NSE",
+      "sector": "bio",
+      "tags": [
+        "diagnostics"
+      ],
+      "tier": "watch",
+      "market": "IN",
+      "watch": {
+        "news_name": "Thyrocare",
+        "extra_keywords": [
+          "preventive diagnostics",
+          "health screening",
+          "thyroid testing"
+        ]
+      },
+      "stage": "commercial"
+    },
+    {
+      "id": "divis_laboratories",
+      "name": "Divi's Laboratories Limited",
+      "aliases": [
+        "Divi's Laboratories",
+        "Divis Laboratories"
+      ],
+      "ticker": "DIVISLAB",
+      "exchange": "NSE",
+      "sector": "bio",
+      "tier": "watch",
+      "market": "IN",
+      "watch": {
+        "news_name": "Divi's Laboratories",
+        "extra_keywords": [
+          "API manufacturing",
+          "custom synthesis",
+          "intermediates"
+        ]
+      },
+      "stage": "commercial"
+    },
+    {
+      "id": "kaynes",
+      "name": "Kaynes Technology India Limited",
+      "aliases": [
+        "Kaynes Technology",
+        "Kaynes"
+      ],
+      "ticker": "KAYNES",
+      "exchange": "NSE",
+      "sector": "semiconductor",
+      "tier": "watch",
+      "market": "IN",
+      "watch": {
+        "news_name": "Kaynes Technology",
+        "extra_keywords": [
+          "electronics manufacturing services",
+          "ESDM",
+          "PCBA"
+        ]
+      },
+      "stage": "commercial"
+    },
+    {
+      "id": "dixon_technologies",
+      "name": "Dixon Technologies (India) Limited",
+      "aliases": [
+        "Dixon Technologies"
+      ],
+      "ticker": "DIXON",
+      "exchange": "NSE",
+      "sector": "semiconductor",
+      "tier": "watch",
+      "market": "IN",
+      "watch": {
+        "news_name": "Dixon Technologies",
+        "extra_keywords": [
+          "electronics manufacturing services",
+          "EMS",
+          "consumer electronics"
+        ]
+      },
+      "stage": "commercial"
+    },
+    {
+      "id": "syrma_sgs",
+      "name": "Syrma SGS Technology Limited",
+      "aliases": [
+        "Syrma SGS"
+      ],
+      "ticker": "SYRMA",
+      "exchange": "NSE",
+      "sector": "semiconductor",
+      "tier": "watch",
+      "market": "IN",
+      "watch": {
+        "news_name": "Syrma SGS",
+        "extra_keywords": [
+          "EMS",
+          "RFID",
+          "power electronics"
+        ]
+      },
+      "stage": "commercial"
+    },
+    {
+      "id": "cg_power",
+      "name": "CG Power and Industrial Solutions Limited",
+      "aliases": [
+        "CG Power"
+      ],
+      "ticker": "CGPOWER",
+      "exchange": "NSE",
+      "sector": "semiconductor",
+      "tags": [
+        "power_semi"
+      ],
+      "tier": "watch",
+      "market": "IN",
+      "watch": {
+        "news_name": "CG Power",
+        "extra_keywords": [
+          "power semiconductors",
+          "OSAT",
+          "transformers",
+          "electric motors"
+        ]
+      },
+      "stage": "commercial"
+    },
+    {
+      "id": "avalon_technologies",
+      "name": "Avalon Technologies Limited",
+      "aliases": [
+        "Avalon Technologies"
+      ],
+      "ticker": "AVALON",
+      "exchange": "NSE",
+      "sector": "semiconductor",
+      "tier": "watch",
+      "market": "IN",
+      "watch": {
+        "news_name": "Avalon Technologies",
+        "extra_keywords": [
+          "EMS",
+          "PCBA",
+          "aerospace electronics"
+        ]
+      },
+      "stage": "commercial"
+    },
+    {
+      "id": "moschip",
+      "name": "MosChip Technologies Limited",
+      "aliases": [
+        "MosChip"
+      ],
+      "ticker": "MOSCHIP",
+      "exchange": "NSE",
+      "sector": "semiconductor",
+      "tags": [
+        "semiconductor"
+      ],
+      "tier": "watch",
+      "market": "IN",
+      "watch": {
+        "news_name": "MosChip",
+        "extra_keywords": [
+          "semiconductor design services",
+          "ASIC design",
+          "IP cores"
+        ]
+      },
+      "stage": "production"
+    },
+    {
+      "id": "mtar",
+      "name": "MTAR Technologies Limited",
+      "aliases": [
+        "MTAR Technologies",
+        "MTAR"
+      ],
+      "ticker": "MTARTECH",
+      "exchange": "NSE",
+      "sector": "space",
+      "tier": "watch",
+      "market": "IN",
+      "watch": {
+        "news_name": "MTAR Technologies",
+        "extra_keywords": [
+          "precision machining",
+          "space components",
+          "nuclear components"
+        ]
+      },
+      "stage": "commercial"
+    },
+    {
+      "id": "centum",
+      "name": "Centum Electronics Limited",
+      "aliases": [
+        "Centum Electronics",
+        "Centum"
+      ],
+      "ticker": "CENTUM",
+      "exchange": "NSE",
+      "sector": "space",
+      "tier": "watch",
+      "market": "IN",
+      "watch": {
+        "news_name": "Centum Electronics",
+        "extra_keywords": [
+          "space electronics",
+          "defense electronics",
+          "electronic modules"
+        ]
+      },
+      "stage": "commercial"
+    },
+    {
+      "id": "astra_microwave",
+      "name": "Astra Microwave Products Limited",
+      "aliases": [
+        "Astra Microwave"
+      ],
+      "ticker": "ASTRAMICRO",
+      "exchange": "NSE",
+      "sector": "space",
+      "tier": "watch",
+      "market": "IN",
+      "watch": {
+        "news_name": "Astra Microwave",
+        "extra_keywords": [
+          "microwave components",
+          "radar subsystems",
+          "RF modules"
+        ]
+      },
+      "stage": "commercial"
+    },
+    {
+      "id": "avantel",
+      "name": "Avantel Limited",
+      "aliases": [
+        "Avantel"
+      ],
+      "ticker": "AVANTEL",
+      "exchange": "NSE",
+      "sector": "space",
+      "tier": "watch",
+      "market": "IN",
+      "watch": {
+        "news_name": "Avantel",
+        "extra_keywords": [
+          "satellite communication",
+          "satcom terminals",
+          "defense communication"
+        ]
+      },
+      "stage": "production"
+    },
+    {
+      "id": "netweb",
+      "name": "NetWeb Technologies India Limited",
+      "aliases": [
+        "NetWeb Technologies",
+        "Netweb Technologies"
+      ],
+      "ticker": "NETWEB",
+      "exchange": "NSE",
+      "sector": "ai",
+      "tags": [
+        "ai_infra"
+      ],
+      "tier": "watch",
+      "market": "IN",
+      "watch": {
+        "news_name": "NetWeb Technologies",
+        "extra_keywords": [
+          "HPC servers",
+          "AI servers",
+          "GPU clusters"
+        ]
+      },
+      "stage": "production"
+    },
+    {
+      "id": "affle_3i",
+      "name": "Affle 3i Limited",
+      "aliases": [
+        "Affle 3i",
+        "Affle"
+      ],
+      "ticker": "AFFLE",
+      "exchange": "NSE",
+      "sector": "ai",
+      "tier": "watch",
+      "market": "IN",
+      "watch": {
+        "news_name": "Affle 3i",
+        "extra_keywords": [
+          "adtech platform",
+          "consumer intelligence",
+          "mobile advertising"
+        ]
+      },
+      "stage": "commercial"
+    },
+    {
+      "id": "mapmyindia",
+      "name": "C.E. Info Systems Limited",
+      "aliases": [
+        "MapmyIndia",
+        "C E Info Systems"
+      ],
+      "ticker": "MAPMYINDIA",
+      "exchange": "NSE",
+      "sector": "ai",
+      "tier": "watch",
+      "market": "IN",
+      "watch": {
+        "news_name": "MapmyIndia",
+        "extra_keywords": [
+          "digital maps",
+          "geospatial data",
+          "GIS platform"
+        ]
+      },
+      "stage": "commercial"
+    },
+    {
+      "id": "e2e_networks",
+      "name": "E2E Networks Limited",
+      "aliases": [
+        "E2E Networks"
+      ],
+      "ticker": "E2E",
+      "exchange": "NSE",
+      "sector": "ai",
+      "tags": [
+        "ai_infra"
+      ],
+      "tier": "watch",
+      "market": "IN",
+      "watch": {
+        "news_name": "E2E Networks",
+        "extra_keywords": [
+          "GPU cloud",
+          "AI cloud infrastructure"
+        ]
+      },
+      "stage": "production"
+    },
+    {
+      "id": "waaree",
+      "name": "Waaree Energies Limited",
+      "aliases": [
+        "Waaree Energies",
+        "Waaree"
+      ],
+      "ticker": "WAAREEENER",
+      "exchange": "NSE",
+      "sector": "energy",
+      "tier": "watch",
+      "market": "IN",
+      "watch": {
+        "news_name": "Waaree Energies",
+        "extra_keywords": [
+          "solar modules",
+          "solar cells",
+          "photovoltaics"
+        ]
+      },
+      "stage": "commercial"
+    },
+    {
+      "id": "premier_energies",
+      "name": "Premier Energies Limited",
+      "aliases": [
+        "Premier Energies"
+      ],
+      "ticker": "PREMIERENE",
+      "exchange": "NSE",
+      "sector": "energy",
+      "tier": "watch",
+      "market": "IN",
+      "watch": {
+        "news_name": "Premier Energies",
+        "extra_keywords": [
+          "solar cells",
+          "solar modules"
+        ]
+      },
+      "stage": "commercial"
+    },
+    {
+      "id": "sterling_wilson",
+      "name": "Sterling and Wilson Renewable Energy Limited",
+      "aliases": [
+        "Sterling and Wilson Renewable Energy",
+        "Sterling and Wilson"
+      ],
+      "ticker": "SWSOLAR",
+      "exchange": "NSE",
+      "sector": "energy",
+      "tier": "watch",
+      "market": "IN",
+      "watch": {
+        "news_name": "Sterling and Wilson Renewable Energy",
+        "extra_keywords": [
+          "solar EPC",
+          "utility-scale solar plants"
+        ]
+      },
+      "stage": "commercial"
+    },
+    {
+      "id": "exide",
+      "name": "Exide Industries Limited",
+      "aliases": [
+        "Exide Industries",
+        "Exide"
+      ],
+      "ticker": "EXIDEIND",
+      "exchange": "NSE",
+      "sector": "energy",
+      "tier": "watch",
+      "market": "IN",
+      "watch": {
+        "news_name": "Exide Industries",
+        "extra_keywords": [
+          "lead-acid batteries",
+          "lithium-ion cells",
+          "energy storage"
+        ]
+      },
+      "stage": "commercial"
+    },
+    {
+      "id": "amara_raja",
+      "name": "Amara Raja Energy & Mobility Limited",
+      "aliases": [
+        "Amara Raja",
+        "Amara Raja Energy and Mobility"
+      ],
+      "ticker": "ARE&M",
+      "exchange": "NSE",
+      "sector": "energy",
+      "tier": "watch",
+      "market": "IN",
+      "watch": {
+        "news_name": "Amara Raja",
+        "extra_keywords": [
+          "lead-acid batteries",
+          "lithium-ion cells",
+          "Amaron"
+        ]
+      },
+      "stage": "commercial"
+    },
+    {
+      "id": "hbl_engineering",
+      "name": "HBL Engineering Limited",
+      "aliases": [
+        "HBL Engineering",
+        "HBL Power Systems"
+      ],
+      "ticker": "HBLENGINE",
+      "exchange": "NSE",
+      "sector": "energy",
+      "tier": "watch",
+      "market": "IN",
+      "watch": {
+        "news_name": "HBL Engineering",
+        "extra_keywords": [
+          "industrial batteries",
+          "defense batteries",
+          "railway signalling"
+        ]
+      },
+      "stage": "commercial"
+    },
+    {
+      "id": "exicom",
+      "name": "Exicom Tele-Systems Limited",
+      "aliases": [
+        "Exicom Tele-Systems",
+        "Exicom"
+      ],
+      "ticker": "EXICOM",
+      "exchange": "NSE",
+      "sector": "energy",
+      "tags": [
+        "ev_charging"
+      ],
+      "tier": "watch",
+      "market": "IN",
+      "watch": {
+        "news_name": "Exicom",
+        "extra_keywords": [
+          "EV chargers",
+          "DC fast charging",
+          "telecom power"
+        ]
+      },
+      "stage": "production"
+    },
+    {
+      "id": "inox_india",
+      "name": "INOX India Limited",
+      "aliases": [
+        "INOX India",
+        "Inox India"
+      ],
+      "ticker": "INOXINDIA",
+      "exchange": "NSE",
+      "sector": "energy",
+      "tags": [
+        "hydrogen"
+      ],
+      "tier": "watch",
+      "market": "IN",
+      "watch": {
+        "news_name": "INOX India",
+        "extra_keywords": [
+          "cryogenic equipment",
+          "LNG storage",
+          "hydrogen storage"
+        ]
+      },
+      "stage": "commercial"
+    },
+    {
+      "id": "ideaforge",
+      "name": "ideaForge Technology Limited",
+      "aliases": [
+        "ideaForge",
+        "IdeaForge Technology"
+      ],
+      "ticker": "IDEAFORGE",
+      "exchange": "NSE",
+      "sector": "robotics",
+      "tags": [
+        "autonomous_mobility"
+      ],
+      "tier": "watch",
+      "market": "IN",
+      "watch": {
+        "news_name": "ideaForge",
+        "extra_keywords": [
+          "unmanned aerial vehicles",
+          "drones",
+          "defense drones"
+        ]
+      },
+      "stage": "production"
+    }
+  ]
+}

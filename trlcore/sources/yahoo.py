@@ -55,14 +55,17 @@ MONEY_UNITS = {"JPY": "百万円", "USD": "百万米ドル", "GBP": "百万英�
                "CHF": "百万スイスフラン", "EUR": "百万ユーロ",
                "CAD": "百万カナダドル", "AUD": "百万豪ドル", "SEK": "百万スウェーデンクローナ",
                "DKK": "百万デンマーククローナ",
-               "NOK": "百万ノルウェークローナ"}
+               "NOK": "百万ノルウェークローナ", "INR": "百万インドルピー",
+               "SGD": "百万シンガポールドル", "NZD": "百万ニュージーランドドル",
+               "PLN": "百万ポーランドズロチ"}
 FINANCIAL_MARKER = "財務数値(Yahoo Finance)"
 
 # ティッカーの市場サフィックス→通貨 (price.currency が取れないときの推定用)。
 # サフィックス無しは米国市場として USD とみなす。
 SUFFIX_CURRENCIES = {"": "USD", "T": "JPY", "L": "GBp", "DE": "EUR", "PA": "EUR", "AS": "EUR",
                      "BR": "EUR", "MI": "EUR", "MC": "EUR", "HE": "EUR", "CO": "DKK", "ST": "SEK",
-                     "OL": "NOK", "SW": "CHF", "AX": "AUD", "TO": "CAD"}
+                     "OL": "NOK", "SW": "CHF", "AX": "AUD", "TO": "CAD", "NS": "INR", "SI": "SGD",
+                     "NZ": "NZD", "WA": "PLN", "VI": "EUR"}
 
 # 実在するブラウザの User-Agent 候補。bot 判定の回避のため、セッション (プロセス)
 # ごとに1つをランダムに選び、そのセッション内では使い続ける (実ブラウザは

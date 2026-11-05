@@ -1,0 +1,376 @@
+{
+  "entities": [
+    {
+      "id": "ryvu",
+      "name": "Ryvu Therapeutics S.A.",
+      "aliases": [
+        "Ryvu Therapeutics",
+        "Ryvu"
+      ],
+      "ticker": "RVU",
+      "exchange": "GPW",
+      "sector": "bio",
+      "tier": "watch",
+      "market": "PL",
+      "watch": {
+        "news_name": "Ryvu Therapeutics",
+        "sponsor": "Ryvu Therapeutics",
+        "extra_keywords": [
+          "oncology drug discovery",
+          "RVU120",
+          "small molecule inhibitors"
+        ],
+        "pubmed": "Ryvu Therapeutics[Affiliation]"
+      },
+      "stage": "demo"
+    },
+    {
+      "id": "selvita",
+      "name": "Selvita S.A.",
+      "aliases": [
+        "Selvita"
+      ],
+      "ticker": "SLV",
+      "exchange": "GPW",
+      "sector": "bio",
+      "tier": "watch",
+      "market": "PL",
+      "watch": {
+        "news_name": "Selvita",
+        "extra_keywords": [
+          "drug discovery CRO",
+          "contract research",
+          "integrated drug discovery"
+        ]
+      },
+      "stage": "commercial"
+    },
+    {
+      "id": "celon_pharma",
+      "name": "Celon Pharma S.A.",
+      "aliases": [
+        "Celon Pharma"
+      ],
+      "ticker": "CLN",
+      "exchange": "GPW",
+      "sector": "bio",
+      "tier": "watch",
+      "market": "PL",
+      "watch": {
+        "news_name": "Celon Pharma",
+        "sponsor": "Celon Pharma",
+        "extra_keywords": [
+          "inhaled drugs",
+          "Salmex",
+          "drug development"
+        ],
+        "pubmed": "Celon Pharma[Affiliation]"
+      },
+      "stage": "commercial"
+    },
+    {
+      "id": "mabion",
+      "name": "Mabion S.A.",
+      "aliases": [
+        "Mabion"
+      ],
+      "ticker": "MAB",
+      "exchange": "GPW",
+      "sector": "bio",
+      "tier": "watch",
+      "market": "PL",
+      "watch": {
+        "news_name": "Mabion",
+        "extra_keywords": [
+          "CDMO",
+          "monoclonal antibodies",
+          "biologics manufacturing"
+        ]
+      },
+      "stage": "production"
+    },
+    {
+      "id": "captor",
+      "name": "Captor Therapeutics S.A.",
+      "aliases": [
+        "Captor Therapeutics",
+        "Captor"
+      ],
+      "ticker": "CTX",
+      "exchange": "GPW",
+      "sector": "bio",
+      "tier": "watch",
+      "market": "PL",
+      "watch": {
+        "news_name": "Captor Therapeutics",
+        "extra_keywords": [
+          "targeted protein degradation",
+          "Optigrade",
+          "molecular glues"
+        ]
+      },
+      "stage": "rd"
+    },
+    {
+      "id": "poltreg",
+      "name": "PolTREG S.A.",
+      "aliases": [
+        "PolTREG",
+        "Poltreg"
+      ],
+      "ticker": "PTG",
+      "exchange": "GPW",
+      "sector": "bio",
+      "tags": [
+        "cell_therapy"
+      ],
+      "tier": "watch",
+      "market": "PL",
+      "watch": {
+        "news_name": "PolTREG",
+        "sponsor": "PolTREG",
+        "extra_keywords": [
+          "Treg cell therapy",
+          "type 1 diabetes",
+          "cell therapy manufacturing"
+        ],
+        "pubmed": "PolTREG[Affiliation]"
+      },
+      "stage": "demo"
+    },
+    {
+      "id": "scope_fluidics",
+      "name": "Scope Fluidics S.A.",
+      "aliases": [
+        "Scope Fluidics"
+      ],
+      "ticker": "SCP",
+      "exchange": "GPW",
+      "sector": "bio",
+      "tags": [
+        "diagnostics"
+      ],
+      "tier": "watch",
+      "market": "PL",
+      "watch": {
+        "news_name": "Scope Fluidics",
+        "extra_keywords": [
+          "BacterOMIC",
+          "rapid bacterial identification",
+          "antibiotic susceptibility testing"
+        ]
+      },
+      "stage": "demo"
+    },
+    {
+      "id": "synektik",
+      "name": "Synektik S.A.",
+      "aliases": [
+        "Synektik"
+      ],
+      "ticker": "SNT",
+      "exchange": "GPW",
+      "sector": "bio",
+      "tags": [
+        "radiopharm",
+        "medtech"
+      ],
+      "tier": "watch",
+      "market": "PL",
+      "watch": {
+        "news_name": "Synektik",
+        "extra_keywords": [
+          "radiopharmaceuticals",
+          "medical device distribution",
+          "surgical robotics"
+        ]
+      },
+      "stage": "commercial"
+    },
+    {
+      "id": "medinice",
+      "name": "Medinice S.A.",
+      "aliases": [
+        "Medinice"
+      ],
+      "ticker": "ICE",
+      "exchange": "GPW",
+      "sector": "bio",
+      "tags": [
+        "medtech"
+      ],
+      "tier": "watch",
+      "market": "PL",
+      "watch": {
+        "news_name": "Medinice",
+        "extra_keywords": [
+          "cardiology devices",
+          "minimally invasive devices",
+          "medical device development"
+        ]
+      },
+      "stage": "rd"
+    },
+    {
+      "id": "urteste",
+      "name": "Urteste S.A.",
+      "aliases": [
+        "Urteste"
+      ],
+      "ticker": "URT",
+      "exchange": "GPW",
+      "sector": "bio",
+      "tags": [
+        "diagnostics"
+      ],
+      "tier": "watch",
+      "market": "PL",
+      "watch": {
+        "news_name": "Urteste",
+        "extra_keywords": [
+          "cancer diagnostics",
+          "urine biomarkers",
+          "early cancer detection"
+        ]
+      },
+      "stage": "rd"
+    },
+    {
+      "id": "vigo_photonics",
+      "name": "VIGO Photonics S.A.",
+      "aliases": [
+        "VIGO Photonics",
+        "Vigo System"
+      ],
+      "ticker": "VGO",
+      "exchange": "GPW",
+      "sector": "semiconductor",
+      "tags": [
+        "photonics"
+      ],
+      "tier": "watch",
+      "market": "PL",
+      "watch": {
+        "news_name": "VIGO Photonics",
+        "extra_keywords": [
+          "infrared detectors",
+          "mid-infrared sensors"
+        ]
+      },
+      "stage": "commercial"
+    },
+    {
+      "id": "creotech",
+      "name": "Creotech Instruments S.A.",
+      "aliases": [
+        "Creotech Instruments",
+        "Creotech"
+      ],
+      "ticker": "CRI",
+      "exchange": "GPW",
+      "sector": "space",
+      "tags": [
+        "earth_observation"
+      ],
+      "tier": "watch",
+      "market": "PL",
+      "watch": {
+        "news_name": "Creotech Instruments",
+        "extra_keywords": [
+          "satellite platforms",
+          "microsatellites",
+          "EagleEye"
+        ]
+      },
+      "stage": "production"
+    },
+    {
+      "id": "scanway",
+      "name": "Scanway S.A.",
+      "aliases": [
+        "Scanway"
+      ],
+      "ticker": "SCW",
+      "exchange": "GPW",
+      "sector": "space",
+      "tags": [
+        "earth_observation"
+      ],
+      "tier": "watch",
+      "market": "PL",
+      "watch": {
+        "news_name": "Scanway",
+        "extra_keywords": [
+          "optical payloads",
+          "space telescopes",
+          "earth observation"
+        ]
+      },
+      "stage": "production"
+    },
+    {
+      "id": "datawalk",
+      "name": "DataWalk S.A.",
+      "aliases": [
+        "DataWalk"
+      ],
+      "ticker": "DAT",
+      "exchange": "GPW",
+      "sector": "ai",
+      "tier": "watch",
+      "market": "PL",
+      "watch": {
+        "news_name": "DataWalk",
+        "extra_keywords": [
+          "data analytics platform",
+          "graph analytics",
+          "intelligence analysis"
+        ]
+      },
+      "stage": "production"
+    },
+    {
+      "id": "asseco_poland",
+      "name": "Asseco Poland S.A.",
+      "aliases": [
+        "Asseco Poland",
+        "Asseco"
+      ],
+      "ticker": "ACP",
+      "exchange": "GPW",
+      "sector": "ai",
+      "tier": "watch",
+      "market": "PL",
+      "watch": {
+        "news_name": "Asseco Poland",
+        "extra_keywords": [
+          "IT services",
+          "banking software",
+          "software solutions"
+        ]
+      },
+      "stage": "commercial"
+    },
+    {
+      "id": "ml_system",
+      "name": "ML System S.A.",
+      "aliases": [
+        "ML System"
+      ],
+      "ticker": "MLS",
+      "exchange": "GPW",
+      "sector": "energy",
+      "tier": "watch",
+      "market": "PL",
+      "watch": {
+        "news_name": "ML System",
+        "extra_keywords": [
+          "BIPV",
+          "building-integrated photovoltaics",
+          "photovoltaic glass"
+        ]
+      },
+      "stage": "production"
+    }
+  ]
+}

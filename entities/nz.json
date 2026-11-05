@@ -1,0 +1,70 @@
+{
+  "entities": [
+    {
+      "id": "aft_pharmaceuticals",
+      "name": "AFT Pharmaceuticals Limited",
+      "aliases": [
+        "AFT Pharmaceuticals"
+      ],
+      "ticker": "AFT",
+      "exchange": "NZX",
+      "sector": "bio",
+      "tier": "watch",
+      "market": "NZ",
+      "watch": {
+        "news_name": "AFT Pharmaceuticals",
+        "extra_keywords": [
+          "Maxigesic",
+          "specialty pharmaceuticals",
+          "pain management"
+        ]
+      },
+      "stage": "commercial"
+    },
+    {
+      "id": "gentrack",
+      "name": "Gentrack Group Limited",
+      "aliases": [
+        "Gentrack"
+      ],
+      "ticker": "GTK",
+      "exchange": "NZX",
+      "sector": "ai",
+      "tier": "watch",
+      "market": "NZ",
+      "watch": {
+        "news_name": "Gentrack",
+        "extra_keywords": [
+          "utilities software",
+          "billing systems",
+          "airport systems"
+        ]
+      },
+      "stage": "commercial"
+    },
+    {
+      "id": "scott_technology",
+      "name": "Scott Technology Limited",
+      "aliases": [
+        "Scott Technology"
+      ],
+      "ticker": "SCT",
+      "exchange": "NZX",
+      "sector": "robotics",
+      "tags": [
+        "industrial_robotics"
+      ],
+      "tier": "watch",
+      "market": "NZ",
+      "watch": {
+        "news_name": "Scott Technology",
+        "extra_keywords": [
+          "automation systems",
+          "meat processing automation",
+          "logistics automation"
+        ]
+      },
+      "stage": "commercial"
+    }
+  ]
+}

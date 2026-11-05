@@ -1,7 +1,7 @@
 """評価監査 (監査役)。
 
 完了済みの長期評価 (kind='long') を読み直し、評価ルールへの抵触の疑いを
-「フラグ」として audit_results に記録するだけの追加層。本体評価 (点・
+「要確認」として audit_results に記録するだけの追加層。本体評価 (点・
 状態・TRL) には一切触れず、再評価も引き起こさない。
 
 既定のエンジンは **規則ベース** (audit_rules.json のパターン照合、
@@ -318,7 +318,7 @@ def _check_a1(inp, chk, ext_text, out):
 def _check_a2(inp, chk, ext_text, out):
     """A2 TRL 9 の継続証拠 (原則2)。ホワイトリスト主導: TRL 9 のときだけ、
     根拠側 (technology_readiness の evidence + extraction) にセクター別の
-    確認語彙が1つも無ければフラグ。セクター専用の語彙が無い場合は
+    確認語彙が1つも無ければ要確認。セクター専用の語彙が無い場合は
     全セクターの和集合で判定する。"""
     trl = inp.get("trl_level") or {}
     if trl.get("level") != 9:
@@ -342,7 +342,7 @@ def _check_a2(inp, chk, ext_text, out):
 def _check_a3(inp, chk, ext_text, out):
     """A3 成長推論の禁止 (原則3)。初版はブラックリストが空で、推論構文に
     当たってもグレー (判定保留) として記録だけする。将来 black にパターン
-    が入れば、その時点で初めてフラグになる。"""
+    が入れば、その時点で初めて要確認になる。"""
     items = inp.get("items") or {}
     targets = [(k, (it or {}).get("reason") or "")
                for k, it in items.items() if isinstance(it, dict)]
@@ -374,7 +374,7 @@ def _check_a4(inp, chk, ext_text, out):
     """A4 技術と商用の混同 (原則1)。技術系項目の reason+evidence に商用
     マーカーがあり、技術マーカーが皆無の場合だけ拾う。バイオでは承認・
     実臨床が正当な技術証拠になりうるため、初版はチェックの mode に従い
-    フラグではなくグレーとして記録する。"""
+    要確認ではなくグレーとして記録する。"""
     items = inp.get("items") or {}
     verdict = chk.get("mode") or "flag"
     for key in TECH_ITEMS:
@@ -396,7 +396,7 @@ def _check_a4(inp, chk, ext_text, out):
 
 def _check_a6(inp, chk, ext_text, out):
     """A6 欠落判定の妥当性。missing_info / critical_missing に、材料プールへ
-    原理的に入らない語彙 (株価・出来高等) が混ざっていたらフラグ。"""
+    原理的に入らない語彙 (株価・出来高等) が混ざっていたら要確認。"""
     items = inp.get("items") or {}
     targets = []
     for key, it in items.items():
@@ -417,7 +417,7 @@ def _check_a6(inp, chk, ext_text, out):
 
 
 def _check_a7(inp, chk, ext_text, out):
-    """A7 減点理由の具体性 (第15条4項)。フラグは複合条件の全充足のみ:
+    """A7 減点理由の具体性 (第15条4項)。要確認は複合条件の全充足のみ:
     低得点 (score <= threshold) かつ理由に漠然フレーズ (狭い集合) かつ
     missing_info が空 かつ理由本文に具体的な名指しが無い。広い漠然
     フレーズだけなら、確定条件を満たさない低得点はグレーに記録する。"""
@@ -497,7 +497,7 @@ def run_audit_rules(store, cfg, *, limit=100, log=print, rules_dir=None):
             "run_id": batch, "auditor_provider": "rules", "auditor_model": model,
             "prompt_version": r["version"], "prompt_sha": r["sha"],
             "flags": entries,
-            "summary": f"規則監査: フラグ {nf} 件 / グレー {ng} 件" if entries else ""})
+            "summary": f"規則監査: 要確認 {nf} 件 / グレー {ng} 件" if entries else ""})
         audited += 1
         n_flags += nf
         n_grays += ng
@@ -507,14 +507,14 @@ def run_audit_rules(store, cfg, *, limit=100, log=print, rules_dir=None):
     res = {"batch": batch, "selected": len(rows), "audited": audited,
            "flags": n_flags, "grays": n_grays, "checks": checks, "failed": failed}
     log(f"rules-audited {audited}/{len(rows)} evaluations "
-        f"({n_flags} flags, {n_grays} grays, {failed} failed) as {batch}")
+        f"(要確認 {n_flags} 件, グレー {n_grays} 件, 失敗 {failed} 件) as {batch}")
     return res
 
 
 def build_audit_report(store, batch):
-    """バッチ単位の Markdown レポート。フラグ (verdict=flag) とグレー
+    """バッチ単位の Markdown レポート。要確認 (verdict=flag) とグレー
     (verdict=gray、判定保留) を分けて数え、一覧も分ける。LLM 経路の旧行
-    (verdict を持たない要素) はフラグとして扱い、llm_calls の試行/成功/
+    (verdict を持たない要素) は要確認として扱い、llm_calls の試行/成功/
     失敗も記録があれば併記する。"""
     rows = store.audit_results(batch)
     calls = [c for c in store.llm_calls(batch) if c.get("purpose") == "audit"]
@@ -537,16 +537,16 @@ def build_audit_report(store, batch):
             c[0 if verdict(f) == "flag" else 1] += 1
     lines = [f"# 監査レポート {batch}", "",
              f"- 監査済み評価: {len(rows)}件"
-             f" (フラグあり {flagged_rows}件 / グレーあり {gray_rows}件)"]
+             f" (要確認あり {flagged_rows}件 / グレーあり {gray_rows}件)"]
     if trials:
         lines.append(f"- 監査コール: 試行 {trials} / 成功 {ok_calls} / 失敗 {trials - ok_calls}"
                      f" (成功率 {ok_calls / trials * 100:.0f}%)")
     lines += ["", "## チェック別内訳", "",
-              "| チェック | フラグ | グレー |", "|---|---|---|"]
+              "| チェック | 要確認 | グレー |", "|---|---|---|"]
     for c in AUDIT_CHECKS:
         f_n, g_n = checks.get(c, [0, 0])
         lines.append(f"| {c} | {f_n} | {g_n} |")
-    for title, want, empty in (("フラグ一覧", "flag", "(フラグはありません)"),
+    for title, want, empty in (("要確認一覧", "flag", "(要確認はありません)"),
                                ("グレー一覧 (判定保留)", "gray", "(グレーはありません)")):
         entries = [(r, f) for r in rows for f in r["flags"] if verdict(f) == want]
         lines += ["", f"## {title}", ""]

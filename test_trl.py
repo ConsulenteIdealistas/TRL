@@ -3972,7 +3972,7 @@ class AuditRulesTests(unittest.TestCase):
         res = T.run_audit_rules(self.store, CFG, limit=10, log=lambda *_: None)
         text = T.build_audit_report(self.store, res["batch"])
         self.assertIn("# 監査レポート", text)
-        self.assertIn("フラグあり 1件", text)
+        self.assertIn("要確認あり 1件", text)
         self.assertIn("グレーあり 1件", text)
         self.assertIn("## グレー一覧", text)
         self.assertIn("報告フラグ", text)

@@ -1,6 +1,7 @@
 """trl.sqlite から静的サイト用の data.json を作る。Web(web/app.js)との契約は web/schema.json。"""
 
 import json
+import os
 from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import quote_plus
@@ -356,7 +357,16 @@ def export_site(store, cfg, out_dir, web_dir=None, now=None):
     (out / "data.json").write_text(json.dumps(data, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     web = Path(web_dir) if web_dir else ROOT / "web"
     if web.is_dir():
+        # AI要約のキーはリポジトリに置かず、公開のときだけ Secret 由来の環境変数から
+        # detail.html のトークンへ差し込む。環境変数が無ければトークンのまま書き出し、
+        # ページ側で無効扱いになる (ボタンは出ない)。
+        sum_key = os.environ.get("GEMINI_SUMMARY_API_KEY", "").strip()
         for p in web.iterdir():
             if p.is_file() and p.name != "schema.json":
-                shutil.copy2(p, out / p.name)
+                if p.name == "detail.html" and sum_key:
+                    (out / p.name).write_text(
+                        p.read_text(encoding="utf-8").replace("__TRL_SUM_KEY__", sum_key),
+                        encoding="utf-8")
+                else:
+                    shutil.copy2(p, out / p.name)
     return data

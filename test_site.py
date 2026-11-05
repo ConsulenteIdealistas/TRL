@@ -853,6 +853,30 @@ class ExportTests(unittest.TestCase):
         self.assertNotIn("schema.json", names)
         self.assertEqual(json.loads((out / "data.json").read_text(encoding="utf-8"))["schema_version"], 3)
 
+    def test_export_injects_summary_key_only_into_detail(self):
+        # AI要約のキーはリポジトリに置かず、公開 (export) 時に Secret 由来の環境変数
+        # から detail.html のトークンへ差し込む。環境変数が無ければトークンのまま
+        # (ページ側で無効扱いになりボタンは出ない)。
+        import os
+        self.build(Mock(make_llm_fn()))
+        out = Path(self.tmp.name) / "site-nokey"
+        T.export_site(self.store, cfg_with(), out)
+        self.assertIn("__TRL_SUM_KEY__", (out / "detail.html").read_text(encoding="utf-8"))
+        old = os.environ.get("GEMINI_SUMMARY_API_KEY")
+        os.environ["GEMINI_SUMMARY_API_KEY"] = "TESTKEY123"
+        try:
+            out2 = Path(self.tmp.name) / "site-key"
+            T.export_site(self.store, cfg_with(), out2)
+        finally:
+            if old is None:
+                os.environ.pop("GEMINI_SUMMARY_API_KEY", None)
+            else:
+                os.environ["GEMINI_SUMMARY_API_KEY"] = old
+        detail = (out2 / "detail.html").read_text(encoding="utf-8")
+        self.assertIn("TESTKEY123", detail)
+        self.assertNotIn("__TRL_SUM_KEY__", detail)
+        self.assertNotIn("TESTKEY123", (out2 / "index.html").read_text(encoding="utf-8"))
+
     def test_search_suggest_is_touch_friendly(self):
         # スマホでサジェストが効くための配線: タップは pointerdown、候補は入力欄の直下、
         # 入力欄は iOS が拡大しない 16px。どれか欠けると実機でタップがずれる/候補が離れる。

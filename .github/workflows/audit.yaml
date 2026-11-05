@@ -59,14 +59,6 @@ jobs:
           fi
       - name: Audit evaluations
         env:
-          TRL_LLM_MODEL: ${{ vars.TRL_LLM_MODEL }}
-          TRL_AUDIT_MODEL: ${{ vars.TRL_AUDIT_MODEL }}
-          TRL_LLM_FALLBACK_MODEL: ${{ vars.TRL_LLM_FALLBACK_MODEL }}
-          TRL_LLM_FALLBACK_MODEL_2: ${{ vars.TRL_LLM_FALLBACK_MODEL_2 }}
-          TRL_LLM_CF_MODEL: ${{ vars.TRL_LLM_CF_MODEL }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           IN_LIMIT: ${{ inputs.limit }}
           IN_BUDGET: ${{ inputs.budget_sec }}
         run: |

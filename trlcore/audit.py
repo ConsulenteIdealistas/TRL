@@ -24,9 +24,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from .config import ROOT
-from .scoring import TECH_ITEMS
+from .scoring import TECH_ITEMS, compute as scoring_compute
 
-AUDIT_CHECKS = ("A1", "A2", "A3", "A4", "A5", "A6", "A7")
+AUDIT_CHECKS = ("A1", "A2", "A3", "A4", "A5", "A6", "A7",
+                "A8", "A9", "A10", "A11", "A12", "A13", "A14")
 
 def _loads(s, default):
     if s is None:
@@ -63,7 +64,8 @@ def build_audit_input(store, ev_row, cfg=None):
     for link in cand.get("entities") or []:
         meta = ent_cfg.get(link.get("entity_id")) or {}
         companies.append({"name": meta.get("name") or link.get("entity_id"),
-                          "sector": meta.get("sector")})
+                          "sector": meta.get("sector"),
+                          "strength": link.get("strength")})
         if sector is None and meta.get("sector"):
             sector = meta["sector"]
 
@@ -79,6 +81,22 @@ def build_audit_input(store, ev_row, cfg=None):
                 and not (pre_stage and k not in TECH_ITEMS)]
 
     trl = extra.get("trl_level")
+    # A13 (スコア再計算) 用: 保存済み項目点から現行設定で総合点を再導出し、
+    # 保存値と突き合わせる (recalc と同じ呼び出し方)。導出できない形なら
+    # None のままにし、チェック側で読み飛ばす
+    expected_total = expected_band = None
+    if cfg and ev.get("kind") == "long":
+        try:
+            score_items = {k: (v or {}).get("score") for k, v in items.items()
+                           if isinstance(v, dict)}
+            out = scoring_compute(score_items, "long", cfg,
+                                  (trl or {}).get("level")
+                                  if isinstance(trl, dict) else None)
+            if out.get("status") == "final":
+                expected_total = out.get("total")
+                expected_band = (out.get("band") or {}).get("label")
+        except Exception:
+            expected_total = expected_band = None
     return {
         "evaluation_id": ev.get("id"),
         "candidate_id": ev.get("candidate_id"),
@@ -92,6 +110,10 @@ def build_audit_input(store, ev_row, cfg=None):
         "items": items,
         "trl_level": trl if isinstance(trl, dict) else None,
         "extraction": extraction,
+        "published": cand.get("published"),
+        "as_of": ev.get("as_of"),
+        "expected_total": expected_total,
+        "expected_band": expected_band,
     }
 
 
@@ -120,7 +142,11 @@ RULES_FILENAME = "audit_rules.json"
 
 # 規則監査のチェック。A5 (点と理由の整合) は意味判断が必要でパターン化の
 # 実測裏付けが無いため、規則化しない (設計書 v2 4節)。
-RULES_CHECKS = ("A1", "A2", "A3", "A4", "A6", "A7")
+# A8 以降は監査要項 (~/workspace/trl-audit/AUDIT_REQUIREMENTS.md、2026-11-06)
+# の8分類に対応する決定的チェック: A8=⑦反証 / A9=⑥証拠充足 / A10=②時点 /
+# A11=⑤数値 / A12=①出典形式 / A13=⑧スコア再計算 / A14=③企業帰属。
+RULES_CHECKS = ("A1", "A2", "A3", "A4", "A6", "A7",
+                "A8", "A9", "A10", "A11", "A12", "A13", "A14")
 
 
 def load_rules(rules_dir=None):
@@ -374,8 +400,161 @@ def _check_a7(inp, chk, ext_text, out):
                           f"理由: 『{_quote(reason, span)}』"})
 
 
+def _check_a8(inp, chk, ext_text, out):
+    """A8 反証監査 (監査要項⑦)。確定評価で総合点が帯域「強い」の下限
+    (total_threshold、既定60) 以上なのに、抽出の counter_points も項目の
+    counter_evidence も空 = 反証が一切記録されていない場合に要確認。
+    好材料への前のめりを拾うためのチェック。抽出自体が無い評価は
+    判定材料が無いため対象外。"""
+    threshold = chk.get("total_threshold", 60)
+    total = inp.get("total")
+    if inp.get("status") != "final" or not isinstance(total, (int, float)) \
+            or isinstance(total, bool) or total < threshold:
+        return
+    ext = inp.get("extraction")
+    if not isinstance(ext, dict):
+        return
+    if ext.get("counter_points"):
+        return
+    items = inp.get("items") or {}
+    if any(isinstance(it, dict) and it.get("counter_evidence")
+           for it in items.values()):
+        return
+    out.append({
+        "check": "A8", "item": "counter_points", "verdict": "flag",
+        "rule": f"total>={threshold}",
+        "detail": f"確定評価 (総合点 {total}) だが、反証 (counter_points / "
+                  f"counter_evidence) が一切記録されていない。否定的材料の"
+                  f"拾い漏れか、材料プールに反証が無い状態で高く出ている"
+                  f"疑いがある。"})
+
+
+def _check_a9(inp, chk, ext_text, out):
+    """A9 証拠充足 (監査要項⑥)。項目点が帯域「非常に強い」の下限
+    (score_threshold、既定80) 以上なのに evidence が空 = 根拠の無い
+    高得点の場合に要確認。"""
+    threshold = chk.get("score_threshold", 80)
+    items = inp.get("items") or {}
+    for key, it in items.items():
+        if not isinstance(it, dict):
+            continue
+        score = it.get("score")
+        if not isinstance(score, (int, float)) or isinstance(score, bool) \
+                or score < threshold:
+            continue
+        if not (it.get("evidence") or []):
+            out.append({
+                "check": "A9", "item": key, "verdict": "flag",
+                "rule": f"score>={threshold}",
+                "detail": f"項目点が {score} 点 (高得点帯) だが、根拠 "
+                          f"(evidence) が1件も記録されていない。"})
+
+
+def _check_a10(inp, chk, ext_text, out):
+    """A10 時点監査 (監査要項②)。候補の公開日が評価の基準日 (as_of)
+    より後 = 基準日時点で存在しない材料で評価した形になっている場合に
+    要確認 (データ不整合の検出)。"""
+    published, as_of = inp.get("published"), inp.get("as_of")
+    if isinstance(published, str) and isinstance(as_of, str) \
+            and published and as_of and published > as_of:
+        out.append({
+            "check": "A10", "item": "candidate", "verdict": "flag",
+            "rule": "published>as_of",
+            "detail": f"候補の公開日 ({published}) が評価の基準日 "
+                      f"({as_of}) より後になっている。"})
+
+
+_NUM_RE = re.compile(r"\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+\.\d+|\d{3,}|\d+(?:\.\d+)?%")
+
+
+def _check_a11(inp, chk, ext_text, out):
+    """A11 数値監査 (監査要項⑤)。項目の理由に現れる数値 (小数・%・
+    3桁以上の整数) が、根拠側 (evidence 要約 + 抽出全文) のどこにも
+    現れない場合にグレーで記録する。丸め・単位換算・関連財務からの引用
+    など正当な不一致がありうるため、初版は確定にせず観測に置く
+    (A3/A4 の初版と同じ扱い)。"""
+    items = inp.get("items") or {}
+    for key, it in items.items():
+        if not isinstance(it, dict):
+            continue
+        reason = _norm_text(it.get("reason") or "")
+        if not reason:
+            continue
+        side = (_evidence_text(it) + " " + ext_text).replace(",", "")
+        missing = []
+        for m in _NUM_RE.finditer(reason):
+            num = m.group(0).replace(",", "").rstrip("%")
+            if num not in side and num not in missing:
+                missing.append(num)
+            if len(missing) >= 3:
+                break
+        if missing:
+            out.append({
+                "check": "A11", "item": key, "verdict": "gray",
+                "rule": "number-not-in-evidence",
+                "detail": f"理由中の数値 {', '.join(missing)} が根拠側 "
+                          f"(evidence + 抽出) に見当たらない。原文照合の"
+                          f"対象として記録する。"})
+
+
+def _check_a12(inp, chk, ext_text, out):
+    """A12 出典形式 (監査要項①のオフライン分)。evidence の ref が無い、
+    または http(s) URL でない場合に要確認。実在確認 (HTTP 照会) は
+    監査の外のリンク検証スイープが担う。"""
+    items = inp.get("items") or {}
+    for key, it in items.items():
+        if not isinstance(it, dict):
+            continue
+        bad = [e for e in (it.get("evidence") or []) if isinstance(e, dict)
+               and not str(e.get("ref") or "").startswith(("http://", "https://"))]
+        if bad:
+            out.append({
+                "check": "A12", "item": key, "verdict": "flag",
+                "rule": "ref-missing-or-not-url",
+                "detail": f"根拠 {len(bad)} 件に出典リンク (http(s) の ref) "
+                          f"が無い。出典へ辿れない根拠は検証できない。"})
+
+
+def _check_a13(inp, chk, ext_text, out):
+    """A13 スコア監査 (監査要項⑧)。保存済み項目点から現行設定で再導出した
+    総合点・バンド (build_audit_input の expected_*) と保存値が食い違う
+    場合に要確認。集計の不整合・未実施の再計算を拾う。"""
+    expected, total = inp.get("expected_total"), inp.get("total")
+    if expected is None or total is None:
+        return
+    if abs(expected - total) > 0.05 or \
+            (inp.get("expected_band") and inp.get("band")
+             and inp["expected_band"] != inp["band"]):
+        out.append({
+            "check": "A13", "item": "total", "verdict": "flag",
+            "rule": "recompute-mismatch",
+            "detail": f"保存された総合点 {total} (バンド {inp.get('band')}) が、"
+                      f"項目点からの再導出 {expected} "
+                      f"(バンド {inp.get('expected_band')}) と一致しない。"})
+
+
+def _check_a14(inp, chk, ext_text, out):
+    """A14 企業帰属 (監査要項③)。リンクした企業が全て weak (あいまい
+    一致のみ) なのに確定評価になっている場合にグレーで記録する。
+    帰属の強さは収集時の照合が決めており、判定の確定には人間の処分が
+    要るため初版は観測に置く。"""
+    if inp.get("status") != "final":
+        return
+    companies = inp.get("companies") or []
+    if companies and all(c.get("strength") == "weak" for c in companies):
+        names = ", ".join(c.get("name") or "?" for c in companies)
+        out.append({
+            "check": "A14", "item": "companies", "verdict": "gray",
+            "rule": "all-links-weak",
+            "detail": f"確定評価だが、企業リンクが全て弱い一致 "
+                      f"(weak) のみ: {names}。帰属の妥当性は判定保留。"})
+
+
 _CHECK_FUNCS = {"A1": _check_a1, "A2": _check_a2, "A3": _check_a3,
-                "A4": _check_a4, "A6": _check_a6, "A7": _check_a7}
+                "A4": _check_a4, "A6": _check_a6, "A7": _check_a7,
+                "A8": _check_a8, "A9": _check_a9, "A10": _check_a10,
+                "A11": _check_a11, "A12": _check_a12, "A13": _check_a13,
+                "A14": _check_a14}
 
 
 def audit_evaluation_rules(inp, rules):

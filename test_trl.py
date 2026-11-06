@@ -3837,7 +3837,7 @@ class AuditTests(unittest.TestCase):
         self.store.set_entities(cid, [{"entity_id": "astroscale", "strength": "strong",
                                        "matched_by": "title", "matched_alias": "Astroscale"}])
         ev = {"kind": "long", "as_of": "2026-10-20", "status": status,
-              "total": 72.0, "band": {"label": "順調"},
+              "total": 70.0, "band": {"label": "strong"},
               "items": {k: item(70) for k in LONG_KEYS},
               "extraction": EXTRACTION, "event": None, "prompt_versions": {},
               "config_version": CFG["config_version"], "config_hash": CFG["config_hash"],
@@ -3952,7 +3952,7 @@ class AuditRulesTests(unittest.TestCase):
         for k, v in (items or {}).items():
             full[k] = v
         ev = {"kind": "long", "as_of": "2026-10-20", "status": "final",
-              "total": 72.0, "band": {"label": "順調"}, "items": full,
+              "total": 70.0, "band": {"label": "strong"}, "items": full,
               "extraction": extraction if extraction is not None else EXTRACTION,
               "event": None, "prompt_versions": {},
               "config_version": CFG["config_version"], "config_hash": CFG["config_hash"],
@@ -3975,11 +3975,13 @@ class AuditRulesTests(unittest.TestCase):
 
     def test_load_rules(self):
         r = T.load_rules()
-        self.assertEqual(r["version"], "v1")
+        self.assertEqual(r["version"], "v2")
         self.assertEqual(len(r["sha"]), 12)
         self.assertEqual(r["sha"], T.load_rules()["sha"])  # 同じファイルでは安定
         # A5 は規則化しない (対象外)。それ以外が載っている
-        self.assertEqual(set(r["rules"]["checks"]), {"A1", "A2", "A3", "A4", "A6", "A7"})
+        self.assertEqual(set(r["rules"]["checks"]),
+                         {"A1", "A2", "A3", "A4", "A6", "A7", "A8", "A9",
+                          "A10", "A11", "A12", "A13", "A14"})
 
     def test_a1_flag(self):
         _, eid = self._mk_eval("A1フラグ", items={
@@ -4080,6 +4082,99 @@ class AuditRulesTests(unittest.TestCase):
             "moat_durability": self._item(score=30, reason="競合との差別化が弱い")})
         self.assertEqual(self._only(self._audit_one(eid4), "A7"), [])
 
+    def _inp(self, **over):
+        """監査要項チェック (A8〜A14) 用の手組み入力。既存チェックに
+        当たらない素直な形を既定にし、テストごとに差分だけ上書きする。"""
+        base = {"status": "final", "total": 70.0, "band": "strong",
+                "sector": "space", "critical_missing": [], "trl_level": None,
+                "items": {k: self._item() for k in LONG_KEYS},
+                "extraction": {"counter_points": ["反証あり"], "facts": []},
+                "published": "2026-10-01", "as_of": "2026-10-20",
+                "expected_total": 70.0, "expected_band": "strong",
+                "companies": [{"name": "X", "sector": "space",
+                               "strength": "strong"}]}
+        base.update(over)
+        return base
+
+    def test_a8_flag_and_rescue(self):
+        inp = self._inp(extraction={"counter_points": [], "facts": []})
+        for it in inp["items"].values():
+            it["counter_evidence"] = []
+        a8 = self._only(T.audit_evaluation_rules(inp, self.rules), "A8")
+        self.assertEqual(len(a8), 1)
+        self.assertEqual(a8[0]["verdict"], "flag")
+        # 反証が抽出側にあれば拾わない。総合点が低ければ対象外
+        inp2 = self._inp()
+        self.assertEqual(self._only(T.audit_evaluation_rules(inp2, self.rules), "A8"), [])
+        inp3 = self._inp(total=50.0, extraction={"counter_points": [], "facts": []})
+        self.assertEqual(self._only(T.audit_evaluation_rules(inp3, self.rules), "A8"), [])
+
+    def test_a9_flag(self):
+        inp = self._inp()
+        inp["items"]["monetization"] = self._item(score=85, evidence=[])
+        a9 = self._only(T.audit_evaluation_rules(inp, self.rules), "A9")
+        self.assertEqual(len(a9), 1)
+        self.assertEqual(a9[0]["item"], "monetization")
+
+    def test_a10_flag(self):
+        inp = self._inp(published="2026-11-01")
+        a10 = self._only(T.audit_evaluation_rules(inp, self.rules), "A10")
+        self.assertEqual(len(a10), 1)
+        inp2 = self._inp()
+        self.assertEqual(self._only(T.audit_evaluation_rules(inp2, self.rules), "A10"), [])
+
+    def test_a11_gray_and_rescue(self):
+        inp = self._inp()
+        inp["items"]["monetization"] = self._item(
+            reason="売上は前年比35.5%増と好調",
+            evidence=[{"ref": "https://example.org/x", "summary": "売上は増加した",
+                       "kind": "fact"}])
+        a11 = self._only(T.audit_evaluation_rules(inp, self.rules), "A11")
+        self.assertEqual(len(a11), 1)
+        self.assertEqual(a11[0]["verdict"], "gray")
+        inp2 = self._inp()
+        inp2["items"]["monetization"] = self._item(
+            reason="売上は前年比35.5%増と好調",
+            evidence=[{"ref": "https://example.org/x",
+                       "summary": "売上は前年比35.5%増", "kind": "fact"}])
+        self.assertEqual(self._only(T.audit_evaluation_rules(inp2, self.rules), "A11"), [])
+
+    def test_a12_flag(self):
+        inp = self._inp()
+        inp["items"]["monetization"] = self._item(
+            evidence=[{"summary": "出典なし", "kind": "fact"}])
+        a12 = self._only(T.audit_evaluation_rules(inp, self.rules), "A12")
+        self.assertEqual(len(a12), 1)
+        self.assertEqual(a12[0]["verdict"], "flag")
+
+    def test_a13_flag_and_match(self):
+        inp = self._inp(expected_total=50.0)
+        a13 = self._only(T.audit_evaluation_rules(inp, self.rules), "A13")
+        self.assertEqual(len(a13), 1)
+        inp2 = self._inp()
+        self.assertEqual(self._only(T.audit_evaluation_rules(inp2, self.rules), "A13"), [])
+
+    def test_a14_gray(self):
+        inp = self._inp(companies=[{"name": "Y", "sector": "space",
+                                     "strength": "weak"}])
+        a14 = self._only(T.audit_evaluation_rules(inp, self.rules), "A14")
+        self.assertEqual(len(a14), 1)
+        self.assertEqual(a14[0]["verdict"], "gray")
+        inp2 = self._inp()
+        self.assertEqual(self._only(T.audit_evaluation_rules(inp2, self.rules), "A14"), [])
+
+    def test_build_input_new_fields(self):
+        _, eid = self._mk_eval("新規フィールド")
+        row = dict(self.store.conn.execute(
+            "SELECT * FROM evaluations WHERE id = ?", (eid,)).fetchone())
+        inp = T.build_audit_input(self.store, row, CFG)
+        self.assertEqual(inp["as_of"], "2026-10-20")
+        self.assertIsNotNone(inp["published"])
+        # 全項目70点のフィクスチャは再導出でも70.0になる (A13が黙る形)
+        self.assertEqual(inp["expected_total"], 70.0)
+        self.assertEqual(inp["expected_band"], "strong")
+        self.assertEqual(inp["companies"][0]["strength"], "strong")
+
     def test_run_audit_rules_idempotent_and_rerun_on_change(self):
         self._mk_eval("規則対象1", items={
             "monetization": self._item(missing=["株価の推移が不明"])})
@@ -4089,7 +4184,7 @@ class AuditRulesTests(unittest.TestCase):
         self.assertGreaterEqual(res1["flags"], 1)
         rows = self.store.audit_results(res1["batch"])
         self.assertEqual(len(rows), 2)
-        self.assertEqual(rows[0]["auditor_model"], "rules/v1")
+        self.assertEqual(rows[0]["auditor_model"], "rules/v2")
         self.assertEqual(rows[0]["prompt_sha"], T.load_rules()["sha"])
         # 同じ規則 (同じ sha) では再監査しない
         res2 = T.run_audit_rules(self.store, CFG, limit=10, log=lambda *_: None)

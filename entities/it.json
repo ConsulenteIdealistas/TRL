@@ -37,7 +37,8 @@
       "exchange": "Borsa Italiana",
       "sector": "bio",
       "tags": [
-        "diagnostics"
+        "diagnostics",
+        "medtech"
       ],
       "tier": "core",
       "market": "IT",

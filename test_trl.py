@@ -2265,6 +2265,38 @@ class IntegrationTests(unittest.TestCase):
         self.assertEqual(srcs["arxiv"]["ok"], 1)
         self.assertGreater(r["counts"]["skipped_no_llm"], 0)  # LLM未設定 → 評価せず収集のみ
 
+    def test_cli_llm_default_is_gemini(self):
+        # TRL_LLM_PROVIDER が未設定・空でも既定は gemini (空文字で評価が
+        # 音もなく止まった 2026-11-06 の事故の回帰テスト)。none は明示時のみ。
+        import os
+        from unittest import mock as um
+        from trlcore import cli
+        seen = []
+
+        def fake_provider(name, model=None):
+            seen.append(name)
+            return object()
+
+        def run_case(argv, env):
+            seen.clear()
+            with tempfile.TemporaryDirectory() as td, \
+                    um.patch.dict(os.environ, env, clear=False), \
+                    um.patch.object(cli, "get_provider", fake_provider), \
+                    um.patch.object(cli, "configure_llm", lambda p, cfg: None), \
+                    um.patch.object(cli, "run_pipeline",
+                                    lambda *a, **k: {"run_id": "x", "counts": {}, "failed": False}), \
+                    um.patch.object(cli, "build_report", lambda s, r: ""):
+                if "TRL_LLM_PROVIDER" not in env:
+                    os.environ.pop("TRL_LLM_PROVIDER", None)
+                rc = cli.main(["run", "--data-dir", td, "--skip-collect"] + argv)
+            self.assertEqual(rc, 0)
+            return seen[-1]
+
+        self.assertEqual(run_case([], {}), "gemini")                      # 未設定
+        self.assertEqual(run_case([], {"TRL_LLM_PROVIDER": ""}), "gemini")  # 空 (本番の事故形)
+        self.assertEqual(run_case([], {"TRL_LLM_PROVIDER": "none"}), "none")
+        self.assertEqual(run_case(["--llm", "none"], {}), "none")          # 明示は尊重
+
     def test_collect_budget_skips_remaining_queries(self):
         # 収集フェーズの時間予算 (監査 A-1): 予算超過後は未着手クエリを打ち切る
         import copy

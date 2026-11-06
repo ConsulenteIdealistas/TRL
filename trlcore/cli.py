@@ -80,7 +80,9 @@ def main(argv=None):
     default="no",
     help="Retry previously failed evaluations",
 )
-    r.add_argument("--llm", default=os.environ.get("TRL_LLM_PROVIDER") or "none")
+    # 既定は gemini (現行の唯一のプロバイダ)。環境変数が未設定・空でも評価が
+    # 音もなく止まらないようにする。収集のみにしたいときは明示的に --llm none。
+    r.add_argument("--llm", default=os.environ.get("TRL_LLM_PROVIDER") or "gemini")
     r.add_argument("--model")
     r.add_argument("--skip-collect", action="store_true")
     r.add_argument("--only-new", action="store_true",

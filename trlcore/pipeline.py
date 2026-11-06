@@ -679,7 +679,7 @@ def run_pipeline(store, cfg, llm, *, as_of, sources=("pubmed", "arxiv"), kinds=(
         [c["id"] for c in handover] + [c["id"] for c in selected])))
     if selected and llm is None:
         counts["skipped_no_llm"] = len(selected)
-        log("[eval] LLMプロバイダ未設定のため評価をスキップ(収集のみ)。TRL_LLM_PROVIDER を設定してください。")
+        log("[eval] LLMプロバイダが none のため評価をスキップ(収集のみ)。")
         selected = []
     st = llm_settings(cfg)
     phase_t0, consecutive, degraded = time.monotonic(), 0, None

@@ -230,6 +230,65 @@ def _audits_by_eval(store):
     return out
 
 
+# ウォッチ・参考ページ (watch.html) 用の同梱上限。一次情報は企業の厚みを
+# 見る主対象として多めに、ニュース系はコピー導線が目的のため少数に絞る
+WATCH_PRIMARY_CAP = 15
+WATCH_NEWS_CAP = 5
+WATCH_NEWS_SOURCES = ("gnews", "prtimes")
+
+
+def _watch_companies(store, cfg):
+    """tier が watch / reference の企業と、そのプール材料を返す (表示専用)。
+
+    評価対象ではないため本体の candidates には載らない材料を、企業単位で
+    一次情報優先に並べて watch.html から読めるようにする。材料は新しい順、
+    一次情報 (論文・治験・開示) を前段、ニュース系を後段に置く。"""
+    ents = [e for e in (cfg.get("entities") or {}).get("entities", [])
+            if (e.get("tier") or "core") in ("watch", "reference")]
+    by_id = {}
+    for e in ents:
+        by_id[e["id"]] = {"id": e["id"], "name": e["name"],
+                          "market": e.get("market") or "JP",
+                          "sector": e.get("sector"),
+                          "tags": ([t for t in e["tags"] if isinstance(t, str)]
+                                   if isinstance(e.get("tags"), list) else []),
+                          "stage": e.get("stage"), "tier": e.get("tier") or "core",
+                          "ticker": e.get("ticker"),
+                          "counts": {"primary": 0, "news": 0},
+                          "latest": None, "_primary": [], "_news": []}
+    if by_id:
+        rows = store.conn.execute(
+            "SELECT ce.entity_id, ce.strength, c.id, c.source, c.title, c.title_ja,"
+            " c.abstract, c.abstract_ja, c.url, c.published"
+            " FROM candidate_entities ce JOIN candidates c ON c.id = ce.candidate_id"
+            " WHERE c.status != 'rejected'"
+            " ORDER BY ce.entity_id, (c.published IS NULL), c.published DESC, c.id").fetchall()
+        for eid, strength, cid, source, title, title_ja, abstract, abstract_ja, url, published in rows:
+            comp = by_id.get(eid)
+            if comp is None:
+                continue
+            mat = {"id": cid, "source": source, "title": title or "",
+                   "title_ja": title_ja or None, "abstract": abstract or "",
+                   "abstract_ja": abstract_ja or None, "url": url or "",
+                   "published": published, "strength": strength or "strong"}
+            if source in PAPER_SOURCES:
+                summ = extract_summary(title, abstract, abstract_ja)
+                if summ:
+                    mat["summary"] = summ
+            bucket = "_news" if source in WATCH_NEWS_SOURCES else "_primary"
+            comp["counts"]["news" if bucket == "_news" else "primary"] += 1
+            if published and (comp["latest"] is None or published > comp["latest"]):
+                comp["latest"] = published
+            if len(comp[bucket]) < (WATCH_NEWS_CAP if bucket == "_news" else WATCH_PRIMARY_CAP):
+                comp[bucket].append(mat)
+    out = []
+    for e in ents:
+        comp = by_id[e["id"]]
+        comp["materials"] = comp.pop("_primary") + comp.pop("_news")
+        out.append(comp)
+    return out
+
+
 def build_site_data(store, cfg, now=None):
     ent_names = {e["id"]: e["name"] for e in (cfg.get("entities") or {}).get("entities", [])}
     ent_tiers = {e["id"]: e.get("tier") or "core" for e in (cfg.get("entities") or {}).get("entities", [])}
@@ -341,7 +400,8 @@ def build_site_data(store, cfg, now=None):
                    "long_weights": long_w,
                    "item_groups": {"technology": [k for k in long_w if k in TECH_ITEMS],
                                    "business": [k for k in long_w if k not in TECH_ITEMS]}},
-        "candidates": cands}
+        "candidates": cands,
+        "watch_companies": _watch_companies(store, cfg)}
 
 
 def export_site(store, cfg, out_dir, web_dir=None, now=None):

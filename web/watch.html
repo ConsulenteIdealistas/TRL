@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ウォッチ・参考 — TRL Explorer</title>
+<link rel="stylesheet" href="style.css">
+<script>try{var tt=localStorage.getItem("trl-theme");document.documentElement.dataset.theme=(tt==="light"||tt==="dark")?tt:"dark";}catch(e){document.documentElement.dataset.theme="dark";}</script>
+<style>
+.wwrap{max-width:980px;margin:0 auto}
+.ptitle{font-size:22px;margin:2px 0 8px}
+.pdesc{color:var(--sub);font-size:13px;line-height:1.8;margin:0 0 14px}
+.wctl{display:flex;flex-direction:column;gap:10px;margin:0 0 16px}
+.wrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.wlbl{font-size:12px;font-weight:800;color:var(--sub);min-width:44px}
+.dchip{padding:6px 11px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--sub);font-size:12px;font-weight:750;cursor:pointer}
+.dchip[aria-pressed="true"]{color:#fff;border-color:transparent;background:var(--accent,#4a6cf7)}
+.tin{flex:1;min-width:180px;padding:8px 11px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:inherit;font:inherit;font-size:13px}
+select.tsel{padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:inherit;font:inherit;font-size:13px}
+.wcount{color:var(--sub);font-size:12.5px;margin:0 0 10px}
+.wcard{margin:0 0 14px;cursor:default}
+.whead{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}
+.wname{font-size:16px;font-weight:800;line-height:1.5}
+.wmeta{color:var(--sub);font-size:12px;line-height:1.9;margin-top:4px}
+.tbadge{padding:2px 8px;border-radius:999px;font-size:11px;font-weight:800}
+.tbadge.watch{color:var(--yc);background:color-mix(in srgb,var(--yc) 16%,transparent)}
+.tbadge.reference{color:var(--vc);background:color-mix(in srgb,var(--vc) 16%,transparent)}
+.wmat{display:none;margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+.wcard.open .wmat{display:block}
+.mat{margin:0 0 12px;padding:11px 12px;border:1px solid var(--line);border-radius:12px;background:var(--field)}
+.mat .mt{font-size:13.5px;font-weight:700;line-height:1.6;margin:5px 0 0}
+.mat .mt a{color:inherit}
+.mat .mja{font-size:12.5px;color:var(--sub);line-height:1.6;margin-top:2px}
+.mat .mrow{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:11.5px;color:var(--sub)}
+.msum{font-size:12.5px;line-height:1.75;margin:8px 0 0;padding:8px 10px;border-left:3px solid var(--line);background:var(--surface);white-space:pre-wrap;word-break:break-word}
+.mabs{font-size:12.5px;line-height:1.75;margin:8px 0 0;white-space:pre-wrap;word-break:break-word}
+.mops{display:flex;flex-wrap:wrap;gap:8px;margin-top:9px}
+.slabel{font-size:11px;font-weight:800;color:var(--sub);letter-spacing:.04em;margin:12px 0 8px}
+</style>
+</head>
+<body>
+<header class="topbar"><a class="brand" href="index.html"><span class="mark">T</span><span>TRL<span class="light"> Explorer</span></span></a><div class="meta">Research Intelligence</div></header>
+<main class="ws">
+<nav class="pagelinks"><a href="index.html">一覧</a><a href="criteria.html">採点基準</a><a href="audit.html">監査</a><a href="watch.html" aria-current="page">ウォッチ・参考</a></nav>
+<div class="wwrap">
+<h1 class="ptitle">ウォッチ・参考</h1>
+<p class="pdesc">評価対象ではない監視企業（ウォッチ）と、取引不可などの理由で収集だけを行う参考企業の材料置き場です。論文・治験・開示などの一次情報を前段に、ニュースを後段に並べています。各社は<strong>未評価</strong>で、一覧の評価済み企業とは別枠です。</p>
+<div class="wctl">
+  <div class="wrow"><input id="q" class="tin" type="search" placeholder="企業名・タグ・材料のタイトルで検索" aria-label="ウォッチ企業を検索"></div>
+  <div class="wrow"><span class="wlbl">層</span><span id="tiers"></span></div>
+  <div class="wrow"><span class="wlbl">分野</span><span id="sectors"></span></div>
+  <div class="wrow"><span class="wlbl">並び</span><select id="sort" class="tsel"><option value="latest">最新材料が新しい順</option><option value="count">一次情報が多い順</option><option value="name">社名順</option></select></div>
+</div>
+<p class="wcount" id="cnt" role="status"></p>
+<div id="list"></div>
+</div>
+</main>
+<footer class="ft"><span>TRL Explorer</span><span><a href="index.html">一覧</a></span><span><a href="criteria.html">採点基準（評価規程と重み）</a></span><span><a href="audit.html">監査（要確認の処分）</a></span><span><a href="watch.html">ウォッチ・参考（未評価の監視企業）</a></span><span>技術成熟度と事業化評価は独立した評価軸です。スコアは評価尺度であり、株価上昇確率・成功確率・投資利益率ではありません。</span></footer>
+<script src="watch.js"></script>
+</body>
+</html>

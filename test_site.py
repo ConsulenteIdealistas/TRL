@@ -998,8 +998,12 @@ class ExportTests(unittest.TestCase):
         # のみ (ヘッダーは両ページともリンクなしで揃える)
         index = (web / "index.html").read_text(encoding="utf-8")
         self.assertIn('<nav class="pagelinks"><a href="criteria.html">採点基準</a>'
-                      '<a href="audit.html">監査</a></nav>', index)
+                      '<a href="audit.html">監査</a><a href="watch.html">ウォッチ・参考</a></nav>', index)
         self.assertIn('<a href="audit.html">監査（要確認の処分）</a>', index)
+        # ウォッチ・参考ページも同格に存在し、一覧から辿れる
+        wpage = (web / "watch.html").read_text(encoding="utf-8")
+        self.assertIn("watch.js", wpage)
+        self.assertIn('<a href="watch.html">ウォッチ・参考（未評価の監視企業）</a>', index)
         detail = (web / "detail.html").read_text(encoding="utf-8")
         self.assertIn('<a href="audit.html">監査（要確認の処分）</a>', detail)
         self.assertNotIn('<a href="audit.html">監査</a>', detail)
@@ -1010,6 +1014,13 @@ class ExportTests(unittest.TestCase):
         names = {p.name for p in out.iterdir()}
         self.assertIn("audit.html", names)
         self.assertIn("audit.js", names)
+        self.assertIn("watch.html", names)
+        self.assertIn("watch.js", names)
+        # ウォッチ・参考の同梱データ (tier が watch / reference の企業だけ)
+        data = json.loads((out / "data.json").read_text(encoding="utf-8"))
+        self.assertIn("watch_companies", data)
+        self.assertTrue(all(c["tier"] in ("watch", "reference")
+                            for c in data["watch_companies"]))
 
 
 class ZeroRiskBatchTests(unittest.TestCase):

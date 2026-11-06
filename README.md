@@ -9,13 +9,13 @@ Python 標準ライブラリのみで動作し、運用はスマホのブラウ�
 
 公開サイト: https://consulenteidealistas.github.io/TRL/ （画面と `data.json` は公開されます）
 
-## 現在の規模（2026-10-29 時点）
+## 現在の規模（2026-11-06 時点）
 
 - 対象企業: **500社**（コア 180 / ウォッチ 283 / 参考 37）、27市場、生成クエリ 1178件
-- 分野別: バイオ 128 / 宇宙 29 / 半導体 40 / AI 30 / ロボティクス 31 / エネルギー・蓄電池 30 / 量子技術 12（ほかに分野を跨ぐタグ: フォトニクス 14 / 医療機器 25）
-- 市場別: US 33 / JP 22 / GB 13 / FR 12 / DE 10 / AU 10 / CA 8 / CH 6 / DK 6 / ES 5 / SE 5 / NL 5 / IT 4 / FI 4 / NO 4 / BE 3
+- 分野別: バイオ 185 / エネルギー・蓄電池 83 / 半導体 68 / AI 52 / 宇宙 43 / ロボティクス 41 / 防衛 16 / 量子技術 12（ほかに分野を跨ぐタグ: 語彙36種・延べ290件、フォトニクス 15 / 医療機器 40 等）
+- 市場別: US 139 / JP 49 / IN 36 / SE 25 / DE 24 / GB 24 / AU 23 / CA 21 / FR 21 / PL 16 / ES 12 / FI 12 / NO 12 / CH 10 / DK 10 / GR 10 / AT 9 / IT 9 / HK 8 / NL 7 / BE 5 / SG 5 / CZ 4 / NZ 3 / TW 3 / PT 2 / IE 1
 - 設定バージョン: `2026.11.0`（設定とプロンプトの内容ハッシュを評価ごとに記録し、変更の追跡はハッシュで行う）
-- テスト: 288件（`test_trl.py` / `test_entities.py` / `test_site.py`、CI でも毎回実行）
+- テスト: 346件（`test_trl.py` / `test_entities.py` / `test_site.py` / `test_roic.py`、CI でも毎回実行）
 
 ## 全体像
 
@@ -23,7 +23,7 @@ Python 標準ライブラリのみで動作し、運用はスマホのブラウ�
 収集 (ソース別に並列) → 正規化・重複排除 → 企業リンク付け → スクリーニング
   → 選定 (コア企業リンク・材料の強さ順, 評価上限は実行ごとに指定)
   → LLM抽出 (根拠・事実) → LLM評価 (long / event)
-  → SQLite 保存 (dataブランチ) → サイト書き出し (data.json + web/) → 表示対象のみ翻訳
+  → SQLite 保存 (dataブランチ) → サイト書き出し (data.json + web/) → 翻訳 (表示対象＋ウォッチ一次情報のキュー)
   → 古い材料の削除 (prune)
 ```
 
@@ -33,7 +33,7 @@ Python 標準ライブラリのみで動作し、運用はスマホのブラウ�
 
 ## 企業辞書（entities/）
 
-企業は市場別ファイル（`entities/jp.json`, `us.json`, ... 全16ファイル）に1エントリずつ定義し、起動時に合体します。企業追加は該当ファイルへの1エントリ追加で完結します。
+企業は市場別ファイル（`entities/jp.json`, `us.json`, ... 全27ファイル）に1エントリずつ定義し、起動時に合体します。企業追加は該当ファイルへの1エントリ追加で完結します。
 
 エントリの主な項目:
 
@@ -41,9 +41,9 @@ Python 標準ライブラリのみで動作し、運用はスマホのブラウ�
 |---|---|
 | `id` / `name` / `aliases` | 一意なID、正式名、別名（日本語名含む）。別名は3文字未満・他企業との衝突を検証で拒否 |
 | `ticker` / `exchange` / `market` | 証券コード（接尾辞なし）、取引所、市場コード（US/GB/...、JP は省略可）。ticker の形式も検証する |
-| `sector` | `bio` / `space` / `semiconductor` / `ai` / `robotics` / `energy` / `quantum`（主分類は1社1つ） |
+| `sector` | `bio` / `space` / `semiconductor` / `ai` / `robotics` / `energy` / `quantum` / `defense`（主分類は1社1つ） |
 | `tags` | 分野を跨ぐ第二の分類（複数可、表示・分析専用で評価には使わない）。`photonics`（光通信）と `medtech`（医療機器）に加え、技術テーマ別の語彙（地球観測・量子コンピュータ・創薬AI・パワー半導体・蓄電ESS 等。ラベルは `web/app.js` の `TL`）と、他分野の sector キー（例: 半導体寄りのロボティクス企業への `semiconductor`）を使う。重なりは具体的なタグを優先し、包含関係にある汎用タグ（例: `industrial_robotics`）は付けない |
-| `tier` | `core` / `watch`（後述） |
+| `tier` | `core` / `watch` / `reference`（後述） |
 | `stage` | 企業の段階: `rd`（研究開発型）/ `demo`（実証型）/ `production`（量産型）/ `commercial`（商業化型）。サイト表示と分析専用で、評価・選定には使わない |
 | `watch.news_name` | ニュース検索に使う代表名 |
 | `watch.sponsor` | ClinicalTrials.gov のスポンサー名（ある企業のみ治験クエリを生成） |
@@ -52,14 +52,14 @@ Python 標準ライブラリのみで動作し、運用はスマホのブラウ�
 | `watch.extra_keywords` | 製品名・技術名などの追加キーワード |
 | `products` | 製品リンク用の製品名・別名（任意） |
 
-**tier の意味**: 評価の対象は**コア企業にリンクする候補のみ**です。ウォッチ企業は収集と根拠プールには参加しますが、その企業だけに紐付く材料は評価されません。層の移動は `tier` の書き換えだけです。
+**tier の意味**: 評価の対象は**コア企業にリンクする候補のみ**です。ウォッチ企業は収集と根拠プールには参加しますが、その企業だけに紐付く材料は評価されません。**参考（reference）**は収集はウォッチと同じですが、評価対象にも昇格候補にもならず、比率の上ではウォッチの内数として数えます。層の移動は `tier` の書き換えだけです。
 
 **クエリの自動生成**: 企業クエリは `sources.json` には書かず、辞書の `sector` と `watch` から起動時に自動生成します（`trl.py queries` で確認可能）。
 
-- `gnews`: 代表名 + セクター別キーワード集合（市場言語別: 英/独/伊/スウェーデン語の集合あり、他は英語集合）
+- `gnews`: 代表名 + セクター別キーワード集合（市場別ロケール・言語別キーワード集合あり）
 - `prtimes`: 英日表記の引用符付き企業名（**JP のみ**）
 - `trials`: `sponsor` がある企業のみ
-- `yahoo`: `ticker` + 市場別接尾辞（GB=.L / FR=.PA / DE=.DE / CH=.SW / SE=.ST / DK=.CO / ES=.MC / NL=.AS / FI=.HE / NO=.OL / BE=.BR / IT=.MI / CA=.TO / AU=.AX、US・JP はなし）
+- `yahoo`: `ticker` + 市場別接尾辞（GB=.L / DE=.DE / CH=.SW / IN=.NS / HK=.HK / TW=.TW など市場ルールで定義、US はなし）
 - `edinet`: 証券コード（**JP のみ**）
 - `pubmed`: `watch.pubmed` がある企業のみ所属検索。その他の論文はトピッククエリ（`sources.json` の `topics`、3件）で収集
 - `openalex`: 機関IDがある企業のみ
@@ -147,7 +147,9 @@ long 評価では、点数・TRL とは独立に「その資料が示す出来�
 | supply_demand | 10 |
 | downside_resilience | 10 |
 
-長期とイベントは別々に評価・保存し、平均しません。市場予想が確認できないイベントは分類を確定せず、expectation_gap / not_priced_in を null に戻して保留にします。現在の材料には株価・出来高データが含まれないため、event は final が出にくく、主に短期視点のメモとして機能します。
+長期とイベントは別々に評価・保存し、平均しません。市場予想が確認できないイベントは分類を確定せず、expectation_gap / not_priced_in を null に戻して保留にします。
+
+**株価反応データ（2026-11-06 導入、プロンプト event.v2）**: event 選定された候補には、Yahoo の日次バーから決定的に計算した株価反応を材料として同梱します（アンカー材料の反応 [0, +1]、頑健なばらつきで割った標準化反応 z、事前ドリフト、出来高倍率。系列は `market_series` にキャッシュし、選定企業だけ遅延取得）。市場予想の記述が無くても、測定可能な反応があれば expectation_gap / not_priced_in を判定してよいことにし、コード側の強制 null も反応がある場合は外しています。導入前の hold は自動では再評価されません。
 
 ### スコアのバンド
 
@@ -170,17 +172,21 @@ long 評価では、点数・TRL とは独立に「その資料が示す出来�
 
 ### LLM 設定
 
-- プロバイダは `gemini` / 未設定（収集のみ）。呼び出しはタイムアウト120秒、再試行1回。429 は再試行せず、次の段へ進みます（枯れた枠への聞き直しは時間と枠の両方を無駄にするため）。
-- 主モデルが一時的な失敗（503/429 等）を返したときだけ、代替モデルへ降ります。階段は Gemini 内の3段（主 → `TRL_LLM_FALLBACK_MODEL` → `TRL_LLM_FALLBACK_MODEL_2`）です。恒常的な失敗と時間上限では降りません。段ごとに連続失敗の見切り（ブレーカー）があり、主と代替1は1回失敗した時点でその実行中はその段を飛ばします（最終段は飛ばしません）。候補1件あたりの総時間予算は300秒（`llm.candidate_budget_sec`）で、失敗の連鎖が1件を際限なく長引かせることはありません。モデルが廃止・変更されたときは、コードを触らず Variable の書き換えだけで切り替えられます。
+- プロバイダは Gemini のみ（未設定・空のときも `gemini` として動作し、`none` と明示したときだけ収集のみになります）。呼び出しはタイムアウト120秒、再試行1回。429 は再試行せず、次の段へ進みます（枯れた枠への聞き直しは時間と枠の両方を無駄にするため）。
+- 主モデルが一時的な失敗（503/429 等）を返したときだけ、代替モデルへ降ります。階段は Gemini 内の2段（主 → `TRL_LLM_FALLBACK_MODEL`）です。恒常的な失敗と時間上限では降りません。段ごとに連続失敗の見切り（ブレーカー）があり、主と代替1は1回失敗した時点でその実行中はその段を飛ばします（最終段は飛ばしません）。候補1件あたりの総時間予算は300秒（`llm.candidate_budget_sec`）で、失敗の連鎖が1件を際限なく長引かせることはありません。モデルが廃止・変更されたときは、コードを触らず Variable の書き換えだけで切り替えられます。
 - 呼び出しは試行単位で `llm_calls` に記録します（候補・目的・実際に答えたモデル・所要秒数・成否・トークン数）。どのモデルが評価したかはサイトにも表示します。
-- プロンプト: `extract.v1.md`（抽出）/ `long.v1.md`（長期）/ `event.v1.md`（イベント）。
+- プロンプト: `extract.v1.md`（抽出）/ `long.v1.md`（長期）/ `event.v2.md`（イベント。v1 は凍結）。
+- 監査は規則ベースに一本化しています（`trlcore/audit.py` の決定的チェック A1〜A7: 件数・継続の主張と根拠の照合、TRL 9 の継続証拠、成長推論の構文、技術と商用の混同、欠落判定の妥当性、減点理由の具体性）。LLM 監査は廃止しました。監査は点数を動かさず「要確認」として記録し、サイトの監査ページで処分します。
 
 ## サイト（web/）
 
 - 書き出し対象は「各候補の最新評価＋未評価のうち次回評価予定＋除外候補（理由つき）」。データ形式は `data.json`（schema_version 3）。体裁の詳細は次節「公開形式」。
-- 一覧: 検索（2文字以上で企業名・キーワード・タイトルの**サジェスト**、日本語入力・スマホ対応）、国・市場と分野とタグと段階の絞り込み、方向性フィルタ、並び替え（おすすめ順 / TRL 高い順・低い順 / 国・市場別 / 分野別 / 日付）。
-- 表示状態: 選定可能（final）/ 要追加調査（review）/ 保留（hold）/ 評価待ち（pending）/ エラー / 除外。画面側で点数の再計算・換算・平均はしません。
+- 一覧: 検索（2文字以上で企業名・キーワード・タイトルの**サジェスト**、日本語入力・スマホ対応）、国・市場と分野とタグと段階の絞り込み、方向性フィルタ、並び替え（おすすめ順 / TRL 高い順・低い順 / 国・市場別 / 分野別 / 日付の新しい順・古い順）。
+- 表示状態: 選定可能（final）/ 要追加調査（review）/ 保留（hold）/ 評価待ち（pending）/ エラー / 除外。画面側で点数の再計算・換算・平均はしません。総合点は「総合点（長期）」と「イベント評価（短期）」を分けて表示します。
 - 詳細ページ（`detail.html`）: 根拠の全文、反証、不足情報と「結果待ち」の別掲、イベント評価、同梱した関連ニュース・財務根拠を表示します。
+- 論文には「要点（抄録から抽出）」を表示します。抄録（5文以上）から文のスコアで上位3文を原文順に抽出する決定的な処理で、書き出し時に計算します（LLM・API は使いません）。
+- ウォッチ・参考ページ（`watch.html`）: 評価対象外の監視企業320社のプール材料を企業単位で読むページ。一次情報（上限15件）とニュース（上限5件）を出典リンク・出典コピー・リンクコピー付きで表示し、タグ絞り込みはセクター別の折り畳みグループです。
+- 採点基準ページ（`criteria.html`）: 現行の配点・必須項目・バンドと評価規程の全文。監査ページ（`audit.html`）: 規則監査の「要確認」を処分し、再評価予約と TRL 調整を入力するページ（調整は非破壊の別層）。
 - 外部由来のテキストは全てエスケープして描画し、リンクは http/https のみ許可します。スコアは数値以外を表示しません。
 
 ### 翻訳
@@ -192,6 +198,8 @@ long 評価では、点数・TRL とは独立に「その資料が示す出来�
 3. **Google Cloud Translation**（月50万字まで無料・毎月リセット、二重障害時のみ）
 
 キーが無い段は自動で飛ばします。どの経路で訳したかは候補ごとに記録され、画面にも「訳: Azure」のように表示されます。
+
+表示対象とは別に、ウォッチ・参考企業の一次情報（論文・治験のみ、ニュースは対象外）を翻訳するキューがあります。優先順は 表示セット > ウォッチ > 参考 > コア で企業をローテーションし、1回50件まで、月次予算150万字です。経路は Azure → Google で、温存中の DeepL は使いません。
 
 翻訳に使った文字数は段ごとに数えて run 記録に残します（`translation_chars`）。累計（Azure / Google は月次、DeepL は一回限り枠のため通算）が 50万 / 100万 / 125万 / 150万 / 175万 / 200万字のしきい値を跨ぐと、run 記録に `translation_alerts` として残し、実行ログにも警告を出します。
 
@@ -261,11 +269,13 @@ long 評価では、点数・TRL とは独立に「その資料が示す出来�
 
 | 名前 | 種別 | 用途 |
 |---|---|---|
-| TRL_LLM_PROVIDER | Variable | `gemini` |
+| TRL_LLM_PROVIDER | Variable | `gemini`（未登録でもコード既定で gemini として動作。`none` 明示時のみ収集のみ） |
 | TRL_LLM_MODEL | Variable | モデル名（未設定時のコード既定は Gemini `gemini-3.8-flash`） |
 | TRL_LLM_FALLBACK_MODEL | Variable | 代替モデル名（任意） |
-| TRL_LLM_FALLBACK_MODEL_2 | Variable | 代替モデル名・第2段（任意） |
 | GEMINI_API_KEY | Secret | LLM のキー |
+| ROIC_API_KEY | Secret | ROIC.ai（財務の穴埋め・裏取り） |
+| ALPHA_VANTAGE_API_KEY | Secret | Alpha Vantage（登録済み・収集器は実装待ち） |
+| SIMFIN_API_KEY | Secret | SimFin（登録済み・収集器は実装待ち） |
 | OPENALEX_API_KEY | Secret | OpenAlex（推奨） |
 | NCBI_API_KEY | Secret | PubMed（任意、レート上限が上がる） |
 | AZURE_TRANSLATOR_KEY | Secret | 翻訳・第1段 |
@@ -291,7 +301,7 @@ python3 trl.py export        # サイト書き出し (data.json + web/, --out �
 python3 trl.py queries       # 生成クエリの一覧
 python3 trl.py check-config  # 設定の検証とハッシュ表示
 python3 trl.py purge --evaluations  # 評価とキューを全削除し候補を未評価に戻す (候補・収集物・実行履歴は残る)
-python3 -m unittest test_trl test_entities test_site   # テスト
+python3 -m unittest test_trl test_entities test_site test_roic   # テスト
 ```
 
 ## ファイル構成
@@ -304,31 +314,34 @@ trlcore/                本体パッケージ
   pipeline.py           収集→選定→評価→書き出しの統括
   store.py              SQLite (候補・評価・識別子・実行記録)
   normalize.py          正規化と重複排除キー
-  sources/              各ソースのフェッチャ (pubmed/arxiv/gnews/prtimes/trials/yahoo/openalex/edinet)
+  sources/              各ソースのフェッチャ (pubmed/arxiv/gnews/prtimes/trials/yahoo/openalex/edinet/edgar/roic)
   evaluate.py           LLM 応答の検証・評価の実行
   scoring.py            スコア計算 (二軸化・バンド)
-  llm.py                LLM プロバイダ (gemini/anthropic, 代替モデル)
+  llm.py                LLM プロバイダ (gemini のみ, 代替モデル)
+  audit.py              規則監査 (A1〜A7, audit_rules.json)
+  market.py             株価反応データ (Yahoo 日次バー→反応・標準化反応・出来高倍率)
+  summarize.py          抽出型の要点 (抄録から上位3文)
   translate.py          翻訳 (Azure→DeepL→Google)
   site.py               data.json 書き出し
   report.py             実行レポート
   http.py               HTTP 取得 (リトライ・秘密情報マスク・応答32MB上限)
-entities/               市場別企業辞書 (16ファイル)
+entities/               市場別企業辞書 (27ファイル)
 scoring.json            配点・必須項目・バンド・スクリーニング・LLM 設定
 sources.json            キーワード集合・生成パラメータ・トピック
-extract.v1.md / long.v1.md / event.v1.md   プロンプト
-web/                    画面 (index.html / detail.html / app.js / style.css / schema.json)
-test_trl.py / test_entities.py / test_site.py   テスト
+extract.v1.md / long.v1.md / event.v2.md   プロンプト (event.v1.md は凍結)
+web/                    画面 (index.html / detail.html / watch.html / audit.html / criteria.html / app.js / watch.js / audit.js / style.css / schema.json)
+test_trl.py / test_entities.py / test_site.py / test_roic.py   テスト
 .github/workflows/main.yaml   ワークフロー
 ```
 
 ## 既知の制約・設計判断
 
 - **EDINET は運用中**: JP のコア企業の開示を取得し、財務書類（有報・四半期・半期とその訂正）からは各社直近2件まで数値を抽出して財務プールに入れます（type=5 の CSV を優先し、取れなければ type=1 の XBRL）。日次リストは直近45日分を証券コード別の索引にまとめて全クエリで共有します（クエリごとの全件走査はしません）。キー未設定の環境では取得を自動でスキップし、エラーにしません。
-- **Yahoo Finance は非公式 API**（キー・登録は不要）。bot 判定を避けるため User-Agent はセッションごとに実在ブラウザの候補から選び、全リクエストをプロセス全体で最小1秒間隔に直列化します。銘柄自体が無い企業（例: QPS研究所）は取得できません。通信が2回とも失敗した場合は空結果で握りつぶさず、収集の失敗として実行統計（sources_failed）に記録します（EDGAR も同様）。
+- **Yahoo Finance は非公式 API**（キー・登録は不要）。bot 判定を避けるため User-Agent はセッションごとに実在ブラウザの候補から選び、全リクエストをプロセス全体で最小1秒間隔に直列化します。銘柄自体が存在しない企業は取得できません。通信が2回とも失敗した場合は空結果で握りつぶさず、収集の失敗として実行統計（sources_failed）に記録します（EDGAR も同様）。
 - **SEC EDGAR は公式 API**（キー・登録は不要、US 上場のみ）。company facts（XBRL）から売上・利益・現預金・短期有価証券などを抽出し、Yahoo と同じ財務プールに入れます。2026-10-29 の実測では US 94社中87社で取得でき、残り（上場直後で未提出・IFRS の集計概念が無い等）は Yahoo 側でカバーします。SEC の fair access 方針に従い User-Agent に運用者名と連絡先を含め、リクエストを間引きします。
 - **arXiv は所属情報を取得しない**ため、企業との strong 一致は成立しません（現時点では対象外として扱います）。
 - **OpenAlex は機関ID登録済みの14社のみ**が対象です。機関レコードが無い企業は PubMed/arXiv 側で拾います。
-- **event 評価の限界**: 材料に株価・出来高が無いため、織り込み度の判定ができず final は出にくい状態です。本格化には株価履歴の材料追加が必要です。
+- **event 評価の限界**: 株価反応データは導入済みですが、市場コンセンサス予想そのものは材料にありません（反応は「予想との差」の代理として扱います）。導入前の hold は自動では再評価されず、必要なら再評価キューで拾います。
 - **TDnet は見送り済み**: 公式 API は索引のみで高額、本文は PDF 中心で現在の構成（標準ライブラリのみ）では抽出できないため採用していません。
-- **未実装**: 特許・IR 資料の本文解析、市場データの取り込み、過去イベントの事後検証、AI 採点の妥当性検証。
+- **未実装**: 特許・IR 資料の本文解析、過去イベントの事後検証、AI 採点の妥当性検証。財務補間の残り2社（SimFin / Alpha Vantage。キーは登録済み）、ESEF 収集器（EU+英国119社、導入決定済み）、スイス10社の EQS + GlobeNewswire 収集器（採用決定済み）は実装待ちです。
 - 失敗した情報源は Actions ログの `::warning::` とレポートに表示されます。全情報源が失敗したときだけジョブが失敗します。

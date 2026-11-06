@@ -17,6 +17,11 @@
 .dchip[aria-pressed="true"]{color:#fff;border-color:transparent;background:var(--accent,#4a6cf7)}
 .tin{flex:1;min-width:180px;padding:8px 11px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:inherit;font:inherit;font-size:13px}
 select.tsel{padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:inherit;font:inherit;font-size:13px}
+.taggroups{display:flex;flex-direction:column;gap:8px}
+.taggroup{border:1px solid var(--line);border-radius:10px;padding:7px 11px;background:var(--surface)}
+.taggroup summary{cursor:pointer;font-size:12.5px;font-weight:800;color:var(--sub);list-style-position:outside}
+.taggroup .wrow{margin-top:8px}
+.taggroup .selcnt{color:var(--accent,#4a6cf7)}
 .wcount{color:var(--sub);font-size:12.5px;margin:0 0 10px}
 .wcard{margin:0 0 14px;cursor:default}
 .whead{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}
@@ -50,6 +55,8 @@ select.tsel{padding:8px 10px;border:1px solid var(--line);border-radius:10px;bac
   <div class="wrow"><span class="wlbl">層</span><span id="tiers"></span></div>
   <div class="wrow"><span class="wlbl">国・市場</span><span id="markets"></span></div>
   <div class="wrow"><span class="wlbl">分野</span><span id="sectors"></span></div>
+  <div class="wrow"><span class="wlbl">タグ</span><span class="wmeta" style="margin:0">セクターごとに折り畳んでいます（複数選択可）</span></div>
+  <div id="tags" class="taggroups"></div>
   <div class="wrow"><span class="wlbl">並び</span><select id="sort" class="tsel"><option value="latest">最新材料が新しい順</option><option value="oldest">最新材料が古い順</option><option value="count">一次情報が多い順</option><option value="name">社名順</option></select></div>
 </div>
 <p class="wcount" id="cnt" role="status"></p>

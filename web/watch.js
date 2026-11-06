@@ -10,11 +10,11 @@ const TL = {photonics: "フォトニクス", medtech: "医療機器", earth_obse
 const SRC_CLASS = {arxiv: "s-arxiv", pubmed: "s-pubmed", gnews: "s-gnews", trials: "s-trials", edinet: "s-edinet", yahoo: "s-yahoo", openalex: "s-openalex", prtimes: "s-prtimes", edgar: "s-edgar", roic: "s-roic"};
 const SRC_LABEL = {arxiv: "arXiv", pubmed: "PubMed", gnews: "News", trials: "ClinicalTrials", edinet: "EDINET", yahoo: "Yahoo Finance", openalex: "OpenAlex", prtimes: "PR TIMES", edgar: "SEC EDGAR", roic: "ROIC.ai"};
 const NEWS_SOURCES = new Set(["gnews", "prtimes"]);
-const tagLabel = t => TL[t] || t;
+const tagLabel = t => TL[t] || CL[t] || t;
 const srcName = s => SRC_LABEL[s] || s;
 
 let companies = [];
-const state = {q: "", tier: "", markets: new Set(), sectors: new Set(), sort: "latest"};
+const state = {q: "", tier: "", markets: new Set(), sectors: new Set(), tags: new Set(), sort: "latest"};
 
 function haystack(c) {
   const parts = [c.name, c.ticker || "", ML[c.market] || "", CL[c.sector] || "",
@@ -98,6 +98,7 @@ function filtered() {
     (!state.tier || c.tier === state.tier) &&
     (!state.markets.size || state.markets.has(c.market)) &&
     (!state.sectors.size || state.sectors.has(c.sector)) &&
+    (!state.tags.size || (c.tags || []).some(t => state.tags.has(t))) &&
     (!q || haystack(c).includes(q)));
   if (state.sort === "latest") rows.sort((a, b) => (b.latest || "") > (a.latest || "") ? 1 : (b.latest || "") < (a.latest || "") ? -1 : a.name.localeCompare(b.name, "ja"));
   else if (state.sort === "oldest") rows.sort((a, b) => (a.latest || "9999") > (b.latest || "9999") ? 1 : (a.latest || "9999") < (b.latest || "9999") ? -1 : a.name.localeCompare(b.name, "ja"));
@@ -144,11 +145,33 @@ async function init() {
   chips($("#sectors"), secs.map(s => [s, CL[s] || s]),
     v => state.sectors.has(v),
     v => { state.sectors.has(v) ? state.sectors.delete(v) : state.sectors.add(v); initChipsOnly(); render(); });
+  // タグは数が多いのでセクターごとに折り畳んで出す。同じタグが複数セクターに
+  // 現れる場合は同じ選択を共有し、チップの押下状態は全グループで同期する
+  const tagOrder = Object.keys(TL);
+  const tagGroups = Object.keys(CL).map(s => {
+    const ts = [...new Set(companies.filter(c => c.sector === s).flatMap(c => c.tags || []))]
+      .sort((a, b) => tagOrder.indexOf(a) - tagOrder.indexOf(b));
+    return [s, ts];
+  }).filter(([, ts]) => ts.length);
+  $("#tags").innerHTML = tagGroups.map(([s, ts]) =>
+    `<details class="taggroup" data-sector="${esc(s)}"><summary>${esc(CL[s] || s)}（${ts.length}種）<span class="selcnt"></span></summary><div class="wrow"></div></details>`).join("");
+  tagGroups.forEach(([s, ts]) => {
+    const box = document.querySelector(`#tags .taggroup[data-sector="${s}"] .wrow`);
+    chips(box, ts.map(t => [t, tagLabel(t)]),
+      v => state.tags.has(v),
+      v => { state.tags.has(v) ? state.tags.delete(v) : state.tags.add(v); initChipsOnly(); render(); });
+  });
   function initChipsOnly() {
     document.querySelectorAll("#tiers .dchip").forEach(b => b.setAttribute("aria-pressed", String(state.tier === b.dataset.v)));
     document.querySelectorAll("#markets .dchip").forEach(b => b.setAttribute("aria-pressed", String(state.markets.has(b.dataset.v))));
     document.querySelectorAll("#sectors .dchip").forEach(b => b.setAttribute("aria-pressed", String(state.sectors.has(b.dataset.v))));
+    document.querySelectorAll("#tags .dchip").forEach(b => b.setAttribute("aria-pressed", String(state.tags.has(b.dataset.v))));
+    document.querySelectorAll("#tags .taggroup").forEach(g => {
+      const n = [...g.querySelectorAll(".dchip")].filter(b => state.tags.has(b.dataset.v)).length;
+      g.querySelector(".selcnt").textContent = n ? ` ・${n}件選択中` : "";
+    });
   }
+  initChipsOnly();
   $("#q").addEventListener("input", e => { state.q = e.target.value; render(); });
   $("#sort").addEventListener("change", e => { state.sort = e.target.value; render(); });
   render();

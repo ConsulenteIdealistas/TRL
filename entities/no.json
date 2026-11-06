@@ -170,6 +170,121 @@
         ]
       },
       "stage": "commercial"
+    },
+    {
+      "id": "arcticzymes",
+      "name": "ArcticZymes Technologies ASA",
+      "aliases": [
+        "ArcticZymes",
+        "アークティックザイムス"
+      ],
+      "ticker": "AZT",
+      "exchange": "Oslo Børs",
+      "sector": "bio",
+      "tier": "watch",
+      "market": "NO",
+      "watch": {
+        "news_name": "ArcticZymes Technologies",
+        "sponsor": "ArcticZymes Technologies",
+        "extra_keywords": [
+          "enzymes",
+          "bioprocessing",
+          "molecular diagnostics"
+        ]
+      },
+      "stage": "production"
+    },
+    {
+      "id": "hexagon_composites",
+      "name": "Hexagon Composites ASA",
+      "aliases": [
+        "Hexagon Composites",
+        "ヘキサゴン・コンポジット"
+      ],
+      "ticker": "HEX",
+      "exchange": "Oslo Børs",
+      "sector": "energy",
+      "tier": "watch",
+      "market": "NO",
+      "watch": {
+        "news_name": "Hexagon Composites",
+        "extra_keywords": [
+          "hydrogen storage",
+          "composite cylinders",
+          "Hexagon Purus"
+        ]
+      },
+      "stage": "commercial"
+    },
+    {
+      "id": "kitron",
+      "name": "Kitron ASA",
+      "aliases": [
+        "Kitron",
+        "キトロン"
+      ],
+      "ticker": "KIT",
+      "exchange": "Oslo Børs",
+      "sector": "semiconductor",
+      "tier": "watch",
+      "market": "NO",
+      "watch": {
+        "news_name": "Kitron",
+        "extra_keywords": [
+          "electronics manufacturing",
+          "EMS",
+          "defence electronics"
+        ]
+      },
+      "stage": "commercial"
+    },
+    {
+      "id": "medistim",
+      "name": "Medistim ASA",
+      "aliases": [
+        "Medistim",
+        "メディスティム"
+      ],
+      "ticker": "MEDI",
+      "exchange": "Oslo Børs",
+      "sector": "bio",
+      "tags": [
+        "medtech"
+      ],
+      "tier": "watch",
+      "market": "NO",
+      "watch": {
+        "news_name": "Medistim",
+        "sponsor": "Medistim",
+        "extra_keywords": [
+          "transit time flow measurement",
+          "TTFM",
+          "MiraQ"
+        ]
+      },
+      "stage": "commercial"
+    },
+    {
+      "id": "scatec",
+      "name": "Scatec ASA",
+      "aliases": [
+        "Scatec",
+        "スカーテック"
+      ],
+      "ticker": "SCATC",
+      "exchange": "Oslo Børs",
+      "sector": "energy",
+      "tier": "watch",
+      "market": "NO",
+      "watch": {
+        "news_name": "Scatec",
+        "extra_keywords": [
+          "solar power",
+          "hydropower",
+          "IPP"
+        ]
+      },
+      "stage": "commercial"
     }
   ]
 }

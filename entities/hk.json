@@ -1,0 +1,185 @@
+{
+  "entities": [
+    {
+      "id": "innovent",
+      "name": "Innovent Biologics, Inc.",
+      "aliases": [
+        "Innovent Biologics",
+        "Innovent"
+      ],
+      "ticker": "1801",
+      "exchange": "HKEX",
+      "sector": "bio",
+      "tier": "watch",
+      "market": "HK",
+      "watch": {
+        "news_name": "Innovent Biologics",
+        "sponsor": "Innovent Biologics",
+        "extra_keywords": [
+          "monoclonal antibodies",
+          "PD-1 inhibitor",
+          "sintilimab",
+          "oncology biologics"
+        ]
+      },
+      "stage": "commercial"
+    },
+    {
+      "id": "akeso",
+      "name": "Akeso, Inc.",
+      "aliases": [
+        "Akeso"
+      ],
+      "ticker": "9926",
+      "exchange": "HKEX",
+      "sector": "bio",
+      "tier": "watch",
+      "market": "HK",
+      "watch": {
+        "news_name": "Akeso",
+        "sponsor": "Akeso",
+        "extra_keywords": [
+          "bispecific antibodies",
+          "ivonescimab",
+          "PD-1/VEGF"
+        ]
+      },
+      "stage": "commercial"
+    },
+    {
+      "id": "kelun_biotech",
+      "name": "Sichuan Kelun-Biotech Biopharmaceutical Co., Ltd.",
+      "aliases": [
+        "Kelun-Biotech"
+      ],
+      "ticker": "6990",
+      "exchange": "HKEX",
+      "sector": "bio",
+      "tier": "watch",
+      "market": "HK",
+      "watch": {
+        "news_name": "Kelun-Biotech",
+        "sponsor": "Kelun-Biotech",
+        "extra_keywords": [
+          "antibody-drug conjugates",
+          "ADC platform",
+          "sacituzumab tirumotecan"
+        ]
+      },
+      "stage": "production"
+    },
+    {
+      "id": "asmpt",
+      "name": "ASMPT Limited",
+      "aliases": [
+        "ASMPT",
+        "ASM Pacific Technology"
+      ],
+      "ticker": "0522",
+      "exchange": "HKEX",
+      "sector": "semiconductor",
+      "tags": [
+        "semi_equipment"
+      ],
+      "tier": "watch",
+      "market": "HK",
+      "watch": {
+        "news_name": "ASMPT",
+        "extra_keywords": [
+          "semiconductor assembly equipment",
+          "thermocompression bonding",
+          "SMT solutions"
+        ]
+      },
+      "stage": "commercial"
+    },
+    {
+      "id": "xtalpi",
+      "name": "XtalPi Inc.",
+      "aliases": [
+        "XtalPi",
+        "QuantumPharm"
+      ],
+      "ticker": "2228",
+      "exchange": "HKEX",
+      "sector": "ai",
+      "tier": "watch",
+      "market": "HK",
+      "watch": {
+        "news_name": "XtalPi",
+        "extra_keywords": [
+          "AI drug discovery",
+          "quantum physics platform",
+          "robotic laboratories"
+        ]
+      },
+      "stage": "production"
+    },
+    {
+      "id": "horizon_robotics",
+      "name": "Horizon Robotics Inc.",
+      "aliases": [
+        "Horizon Robotics"
+      ],
+      "ticker": "9660",
+      "exchange": "HKEX",
+      "sector": "ai",
+      "tier": "watch",
+      "market": "HK",
+      "watch": {
+        "news_name": "Horizon Robotics",
+        "extra_keywords": [
+          "autonomous driving chips",
+          "Journey processors",
+          "urban driving assistance"
+        ]
+      },
+      "stage": "production"
+    },
+    {
+      "id": "hua_hong",
+      "name": "Hua Hong Semiconductor Limited",
+      "aliases": [
+        "Hua Hong Semiconductor",
+        "Hua Hong"
+      ],
+      "ticker": "1347",
+      "exchange": "HKEX",
+      "sector": "semiconductor",
+      "tier": "watch",
+      "market": "HK",
+      "watch": {
+        "news_name": "Hua Hong Semiconductor",
+        "extra_keywords": [
+          "semiconductor foundry",
+          "specialty IC",
+          "power devices"
+        ]
+      },
+      "stage": "commercial"
+    },
+    {
+      "id": "carsgen",
+      "name": "CARsgen Therapeutics Holdings Limited",
+      "aliases": [
+        "CARsgen Therapeutics",
+        "CARsgen"
+      ],
+      "ticker": "2171",
+      "exchange": "HKEX",
+      "sector": "bio",
+      "tier": "watch",
+      "market": "HK",
+      "watch": {
+        "news_name": "CARsgen Therapeutics",
+        "sponsor": "CARsgen Therapeutics",
+        "extra_keywords": [
+          "CAR-T cell therapy",
+          "allogeneic CAR-T",
+          "solid tumors"
+        ]
+      },
+      "stage": "production"
+    }
+  ]
+}

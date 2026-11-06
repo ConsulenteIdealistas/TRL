@@ -139,7 +139,8 @@ WATCH_LOOKBACK_DEFAULTS = {"prtimes": 90, "trials": 365, "edinet": 60, "yahoo": 
 YAHOO_SUFFIX = {"JP": ".T", "US": "", "GB": ".L", "CH": ".SW", "DE": ".DE", "CA": ".TO", "AU": ".AX",
                 "IT": ".MI", "SE": ".ST", "DK": ".CO", "ES": ".MC",
                 "FR": ".PA", "NL": ".AS", "FI": ".HE", "NO": ".OL", "BE": ".BR",
-                "IN": ".NS", "SG": ".SI", "NZ": ".NZ", "PL": ".WA", "AT": ".VI"}
+                "IN": ".NS", "SG": ".SI", "NZ": ".NZ", "PL": ".WA", "AT": ".VI",
+                "TW": ".TW", "HK": ".HK", "IE": ".IR", "PT": ".LS", "CZ": ".PR", "GR": ".AT"}
 GNEWS_LOCALE = {"US": {"hl": "en", "gl": "US", "ceid": "US:en"},
                 "GB": {"hl": "en", "gl": "GB", "ceid": "GB:en"},
                 "CH": {"hl": "en", "gl": "CH", "ceid": "CH:en"},
@@ -159,7 +160,13 @@ GNEWS_LOCALE = {"US": {"hl": "en", "gl": "US", "ceid": "US:en"},
                 "SG": {"hl": "en", "gl": "SG", "ceid": "SG:en"},
                 "NZ": {"hl": "en", "gl": "NZ", "ceid": "NZ:en"},
                 "PL": {"hl": "pl", "gl": "PL", "ceid": "PL:pl"},
-                "AT": {"hl": "de", "gl": "AT", "ceid": "AT:de"}}
+                "AT": {"hl": "de", "gl": "AT", "ceid": "AT:de"},
+                "TW": {"hl": "zh-TW", "gl": "TW", "ceid": "TW:zh-Hant"},
+                "HK": {"hl": "en", "gl": "HK", "ceid": "HK:en"},
+                "IE": {"hl": "en", "gl": "IE", "ceid": "IE:en"},
+                "PT": {"hl": "pt", "gl": "PT", "ceid": "PT:pt"},
+                "CZ": {"hl": "cs", "gl": "CZ", "ceid": "CZ:cs"},
+                "GR": {"hl": "el", "gl": "GR", "ceid": "GR:el"}}
 # 市場ごとのキーワード集合の置き場所 (JP は日本語、それ以外は市場言語。未指定の市場は英語)
 # デンマークは Google News のデンマーク語圏の収載が薄いため英語集合を使う (ロケールは DK)
 KEYWORD_SETS_BY_MARKET = {"JP": "keyword_sets", "DE": "keyword_sets_de",
@@ -257,7 +264,7 @@ CONFIG_FILES = ("scoring.json", "sources.json")
 
 # entities/ ディレクトリ内の市場別ファイルの合体順 (辞書の並び = クエリ生成順を決める)
 ENTITY_FILE_ORDER = ("jp", "us", "gb", "ch", "de", "ca", "au", "it", "se", "dk", "es", "fr", "nl", "fi", "no", "be",
-                     "in", "sg", "nz", "pl", "at")
+                     "in", "sg", "nz", "pl", "at", "tw", "hk", "ie", "pt", "cz", "gr")
 
 
 LLM_DEFAULTS = {"timeout_sec": 120, "retries": 1, "max_consecutive_failures": 2, "phase_budget_sec": 1200,

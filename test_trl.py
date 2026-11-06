@@ -3386,8 +3386,8 @@ class EdgarTests(unittest.TestCase):
     def test_queries_generated_for_us_and_20f_filers(self):
         cfg = T.load_config()
         edgar_qs = [q for q in cfg["sources"]["queries"] if q.get("edgar")]
-        # 米国94社 + edgar_ticker を明示した 20-F 提出3社 (Innate/HUTCHMED/Nanobiotix)
-        self.assertEqual(len(edgar_qs), 97)
+        # 米国139社 + edgar_ticker を明示した 20-F 提出3社 (Innate/HUTCHMED/Nanobiotix)
+        self.assertEqual(len(edgar_qs), 142)
         self.assertTrue(all(q["name"].endswith("-edgar") for q in edgar_qs))
         by_name = {q["name"]: q["edgar"] for q in edgar_qs}
         self.assertEqual(by_name["innate_pharma-edgar"], "IPHA")

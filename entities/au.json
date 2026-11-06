@@ -438,6 +438,116 @@
         ]
       },
       "stage": "demo"
+    },
+    {
+      "id": "austal",
+      "name": "Austal Limited",
+      "aliases": [
+        "Austal",
+        "オースタル"
+      ],
+      "ticker": "ASB",
+      "exchange": "ASX",
+      "sector": "defense",
+      "tier": "watch",
+      "market": "AU",
+      "watch": {
+        "news_name": "Austal",
+        "extra_keywords": [
+          "shipbuilding",
+          "naval vessels",
+          "littoral combat ship"
+        ]
+      },
+      "stage": "commercial"
+    },
+    {
+      "id": "iluka",
+      "name": "Iluka Resources Limited",
+      "aliases": [
+        "Iluka",
+        "イルカ・リソーシズ"
+      ],
+      "ticker": "ILU",
+      "exchange": "ASX",
+      "sector": "energy",
+      "tier": "watch",
+      "market": "AU",
+      "watch": {
+        "news_name": "Iluka Resources",
+        "extra_keywords": [
+          "mineral sands",
+          "Eneabba",
+          "rare earths refinery"
+        ]
+      },
+      "stage": "commercial"
+    },
+    {
+      "id": "lynas",
+      "name": "Lynas Rare Earths Limited",
+      "aliases": [
+        "Lynas",
+        "ライナス"
+      ],
+      "ticker": "LYC",
+      "exchange": "ASX",
+      "sector": "energy",
+      "tier": "watch",
+      "market": "AU",
+      "watch": {
+        "news_name": "Lynas Rare Earths",
+        "extra_keywords": [
+          "rare earths",
+          "Mt Weld",
+          "neodymium"
+        ]
+      },
+      "stage": "commercial"
+    },
+    {
+      "id": "pilbara",
+      "name": "Pilbara Minerals Limited",
+      "aliases": [
+        "Pilbara Minerals",
+        "ピルバラ・ミネラルズ"
+      ],
+      "ticker": "PLS",
+      "exchange": "ASX",
+      "sector": "energy",
+      "tier": "watch",
+      "market": "AU",
+      "watch": {
+        "news_name": "Pilbara Minerals",
+        "extra_keywords": [
+          "Pilgangoora",
+          "spodumene",
+          "lithium"
+        ]
+      },
+      "stage": "commercial"
+    },
+    {
+      "id": "nuix",
+      "name": "Nuix Limited",
+      "aliases": [
+        "Nuix",
+        "ヌイックス"
+      ],
+      "ticker": "NXL",
+      "exchange": "ASX",
+      "sector": "ai",
+      "tier": "watch",
+      "market": "AU",
+      "watch": {
+        "news_name": "Nuix",
+        "extra_keywords": [
+          "forensic analytics",
+          "Nuix Neo",
+          "investigations"
+        ]
+      },
+      "stage": "production"
     }
   ]
 }

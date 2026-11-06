@@ -13,7 +13,7 @@
       "tags": [
         "antibody"
       ],
-      "tier": "watch",
+      "tier": "reference",
       "market": "IN",
       "watch": {
         "news_name": "Biocon",
@@ -37,7 +37,7 @@
       "ticker": "SYNGENE",
       "exchange": "NSE",
       "sector": "bio",
-      "tier": "watch",
+      "tier": "reference",
       "market": "IN",
       "watch": {
         "news_name": "Syngene International",
@@ -59,7 +59,7 @@
       "ticker": "SPARC",
       "exchange": "NSE",
       "sector": "bio",
-      "tier": "watch",
+      "tier": "reference",
       "market": "IN",
       "watch": {
         "news_name": "Sun Pharma Advanced Research",
@@ -83,7 +83,7 @@
       "ticker": "SUVEN",
       "exchange": "NSE",
       "sector": "bio",
-      "tier": "watch",
+      "tier": "reference",
       "market": "IN",
       "watch": {
         "news_name": "Suven Life Sciences",
@@ -109,7 +109,7 @@
       "tags": [
         "vaccine"
       ],
-      "tier": "watch",
+      "tier": "reference",
       "market": "IN",
       "watch": {
         "news_name": "Panacea Biotec",
@@ -132,7 +132,7 @@
       "ticker": "CONCORDBIO",
       "exchange": "NSE",
       "sector": "bio",
-      "tier": "watch",
+      "tier": "reference",
       "market": "IN",
       "watch": {
         "news_name": "Concord Biotech",
@@ -152,7 +152,7 @@
       "ticker": "LAURUSLABS",
       "exchange": "NSE",
       "sector": "bio",
-      "tier": "watch",
+      "tier": "reference",
       "market": "IN",
       "watch": {
         "news_name": "Laurus Labs",
@@ -177,7 +177,7 @@
       "tags": [
         "medtech"
       ],
-      "tier": "watch",
+      "tier": "reference",
       "market": "IN",
       "watch": {
         "news_name": "Poly Medicure",
@@ -202,7 +202,7 @@
       "tags": [
         "diagnostics"
       ],
-      "tier": "watch",
+      "tier": "reference",
       "market": "IN",
       "watch": {
         "news_name": "Dr Lal PathLabs",
@@ -226,7 +226,7 @@
       "tags": [
         "diagnostics"
       ],
-      "tier": "watch",
+      "tier": "reference",
       "market": "IN",
       "watch": {
         "news_name": "Metropolis Healthcare",
@@ -250,7 +250,7 @@
       "tags": [
         "diagnostics"
       ],
-      "tier": "watch",
+      "tier": "reference",
       "market": "IN",
       "watch": {
         "news_name": "Thyrocare",
@@ -272,7 +272,7 @@
       "ticker": "DIVISLAB",
       "exchange": "NSE",
       "sector": "bio",
-      "tier": "watch",
+      "tier": "reference",
       "market": "IN",
       "watch": {
         "news_name": "Divi's Laboratories",
@@ -294,7 +294,7 @@
       "ticker": "KAYNES",
       "exchange": "NSE",
       "sector": "semiconductor",
-      "tier": "watch",
+      "tier": "reference",
       "market": "IN",
       "watch": {
         "news_name": "Kaynes Technology",
@@ -315,7 +315,7 @@
       "ticker": "DIXON",
       "exchange": "NSE",
       "sector": "semiconductor",
-      "tier": "watch",
+      "tier": "reference",
       "market": "IN",
       "watch": {
         "news_name": "Dixon Technologies",
@@ -336,7 +336,7 @@
       "ticker": "SYRMA",
       "exchange": "NSE",
       "sector": "semiconductor",
-      "tier": "watch",
+      "tier": "reference",
       "market": "IN",
       "watch": {
         "news_name": "Syrma SGS",
@@ -360,7 +360,7 @@
       "tags": [
         "power_semi"
       ],
-      "tier": "watch",
+      "tier": "reference",
       "market": "IN",
       "watch": {
         "news_name": "CG Power",
@@ -382,7 +382,7 @@
       "ticker": "AVALON",
       "exchange": "NSE",
       "sector": "semiconductor",
-      "tier": "watch",
+      "tier": "reference",
       "market": "IN",
       "watch": {
         "news_name": "Avalon Technologies",
@@ -406,7 +406,7 @@
       "tags": [
         "semiconductor"
       ],
-      "tier": "watch",
+      "tier": "reference",
       "market": "IN",
       "watch": {
         "news_name": "MosChip",
@@ -428,7 +428,7 @@
       "ticker": "MTARTECH",
       "exchange": "NSE",
       "sector": "space",
-      "tier": "watch",
+      "tier": "reference",
       "market": "IN",
       "watch": {
         "news_name": "MTAR Technologies",
@@ -450,7 +450,7 @@
       "ticker": "CENTUM",
       "exchange": "NSE",
       "sector": "space",
-      "tier": "watch",
+      "tier": "reference",
       "market": "IN",
       "watch": {
         "news_name": "Centum Electronics",
@@ -471,7 +471,7 @@
       "ticker": "ASTRAMICRO",
       "exchange": "NSE",
       "sector": "space",
-      "tier": "watch",
+      "tier": "reference",
       "market": "IN",
       "watch": {
         "news_name": "Astra Microwave",
@@ -492,7 +492,7 @@
       "ticker": "AVANTEL",
       "exchange": "NSE",
       "sector": "space",
-      "tier": "watch",
+      "tier": "reference",
       "market": "IN",
       "watch": {
         "news_name": "Avantel",
@@ -517,7 +517,7 @@
       "tags": [
         "ai_infra"
       ],
-      "tier": "watch",
+      "tier": "reference",
       "market": "IN",
       "watch": {
         "news_name": "NetWeb Technologies",
@@ -539,7 +539,7 @@
       "ticker": "AFFLE",
       "exchange": "NSE",
       "sector": "ai",
-      "tier": "watch",
+      "tier": "reference",
       "market": "IN",
       "watch": {
         "news_name": "Affle 3i",
@@ -561,7 +561,7 @@
       "ticker": "MAPMYINDIA",
       "exchange": "NSE",
       "sector": "ai",
-      "tier": "watch",
+      "tier": "reference",
       "market": "IN",
       "watch": {
         "news_name": "MapmyIndia",
@@ -585,7 +585,7 @@
       "tags": [
         "ai_infra"
       ],
-      "tier": "watch",
+      "tier": "reference",
       "market": "IN",
       "watch": {
         "news_name": "E2E Networks",
@@ -606,7 +606,7 @@
       "ticker": "WAAREEENER",
       "exchange": "NSE",
       "sector": "energy",
-      "tier": "watch",
+      "tier": "reference",
       "market": "IN",
       "watch": {
         "news_name": "Waaree Energies",
@@ -627,7 +627,7 @@
       "ticker": "PREMIERENE",
       "exchange": "NSE",
       "sector": "energy",
-      "tier": "watch",
+      "tier": "reference",
       "market": "IN",
       "watch": {
         "news_name": "Premier Energies",
@@ -648,7 +648,7 @@
       "ticker": "SWSOLAR",
       "exchange": "NSE",
       "sector": "energy",
-      "tier": "watch",
+      "tier": "reference",
       "market": "IN",
       "watch": {
         "news_name": "Sterling and Wilson Renewable Energy",
@@ -669,7 +669,7 @@
       "ticker": "EXIDEIND",
       "exchange": "NSE",
       "sector": "energy",
-      "tier": "watch",
+      "tier": "reference",
       "market": "IN",
       "watch": {
         "news_name": "Exide Industries",
@@ -691,7 +691,7 @@
       "ticker": "ARE&M",
       "exchange": "NSE",
       "sector": "energy",
-      "tier": "watch",
+      "tier": "reference",
       "market": "IN",
       "watch": {
         "news_name": "Amara Raja",
@@ -713,7 +713,7 @@
       "ticker": "HBLENGINE",
       "exchange": "NSE",
       "sector": "energy",
-      "tier": "watch",
+      "tier": "reference",
       "market": "IN",
       "watch": {
         "news_name": "HBL Engineering",
@@ -738,7 +738,7 @@
       "tags": [
         "ev_charging"
       ],
-      "tier": "watch",
+      "tier": "reference",
       "market": "IN",
       "watch": {
         "news_name": "Exicom",
@@ -763,7 +763,7 @@
       "tags": [
         "hydrogen"
       ],
-      "tier": "watch",
+      "tier": "reference",
       "market": "IN",
       "watch": {
         "news_name": "INOX India",
@@ -788,7 +788,7 @@
       "tags": [
         "autonomous_mobility"
       ],
-      "tier": "watch",
+      "tier": "reference",
       "market": "IN",
       "watch": {
         "news_name": "ideaForge",
@@ -796,6 +796,27 @@
           "unmanned aerial vehicles",
           "drones",
           "defense drones"
+        ]
+      },
+      "stage": "production"
+    },
+    {
+      "id": "zen_technologies",
+      "name": "Zen Technologies Limited",
+      "aliases": [
+        "Zen Technologies"
+      ],
+      "ticker": "ZENTEC",
+      "exchange": "NSE",
+      "sector": "defense",
+      "tier": "reference",
+      "market": "IN",
+      "watch": {
+        "news_name": "Zen Technologies",
+        "extra_keywords": [
+          "counter-drone systems",
+          "anti-drone",
+          "combat training simulators"
         ]
       },
       "stage": "production"

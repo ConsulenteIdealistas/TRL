@@ -2341,6 +2341,1035 @@
     ]
    },
    "stage": "rd"
-  }
- ]
+  },
+  {
+   "id": "centrus_energy",
+   "name": "Centrus Energy Corp.",
+   "aliases": [
+    "Centrus Energy",
+    "Centrus"
+   ],
+   "ticker": "LEU",
+   "exchange": "NYSE",
+   "sector": "energy",
+   "tier": "watch",
+   "market": "US",
+   "watch": {
+    "news_name": "Centrus Energy",
+    "extra_keywords": [
+     "uranium enrichment",
+     "HALEU",
+     "nuclear fuel"
+    ]
+   },
+   "stage": "production"
+  },
+  {
+   "id": "iridium",
+   "name": "Iridium Communications Inc.",
+   "aliases": [
+    "Iridium Communications",
+    "Iridium"
+   ],
+   "ticker": "IRDM",
+   "exchange": "NASDAQ",
+   "sector": "space",
+   "tags": [
+    "constellation"
+   ],
+   "tier": "watch",
+   "market": "US",
+   "watch": {
+    "news_name": "Iridium",
+    "extra_keywords": [
+     "satellite communications",
+     "constellation",
+     "government services"
+    ]
+   },
+   "stage": "commercial"
+  },
+  {
+   "id": "mp_materials",
+   "name": "MP Materials Corp.",
+   "aliases": [
+    "MP Materials"
+   ],
+   "ticker": "MP",
+   "exchange": "NYSE",
+   "sector": "energy",
+   "tier": "watch",
+   "market": "US",
+   "watch": {
+    "news_name": "MP Materials",
+    "extra_keywords": [
+     "rare earth",
+     "neodymium",
+     "Mountain Pass",
+     "permanent magnets"
+    ]
+   },
+   "stage": "production"
+  },
+  {
+   "id": "nuscale_power",
+   "name": "NuScale Power Corporation",
+   "aliases": [
+    "NuScale Power",
+    "NuScale"
+   ],
+   "ticker": "SMR",
+   "exchange": "NYSE",
+   "sector": "energy",
+   "tier": "watch",
+   "market": "US",
+   "watch": {
+    "news_name": "NuScale Power",
+    "extra_keywords": [
+     "small modular reactor",
+     "SMR",
+     "VOYGR"
+    ]
+   },
+   "stage": "demo"
+  },
+  {
+   "id": "oklo",
+   "name": "Oklo Inc.",
+   "aliases": [
+    "Oklo"
+   ],
+   "ticker": "OKLO",
+   "exchange": "NYSE",
+   "sector": "energy",
+   "tier": "watch",
+   "market": "US",
+   "watch": {
+    "news_name": "Oklo",
+    "extra_keywords": [
+     "advanced fission",
+     "Aurora powerhouse",
+     "HALEU"
+    ]
+   },
+   "stage": "demo"
+  },
+  {
+   "id": "ondas",
+   "name": "Ondas Holdings Inc.",
+   "aliases": [
+    "Ondas Holdings",
+    "Ondas"
+   ],
+   "ticker": "ONDS",
+   "exchange": "NASDAQ",
+   "sector": "defense",
+   "tags": [
+    "autonomous_mobility"
+   ],
+   "tier": "watch",
+   "market": "US",
+   "watch": {
+    "news_name": "Ondas",
+    "extra_keywords": [
+     "autonomous drones",
+     "private wireless",
+     "counter-drone"
+    ]
+   },
+   "stage": "production"
+  },
+  {
+   "id": "viasat",
+   "name": "Viasat, Inc.",
+   "aliases": [
+    "Viasat",
+    "ViaSat"
+   ],
+   "ticker": "VSAT",
+   "exchange": "NASDAQ",
+   "sector": "space",
+   "tier": "watch",
+   "market": "US",
+   "watch": {
+    "news_name": "Viasat",
+    "extra_keywords": [
+     "satellite communications",
+     "in-flight connectivity",
+     "ViaSat-3"
+    ]
+   },
+   "stage": "commercial"
+  },
+  {
+   "id": "elbit_systems",
+   "name": "Elbit Systems Ltd.",
+   "aliases": [
+    "Elbit Systems",
+    "Elbit"
+   ],
+   "ticker": "ESLT",
+   "exchange": "NASDAQ",
+   "sector": "defense",
+   "tier": "watch",
+   "market": "US",
+   "watch": {
+    "news_name": "Elbit Systems",
+    "extra_keywords": [
+     "defense electronics",
+     "unmanned systems",
+     "C4ISR"
+    ]
+   },
+   "stage": "commercial"
+  },
+  {
+   "id": "tower_semiconductor",
+   "name": "Tower Semiconductor Ltd.",
+   "aliases": [
+    "Tower Semiconductor",
+    "Tower"
+   ],
+   "ticker": "TSEM",
+   "exchange": "NASDAQ",
+   "sector": "semiconductor",
+   "tier": "watch",
+   "market": "US",
+   "watch": {
+    "news_name": "Tower Semiconductor",
+    "extra_keywords": [
+     "semiconductor foundry",
+     "analog",
+     "SiGe"
+    ]
+   },
+   "stage": "commercial"
+  },
+  {
+   "id": "alkermes",
+   "name": "Alkermes plc",
+   "aliases": [
+    "Alkermes"
+   ],
+   "ticker": "ALKS",
+   "exchange": "NASDAQ",
+   "sector": "bio",
+   "tier": "watch",
+   "market": "US",
+   "watch": {
+    "news_name": "Alkermes",
+    "sponsor": "Alkermes, Inc.",
+    "extra_keywords": [
+     "Lybalvi",
+     "Vivitrol",
+     "orexin agonist"
+    ]
+   },
+   "stage": "commercial"
+  },
+  {
+   "id": "jazz_pharmaceuticals",
+   "name": "Jazz Pharmaceuticals plc",
+   "aliases": [
+    "Jazz Pharmaceuticals",
+    "Jazz"
+   ],
+   "ticker": "JAZZ",
+   "exchange": "NASDAQ",
+   "sector": "bio",
+   "tier": "watch",
+   "market": "US",
+   "watch": {
+    "news_name": "Jazz Pharmaceuticals",
+    "sponsor": "Jazz Pharmaceuticals",
+    "extra_keywords": [
+     "Xywav",
+     "Rylaze",
+     "Zepzelca"
+    ]
+   },
+   "stage": "commercial"
+  },
+  {
+   "id": "prothena",
+   "name": "Prothena Corporation plc",
+   "aliases": [
+    "Prothena"
+   ],
+   "ticker": "PRTA",
+   "exchange": "NASDAQ",
+   "sector": "bio",
+   "tags": [
+    "antibody"
+   ],
+   "tier": "watch",
+   "market": "US",
+   "watch": {
+    "news_name": "Prothena",
+    "sponsor": "Prothena Biosciences",
+    "extra_keywords": [
+     "amyloid antibody",
+     "prasinezumab",
+     "alpha-synuclein"
+    ]
+   },
+   "stage": "demo"
+  },
+  {
+   "id": "alvotech",
+   "name": "Alvotech",
+   "aliases": [
+    "Alvotech"
+   ],
+   "ticker": "ALVO",
+   "exchange": "NASDAQ",
+   "sector": "bio",
+   "tier": "watch",
+   "market": "US",
+   "watch": {
+    "news_name": "Alvotech",
+    "sponsor": "Alvotech",
+    "extra_keywords": [
+     "biosimilars",
+     "adalimumab",
+     "ustekinumab"
+    ]
+   },
+   "stage": "production"
+  },
+  {
+   "id": "oculis",
+   "name": "Oculis Holding AG",
+   "aliases": [
+    "Oculis"
+   ],
+   "ticker": "OCS",
+   "exchange": "NASDAQ",
+   "sector": "bio",
+   "tier": "watch",
+   "market": "US",
+   "watch": {
+    "news_name": "Oculis",
+    "sponsor": "Oculis",
+    "extra_keywords": [
+     "OCS-01",
+     "diabetic macular edema",
+     "neuroprotection"
+    ]
+   },
+   "stage": "demo"
+  },
+  {
+   "id": "gilat",
+   "name": "Gilat Satellite Networks Ltd.",
+   "aliases": [
+    "Gilat Satellite Networks",
+    "Gilat"
+   ],
+   "ticker": "GILT",
+   "exchange": "NASDAQ",
+   "sector": "space",
+   "tier": "watch",
+   "market": "US",
+   "watch": {
+    "news_name": "Gilat",
+    "extra_keywords": [
+     "satellite ground segment",
+     "in-flight connectivity",
+     "defense communications"
+    ]
+   },
+   "stage": "production"
+  },
+  {
+   "id": "uniqure",
+   "name": "uniQure N.V.",
+   "aliases": [
+    "uniQure"
+   ],
+   "ticker": "QURE",
+   "exchange": "NASDAQ",
+   "sector": "bio",
+   "tags": [
+    "gene_therapy"
+   ],
+   "tier": "watch",
+   "market": "US",
+   "watch": {
+    "news_name": "uniQure",
+    "sponsor": "uniQure Biopharma B.V.",
+    "extra_keywords": [
+     "gene therapy",
+     "AMT-130",
+     "Huntington disease"
+    ]
+   },
+   "stage": "demo"
+  },
+  {
+   "id": "sophia_genetics",
+   "name": "Sophia Genetics SA",
+   "aliases": [
+    "Sophia Genetics"
+   ],
+   "ticker": "SOPH",
+   "exchange": "NASDAQ",
+   "sector": "ai",
+   "tags": [
+    "diagnostics"
+   ],
+   "tier": "watch",
+   "market": "US",
+   "watch": {
+    "news_name": "Sophia Genetics",
+    "extra_keywords": [
+     "SOPHiA DDM",
+     "genomic data",
+     "precision medicine"
+    ]
+   },
+   "stage": "production"
+  },
+  {
+   "id": "eve_holding",
+   "name": "Eve Holding, Inc.",
+   "aliases": [
+    "Eve Holding",
+    "Eve Air Mobility"
+   ],
+   "ticker": "EVEX",
+   "exchange": "NYSE",
+   "sector": "robotics",
+   "tier": "watch",
+   "market": "US",
+   "watch": {
+    "news_name": "Eve Holding",
+    "extra_keywords": [
+     "eVTOL",
+     "urban air mobility"
+    ]
+   },
+   "stage": "demo"
+  },
+  {
+   "id": "sigma_lithium",
+   "name": "Sigma Lithium Corporation",
+   "aliases": [
+    "Sigma Lithium"
+   ],
+   "ticker": "SGML",
+   "exchange": "NASDAQ",
+   "sector": "energy",
+   "tags": [
+    "battery_materials"
+   ],
+   "tier": "watch",
+   "market": "US",
+   "watch": {
+    "news_name": "Sigma Lithium",
+    "extra_keywords": [
+     "lithium mining",
+     "Grota do Cirilo",
+     "spodumene concentrate"
+    ]
+   },
+   "stage": "production"
+  },
+  {
+   "id": "acm_research",
+   "name": "ACM Research, Inc.",
+   "aliases": [
+    "ACM Research"
+   ],
+   "ticker": "ACMR",
+   "exchange": "NASDAQ",
+   "sector": "semiconductor",
+   "tags": [
+    "semi_equipment"
+   ],
+   "tier": "watch",
+   "market": "US",
+   "watch": {
+    "news_name": "ACM Research",
+    "extra_keywords": [
+     "wafer cleaning equipment",
+     "single-wafer",
+     "advanced packaging"
+    ]
+   },
+   "stage": "production"
+  },
+  {
+   "id": "asp_isotopes",
+   "name": "ASP Isotopes Inc.",
+   "aliases": [
+    "ASP Isotopes"
+   ],
+   "ticker": "ASPI",
+   "exchange": "NASDAQ",
+   "sector": "energy",
+   "tier": "watch",
+   "market": "US",
+   "watch": {
+    "news_name": "ASP Isotopes",
+    "extra_keywords": [
+     "isotope enrichment",
+     "medical isotopes",
+     "quantum enrichment"
+    ]
+   },
+   "stage": "demo"
+  },
+  {
+   "id": "atomera",
+   "name": "Atomera Incorporated",
+   "aliases": [
+    "Atomera"
+   ],
+   "ticker": "ATOM",
+   "exchange": "NASDAQ",
+   "sector": "semiconductor",
+   "tier": "watch",
+   "market": "US",
+   "watch": {
+    "news_name": "Atomera",
+    "extra_keywords": [
+     "Mears Silicon Technology",
+     "MST",
+     "semiconductor licensing"
+    ]
+   },
+   "stage": "rd"
+  },
+  {
+   "id": "cohu",
+   "name": "Cohu, Inc.",
+   "aliases": [
+    "Cohu"
+   ],
+   "ticker": "COHU",
+   "exchange": "NASDAQ",
+   "sector": "semiconductor",
+   "tags": [
+    "semi_equipment"
+   ],
+   "tier": "watch",
+   "market": "US",
+   "watch": {
+    "news_name": "Cohu",
+    "extra_keywords": [
+     "test handlers",
+     "semiconductor testing",
+     "thermal subsystems"
+    ]
+   },
+   "stage": "production"
+  },
+  {
+   "id": "editas_medicine",
+   "name": "Editas Medicine, Inc.",
+   "aliases": [
+    "Editas Medicine",
+    "Editas"
+   ],
+   "ticker": "EDIT",
+   "exchange": "NASDAQ",
+   "sector": "bio",
+   "tags": [
+    "gene_therapy"
+   ],
+   "tier": "watch",
+   "market": "US",
+   "watch": {
+    "news_name": "Editas Medicine",
+    "sponsor": "Editas Medicine, Inc.",
+    "extra_keywords": [
+     "reni-cel",
+     "CRISPR",
+     "gene editing"
+    ]
+   },
+   "stage": "demo"
+  },
+  {
+   "id": "fuelcell_energy",
+   "name": "FuelCell Energy, Inc.",
+   "aliases": [
+    "FuelCell Energy"
+   ],
+   "ticker": "FCEL",
+   "exchange": "NASDAQ",
+   "sector": "energy",
+   "tags": [
+    "hydrogen"
+   ],
+   "tier": "watch",
+   "market": "US",
+   "watch": {
+    "news_name": "FuelCell Energy",
+    "extra_keywords": [
+     "fuel cells",
+     "carbon capture",
+     "distributed generation"
+    ]
+   },
+   "stage": "production"
+  },
+  {
+   "id": "globalstar",
+   "name": "Globalstar, Inc.",
+   "aliases": [
+    "Globalstar"
+   ],
+   "ticker": "GSAT",
+   "exchange": "NASDAQ",
+   "sector": "space",
+   "tags": [
+    "constellation"
+   ],
+   "tier": "watch",
+   "market": "US",
+   "watch": {
+    "news_name": "Globalstar",
+    "extra_keywords": [
+     "low earth orbit",
+     "satellite messaging",
+     "IoT connectivity"
+    ]
+   },
+   "stage": "production"
+  },
+  {
+   "id": "heartflow",
+   "name": "Heartflow, Inc.",
+   "aliases": [
+    "Heartflow",
+    "HeartFlow"
+   ],
+   "ticker": "HTFL",
+   "exchange": "NASDAQ",
+   "sector": "ai",
+   "tags": [
+    "medtech",
+    "diagnostics"
+   ],
+   "tier": "watch",
+   "market": "US",
+   "watch": {
+    "news_name": "Heartflow",
+    "extra_keywords": [
+     "HeartFlow Analysis",
+     "coronary artery disease",
+     "AI imaging"
+    ]
+   },
+   "stage": "production"
+  },
+  {
+   "id": "kopin",
+   "name": "Kopin Corporation",
+   "aliases": [
+    "Kopin"
+   ],
+   "ticker": "KOPN",
+   "exchange": "NASDAQ",
+   "sector": "defense",
+   "tier": "watch",
+   "market": "US",
+   "watch": {
+    "news_name": "Kopin",
+    "extra_keywords": [
+     "microdisplay",
+     "military displays",
+     "augmented reality"
+    ]
+   },
+   "stage": "production"
+  },
+  {
+   "id": "lightbridge",
+   "name": "Lightbridge Corporation",
+   "aliases": [
+    "Lightbridge"
+   ],
+   "ticker": "LTBR",
+   "exchange": "NASDAQ",
+   "sector": "energy",
+   "tier": "watch",
+   "market": "US",
+   "watch": {
+    "news_name": "Lightbridge",
+    "extra_keywords": [
+     "metallic fuel",
+     "nuclear fuel technology"
+    ]
+   },
+   "stage": "rd"
+  },
+  {
+   "id": "myomo",
+   "name": "Myomo, Inc.",
+   "aliases": [
+    "Myomo"
+   ],
+   "ticker": "MYO",
+   "exchange": "NYSE American",
+   "sector": "robotics",
+   "tags": [
+    "medtech"
+   ],
+   "tier": "watch",
+   "market": "US",
+   "watch": {
+    "news_name": "Myomo",
+    "extra_keywords": [
+     "MyoPro",
+     "robotic orthosis",
+     "upper limb paralysis"
+    ]
+   },
+   "stage": "production"
+  },
+  {
+   "id": "nano_nuclear",
+   "name": "NANO Nuclear Energy Inc.",
+   "aliases": [
+    "NANO Nuclear Energy",
+    "NANO Nuclear"
+   ],
+   "ticker": "NNE",
+   "exchange": "NASDAQ",
+   "sector": "energy",
+   "tier": "watch",
+   "market": "US",
+   "watch": {
+    "news_name": "NANO Nuclear Energy",
+    "extra_keywords": [
+     "microreactor",
+     "ZEUS",
+     "ODIN"
+    ]
+   },
+   "stage": "rd"
+  },
+  {
+   "id": "nurix",
+   "name": "Nurix Therapeutics, Inc.",
+   "aliases": [
+    "Nurix Therapeutics",
+    "Nurix"
+   ],
+   "ticker": "NRIX",
+   "exchange": "NASDAQ",
+   "sector": "bio",
+   "tier": "watch",
+   "market": "US",
+   "watch": {
+    "news_name": "Nurix Therapeutics",
+    "sponsor": "Nurix Therapeutics, Inc.",
+    "extra_keywords": [
+     "targeted protein degradation",
+     "molecular glue",
+     "BTK degrader"
+    ]
+   },
+   "stage": "demo"
+  },
+  {
+   "id": "ouster",
+   "name": "Ouster, Inc.",
+   "aliases": [
+    "Ouster"
+   ],
+   "ticker": "OUST",
+   "exchange": "NASDAQ",
+   "sector": "robotics",
+   "tier": "watch",
+   "market": "US",
+   "watch": {
+    "news_name": "Ouster",
+    "extra_keywords": [
+     "digital lidar",
+     "3D sensing"
+    ]
+   },
+   "stage": "production"
+  },
+  {
+   "id": "palladyne_ai",
+   "name": "Palladyne AI Corp.",
+   "aliases": [
+    "Palladyne AI",
+    "Palladyne"
+   ],
+   "ticker": "PDYN",
+   "exchange": "NASDAQ",
+   "sector": "defense",
+   "tier": "watch",
+   "market": "US",
+   "watch": {
+    "news_name": "Palladyne AI",
+    "extra_keywords": [
+     "embodied AI",
+     "defense robotics",
+     "autonomous systems"
+    ]
+   },
+   "stage": "demo"
+  },
+  {
+   "id": "plug_power",
+   "name": "Plug Power Inc.",
+   "aliases": [
+    "Plug Power"
+   ],
+   "ticker": "PLUG",
+   "exchange": "NASDAQ",
+   "sector": "energy",
+   "tags": [
+    "hydrogen"
+   ],
+   "tier": "watch",
+   "market": "US",
+   "watch": {
+    "news_name": "Plug Power",
+    "extra_keywords": [
+     "green hydrogen",
+     "electrolyzer",
+     "fuel cell"
+    ]
+   },
+   "stage": "production"
+  },
+  {
+   "id": "prime_medicine",
+   "name": "Prime Medicine, Inc.",
+   "aliases": [
+    "Prime Medicine"
+   ],
+   "ticker": "PRME",
+   "exchange": "NASDAQ",
+   "sector": "bio",
+   "tags": [
+    "gene_therapy"
+   ],
+   "tier": "watch",
+   "market": "US",
+   "watch": {
+    "news_name": "Prime Medicine",
+    "sponsor": "Prime Medicine, Inc.",
+    "extra_keywords": [
+     "Prime Editing",
+     "genetic medicine"
+    ]
+   },
+   "stage": "demo"
+  },
+  {
+   "id": "relay_therapeutics",
+   "name": "Relay Therapeutics, Inc.",
+   "aliases": [
+    "Relay Therapeutics",
+    "Relay"
+   ],
+   "ticker": "RLAY",
+   "exchange": "NASDAQ",
+   "sector": "bio",
+   "tags": [
+    "drug_ai"
+   ],
+   "tier": "watch",
+   "market": "US",
+   "watch": {
+    "news_name": "Relay Therapeutics",
+    "sponsor": "Relay Therapeutics, Inc.",
+    "extra_keywords": [
+     "Dynamo platform",
+     "precision medicine",
+     "drug discovery"
+    ]
+   },
+   "stage": "demo"
+  },
+  {
+   "id": "rocket_pharmaceuticals",
+   "name": "Rocket Pharmaceuticals, Inc.",
+   "aliases": [
+    "Rocket Pharmaceuticals"
+   ],
+   "ticker": "RCKT",
+   "exchange": "NASDAQ",
+   "sector": "bio",
+   "tags": [
+    "gene_therapy"
+   ],
+   "tier": "watch",
+   "market": "US",
+   "watch": {
+    "news_name": "Rocket Pharmaceuticals",
+    "sponsor": "Rocket Pharmaceuticals Inc.",
+    "extra_keywords": [
+     "gene therapy",
+     "Danon disease",
+     "hematology"
+    ]
+   },
+   "stage": "demo"
+  },
+  {
+   "id": "shoals",
+   "name": "Shoals Technologies Group, Inc.",
+   "aliases": [
+    "Shoals Technologies",
+    "Shoals"
+   ],
+   "ticker": "SHLS",
+   "exchange": "NASDAQ",
+   "sector": "energy",
+   "tier": "watch",
+   "market": "US",
+   "watch": {
+    "news_name": "Shoals Technologies",
+    "extra_keywords": [
+     "solar EBOS",
+     "utility-scale solar"
+    ]
+   },
+   "stage": "production"
+  },
+  {
+   "id": "terrestrial_energy",
+   "name": "Terrestrial Energy Inc.",
+   "aliases": [
+    "Terrestrial Energy"
+   ],
+   "ticker": "IMSR",
+   "exchange": "NASDAQ",
+   "sector": "energy",
+   "tier": "watch",
+   "market": "US",
+   "watch": {
+    "news_name": "Terrestrial Energy",
+    "extra_keywords": [
+     "integral molten salt reactor",
+     "IMSR"
+    ]
+   },
+   "stage": "rd"
+  },
+  {
+   "id": "unusual_machines",
+   "name": "Unusual Machines, Inc.",
+   "aliases": [
+    "Unusual Machines"
+   ],
+   "ticker": "UMAC",
+   "exchange": "NYSE American",
+   "sector": "defense",
+   "tier": "watch",
+   "market": "US",
+   "watch": {
+    "news_name": "Unusual Machines",
+    "extra_keywords": [
+     "FPV drone components",
+     "Blue UAS",
+     "NDAA compliant"
+    ]
+   },
+   "stage": "demo"
+  },
+  {
+   "id": "voyager_therapeutics",
+   "name": "Voyager Therapeutics, Inc.",
+   "aliases": [
+    "Voyager Therapeutics"
+   ],
+   "ticker": "VYGR",
+   "exchange": "NASDAQ",
+   "sector": "bio",
+   "tags": [
+    "gene_therapy"
+   ],
+   "tier": "watch",
+   "market": "US",
+   "watch": {
+    "news_name": "Voyager Therapeutics",
+    "sponsor": "Voyager Therapeutics, Inc.",
+    "extra_keywords": [
+     "AAV gene therapy",
+     "novel capsids",
+     "neurology"
+    ]
+   },
+   "stage": "demo"
+  },
+  {
+   "id": "wolfspeed",
+   "name": "Wolfspeed, Inc.",
+   "aliases": [
+    "Wolfspeed"
+   ],
+   "ticker": "WOLF",
+   "exchange": "NYSE",
+   "sector": "semiconductor",
+   "tags": [
+    "power_semi"
+   ],
+   "tier": "watch",
+   "market": "US",
+   "watch": {
+    "news_name": "Wolfspeed",
+    "extra_keywords": [
+     "silicon carbide",
+     "SiC devices",
+     "power semiconductors"
+    ]
+   },
+   "stage": "production"
+  },
+  {
+   "id": "indie_semiconductor",
+   "name": "indie Semiconductor, Inc.",
+   "aliases": [
+    "indie Semiconductor",
+    "indie"
+   ],
+   "ticker": "INDI",
+   "exchange": "NASDAQ",
+   "sector": "semiconductor",
+   "tier": "watch",
+   "market": "US",
+   "watch": {
+    "news_name": "indie Semiconductor",
+    "extra_keywords": [
+     "automotive chips",
+     "radar",
+     "in-cabin sensing"
+    ]
+   },
+   "stage": "production"
+  },
+  {
+      "id": "draganfly",
+      "name": "Draganfly Inc.",
+      "aliases": [
+        "Draganfly",
+        "ドラガンフライ"
+      ],
+      "ticker": "DPRO",
+      "exchange": "NASDAQ",
+      "sector": "defense",
+      "tier": "watch",
+      "market": "US",
+      "watch": {
+        "news_name": "Draganfly",
+        "extra_keywords": [
+          "drones",
+          "UAV",
+          "public safety"
+        ]
+      },
+      "stage": "production"
+    }
+  ]
 }

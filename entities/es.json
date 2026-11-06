@@ -147,6 +147,140 @@
         "pubmed": "Atrys Health[Affiliation]"
       },
       "stage": "commercial"
+    },
+    {
+      "id": "audax",
+      "name": "Audax Renovables, S.A.",
+      "aliases": [
+        "Audax Renovables",
+        "アウダックス"
+      ],
+      "ticker": "ADX",
+      "exchange": "Bolsa de Madrid",
+      "sector": "energy",
+      "tier": "watch",
+      "market": "ES",
+      "watch": {
+        "news_name": "Audax Renovables",
+        "extra_keywords": [
+          "renewable energy",
+          "energy retail",
+          "wind power"
+        ]
+      },
+      "stage": "commercial"
+    },
+    {
+      "id": "faes_farma",
+      "name": "Faes Farma, S.A.",
+      "aliases": [
+        "Faes Farma",
+        "ファエス・ファルマ"
+      ],
+      "ticker": "FAE",
+      "exchange": "Bolsa de Madrid",
+      "sector": "bio",
+      "tier": "watch",
+      "market": "ES",
+      "watch": {
+        "news_name": "Faes Farma",
+        "sponsor": "Faes Farma",
+        "extra_keywords": [
+          "bilastine",
+          "antihistamine",
+          "pharmaceuticals"
+        ]
+      },
+      "stage": "commercial"
+    },
+    {
+      "id": "grenergy",
+      "name": "Grenergy Renovables, S.A.",
+      "aliases": [
+        "Grenergy",
+        "グレナジー"
+      ],
+      "ticker": "GRE",
+      "exchange": "Bolsa de Madrid",
+      "sector": "energy",
+      "tier": "watch",
+      "market": "ES",
+      "watch": {
+        "news_name": "Grenergy Renovables",
+        "extra_keywords": [
+          "solar power",
+          "battery storage",
+          "hybrid plants"
+        ]
+      },
+      "stage": "production"
+    },
+    {
+      "id": "rovi",
+      "name": "Laboratorios Farmacéuticos Rovi, S.A.",
+      "aliases": [
+        "Laboratorios Rovi"
+      ],
+      "ticker": "ROVI",
+      "exchange": "Bolsa de Madrid",
+      "sector": "bio",
+      "tier": "watch",
+      "market": "ES",
+      "watch": {
+        "news_name": "Laboratorios Rovi",
+        "sponsor": "Laboratorios Rovi",
+        "extra_keywords": [
+          "enoxaparin",
+          "CDMO",
+          "ISM platform"
+        ]
+      },
+      "stage": "commercial"
+    },
+    {
+      "id": "solaria",
+      "name": "Solaria Energía, S.A.",
+      "aliases": [
+        "Solaria",
+        "ソラリア"
+      ],
+      "ticker": "SLR",
+      "exchange": "Bolsa de Madrid",
+      "sector": "energy",
+      "tier": "watch",
+      "market": "ES",
+      "watch": {
+        "news_name": "Solaria Energía",
+        "extra_keywords": [
+          "solar power",
+          "photovoltaic",
+          "IPP"
+        ]
+      },
+      "stage": "commercial"
+    },
+    {
+      "id": "vytrus",
+      "name": "Vytrus Biotech, S.A.",
+      "aliases": [
+        "Vytrus",
+        "ビトラス"
+      ],
+      "ticker": "VYT",
+      "exchange": "BME Growth",
+      "sector": "bio",
+      "tier": "watch",
+      "market": "ES",
+      "watch": {
+        "news_name": "Vytrus Biotech",
+        "sponsor": "Vytrus Biotech",
+        "extra_keywords": [
+          "plant stem cells",
+          "active ingredients",
+          "cosmeceutical"
+        ]
+      },
+      "stage": "production"
     }
   ]
 }

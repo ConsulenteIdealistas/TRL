@@ -1,0 +1,47 @@
+{
+  "entities": [
+    {
+      "id": "ren",
+      "name": "REN - Redes Energéticas Nacionais, SGPS, S.A.",
+      "aliases": [
+        "REN",
+        "Redes Energéticas Nacionais"
+      ],
+      "ticker": "RENE",
+      "exchange": "Euronext Lisbon",
+      "sector": "energy",
+      "tier": "watch",
+      "market": "PT",
+      "watch": {
+        "news_name": "REN",
+        "extra_keywords": [
+          "electricity transmission",
+          "gas transmission",
+          "grid operator"
+        ]
+      },
+      "stage": "commercial"
+    },
+    {
+      "id": "martifer",
+      "name": "Martifer SGPS, S.A.",
+      "aliases": [
+        "Martifer"
+      ],
+      "ticker": "MAR",
+      "exchange": "Euronext Lisbon",
+      "sector": "energy",
+      "tier": "watch",
+      "market": "PT",
+      "watch": {
+        "news_name": "Martifer",
+        "extra_keywords": [
+          "metal construction",
+          "renewable energy development",
+          "wind energy"
+        ]
+      },
+      "stage": "commercial"
+    }
+  ]
+}

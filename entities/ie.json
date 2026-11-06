@@ -1,0 +1,26 @@
+{
+  "entities": [
+    {
+      "id": "malin",
+      "name": "Malin Corporation plc",
+      "aliases": [
+        "Malin Corporation",
+        "Malin"
+      ],
+      "ticker": "MLC",
+      "exchange": "Euronext Growth Dublin",
+      "sector": "bio",
+      "tier": "reference",
+      "market": "IE",
+      "watch": {
+        "news_name": "Malin Corporation",
+        "extra_keywords": [
+          "life sciences investments",
+          "portfolio companies",
+          "asset disposals"
+        ]
+      },
+      "stage": "production"
+    }
+  ]
+}

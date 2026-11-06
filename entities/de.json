@@ -500,6 +500,94 @@
     "pubmed": "Eckert & Ziegler[Affiliation]"
    },
    "stage": "commercial"
+  },
+  {
+   "id": "hensoldt",
+   "name": "Hensoldt AG",
+   "aliases": [
+    "Hensoldt",
+    "ヘンゾルト"
+   ],
+   "ticker": "HAG",
+   "exchange": "Xetra",
+   "sector": "defense",
+   "tier": "watch",
+   "market": "DE",
+   "watch": {
+    "news_name": "Hensoldt",
+    "extra_keywords": [
+     "radar",
+     "sensors",
+     "optronics"
+    ]
+   },
+   "stage": "commercial"
+  },
+  {
+   "id": "renk",
+   "name": "RENK Group AG",
+   "aliases": [
+    "Renk",
+    "レンク"
+   ],
+   "ticker": "R3NK",
+   "exchange": "Xetra",
+   "sector": "defense",
+   "tier": "watch",
+   "market": "DE",
+   "watch": {
+    "news_name": "RENK Group",
+    "extra_keywords": [
+     "vehicle transmissions",
+     "defense mobility",
+     "Renk"
+    ]
+   },
+   "stage": "commercial"
+  },
+  {
+   "id": "energiekontor",
+   "name": "Energiekontor AG",
+   "aliases": [
+    "Energiekontor",
+    "エネルギ―コントール"
+   ],
+   "ticker": "EKT",
+   "exchange": "Xetra",
+   "sector": "energy",
+   "tier": "watch",
+   "market": "DE",
+   "watch": {
+    "news_name": "Energiekontor",
+    "extra_keywords": [
+     "wind power",
+     "solar park",
+     "project development"
+    ]
+   },
+   "stage": "production"
+  },
+  {
+   "id": "sfc_energy",
+   "name": "SFC Energy AG",
+   "aliases": [
+    "SFC Energy",
+    "SFCエナジー"
+   ],
+   "ticker": "F3C",
+   "exchange": "Xetra",
+   "sector": "energy",
+   "tier": "watch",
+   "market": "DE",
+   "watch": {
+    "news_name": "SFC Energy",
+    "extra_keywords": [
+     "EFOY",
+     "methanol fuel cell",
+     "fuel cell"
+    ]
+   },
+   "stage": "production"
   }
  ]
 }

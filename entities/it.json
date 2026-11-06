@@ -103,6 +103,138 @@
         "pubmed": "Philogen[Affiliation]"
       },
       "stage": "demo"
+    },
+    {
+      "id": "fincantieri",
+      "name": "Fincantieri S.p.A.",
+      "aliases": [
+        "Fincantieri",
+        "フィンカンティエリ"
+      ],
+      "ticker": "FCT",
+      "exchange": "BIT",
+      "sector": "defense",
+      "tier": "watch",
+      "market": "IT",
+      "watch": {
+        "news_name": "Fincantieri",
+        "extra_keywords": [
+          "FREMM",
+          "frigate",
+          "naval shipbuilding"
+        ]
+      },
+      "stage": "commercial"
+    },
+    {
+      "id": "alerion",
+      "name": "Alerion Clean Power S.p.A.",
+      "aliases": [
+        "Alerion",
+        "アレリオン"
+      ],
+      "ticker": "ARN",
+      "exchange": "BIT",
+      "sector": "energy",
+      "tier": "watch",
+      "market": "IT",
+      "watch": {
+        "news_name": "Alerion Clean Power",
+        "extra_keywords": [
+          "wind power",
+          "renewable energy",
+          "IPP"
+        ]
+      },
+      "stage": "commercial"
+    },
+    {
+      "id": "almawave",
+      "name": "Almawave S.p.A.",
+      "aliases": [
+        "Almawave",
+        "アルマウェーブ"
+      ],
+      "ticker": "AIW",
+      "exchange": "Euronext Growth Milan",
+      "sector": "ai",
+      "tier": "watch",
+      "market": "IT",
+      "watch": {
+        "news_name": "Almawave",
+        "extra_keywords": [
+          "speech recognition",
+          "natural language processing",
+          "voice AI"
+        ]
+      },
+      "stage": "commercial"
+    },
+    {
+      "id": "expert_ai",
+      "name": "Expert.ai S.p.A.",
+      "aliases": [
+        "Expert.ai",
+        "エキスパートAI"
+      ],
+      "ticker": "EXAI",
+      "exchange": "Euronext Growth Milan",
+      "sector": "ai",
+      "tier": "watch",
+      "market": "IT",
+      "watch": {
+        "news_name": "Expert.ai",
+        "extra_keywords": [
+          "natural language understanding",
+          "NLU platform",
+          "hybrid AI"
+        ]
+      },
+      "stage": "production"
+    },
+    {
+      "id": "pharmanutra",
+      "name": "PharmaNutra S.p.A.",
+      "aliases": [
+        "PharmaNutra",
+        "ファーマニュートラ"
+      ],
+      "ticker": "PHN",
+      "exchange": "BIT",
+      "sector": "bio",
+      "tier": "watch",
+      "market": "IT",
+      "watch": {
+        "news_name": "PharmaNutra",
+        "sponsor": "PharmaNutra",
+        "extra_keywords": [
+          "sucrosomial iron",
+          "nutraceutical",
+          "Cetilar"
+        ]
+      },
+      "stage": "commercial"
+    },
+    {
+      "id": "seco",
+      "name": "SECO S.p.A.",
+      "aliases": [
+        "SECO"
+      ],
+      "ticker": "IOT",
+      "exchange": "BIT",
+      "sector": "ai",
+      "tier": "watch",
+      "market": "IT",
+      "watch": {
+        "news_name": "SECO",
+        "extra_keywords": [
+          "edge computing",
+          "Clea",
+          "embedded systems"
+        ]
+      },
+      "stage": "commercial"
     }
   ]
 }

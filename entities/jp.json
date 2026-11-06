@@ -1424,6 +1424,169 @@
     ]
    },
    "stage": "commercial"
+  },
+  {
+   "id": "acsl",
+   "name": "ACSL Ltd.",
+   "aliases": [
+    "ACSL"
+   ],
+   "ticker": "6232",
+   "exchange": "TSE",
+   "sector": "defense",
+   "tags": [
+    "autonomous_mobility"
+   ],
+   "tier": "watch",
+   "watch": {
+    "news_name": "ACSL",
+    "prtimes_terms": [
+     "ACSL"
+    ],
+    "extra_keywords": [
+     "industrial drones",
+     "SOTEN",
+     "autonomous flight control"
+    ]
+   },
+   "stage": "production"
+  },
+  {
+   "id": "towa",
+   "name": "TOWA Corporation",
+   "aliases": [
+    "TOWA"
+   ],
+   "ticker": "6315",
+   "exchange": "TSE",
+   "sector": "semiconductor",
+   "tags": [
+    "semi_equipment"
+   ],
+   "tier": "watch",
+   "watch": {
+    "news_name": "TOWA",
+    "prtimes_terms": [
+     "TOWA"
+    ],
+    "extra_keywords": [
+     "molding equipment",
+     "semiconductor packaging",
+     "HBM"
+    ]
+   },
+   "stage": "production"
+  },
+  {
+   "id": "cuorips",
+   "name": "Cuorips Inc.",
+   "aliases": [
+    "Cuorips",
+    "キュオプス"
+   ],
+   "ticker": "4894",
+   "exchange": "TSE",
+   "sector": "bio",
+   "tags": [
+    "regenerative_medicine"
+   ],
+   "tier": "watch",
+   "watch": {
+    "news_name": "キュオプス",
+    "prtimes_terms": [
+     "キュオプス",
+     "Cuorips"
+    ],
+    "sponsor": "Cuorips Inc.",
+    "extra_keywords": [
+     "iPS cell sheet",
+     "myocardial regeneration",
+     "heart failure"
+    ]
+   },
+   "stage": "demo"
+  },
+  {
+   "id": "terra_drone",
+   "name": "Terra Drone Corporation",
+   "aliases": [
+    "Terra Drone",
+    "テラドローン"
+   ],
+   "ticker": "278A",
+   "exchange": "TSE",
+   "sector": "defense",
+   "tags": [
+    "autonomous_mobility"
+   ],
+   "tier": "watch",
+   "watch": {
+    "news_name": "テラドローン",
+    "prtimes_terms": [
+     "テラドローン",
+     "Terra Drone"
+    ],
+    "extra_keywords": [
+     "drone inspection",
+     "UTM",
+     "unmanned traffic management"
+    ]
+   },
+   "stage": "production"
+  },
+  {
+   "id": "heartseed",
+   "name": "Heartseed Inc.",
+   "aliases": [
+    "Heartseed",
+    "ハートシード"
+   ],
+   "ticker": "219A",
+   "exchange": "TSE",
+   "sector": "bio",
+   "tags": [
+    "regenerative_medicine"
+   ],
+   "tier": "watch",
+   "watch": {
+    "news_name": "ハートシード",
+    "prtimes_terms": [
+     "ハートシード",
+     "Heartseed"
+    ],
+    "sponsor": "Heartseed Inc.",
+    "extra_keywords": [
+     "iPS cardiomyocyte",
+     "cell transplantation",
+     "heart failure"
+    ]
+   },
+   "stage": "demo"
+  },
+  {
+   "id": "megachips",
+   "name": "MegaChips Corporation",
+   "aliases": [
+    "MegaChips",
+    "メガチップス"
+   ],
+   "ticker": "6875",
+   "exchange": "TSE",
+   "sector": "semiconductor",
+   "tier": "watch",
+   "watch": {
+    "news_name": "メガチップス",
+    "prtimes_terms": [
+     "メガチップス",
+     "MegaChips"
+    ],
+    "extra_keywords": [
+     "ASIC",
+     "fabless",
+     "timing controllers"
+    ]
+   },
+   "stage": "production"
   }
  ]
 }

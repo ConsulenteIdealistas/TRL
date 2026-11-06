@@ -221,6 +221,77 @@
         "sponsor": "Nexstim"
       },
       "stage": "production"
+    },
+    {
+      "id": "canatu",
+      "name": "Canatu Oyj",
+      "aliases": [
+        "Canatu",
+        "カナトゥ"
+      ],
+      "ticker": "CANATU",
+      "exchange": "Nasdaq Helsinki",
+      "sector": "semiconductor",
+      "tier": "watch",
+      "market": "FI",
+      "watch": {
+        "news_name": "Canatu",
+        "extra_keywords": [
+          "carbon nanotubes",
+          "CNT membrane",
+          "EUV pellicle"
+        ]
+      },
+      "stage": "demo"
+    },
+    {
+      "id": "nightingale_health",
+      "name": "Nightingale Health Oyj",
+      "aliases": [
+        "Nightingale Health",
+        "ナイチンゲール・ヘルス"
+      ],
+      "ticker": "HEALTH",
+      "exchange": "Nasdaq Helsinki",
+      "sector": "bio",
+      "tier": "watch",
+      "market": "FI",
+      "watch": {
+        "news_name": "Nightingale Health",
+        "sponsor": "Nightingale Health",
+        "extra_keywords": [
+          "blood biomarkers",
+          "preventive health",
+          "NMR"
+        ]
+      },
+      "stage": "demo"
+    },
+    {
+      "id": "optomed",
+      "name": "Optomed Oyj",
+      "aliases": [
+        "Optomed",
+        "オプトメド"
+      ],
+      "ticker": "OPTOMED",
+      "exchange": "Nasdaq Helsinki",
+      "sector": "bio",
+      "tags": [
+        "medtech"
+      ],
+      "tier": "watch",
+      "market": "FI",
+      "watch": {
+        "news_name": "Optomed",
+        "sponsor": "Optomed",
+        "extra_keywords": [
+          "fundus camera",
+          "retinal screening",
+          "Aurora"
+        ]
+      },
+      "stage": "production"
     }
   ]
 }

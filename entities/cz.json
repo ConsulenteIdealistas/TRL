@@ -1,0 +1,90 @@
+{
+  "entities": [
+    {
+      "id": "doosan_skoda_power",
+      "name": "Doosan Škoda Power a.s.",
+      "aliases": [
+        "Doosan Škoda Power",
+        "Škoda Power"
+      ],
+      "ticker": "DSPW",
+      "exchange": "PSE",
+      "sector": "energy",
+      "tier": "watch",
+      "market": "CZ",
+      "watch": {
+        "news_name": "Doosan Škoda Power",
+        "extra_keywords": [
+          "steam turbines",
+          "turbogenerators",
+          "nuclear power equipment"
+        ]
+      },
+      "stage": "commercial"
+    },
+    {
+      "id": "primoco",
+      "name": "Primoco UAV SE",
+      "aliases": [
+        "Primoco UAV",
+        "Primoco"
+      ],
+      "ticker": "PRIUA",
+      "exchange": "PSE",
+      "sector": "robotics",
+      "tier": "watch",
+      "market": "CZ",
+      "watch": {
+        "news_name": "Primoco UAV",
+        "extra_keywords": [
+          "unmanned aerial vehicles",
+          "long-endurance UAV",
+          "One 150"
+        ]
+      },
+      "stage": "production"
+    },
+    {
+      "id": "e4u",
+      "name": "E4U a.s.",
+      "aliases": [
+        "E4U"
+      ],
+      "ticker": "EFORU",
+      "exchange": "PSE",
+      "sector": "energy",
+      "tier": "watch",
+      "market": "CZ",
+      "watch": {
+        "news_name": "E4U",
+        "extra_keywords": [
+          "renewable power generation",
+          "photovoltaics",
+          "wind power"
+        ]
+      },
+      "stage": "production"
+    },
+    {
+      "id": "gevorkyan",
+      "name": "GEVORKYAN, a.s.",
+      "aliases": [
+        "Gevorkyan"
+      ],
+      "ticker": "GEV",
+      "exchange": "PSE",
+      "sector": "semiconductor",
+      "tier": "watch",
+      "market": "CZ",
+      "watch": {
+        "news_name": "Gevorkyan",
+        "extra_keywords": [
+          "powder metallurgy",
+          "sintered components",
+          "metal injection molding"
+        ]
+      },
+      "stage": "commercial"
+    }
+  ]
+}

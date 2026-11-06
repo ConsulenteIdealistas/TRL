@@ -341,6 +341,261 @@
     "sponsor": "Egetis Therapeutics"
    },
    "stage": "production"
+  },
+  {
+   "id": "gomspace",
+   "name": "GomSpace Group AB",
+   "aliases": [
+    "GomSpace",
+    "ゴムスペース"
+   ],
+   "ticker": "GOMX",
+   "exchange": "Nasdaq First North",
+   "sector": "space",
+   "tier": "watch",
+   "market": "SE",
+   "watch": {
+    "news_name": "GomSpace",
+    "extra_keywords": [
+     "nanosatellite",
+     "CubeSat",
+     "constellation"
+    ]
+   },
+   "stage": "production"
+  },
+  {
+   "id": "bonesupport",
+   "name": "Bonesupport AB",
+   "aliases": [
+    "Bonesupport",
+    "ボーンサポート"
+   ],
+   "ticker": "BONEX",
+   "exchange": "Nasdaq Stockholm",
+   "sector": "bio",
+   "tags": [
+    "medtech"
+   ],
+   "tier": "watch",
+   "market": "SE",
+   "watch": {
+    "news_name": "Bonesupport",
+    "sponsor": "Bonesupport",
+    "extra_keywords": [
+     "CERAMENT",
+     "bone void filler",
+     "orthobiologics"
+    ]
+   },
+   "stage": "production"
+  },
+  {
+   "id": "cellavision",
+   "name": "CellaVision AB",
+   "aliases": [
+    "CellaVision",
+    "セラビジョン"
+   ],
+   "ticker": "CEVI",
+   "exchange": "Nasdaq Stockholm",
+   "sector": "bio",
+   "tier": "watch",
+   "market": "SE",
+   "watch": {
+    "news_name": "CellaVision",
+    "sponsor": "CellaVision",
+    "extra_keywords": [
+     "digital morphology",
+     "hematology",
+     "blood analysis"
+    ]
+   },
+   "stage": "commercial"
+  },
+  {
+   "id": "eolus_vind",
+   "name": "Eolus Vind AB",
+   "aliases": [
+    "Eolus",
+    "エオルス"
+   ],
+   "ticker": "EOLU-B",
+   "exchange": "Nasdaq Stockholm",
+   "sector": "energy",
+   "tier": "watch",
+   "market": "SE",
+   "watch": {
+    "news_name": "Eolus Vind",
+    "extra_keywords": [
+     "wind power",
+     "project development",
+     "energy storage"
+    ]
+   },
+   "stage": "commercial"
+  },
+  {
+   "id": "mycronic",
+   "name": "Mycronic AB",
+   "aliases": [
+    "Mycronic",
+    "マイクロニック"
+   ],
+   "ticker": "MYCR",
+   "exchange": "Nasdaq Stockholm",
+   "sector": "semiconductor",
+   "tier": "watch",
+   "market": "SE",
+   "watch": {
+    "news_name": "Mycronic",
+    "extra_keywords": [
+     "mask writer",
+     "pattern generator",
+     "PCB assembly"
+    ]
+   },
+   "stage": "commercial"
+  },
+  {
+   "id": "ovzon",
+   "name": "Ovzon AB",
+   "aliases": [
+    "Ovzon",
+    "オフゾン"
+   ],
+   "ticker": "OVZON",
+   "exchange": "Nasdaq Stockholm",
+   "sector": "space",
+   "tier": "watch",
+   "market": "SE",
+   "watch": {
+    "news_name": "Ovzon",
+    "extra_keywords": [
+     "Ovzon 3",
+     "SATCOM",
+     "mobile satellite services"
+    ]
+   },
+   "stage": "production"
+  },
+  {
+   "id": "raysearch",
+   "name": "RaySearch Laboratories AB",
+   "aliases": [
+    "RaySearch",
+    "レイサーチ"
+   ],
+   "ticker": "RAY-B",
+   "exchange": "Nasdaq Stockholm",
+   "sector": "ai",
+   "tier": "watch",
+   "market": "SE",
+   "watch": {
+    "news_name": "RaySearch Laboratories",
+    "extra_keywords": [
+     "RayStation",
+     "RayCare",
+     "radiation therapy"
+    ]
+   },
+   "stage": "commercial"
+  },
+  {
+   "id": "smart_eye",
+   "name": "Smart Eye AB",
+   "aliases": [
+    "Smart Eye",
+    "スマートアイ"
+   ],
+   "ticker": "SEYE",
+   "exchange": "Nasdaq Stockholm",
+   "sector": "ai",
+   "tier": "watch",
+   "market": "SE",
+   "watch": {
+    "news_name": "Smart Eye",
+    "extra_keywords": [
+     "driver monitoring",
+     "DMS",
+     "interior sensing"
+    ]
+   },
+   "stage": "production"
+  },
+  {
+   "id": "vitrolife",
+   "name": "Vitrolife AB",
+   "aliases": [
+    "Vitrolife",
+    "ビトロライフ"
+   ],
+   "ticker": "VITR",
+   "exchange": "Nasdaq Stockholm",
+   "sector": "bio",
+   "tags": [
+    "medtech"
+   ],
+   "tier": "watch",
+   "market": "SE",
+   "watch": {
+    "news_name": "Vitrolife",
+    "sponsor": "Vitrolife",
+    "extra_keywords": [
+     "IVF",
+     "embryology",
+     "time-lapse incubator"
+    ]
+   },
+   "stage": "commercial"
+  },
+  {
+   "id": "xvivo_perfusion",
+   "name": "XVIVO Perfusion AB",
+   "aliases": [
+    "XVIVO",
+    "エクスビボ"
+   ],
+   "ticker": "XVIVO",
+   "exchange": "Nasdaq Stockholm",
+   "sector": "bio",
+   "tags": [
+    "medtech"
+   ],
+   "tier": "watch",
+   "market": "SE",
+   "watch": {
+    "news_name": "XVIVO Perfusion",
+    "sponsor": "XVIVO Perfusion",
+    "extra_keywords": [
+     "organ perfusion",
+     "EVLP",
+     "XVIVO System"
+    ]
+   },
+   "stage": "production"
+  },
+  {
+   "id": "mildef",
+   "name": "MilDef Group AB",
+   "aliases": [
+    "MilDef",
+    "ミルデフ"
+   ],
+   "ticker": "MILDEF",
+   "exchange": "Nasdaq Stockholm",
+   "sector": "defense",
+   "tier": "watch",
+   "market": "SE",
+   "watch": {
+    "news_name": "MilDef",
+    "extra_keywords": [
+     "rugged IT",
+     "tactical communication",
+     "defense electronics"
+    ]
+   },
+   "stage": "production"
   }
  ]
 }

@@ -84,7 +84,8 @@
       "業績",
       "採択",
       "実証"
-    ]
+    ],
+    "defense": ["決算", "受注", "契約", "提携", "資金調達", "業績", "採択", "装備", "調達"]
   },
   "keyword_sets_en": {
     "bio": [
@@ -150,7 +151,8 @@
       "funding",
       "demonstration",
       "revenue"
-    ]
+    ],
+    "defense": ["earnings", "contract", "order", "partnership", "funding", "award", "revenue", "procurement"]
   },
   "keyword_sets_de": {
     "bio": [
@@ -211,7 +213,8 @@
       "Partnerschaft",
       "Finanzierung",
       "Umsatz"
-    ]
+    ],
+    "defense": ["Ergebnisse", "Auftrag", "Vertrag", "Partnerschaft", "Finanzierung", "Umsatz", "Rüstung", "Beschaffung"]
   },
   "keyword_sets_it": {
     "bio": [
@@ -271,7 +274,8 @@
       "partnership",
       "finanziamento",
       "ricavi"
-    ]
+    ],
+    "defense": ["risultati", "contratto", "ordine", "partnership", "finanziamento", "ricavi", "difesa", "appalto"]
   },
   "keyword_sets_sv": {
     "bio": [
@@ -331,7 +335,8 @@
       "partnerskap",
       "finansiering",
       "intäkter"
-    ]
+    ],
+    "defense": ["resultat", "kontrakt", "order", "partnerskap", "finansiering", "intäkter", "försvar", "upphandling"]
   },
   "topics": [
     {

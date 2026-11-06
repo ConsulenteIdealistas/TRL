@@ -1,0 +1,223 @@
+{
+  "entities": [
+    {
+      "id": "cenergy",
+      "name": "Cenergy Holdings S.A.",
+      "aliases": [
+        "Cenergy Holdings",
+        "Cenergy"
+      ],
+      "ticker": "CENER",
+      "exchange": "Euronext Athens",
+      "sector": "energy",
+      "tier": "watch",
+      "market": "GR",
+      "watch": {
+        "news_name": "Cenergy Holdings",
+        "extra_keywords": [
+          "submarine power cables",
+          "steel pipes",
+          "Hellenic Cables",
+          "offshore wind"
+        ]
+      },
+      "stage": "commercial"
+    },
+    {
+      "id": "profile_software",
+      "name": "Profile Systems & Software S.A.",
+      "aliases": [
+        "Profile Software",
+        "Profile Systems & Software"
+      ],
+      "ticker": "PROF",
+      "exchange": "Euronext Athens",
+      "sector": "ai",
+      "tier": "watch",
+      "market": "GR",
+      "watch": {
+        "news_name": "Profile Software",
+        "extra_keywords": [
+          "banking software",
+          "wealth management software",
+          "fintech"
+        ]
+      },
+      "stage": "commercial"
+    },
+    {
+      "id": "lavipharm",
+      "name": "Lavipharm S.A.",
+      "aliases": [
+        "Lavipharm"
+      ],
+      "ticker": "LAVI",
+      "exchange": "Euronext Athens",
+      "sector": "bio",
+      "tier": "watch",
+      "market": "GR",
+      "watch": {
+        "news_name": "Lavipharm",
+        "sponsor": "Lavipharm",
+        "extra_keywords": [
+          "transdermal patches",
+          "pharmaceutical manufacturing",
+          "medical cannabis"
+        ]
+      },
+      "stage": "commercial"
+    },
+    {
+      "id": "elvalhalcor",
+      "name": "ElvalHalcor Hellenic Copper and Aluminium Industry S.A.",
+      "aliases": [
+        "ElvalHalcor"
+      ],
+      "ticker": "ELHA",
+      "exchange": "Euronext Athens",
+      "sector": "energy",
+      "tier": "watch",
+      "market": "GR",
+      "watch": {
+        "news_name": "ElvalHalcor",
+        "extra_keywords": [
+          "aluminium products",
+          "copper products",
+          "battery foil"
+        ]
+      },
+      "stage": "commercial"
+    },
+    {
+      "id": "admie",
+      "name": "ADMIE Holding S.A.",
+      "aliases": [
+        "ADMIE Holding",
+        "ADMIE"
+      ],
+      "ticker": "ADMIE",
+      "exchange": "Euronext Athens",
+      "sector": "energy",
+      "tier": "watch",
+      "market": "GR",
+      "watch": {
+        "news_name": "ADMIE Holding",
+        "extra_keywords": [
+          "electricity transmission",
+          "grid operator",
+          "IPTO"
+        ]
+      },
+      "stage": "commercial"
+    },
+    {
+      "id": "gek_terna",
+      "name": "GEK Terna S.A.",
+      "aliases": [
+        "GEK Terna",
+        "GEK TERNA"
+      ],
+      "ticker": "GEKTERNA",
+      "exchange": "Euronext Athens",
+      "sector": "energy",
+      "tier": "watch",
+      "market": "GR",
+      "watch": {
+        "news_name": "GEK Terna",
+        "extra_keywords": [
+          "concessions",
+          "renewable energy",
+          "construction"
+        ]
+      },
+      "stage": "commercial"
+    },
+    {
+      "id": "motor_oil",
+      "name": "Motor Oil (Hellas) Corinth Refineries S.A.",
+      "aliases": [
+        "Motor Oil Hellas",
+        "Motor Oil"
+      ],
+      "ticker": "MOH",
+      "exchange": "Euronext Athens",
+      "sector": "energy",
+      "tier": "watch",
+      "market": "GR",
+      "watch": {
+        "news_name": "Motor Oil Hellas",
+        "extra_keywords": [
+          "oil refining",
+          "renewable energy",
+          "fuel retail"
+        ]
+      },
+      "stage": "commercial"
+    },
+    {
+      "id": "helleniq",
+      "name": "HELLENiQ ENERGY Holdings S.A.",
+      "aliases": [
+        "Helleniq Energy",
+        "Hellenic Petroleum"
+      ],
+      "ticker": "ELPE",
+      "exchange": "Euronext Athens",
+      "sector": "energy",
+      "tier": "watch",
+      "market": "GR",
+      "watch": {
+        "news_name": "Helleniq Energy",
+        "extra_keywords": [
+          "oil refining",
+          "petrochemicals",
+          "renewable energy"
+        ]
+      },
+      "stage": "commercial"
+    },
+    {
+      "id": "quest",
+      "name": "Quest Holdings S.A.",
+      "aliases": [
+        "Quest Holdings",
+        "Quest"
+      ],
+      "ticker": "QUEST",
+      "exchange": "Euronext Athens",
+      "sector": "ai",
+      "tier": "watch",
+      "market": "GR",
+      "watch": {
+        "news_name": "Quest Holdings",
+        "extra_keywords": [
+          "IT distribution",
+          "Unisystems",
+          "IT services"
+        ]
+      },
+      "stage": "commercial"
+    },
+    {
+      "id": "space_hellas",
+      "name": "Space Hellas S.A.",
+      "aliases": [
+        "Space Hellas"
+      ],
+      "ticker": "SPACE",
+      "exchange": "Euronext Athens",
+      "sector": "ai",
+      "tier": "watch",
+      "market": "GR",
+      "watch": {
+        "news_name": "Space Hellas",
+        "extra_keywords": [
+          "systems integration",
+          "ICT solutions",
+          "security systems"
+        ]
+      },
+      "stage": "commercial"
+    }
+  ]
+}

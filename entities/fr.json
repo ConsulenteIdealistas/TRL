@@ -444,6 +444,72 @@
         ]
       },
       "stage": "commercial"
+    },
+    {
+      "id": "exail",
+      "name": "Exail Technologies",
+      "aliases": [
+        "Exail",
+        "エグザイル"
+      ],
+      "ticker": "EXA",
+      "exchange": "Euronext Paris",
+      "sector": "defense",
+      "tier": "watch",
+      "market": "FR",
+      "watch": {
+        "news_name": "Exail Technologies",
+        "extra_keywords": [
+          "maritime robotics",
+          "inertial navigation",
+          "mine countermeasures"
+        ]
+      },
+      "stage": "production"
+    },
+    {
+      "id": "lhyfe",
+      "name": "Lhyfe",
+      "aliases": [
+        "Lhyfe",
+        "ライフ"
+      ],
+      "ticker": "ALHYF",
+      "exchange": "Euronext Growth Paris",
+      "sector": "energy",
+      "tier": "watch",
+      "market": "FR",
+      "watch": {
+        "news_name": "Lhyfe",
+        "extra_keywords": [
+          "green hydrogen",
+          "electrolysis",
+          "renewable hydrogen"
+        ]
+      },
+      "stage": "demo"
+    },
+    {
+      "id": "waga_energy",
+      "name": "Waga Energy",
+      "aliases": [
+        "Waga Energy",
+        "ワガ・エナジー"
+      ],
+      "ticker": "WAGA",
+      "exchange": "Euronext Growth Paris",
+      "sector": "energy",
+      "tier": "watch",
+      "market": "FR",
+      "watch": {
+        "news_name": "Waga Energy",
+        "extra_keywords": [
+          "WAGABOX",
+          "landfill gas",
+          "biomethane"
+        ]
+      },
+      "stage": "production"
     }
   ]
 }

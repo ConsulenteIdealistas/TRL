@@ -1,0 +1,72 @@
+{
+  "entities": [
+    {
+      "id": "alchip",
+      "name": "Alchip Technologies Limited",
+      "aliases": [
+        "Alchip Technologies",
+        "Alchip"
+      ],
+      "ticker": "3661",
+      "exchange": "TWSE",
+      "sector": "semiconductor",
+      "tier": "watch",
+      "market": "TW",
+      "watch": {
+        "news_name": "Alchip Technologies",
+        "extra_keywords": [
+          "ASIC design",
+          "advanced node ASIC",
+          "AI accelerators"
+        ]
+      },
+      "stage": "commercial"
+    },
+    {
+      "id": "hiwin",
+      "name": "HIWIN Technologies Corp.",
+      "aliases": [
+        "HIWIN Technologies",
+        "HIWIN"
+      ],
+      "ticker": "2049",
+      "exchange": "TWSE",
+      "sector": "robotics",
+      "tier": "watch",
+      "market": "TW",
+      "watch": {
+        "news_name": "HIWIN Technologies",
+        "extra_keywords": [
+          "ball screws",
+          "linear guideways",
+          "industrial robots"
+        ]
+      },
+      "stage": "commercial"
+    },
+    {
+      "id": "wiwynn",
+      "name": "Wiwynn Corporation",
+      "aliases": [
+        "Wiwynn"
+      ],
+      "ticker": "6669",
+      "exchange": "TWSE",
+      "sector": "ai",
+      "tags": [
+        "ai_infra"
+      ],
+      "tier": "watch",
+      "market": "TW",
+      "watch": {
+        "news_name": "Wiwynn",
+        "extra_keywords": [
+          "AI servers",
+          "rack integration",
+          "hyperscale data centers"
+        ]
+      },
+      "stage": "commercial"
+    }
+  ]
+}

@@ -414,6 +414,95 @@
         ]
       },
       "stage": "commercial"
+    },
+    
+    {
+      "id": "lithium_americas",
+      "name": "Lithium Americas Corp.",
+      "aliases": [
+        "Lithium Americas",
+        "リチウム・アメリカズ"
+      ],
+      "ticker": "LAC",
+      "exchange": "TSX",
+      "sector": "energy",
+      "tier": "watch",
+      "market": "CA",
+      "watch": {
+        "news_name": "Lithium Americas",
+        "extra_keywords": [
+          "Thacker Pass",
+          "lithium",
+          "brine"
+        ]
+      },
+      "stage": "demo"
+    },
+    {
+      "id": "denison_mines",
+      "name": "Denison Mines Corp.",
+      "aliases": [
+        "Denison Mines",
+        "デニソン・マインズ"
+      ],
+      "ticker": "DNN",
+      "exchange": "TSX",
+      "sector": "energy",
+      "tier": "watch",
+      "market": "CA",
+      "watch": {
+        "news_name": "Denison Mines",
+        "extra_keywords": [
+          "Wheeler River",
+          "uranium",
+          "in-situ recovery"
+        ]
+      },
+      "stage": "demo"
+    },
+    {
+      "id": "kraken_robotics",
+      "name": "Kraken Robotics Inc.",
+      "aliases": [
+        "Kraken Robotics",
+        "クラーケン・ロボティクス"
+      ],
+      "ticker": "PNG",
+      "exchange": "TSXV",
+      "sector": "robotics",
+      "tier": "watch",
+      "market": "CA",
+      "watch": {
+        "news_name": "Kraken Robotics",
+        "extra_keywords": [
+          "AquaPix",
+          "synthetic aperture sonar",
+          "subsea batteries"
+        ]
+      },
+      "stage": "production"
+    },
+    {
+      "id": "polaris_renewable",
+      "name": "Polaris Renewable Energy Inc.",
+      "aliases": [
+        "Polaris Renewable Energy",
+        "ポラリス・リニューアブル"
+      ],
+      "ticker": "PIF",
+      "exchange": "TSX",
+      "sector": "energy",
+      "tier": "watch",
+      "market": "CA",
+      "watch": {
+        "news_name": "Polaris Renewable Energy",
+        "extra_keywords": [
+          "geothermal",
+          "hydropower",
+          "San Jacinto"
+        ]
+      },
+      "stage": "production"
     }
   ]
 }

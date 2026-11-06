@@ -539,6 +539,50 @@
         "pubmed": "Poolbeg Pharma[Affiliation]"
       },
       "stage": "rd"
+    },
+    {
+      "id": "craneware",
+      "name": "Craneware plc",
+      "aliases": [
+        "Craneware",
+        "クレインウェア"
+      ],
+      "ticker": "CRW",
+      "exchange": "LSE",
+      "sector": "ai",
+      "tier": "watch",
+      "market": "GB",
+      "watch": {
+        "news_name": "Craneware",
+        "extra_keywords": [
+          "revenue cycle management",
+          "Trisus",
+          "hospital software"
+        ]
+      },
+      "stage": "production"
+    },
+    {
+      "id": "eurowag",
+      "name": "W.A.G payment solutions plc",
+      "aliases": [
+        "Eurowag",
+        "ユーロワグ"
+      ],
+      "ticker": "EWG",
+      "exchange": "LSE",
+      "sector": "ai",
+      "tier": "watch",
+      "market": "GB",
+      "watch": {
+        "news_name": "Eurowag",
+        "extra_keywords": [
+          "fuel cards",
+          "fleet mobility",
+          "toll payments"
+        ]
+      },
+      "stage": "commercial"
     }
   ]
 }

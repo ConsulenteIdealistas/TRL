@@ -613,28 +613,48 @@ class Store:
         return deleted
 
     def _stale_yahoo_key_ids(self, entity_markets):
-        """旧形式キー (接尾辞なし) の Yahoo 財務で、新形式 (接尾辞つき) の同企業・
-        同時期レコードが既にあるものを返す。移行期のツインのうち旧側だけを消す。
-        新形式が無い企業の旧レコードは (それが唯一の財務のうちは) 残す。"""
+        """Yahoo 財務のツイン (同一企業・同一タイトルの複数保存) の旧側を返す。
+
+        移行期に2種のツインが生まれた: (1) source_id が接尾辞なし→接尾辞つきに
+        変わった組、(2) source_id は同じでも srcid の identifiers 登録が片方に
+        しか無い組 (登録の無い側は upsert で照合できず新規行になっていた)。
+        survivor は「srcid が自分に登録されている候補」を最優先し、次に接尾辞
+        つき source_id、最後に取得の新しい方とする。どの企業・時期の財務も
+        正は1件だけという前提で、グループ内の survivor 以外を旧側とする。
+        唯一の財務 (ツインが無い) は残す。"""
         c = self.conn
         rows = c.execute(
-            "SELECT i.key, i.candidate_id, n.published FROM identifiers i "
-            "JOIN candidates n ON n.id = i.candidate_id "
-            "WHERE i.key LIKE 'srcid:yahoo:%' AND n.source='yahoo'").fetchall()
-        info = {}  # cid -> (symbol, published)
-        for key, cid, published in rows:
-            sid = key[len("srcid:yahoo:"):]
-            info[cid] = (sid[:-11] if len(sid) > 11 else sid, published)
-        groups = {}  # (entity_id, published) -> {"dotted": set, "plain": set}
-        for cid, (sym, published) in info.items():
-            for (eid,) in c.execute("SELECT entity_id FROM candidate_entities WHERE candidate_id=?", (cid,)):
-                g = groups.setdefault((eid, published), {"dotted": set(), "plain": set()})
-                g["dotted" if "." in sym else "plain"].add(cid)
-        stale = set()
-        for (eid, _pub), g in groups.items():
-            if g["dotted"] and g["plain"] and (entity_markets.get(eid) or "JP") != "US":
-                stale |= g["plain"]
-        return stale
+            "SELECT id, source_id, title, retrieved_at FROM candidates "
+            "WHERE source='yahoo' AND source_id IS NOT NULL").fetchall()
+        owner = {}
+        for key, cid in c.execute(
+                "SELECT key, candidate_id FROM identifiers WHERE key LIKE 'srcid:yahoo:%'"):
+            owner[key[len("srcid:yahoo:"):]] = cid
+        links = {}
+        for cid, eid in c.execute("SELECT candidate_id, entity_id FROM candidate_entities"):
+            links.setdefault(cid, []).append(eid)
+        info = {cid: (sid, retrieved) for cid, sid, _title, retrieved in rows}
+        groups = {}
+        for cid, sid, title, _retrieved in rows:
+            for eid in links.get(cid, []):
+                groups.setdefault((eid, title), []).append(cid)
+
+        def rank(cid):
+            sid, retrieved = info[cid]
+            sym = sid[:-11] if len(sid) > 11 else sid
+            return (1 if owner.get(sid) == cid else 0,
+                    1 if "." in sym else 0,
+                    retrieved or "")
+
+        keeps, stale = set(), set()
+        for cids in groups.values():
+            uniq = list(dict.fromkeys(cids))
+            if len(uniq) < 2:
+                continue
+            keep = max(uniq, key=lambda cid: (rank(cid), cid))
+            keeps.add(keep)
+            stale |= {cid for cid in uniq if cid != keep}
+        return stale - keeps  # 別のグループの survivor は消さない
 
     def related_news(self, cid, as_of, limit=8, window_days=90):
         """同一企業に紐付く直近ニュースを、評価時の補助根拠として返す。

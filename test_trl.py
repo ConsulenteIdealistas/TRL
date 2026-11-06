@@ -3126,6 +3126,27 @@ class PruneTests(unittest.TestCase):
             self.assertIsNotNone(store.get_candidate(new))
             store.close()
 
+    def test_prune_stale_yahoo_twins_without_identifier_row(self):
+        # 本番の盲点の再現: 旧キー側に identifiers 行が無いと、索引経由の
+        # 検出ではツインを見つけられなかった (source_id 直読みで検出する)
+        with tempfile.TemporaryDirectory() as td:
+            store = T.Store(Path(td) / "d.sqlite")
+            aff = ["Oxford Nanopore Technologies"]
+            url = "https://finance.yahoo.com/quote/ONT.L"
+            old = self._add(store, "ONT-2026-06-30", source="yahoo", info_type="disclosure",
+                            published="2026-06-30", url=url, affiliations=aff)
+            new = self._add(store, "ONT.L-2026-06-30", source="yahoo", info_type="disclosure",
+                            published="2026-06-30", url=url, affiliations=aff)
+            store.conn.execute("DELETE FROM identifiers WHERE candidate_id=?", (old,))
+            store.conn.commit()
+            markets = {e["id"]: e.get("market") or "JP"
+                       for e in CFG["entities"]["entities"]}
+            counts = store.prune(AS_OF, entity_markets=markets)
+            self.assertEqual(counts["stale_yahoo_keys"], 1)
+            self.assertIsNone(store.get_candidate(old))
+            self.assertIsNotNone(store.get_candidate(new))
+            store.close()
+
     def test_prune_keeps_old_key_without_counterpart(self):
         with tempfile.TemporaryDirectory() as td:
             store = T.Store(Path(td) / "d.sqlite")

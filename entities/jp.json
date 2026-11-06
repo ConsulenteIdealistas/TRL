@@ -321,12 +321,14 @@
   },
   {
    "id": "qps",
-   "name": "Institute for Q-shu Pioneers of Space, Inc.",
+   "name": "QPS Holdings, Inc.",
    "aliases": [
+    "QPSホールディングス",
     "QPS研究所",
-    "QPS Institute"
+    "QPS Institute",
+    "Institute for Q-shu Pioneers of Space"
    ],
-   "ticker": "5595",
+   "ticker": "464A",
    "exchange": "TSE",
    "sector": "space",
    "tags": [
@@ -334,8 +336,9 @@
    ],
    "tier": "core",
    "watch": {
-    "news_name": "QPS研究所",
+    "news_name": "QPSホールディングス",
     "prtimes_terms": [
+     "QPSホールディングス",
      "QPS研究所"
     ]
    },

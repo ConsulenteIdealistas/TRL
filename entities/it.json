@@ -149,28 +149,6 @@
       "stage": "commercial"
     },
     {
-      "id": "almawave",
-      "name": "Almawave S.p.A.",
-      "aliases": [
-        "Almawave",
-        "アルマウェーブ"
-      ],
-      "ticker": "AIW",
-      "exchange": "Euronext Growth Milan",
-      "sector": "ai",
-      "tier": "watch",
-      "market": "IT",
-      "watch": {
-        "news_name": "Almawave",
-        "extra_keywords": [
-          "speech recognition",
-          "natural language processing",
-          "voice AI"
-        ]
-      },
-      "stage": "commercial"
-    },
-    {
       "id": "expert_ai",
       "name": "Expert.ai S.p.A.",
       "aliases": [

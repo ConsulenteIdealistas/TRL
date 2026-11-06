@@ -1646,6 +1646,29 @@ class EvaluateOneTests(unittest.TestCase):
                         event={"classification": 4, "market_expectation": "コンセンサスは赤字継続"})
         self.assertEqual((r["status"], r["total"], r["event"]["classification"]), ("final", 70.0, 4))
 
+    def test_event_with_market_reaction_final_without_expectation(self):
+        # 案A (2026-11-06): 市場予想が無くても、株価反応データがあれば
+        # 乖離・織り込み度の採点を強制 null にせず生かす
+        metrics = {"available": True, "anchor_date": "2026-10-19", "trading_date": "2026-10-19",
+                   "reaction_pct": 8.0, "z": 2.5, "pre_drift_pct": 0.5,
+                   "volume_ratio": 1.8, "sigma_pct": 2.2, "sigma_days": 60}
+        r = ev.evaluate_one(self.cand, "event", CFG,
+                            Mock(make_llm_fn(event_scores={k: 70 for k in EVENT_KEYS},
+                                             event={"classification": 4, "market_expectation": ""})),
+                            AS_OF, market_reaction=(metrics, "Argenx", "ARGX"))
+        self.assertEqual((r["status"], r["total"], r["event"]["classification"]), ("final", 70.0, 4))
+        self.assertEqual(r["extra"]["market_reaction"], metrics)
+
+    def test_event_with_unavailable_reaction_still_holds(self):
+        # 反応データが「利用不可」の場合は従来どおり保留 (根拠なしの採点を生かさない)
+        metrics = {"available": False, "reason": "株価系列を取得できなかった", "anchor_date": "2026-10-19"}
+        r = ev.evaluate_one(self.cand, "event", CFG,
+                            Mock(make_llm_fn(event_scores={k: 70 for k in EVENT_KEYS},
+                                             event={"classification": 4, "market_expectation": ""})),
+                            AS_OF, market_reaction=(metrics, "Argenx", "ARGX"))
+        self.assertEqual(r["status"], "hold")
+        self.assertIsNone(r["event"]["classification"])
+
     def test_provider_requires_key(self):
         import os
         os.environ.pop("GEMINI_API_KEY", None)
@@ -2445,7 +2468,7 @@ class RepoFilesTests(unittest.TestCase):
 
     def test_prompt_files_named_by_scoring_json_are_required(self):
         names = [n for n, _ in T.required_files()]
-        for n in ("extract.v1.md", "long.v1.md", "event.v1.md"):
+        for n in ("extract.v1.md", "long.v1.md", "event.v2.md"):
             self.assertIn(n, names)
 
 
@@ -3192,6 +3215,104 @@ class PruneTests(unittest.TestCase):
             self.assertEqual(counts["stale_yahoo_keys"], 0)
             self.assertIsNotNone(store.get_candidate(only))  # 唯一の財務は残す
             store.close()
+
+
+class MarketReactionTests(unittest.TestCase):
+    def _bars(self, n=130, jump_idx=100, jump=0.08, glitch_idx=None):
+        from datetime import date, timedelta
+        days, d = [], date(2026, 3, 2)
+        while len(days) < n:
+            if d.weekday() < 5:
+                days.append(d)
+            d += timedelta(days=1)
+        closes, price = [], 100.0
+        for i in range(n):
+            price *= 1.004 if i % 2 == 0 else 0.997  # 一定だと MAD が 0 になるため揺らす
+            if i == jump_idx + 1:
+                price *= 1 + jump
+            closes.append(price)
+        if glitch_idx is not None:
+            closes[glitch_idx] *= 1.45
+            closes[glitch_idx + 1] /= 1.45
+        return [(d.isoformat(), c, 2000.0 if i in (jump_idx, jump_idx + 1) else 1000.0)
+                for i, (d, c) in enumerate(zip(days, closes))], days
+
+    def test_reaction_metrics_basic(self):
+        from trlcore import market as MK
+        bars, days = self._bars()
+        m = MK.reaction_metrics(bars, days[100].isoformat())
+        self.assertTrue(m["available"])
+        self.assertAlmostEqual(m["reaction_pct"], 8.2, delta=0.4)
+        self.assertGreater(m["z"], 3)
+        self.assertAlmostEqual(m["volume_ratio"], 2.0, delta=0.05)
+        self.assertEqual(m["trading_date"], days[100].isoformat())
+
+    def test_weekend_anchor_resolves_to_next_trading_day(self):
+        from trlcore import market as MK
+        from datetime import timedelta
+        bars, days = self._bars()
+        saturday = (days[100] - timedelta(days=2)).isoformat()  # 月曜の2日前 = 土曜
+        m = MK.reaction_metrics(bars, saturday)
+        self.assertTrue(m["available"])
+        self.assertEqual(m["trading_date"], days[100].isoformat())
+
+    def test_robust_sigma_survives_glitch(self):
+        from trlcore import market as MK
+        bars, days = self._bars(glitch_idx=50)
+        m = MK.reaction_metrics(bars, days[100].isoformat())
+        self.assertTrue(m["available"])
+        self.assertLess(m["sigma_pct"], 1.0)   # +45% の外れ値に σ が壊されない
+        self.assertGreater(m["z"], 3)
+
+    def test_insufficient_history(self):
+        from trlcore import market as MK
+        bars, days = self._bars(n=10)
+        m = MK.reaction_metrics(bars, days[5].isoformat())
+        self.assertFalse(m["available"])
+
+    def test_fetch_parsing_with_gmtoffset(self):
+        from trlcore import market as MK
+        from datetime import datetime, timezone
+        ts = int(datetime(2026, 10, 19, 15, 0, tzinfo=timezone.utc).timestamp())  # JST では 10/20 00:00
+        doc = {"chart": {"result": [{"meta": {"gmtoffset": 32400}, "timestamp": [ts],
+                                      "indicators": {"quote": [{"close": [123.4], "volume": [555]}]}}]}}
+        bars = MK.fetch_price_series("7203.T", http=lambda url, params=None, headers=None: json.dumps(doc))
+        self.assertEqual(bars, [("2026-10-20", 123.4, 555.0)])
+
+    def test_build_market_reaction_end_to_end(self):
+        from trlcore import market as MK
+        from datetime import date, datetime, timezone
+        bars, days = self._bars()
+        doc = {"chart": {"result": [{"meta": {"gmtoffset": 0},
+                                      "timestamp": [int(datetime.fromisoformat(d).replace(tzinfo=timezone.utc).timestamp())
+                                                    for d, _, _ in bars],
+                                      "indicators": {"quote": [{"close": [c for _, c, _ in bars],
+                                                                "volume": [v for _, _, v in bars]}]}}]}}
+        tmp = tempfile.TemporaryDirectory()
+        store = T.Store(Path(tmp.name) / "d.sqlite")
+        cfg = dict(CFG)
+        cfg["entities"] = {"entities": [{"id": "acme", "name": "Acme", "ticker": "ACME",
+                                         "market": "US", "tier": "core", "sector": "bio"}]}
+        rec, _ = T.normalize(raw(source="prtimes", sid="M1", title="Acme の発表",
+                                 published=days[100].isoformat()), T.now_iso())
+        cid, _ = store.upsert_candidate(rec, "rX")
+        store.set_entities(cid, [{"entity_id": "acme", "strength": "strong"}])
+        cand = store.get_candidate(cid)
+        metrics, name, symbol = MK.build_market_reaction(
+            store, cfg, cand, AS_OF, http=lambda url, params=None, headers=None: json.dumps(doc),
+            log=lambda *_: None)
+        self.assertEqual((name, symbol), ("Acme", "ACME"))
+        self.assertTrue(metrics["available"])
+        text = MK.format_reaction(metrics, name, symbol, cand["source"])
+        self.assertIn("標準化反応 z", text)
+        self.assertIn("アンカーの強さ: 強", text)
+        # 2回目はキャッシュされた系列で計算できる (系列が新しければ http を呼ばない)
+        metrics2, _, _ = MK.build_market_reaction(
+            store, cfg, cand, date(2026, 8, 30),
+            http=lambda *a, **k: (_ for _ in ()).throw(AssertionError("再取得した")), log=lambda *_: None)
+        self.assertTrue(metrics2["available"])
+        store.close()
+        tmp.cleanup()
 
 
 class FinancialSkipTests(unittest.TestCase):

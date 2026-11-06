@@ -226,7 +226,9 @@ catalyst_quality（材料の質）、expectation_gap（市場予想との乖離�
 not_priced_in（未織り込み度）、timing_feasibility（時期の実現可能性）、
 supply_demand（需給構造）、downside_resilience（下落耐性）。
 市場予想や株価の裏付けが資料に無い場合、expectation_gap と
-not_priced_in は null とする。アンカー全文は event.v1.md を正とする。</p>
+not_priced_in は null とする。ただし株価反応データ（材料の公開日を挟んだ
+反応リターン・標準化反応・出来高倍率を決定的に計算したもの）が資料にある
+場合は、その数値を乖離・織り込み度の根拠としてよい。アンカー全文は event.v2.md を正とする。</p>
 <h3>第15条（採点の共通ルール）</h3>
 <ol>
 <li>根拠が無い項目は null とし、0 点で埋めない。null でない項目には
@@ -408,7 +410,7 @@ EPO）、公的採択（NEDO / AMED）。追加は実取得による裏取りと
 </tr>
 <tr>
 <td>第4章 項目・アンカー</td>
-<td>long.v1.md / event.v1.md [採点アンカー]</td>
+<td>long.v1.md / event.v2.md [採点アンカー]</td>
 </tr>
 <tr>
 <td>第5章 集計・重み・帯域</td>

@@ -80,6 +80,13 @@ CREATE TABLE IF NOT EXISTS runs(
 CREATE TABLE IF NOT EXISTS run_sources(
   run_id TEXT, source TEXT, query TEXT, fetched INTEGER, new INTEGER, duplicates INTEGER,
   invalid INTEGER, ok INTEGER, error TEXT, seconds REAL);
+CREATE TABLE IF NOT EXISTS market_series (
+    symbol TEXT NOT NULL,
+    date TEXT NOT NULL,
+    close REAL NOT NULL,
+    volume REAL,
+    PRIMARY KEY (symbol, date)
+);
 CREATE TABLE IF NOT EXISTS candidate_entities (
     candidate_id TEXT NOT NULL,
     entity_id TEXT NOT NULL,
@@ -389,6 +396,28 @@ class Store:
             "SELECT title, abstract, published, source, superseded_at, run_id"
             " FROM candidate_versions WHERE candidate_id=? ORDER BY id", (cid,)).fetchall()
         return [dict(r) for r in rows]
+
+    def candidate_entity_ids(self, cid):
+        """候補に紐づく企業リンク (link_type='entity')。strong を先に、企業ID順。"""
+        rows = self.conn.execute(
+            "SELECT entity_id, strength FROM candidate_entities"
+            " WHERE candidate_id = ? AND link_type = 'entity'", (cid,)).fetchall()
+        rows.sort(key=lambda r: (0 if r[1] == "strong" else 1, r[0]))
+        return [r[0] for r in rows]
+
+    def price_series(self, symbol):
+        """保存済みの日次株価系列を (date, close, volume) の昇順で返す。"""
+        return [(d, c, v) for d, c, v in self.conn.execute(
+            "SELECT date, close, volume FROM market_series WHERE symbol = ? ORDER BY date",
+            (symbol,))]
+
+    def save_price_series(self, symbol, bars):
+        """日次株価系列を保存する。Yahoo 側で数値が訂正され得るため置き換え可
+        (市場データは再取得可能な層であり、評価の原データではない)。"""
+        self.conn.executemany(
+            "INSERT OR REPLACE INTO market_series(symbol, date, close, volume) VALUES(?,?,?,?)",
+            [(symbol, d, c, v) for d, c, v in bars])
+        self.conn.commit()
 
     def get_candidate(self, cid):
         row = self.conn.execute("SELECT * FROM candidates WHERE id=?", (cid,)).fetchone()

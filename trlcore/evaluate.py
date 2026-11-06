@@ -8,6 +8,7 @@ from .http import redact
 from .scoring import compute, item_keys
 from .prompts import load_prompt, render
 from .llm import extract_json
+from .market import format_reaction
 
 
 EVIDENCE_KINDS = {"fact", "inference", "forecast", "hypothesis"}
@@ -154,7 +155,7 @@ def _used_model(llm):
 
 
 def evaluate_one(cand, kind, cfg, llm, as_of, extraction=None, extract_meta=None, prompt_dir=None,
-                 related=None, financials=None):
+                 related=None, financials=None, market_reaction=None):
     """1候補・1系統の評価。失敗しても例外を投げず status=error の結果を返す。"""
     versions = {}
     result = {"kind": kind, "as_of": as_of.isoformat(), "status": "error", "total": None, "band": None,
@@ -173,10 +174,17 @@ def evaluate_one(cand, kind, cfg, llm, as_of, extraction=None, extract_meta=None
         versions[kind] = {"name": kind, "version": p["version"], "sha": p["sha"]}
         result["extra"]["related_news_count"] = len(related or [])
         result["extra"]["related_financials_count"] = len(financials or [])
+        if kind == "event":
+            result["extra"]["market_reaction"] = market_reaction[0] if market_reaction else None
+        reaction_text = ""
+        if market_reaction:
+            reaction_text = format_reaction(market_reaction[0], market_reaction[1],
+                                            market_reaction[2], cand.get("source"))
         text = render(p["text"], {"as_of": as_of.isoformat(), "candidate": _candidate_block(cand),
                                   "extraction": json.dumps(extraction, ensure_ascii=False),
                                   "related": json.dumps(related or [], ensure_ascii=False),
                                   "financials": json.dumps(financials or [], ensure_ascii=False),
+                                  "market_reaction": reaction_text,
                                   "item_keys": ", ".join(item_keys(kind, cfg))})
         # 検証エラー(項目の欠落などモデルの出力不備)は、不足点を伝えて1回だけ再生成する。
         # API失敗(HttpError)はここでは扱わず、従来どおり未評価のまま残す。
@@ -208,8 +216,12 @@ def evaluate_one(cand, kind, cfg, llm, as_of, extraction=None, extract_meta=None
         if kind == "event":
             ev = obj.get("event") or {}
             result["event"] = ev
-            if not str(ev.get("market_expectation", "") or "").strip():
-                # 市場予想が確認できない → 分類は確定せず、乖離・織り込み度は根拠なしとして保留
+            reaction_ok = bool(market_reaction and market_reaction[0]
+                               and market_reaction[0].get("available"))
+            if not str(ev.get("market_expectation", "") or "").strip() and not reaction_ok:
+                # 市場予想が確認できず、株価反応データも無い → 分類は確定せず、
+                # 乖離・織り込み度は根拠なしとして保留。反応データがある場合は
+                # 案A (2026-11-06): 反応を乖離の事後的証拠として採点を生かす
                 ev["classification"] = None
                 for k in ("expectation_gap", "not_priced_in"):
                     if scores.get(k) is not None:

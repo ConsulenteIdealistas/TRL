@@ -100,6 +100,7 @@ function filtered() {
     (!state.sectors.size || state.sectors.has(c.sector)) &&
     (!q || haystack(c).includes(q)));
   if (state.sort === "latest") rows.sort((a, b) => (b.latest || "") > (a.latest || "") ? 1 : (b.latest || "") < (a.latest || "") ? -1 : a.name.localeCompare(b.name, "ja"));
+  else if (state.sort === "oldest") rows.sort((a, b) => (a.latest || "9999") > (b.latest || "9999") ? 1 : (a.latest || "9999") < (b.latest || "9999") ? -1 : a.name.localeCompare(b.name, "ja"));
   else if (state.sort === "count") rows.sort((a, b) => (b.counts.primary - a.counts.primary) || ((b.latest || "") > (a.latest || "") ? 1 : -1));
   else rows.sort((a, b) => a.name.localeCompare(b.name, "ja"));
   return rows;

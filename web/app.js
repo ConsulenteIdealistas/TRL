@@ -78,6 +78,7 @@ function filtered() {
     : o === "sector" ? (ord(sectorOf(a), CO) - ord(sectorOf(b), CO)) || byStatus(a, b)
     : o === "trl" ? (ok(lvl(b)) ? lvl(b) : -1) - (ok(lvl(a)) ? lvl(a) : -1)
     : o === "trl_asc" ? (ok(lvl(a)) ? lvl(a) : 99) - (ok(lvl(b)) ? lvl(b) : 99)
+    : o === "date_asc" ? String(a.published || "9999").localeCompare(String(b.published || "9999"))
     : o === "title" ? a.title.localeCompare(b.title, "ja") : String(b.published || "").localeCompare(String(a.published || "")));
   return r;
 }

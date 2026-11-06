@@ -11,12 +11,14 @@ const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "
 const jst = iso => { try { return new Date(iso).toLocaleString("ja-JP", {timeZone: "Asia/Tokyo", hour12: false}); } catch (e) { return iso; } };
 const ok = t => Number.isInteger(t) && t >= 1 && t <= 9;
 const SL = {final: "選定可能", review: "要追加調査", hold: "保留", pending: "未評価", error: "エラー", rejected: "除外"};
-const CL = {space: "宇宙", bio: "バイオ", semiconductor: "半導体", ai: "AI", robotics: "ロボティクス", energy: "エネルギー・蓄電池", quantum: "量子技術"};
+const CL = {space: "宇宙", bio: "バイオ", semiconductor: "半導体", ai: "AI", robotics: "ロボティクス", energy: "エネルギー・蓄電池", quantum: "量子技術", defense: "防衛"};
 const IL = {technology_readiness: "技術成熟度", technological_advantage: "技術的優位性", monetization: "収益化能力",
   market_growth: "市場成長性", financial_sustainability: "財務的持続可能性", moat_durability: "競争優位性の持続性",
-  trl_level: "TRL判定"};
+  trl_level: "TRL判定", counter_points: "反証", candidate: "候補の時点", total: "総合点", companies: "企業帰属"};
 const CHK = {A1: "原則1: 商用展開とTRLの混同", A2: "原則2: TRL 9 の継続証拠", A3: "原則3: TRLからの推論",
-  A4: "TRL 9 の根拠が商用展開のみ", A5: "点と理由の整合", A6: "欠落判定（材料プール外）", A7: "減点理由の具体性"};
+  A4: "TRL 9 の根拠が商用展開のみ", A5: "点と理由の整合", A6: "欠落判定（材料プール外）", A7: "減点理由の具体性",
+  A8: "反証の欠落", A9: "根拠のない高得点", A10: "時点の不整合（公開日が基準日より後）", A11: "数値の原文照合",
+  A12: "出典リンクの形式", A13: "総合点の再導出照合", A14: "企業帰属（弱いリンクのみ）"};
 const DISP = [["confirmed", "問題あり"], ["false_positive", "誤検知"], ["watch", "様子見"]];
 
 const RKEY = "trl-review";
@@ -68,13 +70,65 @@ async function copyText(t) {
 let DATA = null;
 function audited() { return (DATA.candidates || []).filter(p => p.audit && p.audit.length); }
 
+/* カードの状態 (絞り込みとバッジ用)。要確認/グレーは「未処分が残っている」
+   もの、処分済みは「全エントリ処分済み」のものとして数える */
+const viewState = {filter: "all", sort: "default"};
+const SFILTERS = [["all", "すべて"], ["flag", "要確認"], ["gray", "グレー"],
+  ["done", "処分済み"], ["reserved", "再評価予約"], ["adjusted", "調整済み"]];
+function cardState(p) {
+  let flagOpen = 0, grayOpen = 0, total = 0, decided = 0;
+  for (const a of p.audit) for (const e of a.entries) {
+    total++;
+    const d = decisionOf(a, e);
+    if (d && d.disposition) decided++;
+    else if (e.verdict === "gray") grayOpen++; else flagOpen++;
+  }
+  const evalId = p.audit[0].evaluation_id;
+  return {flagOpen, grayOpen, done: total > 0 && decided === total,
+          reserved: !!(review.reeval[p.id] && review.reeval[p.id].on),
+          adjusted: !!review.adjustments[evalId]};
+}
+function applyView(list) {
+  const f = viewState.filter;
+  const out = list.filter(p => {
+    if (f === "all") return true;
+    const st = cardState(p);
+    return f === "flag" ? st.flagOpen > 0 : f === "gray" ? st.grayOpen > 0 :
+           f === "done" ? st.done : f === "reserved" ? st.reserved : st.adjusted;
+  });
+  const trlOf = p => { const lv = p.long && p.long.trl_level ? p.long.trl_level.level : null; return ok(lv) ? lv : null; };
+  const dateOf = p => (p.long && p.long.evaluated_at) || "";
+  if (viewState.sort === "trl-desc") out.sort((a, b) => (trlOf(b) ?? -1) - (trlOf(a) ?? -1));
+  else if (viewState.sort === "trl-asc") out.sort((a, b) => (trlOf(a) ?? 99) - (trlOf(b) ?? 99));
+  else if (viewState.sort === "new") out.sort((a, b) => dateOf(b).localeCompare(dateOf(a)));
+  else if (viewState.sort === "old") out.sort((a, b) => dateOf(a).localeCompare(dateOf(b)));
+  return out;
+}
+function renderControls() {
+  const counts = {all: 0, flag: 0, gray: 0, done: 0, reserved: 0, adjusted: 0};
+  for (const p of audited()) {
+    counts.all++;
+    const st = cardState(p);
+    if (st.flagOpen) counts.flag++;
+    if (st.grayOpen) counts.gray++;
+    if (st.done) counts.done++;
+    if (st.reserved) counts.reserved++;
+    if (st.adjusted) counts.adjusted++;
+  }
+  $("#stateFilters").innerHTML = SFILTERS.map(([v, label]) =>
+    `<button type="button" class="fchip" data-sfilter="${v}" aria-pressed="${viewState.filter === v ? "true" : "false"}">${label} ${counts[v]}</button>`).join("");
+  const sel = $("#sortSel");
+  if (sel) sel.value = viewState.sort;
+}
+
 function renderCov() {
   const flagE = new Set(), grayE = new Set();
   let decided = 0;
+  const byDisp = {confirmed: 0, false_positive: 0, watch: 0};
   for (const p of audited()) for (const a of p.audit) for (const e of a.entries) {
     if (e.verdict === "gray") grayE.add(a.evaluation_id); else flagE.add(a.evaluation_id);
     const d = decisionOf(a, e);
-    if (d && d.disposition) decided++;
+    if (d && d.disposition) { decided++; if (d.disposition in byDisp) byDisp[d.disposition]++; }
   }
   const reev = Object.values(review.reeval).filter(r => r && r.on).length;
   const adj = Object.keys(review.adjustments).length;
@@ -82,6 +136,9 @@ function renderCov() {
     `<div class="stat y"><small>要確認のある評価</small><strong>${flagE.size}</strong><em>件</em></div>` +
     `<div class="stat x"><small>グレーのある評価</small><strong>${grayE.size}</strong><em>件</em></div>` +
     `<div class="stat g"><small>処分済み</small><strong>${decided}</strong><em>件のエントリ</em></div>` +
+    `<div class="stat r"><small>問題あり</small><strong>${byDisp.confirmed}</strong><em>件のエントリ</em></div>` +
+    `<div class="stat g"><small>誤検知</small><strong>${byDisp.false_positive}</strong><em>件のエントリ</em></div>` +
+    `<div class="stat o"><small>様子見</small><strong>${byDisp.watch}</strong><em>件のエントリ</em></div>` +
     `<div class="stat b"><small>再評価の予約</small><strong>${reev}</strong><em>件</em></div>` +
     `<div class="stat pk"><small>調整済み</small><strong>${adj}</strong><em>件</em></div>`;
 }
@@ -161,6 +218,13 @@ function cardHtml(p) {
       <span class="st st-${esc(p.display_status || "")}">${esc(SL[p.display_status] || p.display_status || "")}</span>
     </div>
     ${ev.length ? `<div class="ameta">元評価: ${ev.join(" ・ ")}</div>` : ""}
+    ${(() => { const st = cardState(p); const b = [];
+      if (st.flagOpen) b.push(`<span class="sbadge flag">要確認 ${st.flagOpen}</span>`);
+      if (st.grayOpen) b.push(`<span class="sbadge gray">グレー ${st.grayOpen}</span>`);
+      if (st.done) b.push(`<span class="sbadge done">処分済み</span>`);
+      if (st.reserved) b.push(`<span class="sbadge resv">再評価予約</span>`);
+      if (st.adjusted) b.push(`<span class="sbadge adj">調整済み</span>`);
+      return b.length ? `<div class="srow">${b.join("")}</div>` : ""; })()}
     ${p.audit.map(auditBlockHtml).join("")}
     <div class="aops">
       <div class="adjrow">
@@ -174,9 +238,11 @@ function cardHtml(p) {
 
 function render() {
   renderCov();
-  const list = audited();
+  renderControls();
+  const all = audited();
+  const list = applyView(all);
   $("#list").innerHTML = list.length ? list.map(cardHtml).join("")
-    : `<div class="empty">監査が付いた評価はまだありません。</div>`;
+    : `<div class="empty">${all.length ? "この状態のカードはありません。" : "監査が付いた評価はまだありません。"}</div>`;
 }
 
 function ensureDecision(key, meta) {
@@ -190,6 +256,8 @@ function ensureDecision(key, meta) {
 }
 
 document.addEventListener("click", ev => {
+  const sfBtn = ev.target.closest("[data-sfilter]");
+  if (sfBtn) { viewState.filter = sfBtn.dataset.sfilter; render(); return; }
   const dispBtn = ev.target.closest("[data-disp]");
   if (dispBtn) {
     const key = dispBtn.dataset.key;
@@ -255,6 +323,7 @@ document.addEventListener("input", ev => {
   }
 });
 document.addEventListener("change", ev => {
+  if (ev.target.id === "sortSel") { viewState.sort = ev.target.value; render(); return; }
   const sel = ev.target.closest("[data-adjsel]");
   if (sel) {
     const d = adjDraft[sel.dataset.adjsel] || (adjDraft[sel.dataset.adjsel] = {});

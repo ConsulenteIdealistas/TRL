@@ -38,10 +38,21 @@
 select.tsel{padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:inherit;font:inherit;font-size:13px}
 .btn.resv[aria-pressed="true"]{color:var(--gd);border-color:var(--green);background:var(--gs)}
 .copybar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:14px 0 4px}
+.abar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin:12px 0 14px}
+.fchips{display:flex;flex-wrap:wrap;gap:8px}
+.fchip{padding:6px 11px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--sub);font-size:12px;font-weight:750;cursor:pointer}
+.fchip[aria-pressed="true"]{color:#fff;background:var(--vc);border-color:transparent}
+.srow{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.sbadge{padding:2px 8px;border-radius:999px;font-size:11px;font-weight:800}
+.sbadge.flag{color:var(--yc);background:color-mix(in srgb,var(--yc) 16%,transparent)}
+.sbadge.gray{color:var(--muted);background:color-mix(in srgb,var(--muted) 14%,transparent)}
+.sbadge.done{color:var(--green);background:var(--gs)}
+.sbadge.resv{color:var(--gd);background:var(--gs)}
+.sbadge.adj{color:var(--vc);background:color-mix(in srgb,var(--vc) 14%,transparent)}
 </style>
 </head>
 <body>
-<header class="topbar"><a class="brand" href="index.html"><span class="mark">T</span><span>TRL<span class="light"> Explorer</span></span></a><div class="meta"><a href="criteria.html">採点基準</a><span class="dot"></span><a href="audit.html">監査</a><span class="dot"></span>Research Intelligence</div></header>
+<header class="topbar"><a class="brand" href="index.html"><span class="mark">T</span><span>TRL<span class="light"> Explorer</span></span></a><div class="meta">Research Intelligence</div></header>
 <main class="ws">
 <div class="awrap">
 <p style="margin:0 0 12px"><a class="tg" href="index.html">← 一覧に戻る</a></p>
@@ -52,6 +63,16 @@ select.tsel{padding:8px 10px;border:1px solid var(--line);border-radius:10px;bac
 <div class="copybar">
 <button class="btn pri" id="copyBtn" type="button">反映用 JSON をコピー</button>
 <span class="hint" id="copyMsg">記録した処分・予約・調整を review_inbox.json の形で書き出します（取り込みは段階B）。</span>
+</div>
+<div class="abar">
+<div class="fchips" id="stateFilters" aria-label="状態で絞り込み"></div>
+<label class="hint">並び順 <select class="tsel" id="sortSel">
+<option value="default">既定</option>
+<option value="trl-desc">TRL 高い順</option>
+<option value="trl-asc">TRL 低い順</option>
+<option value="new">新しい順</option>
+<option value="old">古い順</option>
+</select></label>
 </div>
 <div id="list"><div class="empty">読み込み中…</div></div>
 </div>

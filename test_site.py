@@ -994,6 +994,18 @@ class ExportTests(unittest.TestCase):
         self.assertIn("反映用 JSON をコピー", page)
         self.assertIn("trl-review", js)
         self.assertIn("review_inbox", js + page)
+        # 状態の絞り込み・並び替えと、処分種別を含む8枠の統計。
+        # ヘッダーには採点基準/監査リンクを置かない (他ページと同形)
+        self.assertIn('id="stateFilters"', page)
+        self.assertIn('id="sortSel"', page)
+        self.assertIn("data-sfilter", js)
+        for label in ("要確認", "グレー", "処分済み", "再評価予約", "調整済み",
+                      "問題あり", "誤検知", "様子見"):
+            self.assertIn(label, js)
+        for label in ("TRL 高い順", "TRL 低い順", "新しい順", "古い順"):
+            self.assertIn(label, page)
+        self.assertNotIn('<a href="criteria.html">採点基準</a>', page)
+        self.assertNotIn('<a href="audit.html">監査</a>', page)
         # 一覧は検索と統計の間の .pagelinks に短いリンク、詳細はフッター
         # のみ (ヘッダーは両ページともリンクなしで揃える)
         index = (web / "index.html").read_text(encoding="utf-8")

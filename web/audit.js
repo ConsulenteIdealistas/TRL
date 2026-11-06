@@ -135,7 +135,7 @@ function renderCov() {
   $("#cov").innerHTML =
     `<div class="stat y"><small>要確認のある評価</small><strong>${flagE.size}</strong><em>件</em></div>` +
     `<div class="stat x"><small>グレーのある評価</small><strong>${grayE.size}</strong><em>件</em></div>` +
-    `<div class="stat g"><small>処分済み</small><strong>${decided}</strong><em>件のエントリ</em></div>` +
+    `<div class="stat v"><small>処分済み</small><strong>${decided}</strong><em>件のエントリ</em></div>` +
     `<div class="stat r"><small>問題あり</small><strong>${byDisp.confirmed}</strong><em>件のエントリ</em></div>` +
     `<div class="stat g"><small>誤検知</small><strong>${byDisp.false_positive}</strong><em>件のエントリ</em></div>` +
     `<div class="stat o"><small>様子見</small><strong>${byDisp.watch}</strong><em>件のエントリ</em></div>` +

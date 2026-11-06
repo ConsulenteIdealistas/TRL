@@ -1590,6 +1590,34 @@
     ]
    },
    "stage": "production"
+  },
+  {
+   "id": "liberaware",
+   "name": "Liberaware Inc.",
+   "aliases": [
+    "リベラウェア",
+    "Liberaware"
+   ],
+   "ticker": "218A",
+   "exchange": "TSE",
+   "sector": "defense",
+   "tags": [
+    "autonomous_mobility"
+   ],
+   "tier": "watch",
+   "watch": {
+    "news_name": "リベラウェア",
+    "prtimes_terms": [
+     "リベラウェア",
+     "Liberaware"
+    ],
+    "extra_keywords": [
+     "IBIS",
+     "屋内点検ドローン",
+     "インフラ点検"
+    ]
+   },
+   "stage": "production"
   }
  ]
 }

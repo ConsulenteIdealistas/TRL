@@ -6,6 +6,23 @@
 <title>詳細 — TRL Explorer</title>
 <link rel="stylesheet" href="style.css">
 <script>try{var tt=localStorage.getItem("trl-theme");document.documentElement.dataset.theme=(tt==="light"||tt==="dark")?tt:"dark";}catch(e){document.documentElement.dataset.theme="dark";}</script>
+<style>
+/* 競合比較 (同じタグの企業) 専用。共通クラスは style.css の流儀に合わせる */
+.pctl{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;margin:0 0 8px;font-size:12px;color:var(--sub)}
+.pctl select{min-height:34px;padding:4px 8px;border:1px solid var(--line);border-radius:8px;background:var(--field);color:inherit}
+.peerBox{margin:0 0 10px;border:1px solid var(--line);border-radius:10px;padding:9px 11px;background:var(--field)}
+.peerBox summary{cursor:pointer;font-size:12px;font-weight:750}
+.peerBox .tn{color:var(--gd);font-weight:700;margin-left:6px}
+.peerIn{margin-top:8px}
+.peerIn summary{cursor:pointer;font-size:12px;font-weight:700;color:var(--gd)}
+.ptblwrap{overflow-x:auto;margin-top:8px}
+.ptbl{border-collapse:collapse;width:100%;font-size:11px}
+.ptbl th,.ptbl td{padding:5px 7px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap;vertical-align:middle}
+.ptbl th{color:var(--muted);font-weight:700}
+.ptbl td a{color:var(--gd);font-weight:700;text-decoration:none}
+.ptbl tr.self td{background:var(--sel)}
+.pself{margin-left:6px;padding:2px 6px;border-radius:6px;font-size:10px;font-weight:800;color:var(--gd);background:var(--gs);white-space:nowrap}
+</style>
 </head>
 <body>
 <header class="topbar"><a class="brand" href="index.html"><span class="mark">T</span><span>TRL<span class="light"> Explorer</span></span></a><div class="meta">Research Intelligence</div></header>
@@ -110,6 +127,150 @@ function getNote(id) { try { return localStorage.getItem("trl-note:" + id) || ""
 let noteDraft = null;
 function setNote(id, v) { try { localStorage.setItem("trl-note:" + id, v); return true; } catch (e) { return false; } }
 
+/* ===== 競合比較 (表示専用) =====
+   タグをピア集合として、同じタグの企業を横並びにする。stage・tags と同じ表示層で、
+   採点・選定・必須判定には使わない。入力は data.json の既存フィールドだけ
+   (export・スキーマは変更しない)。
+   比較の単位は候補 (記事) ではなく企業。企業ごとに、強リンク候補の最新の
+   long 評価1件へ集約する。弱リンクは「言及されただけ」なので評価の帰属には
+   使わない (企業固有の項目が算出されるのは強リンクのとき、という本体の扱いに揃える)。 */
+let peerSortKey = "total";
+let peerShowWatch = false;
+
+function peerRegistry(d) {
+  // 企業台帳: entity_id → {企業情報, 最新の long 評価, 代表候補}
+  // ウォッチ・参考企業は candidates にほぼ現れないため watch_companies からも取り込む
+  const byId = new Map();
+  const put = (id, info) => {
+    if (!id) return null;
+    let c = byId.get(id);
+    if (!c) {
+      c = {entity_id: id, name: info.name || id, market: info.market || "JP",
+        sector: info.sector || null, tags: Array.isArray(info.tags) ? info.tags : [],
+        stage: info.stage || null, tier: info.tier || "core",
+        long: null, status: null, cand: null, repCand: null, repKey: ""};
+      byId.set(id, c);
+    }
+    return c;
+  };
+  for (const w of d.watch_companies || []) put(w.id, w);
+  for (const p of d.candidates || []) {
+    for (const e of p.entities || []) {
+      const c = put(e.entity_id, e);
+      if (!c || e.strength !== "strong") continue;
+      // 代表候補 (詳細へのリンク先): 評価が無い企業でも強リンクの最新候補へ辿れるようにする
+      const pk = (p.published || "") + " " + p.id;
+      if (!c.repCand || pk > c.repKey) { c.repCand = p.id; c.repKey = pk; }
+      const ev = p.long;
+      if (!ev || ev.status === "error") continue;  // error 評価は本体でも「評価なし」扱い
+      if (!c.long || (ev.evaluated_at || ev.as_of || "") >= (c.long.evaluated_at || c.long.as_of || "")) {
+        c.long = ev;
+        c.status = p.display_status || null;
+        c.cand = p.id;
+      }
+    }
+  }
+  return byId;
+}
+
+function peerRow(c, selfIds) {
+  // 台帳の1企業を比較表の1行へ。数値 (TRL・総合点・バンド) は final の評価だけに出す
+  const fin = c.long && c.long.status === "final";
+  return {
+    entity_id: c.entity_id, name: c.name, market: c.market, sector: c.sector,
+    stage: c.stage, tier: c.tier || "core", self: selfIds.has(c.entity_id),
+    trl: fin && c.long.trl_level ? c.long.trl_level.level : null,
+    total: fin && typeof c.long.total === "number" ? c.long.total : null,
+    band: fin ? (c.long.band || null) : null,
+    date: c.long ? (c.long.evaluated_at || c.long.as_of || null) : null,
+    status: c.long ? (c.status || c.long.status) : null,
+    cand: c.cand || c.repCand,
+  };
+}
+
+function sortPeerRows(rows, key) {
+  const byName = (a, b) => a.name.localeCompare(b.name, "ja");
+  const dateDesc = (a, b) => String(b.date || "").localeCompare(String(a.date || "")) || byName(a, b);
+  const out = [...rows];
+  if (key === "name") out.sort(byName);
+  else if (key === "date") out.sort(dateDesc);  // 日付なし (空文字) は末尾に落ちる
+  else if (key === "trl") out.sort((a, b) =>
+    (a.trl != null ? 0 : 1) - (b.trl != null ? 0 : 1) ||
+    (b.trl || 0) - (a.trl || 0) || (b.total || 0) - (a.total || 0) || byName(a, b));
+  else out.sort((a, b) =>  // 既定は総合点の降順。final 以外は評価日の新しい順に後ろへ続ける
+    (a.total != null ? 0 : 1) - (b.total != null ? 0 : 1) ||
+    (b.total || 0) - (a.total || 0) || dateDesc(a, b));
+  return out;
+}
+
+function peerTableHtml(rows) {
+  const head = `<tr><th>企業名</th><th>市場・セクター</th><th>TRL</th><th>総合点</th><th>バンド</th><th>段階</th><th>最終評価日</th><th>状態</th></tr>`;
+  const body = rows.map(r => {
+    const name = r.cand ? `<a href="detail.html?id=${encodeURIComponent(r.cand)}">${esc(r.name)}</a>` : esc(r.name);
+    const self = r.self ? `<span class="pself">この企業</span>` : "";
+    // ウォッチ・参考は評価対象外 (単独材料は評価されない)。無いことを不足と同一視しない
+    const off = r.tier !== "core" && r.total == null
+      ? (r.tier === "reference" ? "評価対象外（参考）" : "評価対象外（ウォッチ）") : null;
+    const trlCell = off ? `<span class="hint">${off}</span>`
+      : (r.total != null ? (r.trl != null ? String(r.trl) : "未確定") : "—");
+    const totCell = off ? `<span class="hint">${off}</span>`
+      : (r.total != null ? String(r.total) : "—");
+    const stCell = r.status
+      ? `<span class="st ${r.status === "final" ? "st-final" : "st-" + r.status}">${esc(SL[r.status] || r.status)}</span>`
+      : `<span class="hint">${off || "未評価"}</span>`;
+    return `<tr${r.self ? ' class="self"' : ""}><td>${name}${self}</td>`
+      + `<td>${esc(ML[r.market] || r.market)}・${esc(r.sector ? (CL[r.sector] || r.sector) : "—")}</td>`
+      + `<td>${trlCell}</td><td>${totCell}</td><td>${esc(r.band || "—")}</td>`
+      + `<td>${esc(r.stage ? (STG[r.stage] || r.stage) : "—")}</td>`
+      + `<td>${esc(r.date ? String(r.date).slice(0, 10) : "—")}</td><td>${stCell}</td></tr>`;
+  }).join("");
+  return `<div class="ptblwrap"><table class="ptbl"><thead>${head}</thead><tbody>${body}</tbody></table></div>`;
+}
+
+function renderPeers(d, p) {
+  const el = $("#peers");
+  if (!el) return;
+  const reg = peerRegistry(d);
+  const strong = (p.entities || []).filter(e => e.strength === "strong");
+  const selfIds = new Set(strong.map(e => e.entity_id));
+  const vis = rows => rows.filter(r => peerShowWatch || r.tier === "core" || r.self);
+  const parts = [`<div class="pctl"><label><input type="checkbox" id="peerWatch"${peerShowWatch ? " checked" : ""}> ウォッチ・参考を含める</label>`
+    + `<label>並び順 <select id="peerSort">${[["total", "総合点"], ["trl", "TRL"], ["date", "最終評価日"], ["name", "企業名"]].map(([v, l]) => `<option value="${v}"${peerSortKey === v ? " selected" : ""}>${l}</option>`).join("")}</select></label></div>`
+    + `<p class="hint">同じタグの企業を横並びにした表示専用の比較です（採点には使っていません）。総合点・TRL は final の評価だけに出し、空欄は「評価なし」であって 0点ではありません。</p>`];
+  const seenTags = new Set();
+  let first = true;
+  for (const e of strong) {
+    const selfEnt = reg.get(e.entity_id);
+    for (const t of (selfEnt && selfEnt.tags) || e.tags || []) {
+      if (seenTags.has(t)) continue;
+      seenTags.add(t);
+      const all = [...reg.values()].filter(c => (c.tags || []).includes(t)).map(c => peerRow(c, selfIds));
+      const others = all.filter(r => !r.self);
+      if (!others.length) {
+        // 1社だけのタグ: 比較相手がいないことを明示し、代替として sector 単位の集合を出す
+        let fb = "";
+        if (selfEnt && selfEnt.sector) {
+          const srows = sortPeerRows(vis([...reg.values()].filter(c => c.sector === selfEnt.sector).map(c => peerRow(c, selfIds))), peerSortKey);
+          fb = `<details class="peerIn"><summary>同じセクター（${esc(CL[selfEnt.sector] || selfEnt.sector)}）の企業を見る</summary>${peerTableHtml(srows)}</details>`;
+        }
+        parts.push(`<div class="peerBox"><p style="margin:0"><b>${esc(tagLabel(t))}</b></p><p class="hint">このタグを持つ企業は他にいません（比較相手がいません）。</p>${fb}</div>`);
+        continue;
+      }
+      const rows = sortPeerRows(vis(all), peerSortKey);
+      if (!rows.some(r => !r.self)) {
+        parts.push(`<div class="peerBox"><p style="margin:0"><b>${esc(tagLabel(t))}</b></p><p class="hint">このタグの他の企業は全てウォッチ・参考です。「ウォッチ・参考を含める」を有効にすると表示されます。</p></div>`);
+        continue;
+      }
+      parts.push(`<details class="peerBox"${first ? " open" : ""}><summary>${esc(tagLabel(t))}<span class="tn">${rows.length}社</span></summary>${peerTableHtml(rows)}</details>`);
+      first = false;
+    }
+  }
+  el.innerHTML = parts.join("");
+  const w = $("#peerWatch"), s = $("#peerSort");
+  if (w) w.addEventListener("change", () => { peerShowWatch = w.checked; renderPeers(d, p); });
+  if (s) s.addEventListener("change", () => { peerSortKey = s.value; renderPeers(d, p); });
+}
+
 async function load() {
   const id = new URLSearchParams(location.search).get("id");
   let d;
@@ -163,6 +324,7 @@ ${p.display_status === "rejected" ? `<section class="ds"><h4>除外理由</h4><p
 <section class="ds"><h4>関連事業ニュース（評価に同梱した根拠プール）</h4>${news ? `<ul class="news">${news}</ul>` : `<p class="hint">同梱されたニュースはありません。</p>`}${(p.related_news || []).some(n => n.via_google_news) ? `<p class="hint">Google News 経由の記事リンクは直接開けないため、タイトルをクリックするとタイトル検索で元記事を開きます。媒体名は媒体のサイトへのリンクです。</p>` : ""}</section>
 <section class="ds"><h4>関連財務根拠（開示資料の財務数値）</h4>${fins ? `<ul class="news">${fins}</ul>` : `<p class="hint">同梱された財務根拠はありません。</p>`}</section>
 <section class="ds"><h4>関連企業</h4>${p.entities.map(e => `<span class="chip">${esc(e.name)}${e.product_name ? "（" + esc(e.product_name) + "）" : ""}${e.market ? "・" + esc(ML[e.market] || e.market) : ""}${e.sector ? "・" + esc(CL[e.sector] || e.sector) : ""}${(e.tags || []).length ? "・" + e.tags.map(t => esc(tagLabel(t))).join("・") : ""}${e.stage ? "・" + esc(STG[e.stage] || e.stage) : ""} ${e.strength === "strong" ? "" : "・弱"}${e.tier === "watch" ? "・ウォッチ" : e.tier === "reference" ? "・参考" : ""}</span>`).join("") || '<span class="hint">関連企業は未特定です。</span>'}</section>
+${p.entities.some(e => e.strength === "strong" && (e.tags || []).length) ? `<section class="ds"><h4>同じタグの企業</h4><div id="peers"></div></section>` : ""}
 <section class="ds"><h4>調査メモ</h4><textarea id="note" aria-label="調査メモ" placeholder="仮説、確認したい点、次の調査などを記録...">${esc(noteDraft !== null ? noteDraft : getNote(p.id))}</textarea><div class="acts"><button class="btn sec" type="button" id="save">メモを保存</button><button class="btn sec" type="button" id="cpys">出典をコピー</button><a class="btn src" href="${esc(safeUrl(p.url))}" target="_blank" rel="noopener noreferrer">原文サイトを開く ↗</a></div><p id="msg" class="hint" aria-live="polite">メモはこの端末のブラウザにだけ保存されます。</p></section></div>`;
   const evalText = () => {
     // 評価まるごとコピー用テキスト (項目点・理由・TRL・不足・前回比)
@@ -248,6 +410,7 @@ ${p.display_status === "rejected" ? `<section class="ds"><h4>除外理由</h4><p
   if (cs) cs.addEventListener("click", () => copyBuilt(() => [p.title, (SRC_LABEL[p.source] || p.source) + (p.published ? " ・ " + p.published : ""), p.url].filter(Boolean).join("\n"), cs));
   if (ce) ce.addEventListener("click", () => copyBuilt(() => evalText(), ce));
   if (cm) cm.addEventListener("click", () => copyBuilt(() => mdNote(), cm));
+  renderPeers(d, p);
 }
 load();
 </script>

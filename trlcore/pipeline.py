@@ -17,7 +17,7 @@ from .sources.edgar import edgar_fetch
 from .sources.yahoo import yahoo_fetch
 from .sources.openalex import openalex_fetch
 from .sources.roic import fetch_roic, roic_enabled, roic_symbol
-from .translate import crossed_thresholds, translate_display_set, usage_totals
+from .translate import crossed_thresholds, translate_display_set, translate_watch_queue, usage_totals
 from .entities import entity_screen, link_entities
 from .prompts import load_prompt
 from .llm import llm_settings
@@ -807,6 +807,11 @@ def run_pipeline(store, cfg, llm, *, as_of, sources=("pubmed", "arxiv"), kinds=(
     # 翻訳は専用 API (Azure → DeepL → Google) で行い、評価用 LLM には任せない
     usage_before = usage_totals(store, today)
     counts["translated"], counts["translation_chars"] = translate_display_set(store, cfg, today, log)
+    # ウォッチ・参考の一次情報 (論文・治験のみ、ニュースは訳さない) も同じ
+    # 月次予算の内側で訳す。使用量の台帳は表示セットと合算する
+    counts["translated_watch"], watch_stats = translate_watch_queue(store, cfg, today, log)
+    for _name, _chars in watch_stats.items():
+        counts["translation_chars"][_name] = counts["translation_chars"].get(_name, 0) + _chars
     # 無料枠のしきい値を跨いだら記録とログに残す (azure/google は月次累計、deepl は通算)
     alerts = []
     for name, chars in sorted(counts["translation_chars"].items()):

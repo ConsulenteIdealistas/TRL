@@ -14,7 +14,7 @@ const tagLabel = t => TL[t] || t;
 const srcName = s => SRC_LABEL[s] || s;
 
 let companies = [];
-const state = {q: "", tier: "", sectors: new Set(), sort: "latest"};
+const state = {q: "", tier: "", markets: new Set(), sectors: new Set(), sort: "latest"};
 
 function haystack(c) {
   const parts = [c.name, c.ticker || "", ML[c.market] || "", CL[c.sector] || "",
@@ -96,6 +96,7 @@ function filtered() {
   const q = state.q.trim().toLowerCase();
   let rows = companies.filter(c =>
     (!state.tier || c.tier === state.tier) &&
+    (!state.markets.size || state.markets.has(c.market)) &&
     (!state.sectors.size || state.sectors.has(c.sector)) &&
     (!q || haystack(c).includes(q)));
   if (state.sort === "latest") rows.sort((a, b) => (b.latest || "") > (a.latest || "") ? 1 : (b.latest || "") < (a.latest || "") ? -1 : a.name.localeCompare(b.name, "ja"));
@@ -133,12 +134,18 @@ async function init() {
   chips($("#tiers"), [["", "すべて"], ["watch", "ウォッチ"], ["reference", "参考"]],
     v => state.tier === v,
     v => { state.tier = v; initChipsOnly(); render(); });
+  const mkts = [...new Set(companies.map(c => c.market).filter(Boolean))]
+    .sort((a, b) => companies.filter(c => c.market === b).length - companies.filter(c => c.market === a).length);
+  chips($("#markets"), mkts.map(m => [m, ML[m] || m]),
+    v => state.markets.has(v),
+    v => { state.markets.has(v) ? state.markets.delete(v) : state.markets.add(v); initChipsOnly(); render(); });
   const secs = [...new Set(companies.map(c => c.sector).filter(Boolean))];
   chips($("#sectors"), secs.map(s => [s, CL[s] || s]),
     v => state.sectors.has(v),
     v => { state.sectors.has(v) ? state.sectors.delete(v) : state.sectors.add(v); initChipsOnly(); render(); });
   function initChipsOnly() {
     document.querySelectorAll("#tiers .dchip").forEach(b => b.setAttribute("aria-pressed", String(state.tier === b.dataset.v)));
+    document.querySelectorAll("#markets .dchip").forEach(b => b.setAttribute("aria-pressed", String(state.markets.has(b.dataset.v))));
     document.querySelectorAll("#sectors .dchip").forEach(b => b.setAttribute("aria-pressed", String(state.sectors.has(b.dataset.v))));
   }
   $("#q").addEventListener("input", e => { state.q = e.target.value; render(); });

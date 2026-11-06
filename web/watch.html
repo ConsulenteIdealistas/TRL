@@ -41,13 +41,14 @@ select.tsel{padding:8px 10px;border:1px solid var(--line);border-radius:10px;bac
 <body>
 <header class="topbar"><a class="brand" href="index.html"><span class="mark">T</span><span>TRL<span class="light"> Explorer</span></span></a><div class="meta">Research Intelligence</div></header>
 <main class="ws">
-<nav class="pagelinks"><a href="index.html">一覧</a><a href="criteria.html">採点基準</a><a href="audit.html">監査</a><a href="watch.html" aria-current="page">ウォッチ・参考</a></nav>
+<nav class="pagelinks"><a href="index.html">一覧</a><a href="criteria.html">採点基準</a><a href="audit.html">監査</a></nav>
 <div class="wwrap">
 <h1 class="ptitle">ウォッチ・参考</h1>
 <p class="pdesc">評価対象ではない監視企業（ウォッチ）と、取引不可などの理由で収集だけを行う参考企業の材料置き場です。論文・治験・開示などの一次情報を前段に、ニュースを後段に並べています。各社は<strong>未評価</strong>で、一覧の評価済み企業とは別枠です。</p>
 <div class="wctl">
   <div class="wrow"><input id="q" class="tin" type="search" placeholder="企業名・タグ・材料のタイトルで検索" aria-label="ウォッチ企業を検索"></div>
   <div class="wrow"><span class="wlbl">層</span><span id="tiers"></span></div>
+  <div class="wrow"><span class="wlbl">国・市場</span><span id="markets"></span></div>
   <div class="wrow"><span class="wlbl">分野</span><span id="sectors"></span></div>
   <div class="wrow"><span class="wlbl">並び</span><select id="sort" class="tsel"><option value="latest">最新材料が新しい順</option><option value="count">一次情報が多い順</option><option value="name">社名順</option></select></div>
 </div>
@@ -55,7 +56,7 @@ select.tsel{padding:8px 10px;border:1px solid var(--line);border-radius:10px;bac
 <div id="list"></div>
 </div>
 </main>
-<footer class="ft"><span>TRL Explorer</span><span><a href="index.html">一覧</a></span><span><a href="criteria.html">採点基準（評価規程と重み）</a></span><span><a href="audit.html">監査（要確認の処分）</a></span><span><a href="watch.html">ウォッチ・参考（未評価の監視企業）</a></span><span>技術成熟度と事業化評価は独立した評価軸です。スコアは評価尺度であり、株価上昇確率・成功確率・投資利益率ではありません。</span></footer>
+<footer class="ft"><span>TRL Explorer</span><span><a href="index.html">一覧</a></span><span><a href="criteria.html">採点基準（評価規程と重み）</a></span><span><a href="audit.html">監査（要確認の処分）</a></span><span>技術成熟度と事業化評価は独立した評価軸です。スコアは評価尺度であり、株価上昇確率・成功確率・投資利益率ではありません。</span></footer>
 <script src="watch.js"></script>
 </body>
 </html>

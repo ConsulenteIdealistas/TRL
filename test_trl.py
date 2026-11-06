@@ -395,6 +395,54 @@ class NewSourceParseTests(unittest.TestCase):
         store.close()
         tmp.cleanup()
 
+    def test_translate_watch_queue(self):
+        # ウォッチ・参考の一次情報だけを訳す (ニュースは対象外、DeepL は使わない)
+        import os
+        from unittest import mock as um
+        tmp = tempfile.TemporaryDirectory()
+        store = T.Store(Path(tmp.name) / "d.sqlite")
+        cfg = dict(CFG)
+        cfg["entities"] = {"entities": [
+            {"id": "watch_co", "name": "Watch Co", "tier": "watch", "market": "US", "sector": "bio"},
+            {"id": "ref_co", "name": "Ref Co", "tier": "reference", "market": "IN", "sector": "bio"},
+            {"id": "core_co", "name": "Core Co", "tier": "core", "market": "US", "sector": "bio"}]}
+        made = {}
+        for key, src, sid, title, eid in (
+                ("w1", "pubmed", "W1", "Watch Paper Alpha", "watch_co"),
+                ("w2", "openalex", "W2", "Watch Paper Beta", "watch_co"),
+                ("r1", "arxiv", "R1", "Reference Paper Gamma", "ref_co"),
+                ("g1", "gnews", "G1", "Watch News Delta", "watch_co")):
+            rec, _ = T.normalize(raw(source=src, sid=sid, title=title), T.now_iso())
+            cid, _ = store.upsert_candidate(rec, "rX")
+            store.set_entities(cid, [{"entity_id": eid, "strength": "strong"}])
+            made[key] = (cid, rec)
+        urls = []
+
+        def g_http(url, params=None, headers=None, data=None, **kw):
+            urls.append(url)
+            qs = json.loads(data)["q"]
+            return json.dumps({"data": {"translations": [{"translatedText": "訳:" + q} for q in qs]}})
+        env = {"GOOGLE_TRANSLATE_API_KEY": "gk", "DEEPL_API_KEY": "dk:fx"}
+        with um.patch.dict(os.environ, env, clear=False):
+            n, stats = T.translate_watch_queue(store, cfg, AS_OF, log=lambda *_: None, http=g_http)
+            self.assertEqual(n, 3)  # 論文3件のみ (ニュースは訳さない)
+            want = sum(len(made[k][1]["title"]) + len(made[k][1]["abstract"]) for k in ("w1", "w2", "r1"))
+            self.assertEqual(stats, {"google": want})  # DeepL 温存枠は使わない
+            self.assertTrue(all("translation.googleapis.com" in u for u in urls))
+            self.assertIsNone(store.get_candidate(made["g1"][0]).get("title_ja"))
+            self.assertEqual(json.loads(store.get_candidate(made["w1"][0])["translation_src"]),
+                             {"title": "google", "abstract": "google"})
+            # 2回目は未訳が無いので 0 件
+            self.assertEqual(T.translate_watch_queue(store, cfg, AS_OF, log=lambda *_: None, http=g_http), (0, {}))
+            # 月次予算を極小にすると在庫があっても止まる
+            rec, _ = T.normalize(raw(source="pubmed", sid="W9", title="Watch Paper Zeta"), T.now_iso())
+            cid9, _ = store.upsert_candidate(rec, "rX")
+            store.set_entities(cid9, [{"entity_id": "watch_co", "strength": "strong"}])
+            with um.patch("trlcore.translate.WATCH_MONTHLY_BUDGET", 1):
+                self.assertEqual(T.translate_watch_queue(store, cfg, AS_OF, log=lambda *_: None, http=g_http), (0, {}))
+        store.close()
+        tmp.cleanup()
+
     def test_mt_providers_and_fallback(self):
         import os
         from unittest import mock as um

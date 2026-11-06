@@ -149,51 +149,44 @@ def display_ids(store, cfg, today, pending_limit=10):
     return ids
 
 
-def _backends(http):
+def _backends(http, exclude=()):
     """使える翻訳経路を優先順に返す: [(名前, バッチ関数), ...]"""
     chain = []
     azure_key = os.environ.get("AZURE_TRANSLATOR_KEY")
-    if azure_key:
+    if azure_key and "azure" not in exclude:
         region = os.environ.get("AZURE_TRANSLATOR_REGION") or None
         chain.append(("azure", _mt_batch(lambda ts: azure_translate(ts, azure_key, region, http))))
     deepl_key = os.environ.get("DEEPL_API_KEY")
-    if deepl_key:
+    if deepl_key and "deepl" not in exclude:
         chain.append(("deepl", _mt_batch(lambda ts: deepl_translate(ts, deepl_key, http))))
     google_key = os.environ.get("GOOGLE_TRANSLATE_API_KEY")
-    if google_key:
+    if google_key and "google" not in exclude:
         chain.append(("google", _mt_batch(lambda ts: google_translate(ts, google_key, http))))
     return chain
 
 
-def translate_display_set(store, cfg, today, log=print, http=http_fetch):
-    """表示対象のうち未訳のものを訳して保存する。
+def _wants(c):
+    """候補が訳を必要とする側 (title, abstract) を返す。
 
-    -> (訳した件数, 段ごとの翻訳文字数 {"azure": 字数, ...})。
-    文字数は実際に送信して訳し終えた原文の字数 (課金・枠消費の単位)。
-    """
-    chain = _backends(http)
-    if not chain:
-        return 0, {}
+    出典 (translation_src) の記録が無い訳は、記録を付け始める前の古い訳。
+    訳文があっても出典が無い項目は未訳扱いにして訳し直し、出典を付け直す。"""
+    try:
+        src = json.loads(c.get("translation_src") or "{}")
+    except ValueError:
+        src = {}
+    if not isinstance(src, dict):
+        src = {}
+    want_title = needs_translation(c["title"]) and (not c.get("title_ja") or "title" not in src)
+    want_abs = needs_translation(c["abstract"]) and (not c.get("abstract_ja") or "abstract" not in src)
+    return want_title, want_abs
+
+
+def _run_batches(store, todo, chain, log):
+    """(cid, 候補, want_title, want_abs) の並びをバッチ翻訳して保存する。
+
+    -> (訳した件数, 段ごとの翻訳文字数)。失敗したバッチは原文表示に落ちる
+    だけで、残りは続ける。"""
     stats = {}
-    todo = []
-    for cid in sorted(display_ids(store, cfg, today)):
-        c = store.get_candidate(cid)
-        if not c:
-            continue
-        # 出典 (translation_src) の記録が無い訳は、記録を付け始める前の古い訳。
-        # 訳文があっても出典が無い項目は未訳扱いにして訳し直し、出典を付け直す
-        try:
-            src = json.loads(c.get("translation_src") or "{}")
-        except ValueError:
-            src = {}
-        if not isinstance(src, dict):
-            src = {}
-        want_title = needs_translation(c["title"]) and (not c.get("title_ja") or "title" not in src)
-        want_abs = needs_translation(c["abstract"]) and (not c.get("abstract_ja") or "abstract" not in src)
-        if want_title or want_abs:
-            todo.append((cid, c, want_title, want_abs))
-        if len(todo) >= MAX_PER_RUN:
-            break
     done = 0
     for s in range(0, len(todo), BATCH):
         chunk = todo[s:s + BATCH]
@@ -225,6 +218,125 @@ def translate_display_set(store, cfg, today, log=print, http=http_fetch):
                                   title_by=provider if want_title else None,
                                   abstract_by=provider if want_abs else None)
             done += 1
+    return done, stats
+
+
+def translate_display_set(store, cfg, today, log=print, http=http_fetch):
+    """表示対象のうち未訳のものを訳して保存する。
+
+    -> (訳した件数, 段ごとの翻訳文字数 {"azure": 字数, ...})。
+    文字数は実際に送信して訳し終えた原文の字数 (課金・枠消費の単位)。
+    """
+    chain = _backends(http)
+    if not chain:
+        return 0, {}
+    todo = []
+    for cid in sorted(display_ids(store, cfg, today)):
+        c = store.get_candidate(cid)
+        if not c:
+            continue
+        want_title, want_abs = _wants(c)
+        if want_title or want_abs:
+            todo.append((cid, c, want_title, want_abs))
+        if len(todo) >= MAX_PER_RUN:
+            break
+    done, stats = _run_batches(store, todo, chain, log)
     if done:
         log(f"[translate] 日本語訳を {done} 件作成")
+    return done, stats
+
+
+# --- ウォッチ・参考の一次情報の翻訳キュー ------------------------------------
+
+# 対象は一次情報のみ (論文と治験)。ニュースは訳さない (ノイズが多く、
+# 読む価値は一次情報側にあるという判断。2026-11-06 泰崇)。
+# 経路は Azure 主・Google 予備で、DeepL の一回限り枠は温存して使わない。
+# 上限と予算は 2026-11-06 の確定値: 1実行 50件、翻訳全体の月次予算 150万字
+# (Azure F0 の月 200万字に対し、表示セットの余地を残すための天井)。
+WATCH_MAX_PER_RUN = 50
+WATCH_MONTHLY_BUDGET = 1_500_000
+WATCH_SOURCES = ("pubmed", "openalex", "arxiv", "trials")
+
+
+def _watch_todo(store, cfg, today):
+    """キューの対象を優先順に並べる。
+
+    優先順位は ウォッチ > 参考 > core の未訳分 (表示セットは先行フェーズの
+    担当なので除く)。同じ層では企業ラウンドロビン (材料の多い企業が
+    枠を独占しない)、企業内は新しい順。"""
+    skip = display_ids(store, cfg, today)
+    tiers = {e["id"]: e.get("tier") or "core"
+             for e in (cfg.get("entities") or {}).get("entities", [])}
+    links = {}
+    for cid, eid in store.conn.execute("SELECT candidate_id, entity_id FROM candidate_entities"):
+        links.setdefault(cid, []).append(eid)
+    srcs = ",".join("?" * len(WATCH_SOURCES))
+    rows = store.conn.execute(
+        f"SELECT id FROM candidates WHERE source IN ({srcs}) AND status != 'rejected'"
+        " AND (title_ja IS NULL OR abstract_ja IS NULL"
+        " OR translation_src IS NULL OR translation_src = '{}')", WATCH_SOURCES).fetchall()
+    groups = {}
+    for (cid,) in rows:
+        if cid in skip:
+            continue
+        linked = links.get(cid) or []
+        if not linked:
+            continue
+        lt = [tiers.get(e, "core") for e in linked]
+        if "core" in lt:
+            bucket = 2
+        elif "watch" in lt:
+            bucket = 0
+        elif "reference" in lt:
+            bucket = 1
+        else:
+            continue
+        c = store.get_candidate(cid)
+        if not c:
+            continue
+        want_title, want_abs = _wants(c)
+        if not (want_title or want_abs):
+            continue
+        company = min(e for e in linked if tiers.get(e, "core") == ("watch" if bucket == 0 else "reference" if bucket == 1 else "core"))
+        chars = (len(c["title"]) if want_title else 0) + (len(c["abstract"]) if want_abs else 0)
+        groups.setdefault((bucket, company), []).append(
+            (cid, c, want_title, want_abs, chars))
+    for items in groups.values():
+        items.sort(key=lambda x: (x[1].get("published") or "", x[0]), reverse=True)
+    # 企業の並びは、その企業の最新材料が新しい順 (bucket 内)
+    ordered = []
+    for bucket in (0, 1, 2):
+        companies = sorted((k for k in groups if k[0] == bucket),
+                           key=lambda k: groups[k][0][1].get("published") or "", reverse=True)
+        queues = [list(groups[k]) for k in companies]
+        while any(queues):
+            for q in queues:
+                if q:
+                    ordered.append(q.pop(0))
+    return ordered
+
+
+def translate_watch_queue(store, cfg, today, log=print, http=http_fetch):
+    """ウォッチ・参考 (と残りの core) の一次情報の未訳分を予算内で訳す。
+
+    -> (訳した件数, 段ごとの翻訳文字数)。月次予算は翻訳全体 (azure+google
+    の月次累計) に対して効かせ、表示セットの枠を食い潰さない。"""
+    chain = _backends(http, exclude={"deepl"})
+    if not chain:
+        return 0, {}
+    used = usage_totals(store, today)
+    month_used = used.get("azure", 0) + used.get("google", 0)
+    todo, spent = [], 0
+    for item in _watch_todo(store, cfg, today):
+        if len(todo) >= WATCH_MAX_PER_RUN:
+            break
+        if month_used + spent + item[4] > WATCH_MONTHLY_BUDGET:
+            continue  # 予算に収まる小さい材料が後ろにあれば拾う
+        spent += item[4]
+        todo.append(item[:4])
+    if not todo:
+        return 0, {}
+    done, stats = _run_batches(store, todo, chain, log)
+    if done:
+        log(f"[translate] ウォッチ・参考の一次情報の訳を {done} 件作成")
     return done, stats

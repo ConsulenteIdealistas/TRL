@@ -33,6 +33,9 @@ async function copyText(text, btn) {
   if (btn) { const o = btn.textContent; btn.textContent = "コピー済み"; setTimeout(() => { btn.textContent = o; }, 1200); }
 }
 
+function citeText(m) {
+  return [m.title, srcName(m.source) + (m.published ? " ・ " + m.published : ""), m.url].filter(Boolean).join("\n");
+}
 function matText(m) {
   return [m.title, m.title_ja || "", `出典: ${srcName(m.source)} ${m.published || ""}`, m.url,
     "", m.abstract_ja || m.abstract || ""].join("\n");
@@ -57,7 +60,7 @@ function matHtml(c, m) {
     ${m.title_ja ? `<p class="mja">${esc(m.title_ja)}</p>` : ""}
     ${m.summary ? `<p class="msum"><strong>要点（抄録から抽出）</strong><br>${esc(m.summary)}</p>` : ""}
     ${abs}
-    <div class="mops"><button type="button" class="btn" data-copy="${m.id}">コピー</button><button type="button" class="btn" data-md="${m.id}">Markdown</button></div>
+    <div class="mops"><button type="button" class="btn" data-ccite="${m.id}">出典コピー</button>${m.url ? `<button type="button" class="btn" data-clink="${m.id}">リンクコピー</button>` : ""}<button type="button" class="btn" data-copy="${m.id}">コピー</button><button type="button" class="btn" data-md="${m.id}">Markdown</button></div>
   </article>`;
 }
 
@@ -84,6 +87,12 @@ function renderMats(el, c) {
   if (c.counts.primary > prim.length || c.counts.news > news.length)
     html += `<p class="wmeta">表示は一次情報 ${prim.length}件・ニュース ${news.length}件まで（全件は収集プール内）。</p>`;
   el.innerHTML = html;
+  el.querySelectorAll("[data-ccite]").forEach(b => b.addEventListener("click", () => {
+    const m = c.materials.find(x => String(x.id) === b.dataset.ccite); if (m) copyText(citeText(m), b);
+  }));
+  el.querySelectorAll("[data-clink]").forEach(b => b.addEventListener("click", () => {
+    const m = c.materials.find(x => String(x.id) === b.dataset.clink); if (m && m.url) copyText(m.url, b);
+  }));
   el.querySelectorAll("[data-copy]").forEach(b => b.addEventListener("click", () => {
     const m = c.materials.find(x => String(x.id) === b.dataset.copy); if (m) copyText(matText(m), b);
   }));

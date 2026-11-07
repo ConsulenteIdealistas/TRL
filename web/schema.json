@@ -41,6 +41,7 @@
   ],
   "candidate_optional": [
     "audit",
+    "audit_event",
     "summary"
   ],
   "audit": [

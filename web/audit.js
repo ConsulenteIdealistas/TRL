@@ -18,7 +18,8 @@ const IL = {technology_readiness: "技術成熟度", technological_advantage: "�
 const CHK = {A1: "原則1: 商用展開とTRLの混同", A2: "原則2: TRL 9 の継続証拠", A3: "原則3: TRLからの推論",
   A4: "TRL 9 の根拠が商用展開のみ", A5: "点と理由の整合", A6: "欠落判定（材料プール外）", A7: "減点理由の具体性",
   A8: "反証の欠落", A9: "根拠のない高得点", A10: "時点の不整合（公開日が基準日より後）", A11: "数値の原文照合",
-  A12: "出典リンクの形式", A13: "総合点の再導出照合", A14: "企業帰属（弱いリンクのみ）"};
+  A12: "出典リンクの形式", A13: "総合点の再導出照合", A14: "企業帰属（弱いリンクのみ）",
+  A15: "上限の観測", E1: "価格反応と未織り込みの矛盾", E2: "反応データ未使用の保留"};
 const DISP = [["confirmed", "問題あり"], ["false_positive", "誤検知"], ["watch", "様子見"]];
 
 const RKEY = "trl-review";
@@ -68,24 +69,26 @@ async function copyText(t) {
 }
 
 let DATA = null;
-function audited() { return (DATA.candidates || []).filter(p => p.audit && p.audit.length); }
+const blocksOf = p => (viewState.kind === "event" ? p.audit_event : p.audit) || [];
+const evOf = p => viewState.kind === "event" ? p.event : p.long;
+function audited() { return (DATA.candidates || []).filter(p => blocksOf(p).length); }
 
 /* カードの状態 (絞り込みとバッジ用)。要確認/グレーは「未処分が残っている」
    もの、処分済みは「全エントリ処分済み」のものとして数える */
-const viewState = {filter: "all", sort: "default"};
+const viewState = {filter: "all", sort: "default", kind: "long"};
 const SFILTERS = [["all", "すべて"], ["flag", "要確認"], ["gray", "グレー"],
   ["done", "処分済み"], ["dconfirmed", "問題あり"], ["dfalse", "誤検知"],
   ["dwatch", "様子見"], ["reserved", "再評価予約"], ["adjusted", "調整済み"]];
 function cardState(p) {
   let flagOpen = 0, grayOpen = 0, total = 0, decided = 0;
   const disp = {confirmed: 0, false_positive: 0, watch: 0};
-  for (const a of p.audit) for (const e of a.entries) {
+  for (const a of blocksOf(p)) for (const e of a.entries) {
     total++;
     const d = decisionOf(a, e);
     if (d && d.disposition) { decided++; if (d.disposition in disp) disp[d.disposition]++; }
     else if (e.verdict === "gray") grayOpen++; else flagOpen++;
   }
-  const evalId = p.audit[0].evaluation_id;
+  const evalId = blocksOf(p)[0].evaluation_id;
   return {flagOpen, grayOpen, done: total > 0 && decided === total, disp,
           reserved: !!(review.reeval[p.id] && review.reeval[p.id].on),
           adjusted: !!review.adjustments[evalId]};
@@ -102,8 +105,8 @@ function applyView(list) {
            f === "dwatch" ? st.disp.watch > 0 :
            f === "reserved" ? st.reserved : st.adjusted;
   });
-  const trlOf = p => { const lv = p.long && p.long.trl_level ? p.long.trl_level.level : null; return ok(lv) ? lv : null; };
-  const dateOf = p => (p.long && p.long.evaluated_at) || "";
+  const trlOf = p => { const lv = viewState.kind === "long" && p.long && p.long.trl_level ? p.long.trl_level.level : null; return ok(lv) ? lv : null; };
+  const dateOf = p => { const L = evOf(p); return (L && L.evaluated_at) || ""; };
   if (viewState.sort === "trl-desc") out.sort((a, b) => (trlOf(b) ?? -1) - (trlOf(a) ?? -1));
   else if (viewState.sort === "trl-asc") out.sort((a, b) => (trlOf(a) ?? 99) - (trlOf(b) ?? 99));
   else if (viewState.sort === "new") out.sort((a, b) => dateOf(b).localeCompare(dateOf(a)));
@@ -125,6 +128,11 @@ function renderControls() {
     if (st.reserved) counts.reserved++;
     if (st.adjusted) counts.adjusted++;
   }
+  const kindCounts = {long: (DATA.candidates || []).filter(p => (p.audit || []).length).length,
+                      event: (DATA.candidates || []).filter(p => (p.audit_event || []).length).length};
+  const kf = $("#kindFilters");
+  if (kf) kf.innerHTML = [["long", "長期評価"], ["event", "イベント評価"]].map(([k, label]) =>
+    `<button type="button" class="fchip" data-kind="${k}" aria-pressed="${viewState.kind === k ? "true" : "false"}">${label} ${kindCounts[k]}</button>`).join("");
   $("#stateFilters").innerHTML = SFILTERS.map(([v, label]) =>
     `<button type="button" class="fchip" data-sfilter="${v}" aria-pressed="${viewState.filter === v ? "true" : "false"}">${label} ${counts[v]}</button>`).join("");
   const sel = $("#sortSel");
@@ -140,7 +148,7 @@ function renderCov() {
   const byDisp = {confirmed: 0, false_positive: 0, watch: 0};
   for (const p of audited()) {
     const st = cardState(p);
-    for (const a of p.audit) for (const e of a.entries) {
+    for (const a of blocksOf(p)) for (const e of a.entries) {
       if (e.verdict === "gray") grayE.add(a.evaluation_id); else flagE.add(a.evaluation_id);
     }
     if (st.done) done++;
@@ -206,7 +214,7 @@ function adjustHtml(p, evalId) {
 }
 
 function cardHtml(p) {
-  const L = p.long || null;
+  const L = evOf(p);
   const title = p.title_ja || p.title;
   const entNames = (p.entities || []).map(e => e.name).filter(Boolean).join("、");
   const sectors = [...new Set((p.entities || []).map(e => CL[e.sector] || e.sector).filter(Boolean))].join("・");
@@ -217,12 +225,15 @@ function cardHtml(p) {
   const ev = [];
   if (L) {
     if (L.total !== null && L.total !== undefined) ev.push(`総合点 ${esc(L.total)}${L.band ? `（${esc(L.band)}）` : ""}`);
-    const lv = L.trl_level ? L.trl_level.level : null;
-    ev.push(`TRL ${ok(lv) ? lv : "未確定"}`);
+    if (viewState.kind === "long") {
+      const lv = L.trl_level ? L.trl_level.level : null;
+      ev.push(`TRL ${ok(lv) ? lv : "未確定"}`);
+    }
     if (L.llm_model) ev.push(`評価: ${esc(L.llm_model)}`);
     if (L.evaluated_at) ev.push(jst(L.evaluated_at));
   }
-  const evalId = p.audit[0].evaluation_id;
+  const evalId = blocksOf(p)[0].evaluation_id;
+  const stKey = viewState.kind === "event" && L ? L.status : p.display_status;
   const resv = review.reeval[p.id];
   const resvOn = !!(resv && resv.on);
   return `<section class="panel acard" id="card-${esc(p.id)}">
@@ -231,10 +242,11 @@ function cardHtml(p) {
         <a class="atitle" href="detail.html?id=${encodeURIComponent(p.id)}">${esc(title)}</a>
         ${bits.length ? `<div class="ameta">${bits.join(" ・ ")}</div>` : ""}
       </div>
-      <span class="st st-${esc(p.display_status || "")}">${esc(SL[p.display_status] || p.display_status || "")}</span>
+      <span class="st st-${esc(stKey || "")}">${esc(SL[stKey] || stKey || "")}</span>
     </div>
     ${ev.length ? `<div class="ameta">元評価: ${ev.join(" ・ ")}</div>` : ""}
     ${(() => { const st = cardState(p); const b = [];
+      if (viewState.kind === "event") b.push(`<span class="sbadge evk">イベント評価</span>`);
       if (st.flagOpen) b.push(`<span class="sbadge flag">要確認 ${st.flagOpen}</span>`);
       if (st.grayOpen) b.push(`<span class="sbadge gray">グレー ${st.grayOpen}</span>`);
       if (st.done) b.push(`<span class="sbadge done">処分済み</span>`);
@@ -242,13 +254,13 @@ function cardHtml(p) {
       if (st.adjusted) b.push(`<span class="sbadge adj">調整済み</span>`);
       return b.length ? `<div class="srow">${b.join("")}</div>` : ""; })()}
     <div class="ameta"><a class="tg" href="detail.html?id=${encodeURIComponent(p.id)}">記事（詳細ページ）を見る →</a></div>
-    ${p.audit.map(auditBlockHtml).join("")}
+    ${blocksOf(p).map(auditBlockHtml).join("")}
     <div class="aops">
       <div class="adjrow">
         <button type="button" class="btn quiet resv" data-reeval="${esc(p.id)}" aria-pressed="${resvOn ? "true" : "false"}">${resvOn ? "再評価: 予約済み（タップで解除）" : "再評価を予約する"}</button>
         <span class="hint">処分で「問題あり」にした評価の作り直しは、再評価（経路A）で行います。</span>
       </div>
-      ${adjustHtml(p, evalId)}
+      ${viewState.kind === "long" ? adjustHtml(p, evalId) : ""}
     </div>
   </section>`;
 }
@@ -273,6 +285,8 @@ function ensureDecision(key, meta) {
 }
 
 document.addEventListener("click", ev => {
+  const kindBtn = ev.target.closest("[data-kind]");
+  if (kindBtn) { viewState.kind = kindBtn.dataset.kind; viewState.filter = "all"; render(); return; }
   const sfBtn = ev.target.closest("[data-sfilter]");
   if (sfBtn) { viewState.filter = sfBtn.dataset.sfilter; render(); return; }
   const dispBtn = ev.target.closest("[data-disp]");
@@ -374,10 +388,18 @@ $("#copyBtn").addEventListener("click", async () => {
     return;
   }
   DATA = d;
+  // 詳細ページからの遷移: ?k=event でイベント側を開く。?c= の候補が
+  // 現在の種別に無ければ、監査がある側へ切り替える
+  const q = new URLSearchParams(location.search);
+  if (q.get("k") === "event" || q.get("k") === "long") viewState.kind = q.get("k");
   render();
-  // 詳細ページからの遷移 (?c=候補ID): 絞り込みを外して該当カードへ移動し、
-  // しばらく枠線で目立たせる
-  const target = new URLSearchParams(location.search).get("c");
+  const target = q.get("c");
+  if (target && !audited().some(p => p.id === target)) {
+    const other = viewState.kind === "event" ? "long" : "event";
+    const has = (DATA.candidates || []).some(p => p.id === target &&
+      ((other === "event" ? p.audit_event : p.audit) || []).length);
+    if (has) { viewState.kind = other; render(); }
+  }
   if (target && audited().some(p => p.id === target)) {
     viewState.filter = "all";
     render();

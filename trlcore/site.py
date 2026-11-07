@@ -201,7 +201,7 @@ def _audit_entries(flags):
 
 
 def _audits_by_eval(store):
-    """最新の long 評価に紐づく監査結果を {evaluation_id: [監査, ...]} で返す。
+    """kind ごとの最新評価に紐づく監査結果を {evaluation_id: [監査, ...]} で返す。
 
     監査は evaluation_id 単位で記録される (規則版・LLM 版の双方)。
     評価が更新されて最新でなくなった評価への監査は含めない
@@ -209,8 +209,8 @@ def _audits_by_eval(store):
     """
     rows = store.conn.execute(
         "SELECT a.* FROM audit_results a JOIN evaluations e ON e.id = a.evaluation_id "
-        "WHERE e.kind = 'long' AND e.id = (SELECT MAX(e2.id) FROM evaluations e2 "
-        "WHERE e2.candidate_id = e.candidate_id AND e2.kind = 'long') "
+        "WHERE e.id = (SELECT MAX(e2.id) FROM evaluations e2 "
+        "WHERE e2.candidate_id = e.candidate_id AND e2.kind = e.kind) "
         "ORDER BY a.id").fetchall()
     out = {}
     for r in rows:
@@ -374,6 +374,11 @@ def build_site_data(store, cfg, now=None):
             au = audits.get(long_row["id"])
             if au:
                 cand["audit"] = au
+        # イベント評価の監査も同じ形で同梱する (監査ページのイベント表示用)
+        if event_row is not None:
+            au = audits.get(event_row["id"])
+            if au:
+                cand["audit_event"] = au
         # 論文の要点 (抄録からの決定的な抽出、表示専用)。対象でない候補には付けない
         if c["source"] in PAPER_SOURCES:
             summ = extract_summary(c["title"], c["abstract"], c.get("abstract_ja"))

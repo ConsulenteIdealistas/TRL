@@ -51,6 +51,7 @@ select.tsel{padding:8px 10px;border:1px solid var(--line);border-radius:10px;bac
 .sbadge.done{color:var(--green);background:var(--gs)}
 .sbadge.resv{color:var(--gd);background:var(--gs)}
 .sbadge.adj{color:var(--vc);background:color-mix(in srgb,var(--vc) 14%,transparent)}
+.sbadge.evk{color:#22d3ee;background:rgba(34,211,238,.13)}
 </style>
 </head>
 <body>
@@ -67,6 +68,7 @@ select.tsel{padding:8px 10px;border:1px solid var(--line);border-radius:10px;bac
 <span class="hint" id="copyMsg">記録した処分・予約・調整を review_inbox.json の形で書き出します（取り込みは段階B）。</span>
 </div>
 <div class="abar">
+<div class="fchips" id="kindFilters" aria-label="評価の種別" style="margin-bottom:8px"></div>
 <div class="fchips" id="stateFilters" aria-label="状態で絞り込み"></div>
 <label class="hint">並び順 <select class="tsel" id="sortSel">
 <option value="default">既定</option>

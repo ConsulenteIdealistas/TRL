@@ -20,16 +20,24 @@ const ACH = {A1: "商用展開とTRLの混同", A2: "TRL 9 の継続証拠", A3:
   E1: "価格反応との整合", E2: "反応データ未使用"};
 const AIL = {counter_points: "反証", candidate: "候補の時点", total: "総合点", companies: "企業帰属",
   not_priced_in: "未織り込み度", trl_level: "TRL判定"};
-function auditSectionHtml(p) {
-  if (!p.audit || !p.audit.length) return "";
+function auditGroupHtml(blocks, heading, link) {
   let nf = 0, ng = 0;
   const rows = [];
-  for (const a of p.audit) for (const e of a.entries || []) {
+  for (const a of blocks) for (const e of a.entries || []) {
     if (e.verdict === "gray") ng++; else nf++;
     rows.push(`<li><b>${esc(e.check || "")}</b> ${e.verdict === "gray" ? "グレー" : "要確認"}: ${esc(ACH[e.check] || "")}${e.item ? `（${esc(AIL[e.item] || IL[e.item] || e.item)}）` : ""}</li>`);
   }
-  if (!rows.length) return `<section class="ds"><h4>監査</h4><p class="hint">監査で指摘はありませんでした。</p></section>`;
-  return `<section class="ds"><h4>監査</h4><p>要確認 ${nf} 件 / グレー ${ng} 件</p><ul class="pts">${rows.join("")}</ul><div class="acts"><a class="btn sec" href="audit.html?c=${encodeURIComponent(p.id)}">監査ページでこの記事の指摘を見る →</a></div></section>`;
+  const head = heading ? `<p><b>${esc(heading)}</b></p>` : "";
+  if (!rows.length) return `${head}<p class="hint">監査で指摘はありませんでした。</p>`;
+  return `${head}<p>要確認 ${nf} 件 / グレー ${ng} 件</p><ul class="pts">${rows.join("")}</ul><div class="acts"><a class="btn sec" href="${link}">監査ページでこの記事の指摘を見る →</a></div>`;
+}
+function auditSectionHtml(p) {
+  const hasL = p.audit && p.audit.length, hasE = p.audit_event && p.audit_event.length;
+  if (!hasL && !hasE) return "";
+  let h = `<section class="ds"><h4>監査</h4>`;
+  if (hasL) h += auditGroupHtml(p.audit, hasE ? "長期評価" : null, `audit.html?c=${encodeURIComponent(p.id)}`);
+  if (hasE) h += auditGroupHtml(p.audit_event, "イベント評価", `audit.html?c=${encodeURIComponent(p.id)}&k=event`);
+  return h + "</section>";
 }
 const $ = s => document.querySelector(s);
 const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));

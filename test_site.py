@@ -960,6 +960,33 @@ class ExportTests(unittest.TestCase):
         self.assertTrue(others)
         self.assertTrue(all("audit" not in x for x in others))
 
+    def test_audit_event_attached_to_latest_event_evaluation(self):
+        # イベント評価の監査は audit_event に同梱される (長期側の audit とは別枠)
+        data = self.build(Mock(make_llm_fn(long_scores={k: 65 for k in LONG_KEYS})))
+        target = next(c for c in data["candidates"] if c["long"])
+        cid = target["id"]
+        ev = {"kind": "event", "as_of": "2026-10-25", "status": "hold",
+              "total": None, "band": None,
+              "items": {}, "extraction": EXTRACTION, "event": None, "prompt_versions": {},
+              "config_version": CFG["config_version"], "config_hash": CFG["config_hash"],
+              "llm_provider": "mock", "llm_model": "mock-1",
+              "input_hash": "h-ev", "errors": [], "extra": {}}
+        eid = self.store.add_evaluation("r-ev", cid, ev)
+        self.store.add_audit_result({
+            "evaluation_id": eid, "candidate_id": cid, "run_id": "aud-ev",
+            "auditor_provider": "rules", "auditor_model": "rules/v3",
+            "prompt_version": "v3", "prompt_sha": "rulesha3",
+            "flags": [{"check": "E2", "item": "not_priced_in", "verdict": "gray",
+                       "rule": "reaction_unused_hold", "detail": "価格反応があるのに未判定"}],
+            "summary": "グレー1件"})
+        data = T.build_site_data(self.store, cfg_with(), datetime(2026, 10, 26, tzinfo=timezone.utc))
+        c = next(x for x in data["candidates"] if x["id"] == cid)
+        self.assertIn("audit_event", c)
+        blk = c["audit_event"][0]
+        self.assertEqual(blk["evaluation_id"], eid)
+        self.assertEqual(blk["entries"][0]["check"], "E2")
+        self.assertNotIn("audit", c)  # long 側に監査は無いので混ざらない
+
     def test_audit_on_superseded_evaluation_not_exported(self):
         # 監査が付いた評価より新しい long 評価が付いたら、その監査は
         # 最新評価への監査ではないので同梱しない (処分は表示中の評価へのもの)
@@ -1016,6 +1043,13 @@ class ExportTests(unittest.TestCase):
         self.assertIn('id="card-', js)
         self.assertIn('get("c")', js)
         self.assertIn("記事（詳細ページ）を見る", js)
+        # イベント監査の表示: 種別切替と audit_event の利用、E1/E2 のラベル
+        self.assertIn("audit_event", js)
+        self.assertIn("data-kind", js)
+        self.assertIn("イベント評価", js)
+        self.assertIn("E1:", js)
+        self.assertIn("E2:", js)
+        self.assertIn("audit_event", app)
         # 一覧は検索と統計の間の .pagelinks に短いリンク、詳細はフッター
         # のみ (ヘッダーは両ページともリンクなしで揃える)
         index = (web / "index.html").read_text(encoding="utf-8")

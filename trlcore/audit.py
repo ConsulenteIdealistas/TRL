@@ -27,7 +27,8 @@ from .config import ROOT
 from .scoring import TECH_ITEMS, compute as scoring_compute
 
 AUDIT_CHECKS = ("A1", "A2", "A3", "A4", "A5", "A6", "A7",
-                "A8", "A9", "A10", "A11", "A12", "A13", "A14")
+                "A8", "A9", "A10", "A11", "A12", "A13", "A14", "A15",
+                "E1", "E2")
 
 def _loads(s, default):
     if s is None:
@@ -85,11 +86,11 @@ def build_audit_input(store, ev_row, cfg=None):
     # 保存値と突き合わせる (recalc と同じ呼び出し方)。導出できない形なら
     # None のままにし、チェック側で読み飛ばす
     expected_total = expected_band = None
-    if cfg and ev.get("kind") == "long":
+    if cfg and ev.get("kind") in ("long", "event"):
         try:
             score_items = {k: (v or {}).get("score") for k, v in items.items()
                            if isinstance(v, dict)}
-            out = scoring_compute(score_items, "long", cfg,
+            out = scoring_compute(score_items, ev["kind"], cfg,
                                   (trl or {}).get("level")
                                   if isinstance(trl, dict) else None)
             if out.get("status") == "final":
@@ -97,9 +98,12 @@ def build_audit_input(store, ev_row, cfg=None):
                 expected_band = (out.get("band") or {}).get("label")
         except Exception:
             expected_total = expected_band = None
+    mr = extra.get("market_reaction")
     return {
         "evaluation_id": ev.get("id"),
         "candidate_id": ev.get("candidate_id"),
+        "kind": ev.get("kind"),
+        "market_reaction": mr if isinstance(mr, dict) else None,
         "title": cand.get("title"),
         "sector": sector,
         "companies": companies,
@@ -117,18 +121,18 @@ def build_audit_input(store, ev_row, cfg=None):
     }
 
 
-def select_unaudited(store, prompt_sha, model, limit=100):
-    """未監査の long 評価を古い順に返す。監査済みの判定は冪等キー
+def select_unaudited(store, prompt_sha, model, limit=100, kind="long"):
+    """未監査の評価 (kind 別) を古い順に返す。監査済みの判定は冪等キー
     (evaluation_id, prompt_sha, auditor_model) の一致で行うため、監査
     プロンプトが改訂される (sha が変わる) か監査モデルが変われば、
     過去に監査した評価も再び対象になる。"""
     rows = store.conn.execute(
-        "SELECT e.* FROM evaluations e WHERE e.kind = 'long'"
+        "SELECT e.* FROM evaluations e WHERE e.kind = ?"
         " AND NOT EXISTS (SELECT 1 FROM audit_results a"
         "   WHERE a.evaluation_id = e.id AND a.prompt_sha = ?"
         "   AND a.auditor_model = ?)"
         " ORDER BY e.evaluated_at ASC, e.id ASC LIMIT ?",
-        (prompt_sha, model, int(limit))).fetchall()
+        (kind, prompt_sha, model, int(limit))).fetchall()
     return [dict(r) for r in rows]
 
 
@@ -146,7 +150,11 @@ RULES_FILENAME = "audit_rules.json"
 # の8分類に対応する決定的チェック: A8=⑦反証 / A9=⑥証拠充足 / A10=②時点 /
 # A11=⑤数値 / A12=①出典形式 / A13=⑧スコア再計算 / A14=③企業帰属。
 RULES_CHECKS = ("A1", "A2", "A3", "A4", "A6", "A7",
-                "A8", "A9", "A10", "A11", "A12", "A13", "A14")
+                "A8", "A9", "A10", "A11", "A12", "A13", "A14", "A15")
+# event 評価の監査。A10/A12 は long と共通 (時点・出典形式)。E1/E2 は
+# 実測した価格反応 (extra.market_reaction) との整合を見る (監査要項の
+# event 監査節、ISA 520 の分析的手続きが発想の出典)
+EVENT_CHECKS = ("A10", "A12", "E1", "E2")
 
 
 def load_rules(rules_dir=None):
@@ -550,11 +558,78 @@ def _check_a14(inp, chk, ext_text, out):
                       f"(weak) のみ: {names}。帰属の妥当性は判定保留。"})
 
 
+def _check_a15(inp, chk, ext_text, out):
+    """A15 上限の観測 (監査要項⑧)。A2 (TRL 9 の継続証拠なし) がこの監査で
+    確定した評価は、証拠が示す水準を超えて最高帯域に置かないという上限
+    ルールの対象になる。上限値 cap_total は帯域表の最高帯域の下限の直下
+    (第2帯域の上限)。適用自体は非破壊の調整レイヤーが担うため、ここでは
+    「上限を適用するとどうなるか」をグレーで観測するに留める。A2 の判定に
+    依存するため、チェック順序の最後で out を見て判定する。"""
+    cap = chk.get("cap_total", 79)
+    total = inp.get("total")
+    if not any(e.get("check") == "A2" and e.get("verdict") == "flag" for e in out):
+        return
+    if not isinstance(total, (int, float)) or isinstance(total, bool) \
+            or total <= cap:
+        return
+    out.append({
+        "check": "A15", "item": "total", "verdict": "gray",
+        "rule": f"cap:{cap}",
+        "detail": f"上限ルールの対象: TRL 9 の継続証拠が無い (A2) ため、"
+                  f"総合点は上限 {cap} で抑えるのが要項の定め。現在は "
+                  f"{total}。適用は調整レイヤーで行うため、ここでは観測"
+                  f"として記録する。"})
+
+
+def _check_e1(inp, chk, ext_text, out):
+    """E1 反応整合 (event 監査)。独立に実測した価格反応が強く出ている
+    (z >= z_threshold) のに、not_priced_in が高得点 (「織り込まれて
+    いない」) なのは矛盾の疑いとして要確認にする。ISA 520 の分析的
+    手続き (独立した期待値と記録値の差異を閾値で判定する) の型。"""
+    if inp.get("status") != "final":
+        return
+    mr = inp.get("market_reaction") or {}
+    z = mr.get("z")
+    item = (inp.get("items") or {}).get("not_priced_in") or {}
+    score = item.get("score") if isinstance(item, dict) else None
+    zt = chk.get("z_threshold", 2.0)
+    st = chk.get("score_threshold", 60)
+    if mr.get("available") and isinstance(z, (int, float)) \
+            and isinstance(score, (int, float)) and z >= zt and score >= st:
+        out.append({
+            "check": "E1", "item": "not_priced_in", "verdict": "flag",
+            "rule": f"z>={zt},score>={st}",
+            "detail": f"価格は既に強く反応している (標準化反応 z={z:.2f}、"
+                      f"反応 {mr.get('reaction_pct')}%) のに、"
+                      f"not_priced_in が {score} 点 (織り込まれていない側) "
+                      f"になっている。実測との整合に疑いがある。"})
+
+
+def _check_e2(inp, chk, ext_text, out):
+    """E2 反応データ未使用の観測 (event 監査)。価格反応データが取得できた
+    のに not_priced_in が未判定のまま保持された評価をグレーで記録する。
+    event.v2 (反応があれば必須項目の強制 null を外す) の実地観察用。"""
+    if inp.get("status") != "hold":
+        return
+    mr = inp.get("market_reaction") or {}
+    item = (inp.get("items") or {}).get("not_priced_in") or {}
+    if mr.get("available") and isinstance(item, dict) \
+            and item.get("score") is None:
+        out.append({
+            "check": "E2", "item": "not_priced_in", "verdict": "gray",
+            "rule": "reaction-available-but-unjudged",
+            "detail": f"価格反応データがある (z={mr.get('z')}、反応 "
+                      f"{mr.get('reaction_pct')}%) のに not_priced_in が"
+                      f"未判定のまま保持されている。判定材料として反応が"
+                      f"使われなかった可能性を記録する。"})
+
+
 _CHECK_FUNCS = {"A1": _check_a1, "A2": _check_a2, "A3": _check_a3,
                 "A4": _check_a4, "A6": _check_a6, "A7": _check_a7,
                 "A8": _check_a8, "A9": _check_a9, "A10": _check_a10,
                 "A11": _check_a11, "A12": _check_a12, "A13": _check_a13,
-                "A14": _check_a14}
+                "A14": _check_a14, "A15": _check_a15,
+                "E1": _check_e1, "E2": _check_e2}
 
 
 def audit_evaluation_rules(inp, rules):
@@ -564,14 +639,16 @@ def audit_evaluation_rules(inp, rules):
     checks = (rules or {}).get("checks") or {}
     ext_text = _extraction_text(inp.get("extraction"))
     out = []
-    for name in RULES_CHECKS:
+    names = EVENT_CHECKS if inp.get("kind") == "event" else RULES_CHECKS
+    for name in names:
         if name in checks:
             _CHECK_FUNCS[name](inp, checks[name], ext_text, out)
     return out
 
 
 def run_audit_rules(store, cfg, *, limit=100, log=print, rules_dir=None):
-    """規則エンジンで未監査の long 評価を監査し、audit_results に記録する。
+    """規則エンジンで未監査の評価 (long + event) を監査し、audit_results
+    に記録する。limit は種類ごとの上限。
     API を呼ばないため失敗は基本的に起きないが、想定外のレコード形で
     1件が落ちても全体は止めない (落ちた評価は未監査のまま残る)。冪等判定は
     (evaluation_id, prompt_sha, auditor_model) で、規則の
@@ -579,7 +656,8 @@ def run_audit_rules(store, cfg, *, limit=100, log=print, rules_dir=None):
     batch = "aud-" + datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     r = load_rules(rules_dir)
     model = f"rules/{r['version']}"
-    rows = select_unaudited(store, r["sha"], model, limit)
+    rows = select_unaudited(store, r["sha"], model, limit, kind="long") \
+        + select_unaudited(store, r["sha"], model, limit, kind="event")
     audited = failed = n_flags = n_grays = 0
     checks = {}
     for row in rows:

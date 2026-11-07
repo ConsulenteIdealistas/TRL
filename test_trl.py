@@ -19,7 +19,7 @@ openalex = NS(parse=T.openalex_parse_works, fetch=T.openalex_fetch)
 ev = NS(validate_assessment=T.validate_assessment, validate_extraction=T.validate_extraction, evaluate_one=T.evaluate_one)
 
 import json
-from datetime import date
+from datetime import date, timedelta
 
 
 CFG = load_config()
@@ -2147,7 +2147,9 @@ class IntegrationTests(unittest.TestCase):
         self.assertEqual(len(store.list_queue()), 2)
 
         # 間隔経過後に情報が揃えば確定し、キューは解消
-        later = date(2026, 11, 20)
+        # 評価日時は実時計で刻まれるため、「間隔経過後」は実日付基準で
+        # 決める (固定日だと実行日が進むにつれて間隔内に戻ってしまう)
+        later = date.today() + timedelta(days=15)
         llm2 = Mock(make_llm_fn(long_scores={k: 65 for k in LONG_KEYS}))
         r3 = run_pipeline(store, self.cfg(), llm2, as_of=AS_OF, kinds=("long",), do_collect=False, today=later,
                           log=lambda *_: None)
@@ -2237,7 +2239,7 @@ class IntegrationTests(unittest.TestCase):
         cfg2["scoring"] = json.loads(json.dumps(CFG["scoring"]))
         cfg2["scoring"]["llm"] = {**(cfg2["scoring"].get("llm") or {}), "run_budget_sec": 1}
         r2 = run_pipeline(store, cfg2, llm, as_of=AS_OF, kinds=("long",), do_collect=False,
-                          today=date(2026, 11, 20), log=lambda *_: None)
+                          today=date.today() + timedelta(days=15), log=lambda *_: None)
         # 締め切り (1秒) のため評価は打ち切られる (選定は run レコードに記録される)
         self.assertEqual(r2["counts"]["selected"], 2)
         self.assertEqual(r2["counts"]["final"], 0)
@@ -3975,13 +3977,14 @@ class AuditRulesTests(unittest.TestCase):
 
     def test_load_rules(self):
         r = T.load_rules()
-        self.assertEqual(r["version"], "v2")
+        self.assertEqual(r["version"], "v3")
         self.assertEqual(len(r["sha"]), 12)
         self.assertEqual(r["sha"], T.load_rules()["sha"])  # 同じファイルでは安定
         # A5 は規則化しない (対象外)。それ以外が載っている
         self.assertEqual(set(r["rules"]["checks"]),
                          {"A1", "A2", "A3", "A4", "A6", "A7", "A8", "A9",
-                          "A10", "A11", "A12", "A13", "A14"})
+                          "A10", "A11", "A12", "A13", "A14", "A15",
+                          "E1", "E2"})
 
     def test_a1_flag(self):
         _, eid = self._mk_eval("A1フラグ", items={
@@ -4163,6 +4166,39 @@ class AuditRulesTests(unittest.TestCase):
         inp2 = self._inp()
         self.assertEqual(self._only(T.audit_evaluation_rules(inp2, self.rules), "A14"), [])
 
+    def test_a15_cap_observation(self):
+        trl9 = {"level": 9, "reason": "実用化済み", "evidence": [], "missing_info": []}
+        inp = self._inp(total=85.0, trl_level=trl9)
+        entries = T.audit_evaluation_rules(inp, self.rules)
+        self.assertEqual(len(self._only(entries, "A2")), 1)  # 前提: A2 が確定
+        a15 = self._only(entries, "A15")
+        self.assertEqual(len(a15), 1)
+        self.assertEqual(a15[0]["verdict"], "gray")
+        # 上限以下なら A2 が確定しても上限観測は付かない
+        inp2 = self._inp(total=70.0, trl_level=trl9)
+        self.assertEqual(self._only(T.audit_evaluation_rules(inp2, self.rules), "A15"), [])
+
+    def test_e1_flag(self):
+        inp = self._inp(kind="event")
+        inp["items"]["not_priced_in"] = self._item(score=70)
+        inp["market_reaction"] = {"available": True, "z": 2.5, "reaction_pct": 12.3}
+        e1 = self._only(T.audit_evaluation_rules(inp, self.rules), "E1")
+        self.assertEqual(len(e1), 1)
+        self.assertEqual(e1[0]["verdict"], "flag")
+        inp["market_reaction"] = {"available": True, "z": 0.5, "reaction_pct": 1.0}
+        self.assertEqual(self._only(T.audit_evaluation_rules(inp, self.rules), "E1"), [])
+
+    def test_e2_gray(self):
+        inp = self._inp(kind="event", status="hold")
+        inp["items"]["not_priced_in"] = self._item(score=None)
+        inp["market_reaction"] = {"available": True, "z": 1.2, "reaction_pct": 2.7}
+        e2 = self._only(T.audit_evaluation_rules(inp, self.rules), "E2")
+        self.assertEqual(len(e2), 1)
+        self.assertEqual(e2[0]["verdict"], "gray")
+        # 反応データが無い旧評価では静か
+        inp["market_reaction"] = None
+        self.assertEqual(self._only(T.audit_evaluation_rules(inp, self.rules), "E2"), [])
+
     def test_build_input_new_fields(self):
         _, eid = self._mk_eval("新規フィールド")
         row = dict(self.store.conn.execute(
@@ -4184,7 +4220,7 @@ class AuditRulesTests(unittest.TestCase):
         self.assertGreaterEqual(res1["flags"], 1)
         rows = self.store.audit_results(res1["batch"])
         self.assertEqual(len(rows), 2)
-        self.assertEqual(rows[0]["auditor_model"], "rules/v2")
+        self.assertEqual(rows[0]["auditor_model"], "rules/v3")
         self.assertEqual(rows[0]["prompt_sha"], T.load_rules()["sha"])
         # 同じ規則 (同じ sha) では再監査しない
         res2 = T.run_audit_rules(self.store, CFG, limit=10, log=lambda *_: None)

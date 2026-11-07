@@ -74,17 +74,19 @@ function audited() { return (DATA.candidates || []).filter(p => p.audit && p.aud
    もの、処分済みは「全エントリ処分済み」のものとして数える */
 const viewState = {filter: "all", sort: "default"};
 const SFILTERS = [["all", "すべて"], ["flag", "要確認"], ["gray", "グレー"],
-  ["done", "処分済み"], ["reserved", "再評価予約"], ["adjusted", "調整済み"]];
+  ["done", "処分済み"], ["dconfirmed", "問題あり"], ["dfalse", "誤検知"],
+  ["dwatch", "様子見"], ["reserved", "再評価予約"], ["adjusted", "調整済み"]];
 function cardState(p) {
   let flagOpen = 0, grayOpen = 0, total = 0, decided = 0;
+  const disp = {confirmed: 0, false_positive: 0, watch: 0};
   for (const a of p.audit) for (const e of a.entries) {
     total++;
     const d = decisionOf(a, e);
-    if (d && d.disposition) decided++;
+    if (d && d.disposition) { decided++; if (d.disposition in disp) disp[d.disposition]++; }
     else if (e.verdict === "gray") grayOpen++; else flagOpen++;
   }
   const evalId = p.audit[0].evaluation_id;
-  return {flagOpen, grayOpen, done: total > 0 && decided === total,
+  return {flagOpen, grayOpen, done: total > 0 && decided === total, disp,
           reserved: !!(review.reeval[p.id] && review.reeval[p.id].on),
           adjusted: !!review.adjustments[evalId]};
 }
@@ -94,7 +96,11 @@ function applyView(list) {
     if (f === "all") return true;
     const st = cardState(p);
     return f === "flag" ? st.flagOpen > 0 : f === "gray" ? st.grayOpen > 0 :
-           f === "done" ? st.done : f === "reserved" ? st.reserved : st.adjusted;
+           f === "done" ? st.done :
+           f === "dconfirmed" ? st.disp.confirmed > 0 :
+           f === "dfalse" ? st.disp.false_positive > 0 :
+           f === "dwatch" ? st.disp.watch > 0 :
+           f === "reserved" ? st.reserved : st.adjusted;
   });
   const trlOf = p => { const lv = p.long && p.long.trl_level ? p.long.trl_level.level : null; return ok(lv) ? lv : null; };
   const dateOf = p => (p.long && p.long.evaluated_at) || "";
@@ -105,13 +111,17 @@ function applyView(list) {
   return out;
 }
 function renderControls() {
-  const counts = {all: 0, flag: 0, gray: 0, done: 0, reserved: 0, adjusted: 0};
+  const counts = {all: 0, flag: 0, gray: 0, done: 0, dconfirmed: 0, dfalse: 0,
+                  dwatch: 0, reserved: 0, adjusted: 0};
   for (const p of audited()) {
     counts.all++;
     const st = cardState(p);
     if (st.flagOpen) counts.flag++;
     if (st.grayOpen) counts.gray++;
     if (st.done) counts.done++;
+    if (st.disp.confirmed) counts.dconfirmed++;
+    if (st.disp.false_positive) counts.dfalse++;
+    if (st.disp.watch) counts.dwatch++;
     if (st.reserved) counts.reserved++;
     if (st.adjusted) counts.adjusted++;
   }
@@ -122,23 +132,29 @@ function renderControls() {
 }
 
 function renderCov() {
+  // 枠の数字は絞り込みチップと必ず一致させる: すべて「評価 (カード) の数」
+  // で数える (エントリ数で数えると同じラベルで数字が食い違うため)。
+  // 処分済み = 全エントリを処分した評価、問題あり等 = その処分を含む評価
   const flagE = new Set(), grayE = new Set();
-  let decided = 0;
+  let done = 0;
   const byDisp = {confirmed: 0, false_positive: 0, watch: 0};
-  for (const p of audited()) for (const a of p.audit) for (const e of a.entries) {
-    if (e.verdict === "gray") grayE.add(a.evaluation_id); else flagE.add(a.evaluation_id);
-    const d = decisionOf(a, e);
-    if (d && d.disposition) { decided++; if (d.disposition in byDisp) byDisp[d.disposition]++; }
+  for (const p of audited()) {
+    const st = cardState(p);
+    for (const a of p.audit) for (const e of a.entries) {
+      if (e.verdict === "gray") grayE.add(a.evaluation_id); else flagE.add(a.evaluation_id);
+    }
+    if (st.done) done++;
+    for (const k of Object.keys(byDisp)) if (st.disp[k]) byDisp[k]++;
   }
   const reev = Object.values(review.reeval).filter(r => r && r.on).length;
   const adj = Object.keys(review.adjustments).length;
   $("#cov").innerHTML =
     `<div class="stat y"><small>要確認のある評価</small><strong>${flagE.size}</strong><em>件</em></div>` +
     `<div class="stat x"><small>グレーのある評価</small><strong>${grayE.size}</strong><em>件</em></div>` +
-    `<div class="stat v"><small>処分済み</small><strong>${decided}</strong><em>件のエントリ</em></div>` +
-    `<div class="stat r"><small>問題あり</small><strong>${byDisp.confirmed}</strong><em>件のエントリ</em></div>` +
-    `<div class="stat g"><small>誤検知</small><strong>${byDisp.false_positive}</strong><em>件のエントリ</em></div>` +
-    `<div class="stat o"><small>様子見</small><strong>${byDisp.watch}</strong><em>件のエントリ</em></div>` +
+    `<div class="stat v"><small>処分済み</small><strong>${done}</strong><em>件の評価</em></div>` +
+    `<div class="stat r"><small>問題あり</small><strong>${byDisp.confirmed}</strong><em>件の評価</em></div>` +
+    `<div class="stat g"><small>誤検知</small><strong>${byDisp.false_positive}</strong><em>件の評価</em></div>` +
+    `<div class="stat o"><small>様子見</small><strong>${byDisp.watch}</strong><em>件の評価</em></div>` +
     `<div class="stat b"><small>再評価の予約</small><strong>${reev}</strong><em>件</em></div>` +
     `<div class="stat pk"><small>調整済み</small><strong>${adj}</strong><em>件</em></div>`;
 }

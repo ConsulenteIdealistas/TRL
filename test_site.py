@@ -999,6 +999,8 @@ class ExportTests(unittest.TestCase):
         self.assertIn('id="stateFilters"', page)
         self.assertIn('id="sortSel"', page)
         self.assertIn("data-sfilter", js)
+        for key in ("dconfirmed", "dfalse", "dwatch"):
+            self.assertIn(key, js)
         for label in ("要確認", "グレー", "処分済み", "再評価予約", "調整済み",
                       "問題あり", "誤検知", "様子見"):
             self.assertIn(label, js)

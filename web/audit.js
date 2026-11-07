@@ -209,7 +209,7 @@ function cardHtml(p) {
   const evalId = p.audit[0].evaluation_id;
   const resv = review.reeval[p.id];
   const resvOn = !!(resv && resv.on);
-  return `<section class="panel acard">
+  return `<section class="panel acard" id="card-${esc(p.id)}">
     <div class="ahead">
       <div style="min-width:0">
         <a class="atitle" href="detail.html?id=${encodeURIComponent(p.id)}">${esc(title)}</a>
@@ -225,6 +225,7 @@ function cardHtml(p) {
       if (st.reserved) b.push(`<span class="sbadge resv">再評価予約</span>`);
       if (st.adjusted) b.push(`<span class="sbadge adj">調整済み</span>`);
       return b.length ? `<div class="srow">${b.join("")}</div>` : ""; })()}
+    <div class="ameta"><a class="tg" href="detail.html?id=${encodeURIComponent(p.id)}">記事（詳細ページ）を見る →</a></div>
     ${p.audit.map(auditBlockHtml).join("")}
     <div class="aops">
       <div class="adjrow">
@@ -358,4 +359,17 @@ $("#copyBtn").addEventListener("click", async () => {
   }
   DATA = d;
   render();
+  // 詳細ページからの遷移 (?c=候補ID): 絞り込みを外して該当カードへ移動し、
+  // しばらく枠線で目立たせる
+  const target = new URLSearchParams(location.search).get("c");
+  if (target && audited().some(p => p.id === target)) {
+    viewState.filter = "all";
+    render();
+    const el = document.getElementById("card-" + target);
+    if (el) {
+      el.scrollIntoView({block: "start"});
+      el.classList.add("hl");
+      setTimeout(() => el.classList.remove("hl"), 5000);
+    }
+  }
 })();

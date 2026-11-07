@@ -13,6 +13,24 @@ const SR = {abstract_too_short: "要旨が短いため評価対象外", publishe
 const SO = {final: 0, review: 1, hold: 2, pending: 3, error: 4, rejected: 5};  // おすすめ順での状態の優先度
 const IL = {technology_readiness: "技術成熟度", technological_advantage: "技術的優位性", monetization: "収益化能力",
   market_growth: "市場成長性", financial_sustainability: "財務的持続可能性", moat_durability: "競争優位性の持続性"};
+const ACH = {A1: "商用展開とTRLの混同", A2: "TRL 9 の継続証拠", A3: "TRLからの推論", A4: "TRL 9 の根拠が商用展開のみ",
+  A5: "点と理由の整合", A6: "欠落判定（材料プール外）", A7: "減点理由の具体性", A8: "反証の欠落",
+  A9: "根拠のない高得点", A10: "時点の不整合", A11: "数値の原文照合", A12: "出典リンクの形式",
+  A13: "総合点の再導出照合", A14: "企業帰属（弱いリンクのみ）", A15: "上限の観測",
+  E1: "価格反応との整合", E2: "反応データ未使用"};
+const AIL = {counter_points: "反証", candidate: "候補の時点", total: "総合点", companies: "企業帰属",
+  not_priced_in: "未織り込み度", trl_level: "TRL判定"};
+function auditSectionHtml(p) {
+  if (!p.audit || !p.audit.length) return "";
+  let nf = 0, ng = 0;
+  const rows = [];
+  for (const a of p.audit) for (const e of a.entries || []) {
+    if (e.verdict === "gray") ng++; else nf++;
+    rows.push(`<li><b>${esc(e.check || "")}</b> ${e.verdict === "gray" ? "グレー" : "要確認"}: ${esc(ACH[e.check] || "")}${e.item ? `（${esc(AIL[e.item] || IL[e.item] || e.item)}）` : ""}</li>`);
+  }
+  if (!rows.length) return `<section class="ds"><h4>監査</h4><p class="hint">監査で指摘はありませんでした。</p></section>`;
+  return `<section class="ds"><h4>監査</h4><p>要確認 ${nf} 件 / グレー ${ng} 件</p><ul class="pts">${rows.join("")}</ul><div class="acts"><a class="btn sec" href="audit.html?c=${encodeURIComponent(p.id)}">監査ページでこの記事の指摘を見る →</a></div></section>`;
+}
 const $ = s => document.querySelector(s);
 const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
 const safeUrl = u => /^https?:\/\//i.test(String(u || "")) ? String(u) : "#";
@@ -322,6 +340,7 @@ function detail() {
 <section class="ds"><h4>技術評価</h4>${L ? G.technology.map(k => scoreRow(k, L.items[k])).join("") : `<p class="hint">未評価です。</p>`}</section>
 <section class="ds"><h4>事業評価</h4>${L && L.business_stage === "pre_stage" ? `<p class="note">この技術は前商業段階(TRL 3以下)のため、事業項目は「段階未達」として不足とは区別しています。点が付いている項目はそのまま表示します。</p>` : ""}${L ? G.business.map(k => scoreRow(k, L.items[k])).join("") : `<p class="hint">未評価です。</p>`}${L && !strong.length ? `<p class="note">関連企業が特定できていないため、企業固有の項目は算出されません。総合点は6項目すべてが揃うまで確定せず、重みの再配分もしません。</p>` : ""}</section>
 <section class="ds"><h4>総合点（長期）</h4><p>${total}</p>${L && L.total_scope === "technology" ? `<p class="note">これは技術評価の総合点です。事業項目は段階未達のため対象外で、技術軸の項目だけで算出しています。</p>` : ""}${holdCauseTxt(L) ? `<p class="note">${esc(holdCauseTxt(L))}</p>` : ""}${L && L.total_orig != null && L.total != null && L.total_orig !== L.total ? `<p class="note">評価当時の総合点は ${L.total_orig}${L.band_orig ? `（${esc(L.band_orig)}）` : ""} でした。上の総合点は、重みの改訂に合わせて現行の物差しで計算し直した値です。</p>` : ""}${L ? `<div class="acts"><button class="btn sec" type="button" id="cpye">評価をコピー</button><button class="btn obsidian" type="button" id="cpym">Markdownでコピー</button></div>` : ""}</section>
+${auditSectionHtml(p)}
 ${EV ? `<section class="ds"><h4>イベント評価（短期）</h4>${Object.keys(EV.items).map(k => scoreRow(k, EV.items[k])).join("")}<p>総合点 ${EV.total != null ? EV.total + " / 100(" + esc(EV.band || "") + ")" : "未確定（保留）"}</p></section>` : ""}
 ${L && L.prev ? `<section class="ds"><h4>前回評価との比較</h4>${prevCmp(L, lvl(p))}</section>` : ""}
 <section class="ds"><h4>材料の方向性</h4>${L && L.direction ? `<p>${dirB(p)} ${esc(L.direction.reason || "")}</p><p class="hint">方向性は点数やTRLとは独立に、資料が示す出来事の追い風・逆風を判定したものです。</p>` : `<p class="hint">未判定です（方向を決める出来事が資料に無いか、旧基準の評価です）。</p>`}</section>

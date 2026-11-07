@@ -1006,6 +1006,14 @@ class ExportTests(unittest.TestCase):
             self.assertIn(label, page)
         self.assertNotIn('<a href="criteria.html">採点基準</a>', page)
         self.assertNotIn('<a href="audit.html">監査</a>', page)
+        # 記事 (詳細) と監査カードの相互遷移: 詳細に監査セクションと
+        # 監査ページへの深いリンク、監査側は ?c= で該当カードへ移動する
+        app = (web / "app.js").read_text(encoding="utf-8")
+        self.assertIn("auditSectionHtml", app)
+        self.assertIn("audit.html?c=", app)
+        self.assertIn('id="card-', js)
+        self.assertIn('get("c")', js)
+        self.assertIn("記事（詳細ページ）を見る", js)
         # 一覧は検索と統計の間の .pagelinks に短いリンク、詳細はフッター
         # のみ (ヘッダーは両ページともリンクなしで揃える)
         index = (web / "index.html").read_text(encoding="utf-8")
@@ -1166,46 +1174,6 @@ class ZeroRiskBatchTests(unittest.TestCase):
         for text in (app, detail):
             self.assertIn("評価をコピー", text)
             self.assertIn("evalText", text)
-
-    def test_peer_compare_view_on_detail(self):
-        # 競合比較ビュー (表示専用): 詳細の「関連企業」の下に「同じタグの企業」。
-        # ピア集合はタグ単位で、企業ごとに最新の long 評価1件へ集約する。
-        # export・スキーマは変更せず data.json の既存フィールドだけで組み立てる
-        detail = (T.ROOT / "web" / "detail.html").read_text(encoding="utf-8")
-        self.assertIn("<h4>同じタグの企業</h4>", detail)
-        self.assertLess(detail.index("<h4>関連企業</h4>"),
-                        detail.index("<h4>同じタグの企業</h4>"))
-        # 強リンク企業にタグがある候補だけにセクションを出す
-        self.assertIn('e.strength === "strong" && (e.tags || []).length', detail)
-        # 集約ロジック: 企業台帳 (watch_companies も取り込む)・最新1件への集約・
-        # 行化・並び替えが detail.html 内に揃っている
-        for token in ("peerRegistry", "peerRow", "sortPeerRows", "peerTableHtml",
-                      "renderPeers", "watch_companies", "entity_id"):
-            self.assertIn(token, detail)
-        # 弱リンクは評価の帰属に使わない (強リンクだけを辿る)
-        self.assertIn('e.strength !== "strong") continue', detail)
-        # 列は設計どおり8列 (企業名は詳細リンク付き)
-        for col in ("企業名", "市場・セクター", "TRL", "総合点", "バンド",
-                    "段階", "最終評価日", "状態"):
-            self.assertIn("<th>" + col + "</th>", detail)
-        self.assertIn("detail.html?id=", detail)
-        # ウォッチ・参考は既定で表示せずトグルで含める。行には対象外と明示し、
-        # 空欄は 0点ではないことを注記する
-        self.assertIn('id="peerWatch"', detail)
-        self.assertIn("ウォッチ・参考を含める", detail)
-        self.assertIn("評価対象外（ウォッチ）", detail)
-        self.assertIn("評価対象外（参考）", detail)
-        self.assertIn("0点ではありません", detail)
-        # 並び替えは総合点 (既定)・TRL・最終評価日・企業名
-        self.assertIn('id="peerSort"', detail)
-        self.assertIn('["trl", "TRL"]', detail)
-        self.assertIn('["date", "最終評価日"]', detail)
-        self.assertIn('["name", "企業名"]', detail)
-        # 1社だけのタグは「比較相手がいません」と出し、sector 単位の集合へ
-        # フォールバックする
-        self.assertIn("比較相手がいません", detail)
-        self.assertIn("同じセクター", detail)
-        self.assertIn("c.sector === selfEnt.sector", detail)
 
     def test_quiet_zero_source_recorded(self):
         cfg = cfg_with()

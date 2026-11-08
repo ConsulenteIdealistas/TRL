@@ -356,7 +356,7 @@ def _collect_roic(store, cfg, run_id, as_of, counts, log, budget, collect_t0, fe
     財務プールと候補バージョン保全 (upsert_candidate の開示更新) に乗る。
     """
     coverage = store.financial_sources_by_entity()
-    successes = store.last_source_successes()
+    successes = store.last_source_successes_with_fetch("roic")
     targets, n_rest, n_unmapped = [], 0, 0
     for e in cfg.get("entities", {}).get("entities", []):
         if e.get("tier") != "core" or not e.get("ticker"):
@@ -368,10 +368,16 @@ def _collect_roic(store, cfg, run_id, as_of, counts, log, budget, collect_t0, fe
         if symbol is None:
             n_unmapped += 1
             continue
-        last = parse_date((successes.get(("roic", f"{e['id']}-roic")) or "")[:10])
-        if last is not None and (as_of - last).days < ROIC_SKIP_DAYS:
-            n_rest += 1
-            continue
+        # 休止は「成功して1件以上取れた」ときだけ。ok でも fetched=0 の
+        # 空振りを成功として休むと、識別子の誤り (英国 LON 等) で30日
+        # 閉じ込められる。本当に材料が無い企業は毎回対象に残るが、
+        # 1回の上限 (10社) の範囲で収まる規模に限られる
+        att = successes.get(("roic", f"{e['id']}-roic"))
+        if att is not None and (att[1] or 0) > 0:
+            last = parse_date((att[0] or "")[:10])
+            if last is not None and (as_of - last).days < ROIC_SKIP_DAYS:
+                n_rest += 1
+                continue
         targets.append((1 if have else 0, e, symbol))
     targets.sort(key=lambda t: t[0])  # 安定ソート: 財務ゼロ (0) を先に、同群は辞書順
     counts["roic_targets"] = len(targets)

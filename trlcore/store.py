@@ -1057,6 +1057,19 @@ class Store:
             out.setdefault((source, q), (t, bool(ok)))
         return out
 
+    def last_source_successes_with_fetch(self, source):
+        """指定ソースについて (source, query) ごとの最終成功 (ok) の
+        (開始日時, fetched) を返す。ROIC の休止判定専用: 成功でも
+        fetched=0 (空振り) は成功として数えない判定に使う。"""
+        rows = self.conn.execute(
+            "SELECT rs.query, r.started_at, rs.fetched FROM run_sources rs "
+            "JOIN runs r ON r.run_id = rs.run_id WHERE rs.source = ? AND rs.ok = 1 "
+            "ORDER BY r.started_at DESC, rs.rowid DESC", (source,)).fetchall()
+        out = {}
+        for q, t, f in rows:
+            out.setdefault((source, q), (t, f))
+        return out
+
     def latest_financial_periods(self, source):
         """企業ごとの最新の財務レコードの期末日 (published) を返す。"""
         rows = self.conn.execute(

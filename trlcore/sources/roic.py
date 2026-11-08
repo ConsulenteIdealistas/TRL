@@ -74,12 +74,14 @@ def _get(path, params, http):
 
 # entities の market → ROIC の取引所コード。
 # 公式ドキュメントの例 (NASDAQ / NYSE) と ROIC 自社サイトの銘柄ページ表記
-# (TYO / XETR / ASX / TSX / CPH / STO / OSL) で実例を確認したものと、
-# 未確認の慣用コード (LON / SIX / HEL / EURONEXT / MCE / MIL) が混ざる。
+# (TYO / XETR / ASX / TSX / CPH / STO / OSL / LSE) で実例を確認したものと、
+# 未確認の慣用コード (SIX / HEL / EURONEXT / MCE / MIL) が混ざる。
+# GB は当初 LON と置いたが、live 初回 (2026-11-05/06) で英国9社が全て
+# 0件となり、自社サイトの LSE 表記 (例: LSE:LSEG) に直した。
 # 未確認分が間違っていれば、その市場の取得は 404 → 0件として run_sources に
 # 記録される (静かに失敗しない) ため、live の初回結果を見て直せる。
 EXCHANGE_BY_MARKET = {
-    "JP": "TYO", "GB": "LON", "DE": "XETR", "CH": "SIX", "CA": "TSX",
+    "JP": "TYO", "GB": "LSE", "DE": "XETR", "CH": "SIX", "CA": "TSX",
     "AU": "ASX", "SE": "STO", "DK": "CPH", "NO": "OSL", "FI": "HEL",
     "NL": "EURONEXT", "BE": "EURONEXT", "FR": "EURONEXT",
     "ES": "MCE", "IT": "MIL",

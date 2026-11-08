@@ -71,6 +71,7 @@ class RoicFetcherTests(unittest.TestCase):
         self.assertEqual(roic.roic_symbol({"market": "JP", "ticker": "3174"}), "TYO:3174")
         self.assertEqual(roic.roic_symbol({"market": "DE", "ticker": "SAP"}), "XETR:SAP")
         self.assertEqual(roic.roic_symbol({"market": "DK", "ticker": "NOVO-B"}), "CPH:NOVO-B")
+        self.assertEqual(roic.roic_symbol({"market": "GB", "ticker": "OXB"}), "LSE:OXB")
         # US は取引所が決まらないため裸ティッカー (取得時に検索で解決)
         self.assertEqual(roic.roic_symbol({"market": "US", "ticker": "aapl"}), "AAPL")
         # 変換できない市場・ティッカーなしは None
@@ -252,6 +253,18 @@ class RoicCollectTests(unittest.TestCase):
         self.assertNotIn("TYO:1000", self.calls)  # 5日前の成功 → 30日休止
         self.assertIn("TYO:2000", self.calls)
         self.assertEqual(self.counts["roic_skipped_rest"], 1)
+
+    def test_zero_fetch_success_does_not_rest(self):
+        # ok でも fetched=0 の空振りは成功として数えない (英国 LON の罠:
+        # 「成功・0件」で30日休止に閉じ込められていた)
+        self.store.conn.execute(
+            "INSERT INTO runs(run_id, started_at) VALUES('recent-run', '2026-10-15T00:00:00+00:00')")
+        self.store.conn.execute(
+            "INSERT INTO run_sources VALUES('recent-run', 'roic', 'a_zero-roic', 0, 0, 0, 0, 1, NULL, 0.1)")
+        self.store.conn.commit()
+        self.run_collect()
+        self.assertIn("TYO:1000", self.calls)  # 5日前の空振り → 休止せず再試行
+        self.assertEqual(self.counts["roic_skipped_rest"], 0)
 
     def test_disabled_without_key(self):
         with mock.patch.dict(os.environ, {}, clear=True):

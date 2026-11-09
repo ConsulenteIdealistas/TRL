@@ -3977,7 +3977,7 @@ class AuditRulesTests(unittest.TestCase):
 
     def test_load_rules(self):
         r = T.load_rules()
-        self.assertEqual(r["version"], "v4")
+        self.assertEqual(r["version"], "v4.1")
         self.assertEqual(len(r["sha"]), 12)
         self.assertEqual(r["sha"], T.load_rules()["sha"])  # 同じファイルでは安定
         # A5 は規則化しない (対象外)。それ以外とポジティブ監査 P1〜P6 が載っている
@@ -4232,6 +4232,39 @@ class AuditRulesTests(unittest.TestCase):
         inp["items"]["technology_readiness"] = self._item(evidence=hit)
         self.assertEqual(self._only(T.audit_evaluation_rules(inp, self.rules), "P1"), [])
 
+    def test_p1_design_cap_and_priority(self):
+        trl8 = {"level": 8, "reason": "実証段階", "evidence": [], "missing_info": []}
+        # 試験デザイン・目的の文に確認語彙と回数が同居しても flag には
+        # しない (判定保留に上限)。v4.1 の校正 (試験目的文へのヒット対策)
+        inp = self._inp(trl_level=trl8)
+        inp["items"]["technology_readiness"] = self._item(evidence=[
+            {"ref": "https://example.org/x", "kind": "fact",
+             "summary": "複数ミッション成功を評価する観察研究であり、通算3回を対象とする。"}])
+        p1 = self._only(T.audit_evaluation_rules(inp, self.rules), "P1")
+        self.assertEqual(len(p1), 1)
+        self.assertEqual(p1[0]["verdict"], "gray")
+        self.assertIn("試験デザイン・目的の記述のため判定保留", p1[0]["detail"])
+        # デザインでない文に確認語彙と回数が同居すれば従来どおり flag
+        inp = self._inp(trl_level=trl8)
+        inp["items"]["technology_readiness"] = self._item(evidence=[
+            {"ref": "https://example.org/x", "kind": "fact",
+             "summary": "複数ミッション成功を重ね、通算3回の打ち上げに成功している。"}])
+        p1 = self._only(T.audit_evaluation_rules(inp, self.rules), "P1")
+        self.assertEqual(len(p1), 1)
+        self.assertEqual(p1[0]["verdict"], "flag")
+        # デザインのヒットが先にあっても、後ろの非デザインのヒットを
+        # 優先して判定する (デザイン候補に引きずられない)
+        inp = self._inp(trl_level=trl8)
+        inp["items"]["technology_readiness"] = self._item(evidence=[
+            {"ref": "https://example.org/x", "kind": "fact",
+             "summary": "複数ミッション成功を評価する観察研究であり、通算3回を対象とする。"},
+            {"ref": "https://example.org/x", "kind": "fact",
+             "summary": "複数ミッション成功を重ね、通算5回の打ち上げに成功している。"}])
+        p1 = self._only(T.audit_evaluation_rules(inp, self.rules), "P1")
+        self.assertEqual(len(p1), 1)
+        self.assertEqual(p1[0]["verdict"], "flag")
+        self.assertIn("5回", p1[0]["detail"])
+
     def test_p2_gray_and_threshold(self):
         facts = [{"statement": f"事実{i}", "source": f"s{i % 2}"} for i in range(5)]
         inp = self._inp(status="hold",
@@ -4245,6 +4278,28 @@ class AuditRulesTests(unittest.TestCase):
         self.assertEqual(self._only(T.audit_evaluation_rules(inp, self.rules), "P2"), [])
         # 企業リンクが無い保留は『企業未特定』で設計どおりなので対象外
         inp = self._inp(status="hold", companies=[],
+                        extraction={"facts": facts, "counter_points": []})
+        self.assertEqual(self._only(T.audit_evaluation_rules(inp, self.rules), "P2"), [])
+
+    def test_p2_pool_sources(self):
+        # v4.1: 出典は facts の source と材料プールの出典識別子の和集合で数える。
+        # facts が単一出典でも、プールに複数の出典があれば発火する
+        facts = [{"statement": f"事実{i}", "source": "u1"} for i in range(5)]
+        inp = self._inp(status="hold",
+                        extraction={"facts": facts, "counter_points": []},
+                        pool_sources=["媒体A", "yahoo"])
+        p2 = self._only(T.audit_evaluation_rules(inp, self.rules), "P2")
+        self.assertEqual(len(p2), 1)
+        self.assertEqual(p2[0]["verdict"], "gray")
+        self.assertIn("材料プール", p2[0]["detail"])
+        self.assertIn("媒体A", p2[0]["detail"])
+        # プールが無ければ facts の単一出典だけでは発火しない
+        inp = self._inp(status="hold",
+                        extraction={"facts": facts, "counter_points": []},
+                        pool_sources=[])
+        self.assertEqual(self._only(T.audit_evaluation_rules(inp, self.rules), "P2"), [])
+        # pool_sources キー自体が無い旧い入力でも壊れない
+        inp = self._inp(status="hold",
                         extraction={"facts": facts, "counter_points": []})
         self.assertEqual(self._only(T.audit_evaluation_rules(inp, self.rules), "P2"), [])
 
@@ -4335,7 +4390,7 @@ class AuditRulesTests(unittest.TestCase):
         self.assertGreaterEqual(res1["flags"], 1)
         rows = self.store.audit_results(res1["batch"])
         self.assertEqual(len(rows), 2)
-        self.assertEqual(rows[0]["auditor_model"], "rules/v4")
+        self.assertEqual(rows[0]["auditor_model"], "rules/v4.1")
         self.assertEqual(rows[0]["prompt_sha"], T.load_rules()["sha"])
         # 同じ規則 (同じ sha) では再監査しない
         res2 = T.run_audit_rules(self.store, CFG, limit=10, log=lambda *_: None)

@@ -20,10 +20,11 @@ import hashlib
 import json
 import re
 import unicodedata
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from .config import ROOT
+from .dates import parse_date
 from .scoring import TECH_ITEMS, compute as scoring_compute
 
 AUDIT_CHECKS = ("A1", "A2", "A3", "A4", "A5", "A6", "A7",
@@ -41,9 +42,73 @@ def _loads(s, default):
         return default
 
 
+def _filing_period_key(title):
+    """EDINET 表題の「第N期(開始－終了)」を取り出す (store と同じ定義。
+    財務プールの I-6 訂正除外を監査側でも同じ条件で再現するため)。"""
+    m = re.search(r"第\d+期\([^)]*\)", title or "")
+    return m.group(0) if m else None
+
+
+def _pool_source_ids(store, cand, as_of):
+    """評価時の材料プールに入る材料の出典識別子を、監査時点の DB から
+    再導出して返す (P2 の出典数え直し用)。
+
+    プールの定義 (窓・上限・リンク条件・I-6 訂正除外) は評価時の
+    store.related_news / related_financials と同一で、site.py や
+    vault.py が書き出し時にプールを再導出するのと同じ流儀。評価後に
+    収集・削除された材料の分だけ、評価時の実プールとはずれることが
+    ある。原文は載せず識別子だけを返す: ニュースは媒体名
+    (fields の先頭)、無ければ source コード。財務 (開示) は source。"""
+    cid = cand.get("id")
+    start = (as_of - timedelta(days=90)).isoformat()
+    rows = store.conn.execute(
+        "SELECT DISTINCT n.title, n.published, n.url, n.fields_json, n.source,"
+        " n.media_url FROM candidates n "
+        "JOIN candidate_entities ne ON ne.candidate_id = n.id "
+        "JOIN candidate_entities ce ON ce.entity_id = ne.entity_id "
+        "WHERE ce.candidate_id = ? AND n.id != ? AND n.info_type = 'news' "
+        "AND ne.link_type = 'entity' "
+        "AND NOT (n.status = 'rejected' AND n.screen_reason LIKE 'duplicate_of:%') "
+        "AND n.published IS NOT NULL AND n.published <= ? AND n.published >= ? "
+        "ORDER BY n.published DESC, n.id LIMIT 8",
+        (cid, cid, as_of.isoformat(), start)).fetchall()
+    ids = []
+    for r in rows:
+        fields = _loads(r["fields_json"], [])
+        ids.append(fields[0] if isinstance(fields, list) and fields
+                   else r["source"])
+    start = (as_of - timedelta(days=400)).isoformat()
+    rows = store.conn.execute(
+        "SELECT DISTINCT n.title, n.published, n.url, n.abstract, n.source"
+        " FROM candidates n "
+        "JOIN candidate_entities ne ON ne.candidate_id = n.id "
+        "JOIN candidate_entities ce ON ce.entity_id = ne.entity_id "
+        "WHERE ce.candidate_id = ? AND n.id != ? AND n.info_type = 'disclosure' "
+        "AND ne.strength = 'strong' AND ne.link_type = 'entity' "
+        "AND n.abstract LIKE '%財務数値(%' "
+        "AND n.published IS NOT NULL AND n.published <= ? AND n.published >= ? "
+        "ORDER BY n.published DESC, n.id LIMIT 6",
+        (cid, cid, as_of.isoformat(), start)).fetchall()
+    fins = [{"title": r["title"], "source": r["source"]} for r in rows]
+    corrected = {_filing_period_key(f["title"]) for f in fins
+                 if "訂正" in (f["title"] or "") and _filing_period_key(f["title"])}
+    if corrected:
+        fins = [f for f in fins if "訂正" in (f["title"] or "")
+                or _filing_period_key(f["title"]) not in corrected]
+    ids += [f["source"] for f in fins[:2]]
+    out = []
+    for x in ids:
+        if x and x not in out:
+            out.append(x)
+    return out
+
+
 def build_audit_input(store, ev_row, cfg=None):
     """評価1件分の監査入力 JSON (設計書3節) を、保存済みレコードから組む。
-    材料の原文は載せない (保存済みの抽出・項目情報だけを使う)。
+    材料の原文は載せない (保存済みの抽出・項目情報だけを使う)。例外として
+    材料プールの出典識別子 (pool_sources) だけは監査時点で DB から
+    再導出して載せる (P2 が出典の多様性を数えるため。識別子のみで
+    原文は含まない)。
     cfg があれば企業名・セクターの解決と critical_missing の導出に使う。
     critical_missing の導出はサイト表示 (site._ev_for_site) と同じ規則:
     必須項目のうち score が None のもの。ただし事業軸が段階未達
@@ -57,6 +122,18 @@ def build_audit_input(store, ev_row, cfg=None):
         extra = {}
     extraction = _loads(ev.get("extraction_json"), None)
     cand = store.get_candidate(ev.get("candidate_id")) or {}
+
+    # P2 用: 材料プールの出典識別子。評価時 (pipeline) と同じく、ニュース
+    # 候補そのものにはプールを付けない。再導出に失敗しても監査入力の
+    # 組み立て自体は止めない (A13 の再導出と同じ扱い)。
+    pool_sources = []
+    if cand.get("info_type") != "news":
+        as_of_d = parse_date(ev.get("as_of"))
+        if as_of_d is not None:
+            try:
+                pool_sources = _pool_source_ids(store, cand, as_of_d)
+            except Exception:
+                pool_sources = []
 
     ent_cfg = {}
     if cfg and cfg.get("entities"):
@@ -114,6 +191,7 @@ def build_audit_input(store, ev_row, cfg=None):
         "items": items,
         "trl_level": trl if isinstance(trl, dict) else None,
         "extraction": extraction,
+        "pool_sources": pool_sources,
         "published": cand.get("published"),
         "as_of": ev.get("as_of"),
         "expected_total": expected_total,

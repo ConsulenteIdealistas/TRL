@@ -41,6 +41,11 @@ def _is_plan(sentence, chk):
     return bool(_find(chk.get("plan_markers"), sentence))
 
 
+def _is_design(sentence, chk):
+    """試験デザイン・目的を述べる文か (v4.1)。結果の報告文とは区別する。"""
+    return bool(_find(chk.get("design_markers"), sentence))
+
+
 def _check_p1(inp, chk, ext_text, out):
     """P1 TRL 9 の条件を満たしている可能性 (A1/A2 の鏡)。"""
     trl = inp.get("trl_level") or {}
@@ -61,23 +66,39 @@ def _check_p1(inp, chk, ext_text, out):
         # 付けない)。
         return
     scope = sector
-    # 計画・予定の文に当たった語彙は飛ばし、実施済みの文に当たったものだけ使う
+    # 計画・予定の文に当たった語彙は飛ばし、実施済みの文に当たったものだけ使う。
+    # 試験デザイン・目的の文 (design_markers) に当たったものは候補として保持し、
+    # 非デザインのヒットが他にあればそちらを優先する。デザインのヒットしか
+    # 無い場合は verdict を gray に上限する (v4.1: 試験目的文へのヒットを
+    # 要確認にしないための校正)。
     hit = sent = None
+    design_hit = design_sent = None
     for p in pats:
         for m in re.finditer(_pattern_regex(p), side):
             s = _sentence(side, m.span())
-            if not _is_plan(s, chk):
-                hit, sent = (p, m.group(0), m.span()), s
-                break
+            if _is_plan(s, chk):
+                continue
+            if _is_design(s, chk):
+                if design_hit is None:
+                    design_hit, design_sent = (p, m.group(0), m.span()), s
+                continue
+            hit, sent = (p, m.group(0), m.span()), s
+            break
         if hit:
             break
-    if not hit:
-        return
+    capped = False
+    if hit is None:
+        if design_hit is None:
+            return
+        hit, sent, capped = design_hit, design_sent, True
     p, matched, span = hit
     same = _find(chk.get("count_patterns"), sent)
     elsewhere = None if same else _find(chk.get("count_patterns"), side)
-    if same:
+    if same and not capped:
         verdict, cnt = "flag", same[1]
+        basis = f"同じ文に回数・期間「{cnt}」の明記もある"
+    elif same:
+        verdict, cnt = "gray", same[1]
         basis = f"同じ文に回数・期間「{cnt}」の明記もある"
     elif elsewhere:
         verdict, cnt = "gray", elsewhere[1]
@@ -85,6 +106,8 @@ def _check_p1(inp, chk, ext_text, out):
     else:
         verdict = "gray"
         basis = "回数・期間の明記は見当たらないため判定保留"
+    if capped:
+        basis += "。ただし当たった文は試験デザイン・目的の記述のため判定保留 (グレー) とする"
     out.append({
         "check": "P1", "item": "trl_level", "verdict": verdict,
         "rule": f"confirm_by_sector:{scope}",
@@ -102,7 +125,12 @@ def _pattern_regex(p):
 
 
 def _check_p2(inp, chk, ext_text, out):
-    """P2 保留のままの豊富な事実 (A8 の鏡)。観測 (gray) のみ。"""
+    """P2 保留のままの豊富な事実 (A8 の鏡)。観測 (gray) のみ。
+
+    出典の種類数は、抽出 facts の source と材料プール (build_audit_input が
+    監査時点で再導出した関連ニュース・財務根拠) の出典識別子の和集合で
+    数える (v4.1)。facts の source だけでは、抽出が候補 (記事) 単位で
+    常に単一出典になるため min_sources を構造的に満たせなかった。"""
     if inp.get("status") != "hold" or not inp.get("companies"):
         return  # 企業リンクが無い保留は『企業未特定』で、設計どおり
     ext = inp.get("extraction")
@@ -110,13 +138,24 @@ def _check_p2(inp, chk, ext_text, out):
     if not isinstance(facts, list):
         return
     stmts = [f for f in facts if isinstance(f, dict) and f.get("statement")]
-    sources = {f.get("source") for f in stmts if f.get("source")}
-    if len(stmts) >= chk.get("min_facts", 5) and len(sources) >= chk.get("min_sources", 2):
+    fact_sources = {f.get("source") for f in stmts if f.get("source")}
+    pool_sources = [s for s in (inp.get("pool_sources") or []) if s]
+    sources = fact_sources | set(pool_sources)
+    if len(stmts) >= chk.get("min_facts", 5) \
+            and len(sources) >= chk.get("min_sources", 2):
+        pool_part = ""
+        if pool_sources:
+            uniq_pool = list(dict.fromkeys(pool_sources))
+            pool_part = (f" + 材料プール {len(set(pool_sources))} 種類 "
+                         f"({'、'.join(uniq_pool[:5])}"
+                         f"{' ほか' if len(uniq_pool) > 5 else ''})")
         out.append({
             "check": "P2", "item": "extraction", "verdict": "gray",
-            "rule": f"hold&facts>={chk.get('min_facts', 5)}",
-            "detail": f"状態は保留 (hold) だが、抽出された事実が {len(stmts)} 件・"
-                      f"出典 {len(sources)} 件ある。未採点の必須項目: "
+            "rule": f"hold&facts>={chk.get('min_facts', 5)}"
+                    f"&sources>={chk.get('min_sources', 2)}",
+            "detail": f"状態は保留 (hold) だが、抽出された事実が {len(stmts)} 件あり、"
+                      f"出典は {len(sources)} 種類 (抽出 {len(fact_sources)} 種類"
+                      f"{pool_part}) ある。未採点の必須項目: "
                       f"{', '.join(inp.get('critical_missing') or []) or 'なし'}。"
                       f"拾い漏れか保留の長期化かを確認する。"})
 

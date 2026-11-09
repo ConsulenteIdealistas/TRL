@@ -3977,14 +3977,15 @@ class AuditRulesTests(unittest.TestCase):
 
     def test_load_rules(self):
         r = T.load_rules()
-        self.assertEqual(r["version"], "v3")
+        self.assertEqual(r["version"], "v4")
         self.assertEqual(len(r["sha"]), 12)
         self.assertEqual(r["sha"], T.load_rules()["sha"])  # 同じファイルでは安定
-        # A5 は規則化しない (対象外)。それ以外が載っている
+        # A5 は規則化しない (対象外)。それ以外とポジティブ監査 P1〜P6 が載っている
         self.assertEqual(set(r["rules"]["checks"]),
                          {"A1", "A2", "A3", "A4", "A6", "A7", "A8", "A9",
                           "A10", "A11", "A12", "A13", "A14", "A15",
-                          "E1", "E2"})
+                          "E1", "E2",
+                          "P1", "P2", "P3", "P4", "P5", "P6"})
 
     def test_a1_flag(self):
         _, eid = self._mk_eval("A1フラグ", items={
@@ -4199,6 +4200,120 @@ class AuditRulesTests(unittest.TestCase):
         inp["market_reaction"] = None
         self.assertEqual(self._only(T.audit_evaluation_rules(inp, self.rules), "E2"), [])
 
+    def test_p1_flag_gray_plan_and_unknown_sector(self):
+        trl8 = {"level": 8, "reason": "実証段階", "evidence": [], "missing_info": []}
+        hit = [{"ref": "https://example.org/x", "kind": "fact",
+                "summary": "複数ミッション成功を重ね、通算3回の打ち上げに成功している"}]
+        # 確認語彙と同じ文に回数・期間の明記 → 要確認
+        inp = self._inp(trl_level=trl8)
+        inp["items"]["technology_readiness"] = self._item(evidence=hit)
+        p1 = self._only(T.audit_evaluation_rules(inp, self.rules), "P1")
+        self.assertEqual(len(p1), 1)
+        self.assertEqual(p1[0]["verdict"], "flag")
+        self.assertEqual(p1[0]["rule"], "confirm_by_sector:space")
+        # 回数・期間が別の文にある → グレー
+        inp = self._inp(trl_level=trl8)
+        inp["items"]["technology_readiness"] = self._item(evidence=[
+            {"ref": "https://example.org/x", "kind": "fact",
+             "summary": "ミッション成功を収めた。"},
+            {"ref": "https://example.org/x", "kind": "fact",
+             "summary": "打ち上げは通算3回を記録した。"}])
+        p1 = self._only(T.audit_evaluation_rules(inp, self.rules), "P1")
+        self.assertEqual(len(p1), 1)
+        self.assertEqual(p1[0]["verdict"], "gray")
+        # 計画・予定の文に当たった語彙は数えない (第10条1)
+        inp = self._inp(trl_level=trl8)
+        inp["items"]["technology_readiness"] = self._item(evidence=[
+            {"ref": "https://example.org/x", "kind": "fact",
+             "summary": "ミッション成功を目指す計画で、3回の打ち上げを予定している"}])
+        self.assertEqual(self._only(T.audit_evaluation_rules(inp, self.rules), "P1"), [])
+        # セクター別の語彙が引けない場合は束ね判定をせず発火しない
+        inp = self._inp(trl_level=trl8, sector="mining")
+        inp["items"]["technology_readiness"] = self._item(evidence=hit)
+        self.assertEqual(self._only(T.audit_evaluation_rules(inp, self.rules), "P1"), [])
+
+    def test_p2_gray_and_threshold(self):
+        facts = [{"statement": f"事実{i}", "source": f"s{i % 2}"} for i in range(5)]
+        inp = self._inp(status="hold",
+                        extraction={"facts": facts, "counter_points": []})
+        p2 = self._only(T.audit_evaluation_rules(inp, self.rules), "P2")
+        self.assertEqual(len(p2), 1)
+        self.assertEqual(p2[0]["verdict"], "gray")
+        # 事実が閾値 (5件) 未満なら拾わない
+        inp = self._inp(status="hold",
+                        extraction={"facts": facts[:4], "counter_points": []})
+        self.assertEqual(self._only(T.audit_evaluation_rules(inp, self.rules), "P2"), [])
+        # 企業リンクが無い保留は『企業未特定』で設計どおりなので対象外
+        inp = self._inp(status="hold", companies=[],
+                        extraction={"facts": facts, "counter_points": []})
+        self.assertEqual(self._only(T.audit_evaluation_rules(inp, self.rules), "P2"), [])
+
+    def test_p3_flag_gray_and_rescue(self):
+        def fact_ev(text):
+            return {"ref": "https://example.org/x", "summary": text, "kind": "fact"}
+        low = {"score": 30, "reason": "売上が伸び悩んでいる",
+               "evidence": [fact_ev("売上は120億円だった"), fact_ev("受注は45件"),
+                            fact_ev("出荷は300台")],
+               "counter_evidence": [], "missing_info": []}
+        inp = self._inp()
+        inp["items"]["monetization"] = low
+        p3 = self._only(T.audit_evaluation_rules(inp, self.rules), "P3")
+        self.assertEqual(len(p3), 1)
+        self.assertEqual(p3[0]["verdict"], "flag")
+        self.assertEqual(p3[0]["item"], "monetization")
+        # 数値を含む fact 根拠が2件ならグレー
+        inp = self._inp()
+        inp["items"]["monetization"] = dict(low, evidence=low["evidence"][:2])
+        p3 = self._only(T.audit_evaluation_rules(inp, self.rules), "P3")
+        self.assertEqual(len(p3), 1)
+        self.assertEqual(p3[0]["verdict"], "gray")
+        # 不足情報が記録されていれば低得点には説明があるので拾わない
+        inp = self._inp()
+        inp["items"]["monetization"] = dict(low, missing_info=["四半期の内訳"])
+        self.assertEqual(self._only(T.audit_evaluation_rules(inp, self.rules), "P3"), [])
+
+    def test_p4_flag(self):
+        inp = self._inp(critical_missing=["monetization"])
+        inp["items"]["monetization"] = {
+            "score": None, "reason": "",
+            "evidence": [{"ref": "https://example.org/x", "summary": "根拠あり",
+                          "kind": "fact"}],
+            "counter_evidence": [], "missing_info": []}
+        p4 = self._only(T.audit_evaluation_rules(inp, self.rules), "P4")
+        self.assertEqual(len(p4), 1)
+        self.assertEqual(p4[0]["verdict"], "flag")
+        # 不足情報が記録されていれば採点漏れではない
+        inp["items"]["monetization"]["missing_info"] = ["決算の内訳"]
+        self.assertEqual(self._only(T.audit_evaluation_rules(inp, self.rules), "P4"), [])
+
+    def test_p5_gray(self):
+        null_item = {"score": None, "reason": "", "evidence": [],
+                     "counter_evidence": [], "missing_info": []}
+        inp = self._inp(critical_missing=["monetization"])
+        inp["items"]["monetization"] = null_item
+        p5 = self._only(T.audit_evaluation_rules(inp, self.rules), "P5")
+        self.assertEqual(len(p5), 1)
+        self.assertEqual(p5[0]["verdict"], "gray")
+        # strong が一意に定まらなければ対象外 (第5条2)
+        inp = self._inp(critical_missing=["monetization"], companies=[
+            {"name": "X", "sector": "space", "strength": "strong"},
+            {"name": "Y", "sector": "space", "strength": "strong"}])
+        inp["items"]["monetization"] = null_item
+        self.assertEqual(self._only(T.audit_evaluation_rules(inp, self.rules), "P5"), [])
+
+    def test_p6_flag_and_no_reaction(self):
+        inp = self._inp(kind="event")
+        inp["items"]["not_priced_in"] = self._item(score=30)
+        inp["market_reaction"] = {"available": True, "z": 0.2, "reaction_pct": 0.4}
+        p6 = self._only(T.audit_evaluation_rules(inp, self.rules), "P6")
+        self.assertEqual(len(p6), 1)
+        self.assertEqual(p6[0]["verdict"], "flag")
+        # 反応データが無ければ判定材料が無いので拾わない
+        inp["market_reaction"] = None
+        self.assertEqual(self._only(T.audit_evaluation_rules(inp, self.rules), "P6"), [])
+        inp["market_reaction"] = {"available": False, "z": None, "reaction_pct": None}
+        self.assertEqual(self._only(T.audit_evaluation_rules(inp, self.rules), "P6"), [])
+
     def test_build_input_new_fields(self):
         _, eid = self._mk_eval("新規フィールド")
         row = dict(self.store.conn.execute(
@@ -4220,7 +4335,7 @@ class AuditRulesTests(unittest.TestCase):
         self.assertGreaterEqual(res1["flags"], 1)
         rows = self.store.audit_results(res1["batch"])
         self.assertEqual(len(rows), 2)
-        self.assertEqual(rows[0]["auditor_model"], "rules/v3")
+        self.assertEqual(rows[0]["auditor_model"], "rules/v4")
         self.assertEqual(rows[0]["prompt_sha"], T.load_rules()["sha"])
         # 同じ規則 (同じ sha) では再監査しない
         res2 = T.run_audit_rules(self.store, CFG, limit=10, log=lambda *_: None)

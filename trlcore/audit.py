@@ -738,3 +738,19 @@ def build_audit_report(store, batch):
         if r.get("summary"):
             lines.append(f"- {r.get('candidate_title') or r['candidate_id']}: {r['summary']}")
     return "\n".join(lines) + "\n"
+
+
+# ---------------------------------------------------------------------------
+# ポジティブ監査 (過小評価の疑い、P1〜P6) の登録。audit_positive は本
+# モジュールのヘルパー (TECH_ITEMS / _find 等) を import するため、循環を
+# 避けてモジュール末尾で取り込む。AUDIT_CHECKS / RULES_CHECKS /
+# EVENT_CHECKS は build_audit_report / audit_evaluation_rules が実行時に
+# モジュール global として参照し、trl.py の from import も本モジュールの
+# 読み込み完了後に束縛されるため、末尾での再束縛で問題ない。
+# ---------------------------------------------------------------------------
+from .audit_positive import (POSITIVE_CHECK_FUNCS, POSITIVE_RULES_CHECKS,
+                             POSITIVE_EVENT_CHECKS, POSITIVE_CHECKS)
+_CHECK_FUNCS.update(POSITIVE_CHECK_FUNCS)
+RULES_CHECKS = RULES_CHECKS + POSITIVE_RULES_CHECKS
+EVENT_CHECKS = EVENT_CHECKS + POSITIVE_EVENT_CHECKS
+AUDIT_CHECKS = AUDIT_CHECKS + POSITIVE_CHECKS

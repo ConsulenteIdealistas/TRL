@@ -51,9 +51,10 @@ def normalize(raw, retrieved_at):
     if raw.get("arxiv_id"):
         keys.append("arxiv:" + str(raw["arxiv_id"]).strip().lower())
     url = norm_url(raw.get("url"))
-    if raw.get("source") in ("yahoo", "edgar", "roic", "simfin") and raw.get("source_id"):
+    if raw.get("source") in ("yahoo", "edgar", "roic", "simfin", "alphavantage") and raw.get("source_id"):
         # Yahoo の URL は銘柄ページ、EDGAR の URL は企業ページ、ROIC の URL は
-        # 銘柄ページ、SimFin の URL は価格ページで、いずれも期間で不変。
+        # 銘柄ページ、SimFin の URL は価格ページ、Alpha Vantage の URL は
+        # トップページで、いずれも期間で不変。
         # URL をキーにすると期間レコードが
         # 初回分へ統合され、新しい財務数値が永久に取り込まれないため、レコード
         # 単位の source_id(ticker-period)を安定IDとして使う。

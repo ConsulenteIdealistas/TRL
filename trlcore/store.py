@@ -1190,6 +1190,19 @@ class Store:
             out.setdefault((source, q), (t, f))
         return out
 
+    def source_attempts_on(self, source, day):
+        """指定ソースについて、day (YYYY-MM-DD、runs.started_at の日付部分
+        = UTC) に記録された試行行数 (run_sources の行数) を返す。
+        Alpha Vantage の日次枠 (25回/日) の当日消費済みを数えるために使う:
+        1行 = 1社分の試行で、呼び出し側が社あたりのリクエスト数 (3) を
+        掛ける。失敗した試行も枠は消費しているため、ok の成否は問わない。"""
+        row = self.conn.execute(
+            "SELECT COUNT(*) FROM run_sources rs "
+            "JOIN runs r ON r.run_id = rs.run_id "
+            "WHERE rs.source = ? AND substr(r.started_at, 1, 10) = ?",
+            (source, str(day))).fetchone()
+        return row[0] if row else 0
+
     def latest_financial_periods(self, source):
         """企業ごとの最新の財務レコードの期末日 (published) を返す。"""
         rows = self.conn.execute(

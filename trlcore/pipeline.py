@@ -18,6 +18,12 @@ from .sources.yahoo import yahoo_fetch
 from .sources.openalex import openalex_fetch
 from .sources.roic import fetch_roic, roic_enabled, roic_symbol
 from .sources.simfin import fetch_simfin_bulk, simfin_enabled, simfin_market, simfin_ticker
+from .sources.alphavantage import (DAILY_REQUEST_LIMIT as AV_DAILY_REQUEST_LIMIT,
+                                   MAX_COMPANIES_PER_DAY as AV_MAX_COMPANIES_PER_DAY,
+                                   REQUESTS_PER_COMPANY as AV_REQUESTS_PER_COMPANY,
+                                   RateLimitError as AvRateLimitError,
+                                   alphavantage_enabled, alphavantage_symbol,
+                                   fetch_alphavantage)
 from .translate import crossed_thresholds, translate_display_set, translate_watch_queue, usage_totals
 from .config import ROOT
 from .review import INBOX_NAME, import_inbox_file
@@ -98,6 +104,13 @@ ROIC_LOOKBACK_DAYS = 400
 SIMFIN_SKIP_DAYS = 30
 # 取得窓は ROIC と同じく財務プールの窓 (related_financials の400日)
 SIMFIN_LOOKBACK_DAYS = 400
+# Alpha Vantage 低速キュー補完収集 (SimFin 圏外の四半期。詳細は
+# _collect_alphavantage と sources/alphavantage.py)。休止と取得窓は
+# ROIC / SimFin と同じ (四半期単位でしか変わらない・プールの窓に合わせる)。
+# 枠 (25回/日・1社3リクエスト) の上限値は sources/alphavantage 側で
+# 枠から導出して持ち、ここでは持たない (二重管理でずらさない)
+ALPHAVANTAGE_SKIP_DAYS = 30
+ALPHAVANTAGE_LOOKBACK_DAYS = 400
 # 1回の実行で対象にする社数に上限は置かない: コストは社数ではなく市場数
 # (最大3市場×3ファイル) で決まり、対象社を増やしても追加ダウンロードは
 # 発生しないため、上限で切ると「バルクを落としたのに一部しか使わない」
@@ -188,7 +201,7 @@ def _apply_shallow_windows(cfg):
 
 
 def collect(store, cfg, run_id, as_of, sources, fetchers, counts, log, budget_cap=None,
-            roic_fetcher=None, simfin_fetcher=None):
+            roic_fetcher=None, simfin_fetcher=None, alphavantage_fetcher=None):
     d = cfg["sources"]["defaults"]
     now = datetime.now(timezone.utc).isoformat(timespec="seconds")
     jobs = [(sname, q) for q in cfg["sources"]["queries"] for sname in sources if q.get(sname)]
@@ -361,6 +374,10 @@ def collect(store, cfg, run_id, as_of, sources, fetchers, counts, log, budget_ca
     if simfin_enabled():
         _collect_simfin(store, cfg, run_id, as_of, counts, log, budget, collect_t0,
                         simfin_fetcher or fetch_simfin_bulk)
+    # 財務補完 (Alpha Vantage 低速キュー): 最後段。キーがある場合だけ回す
+    if alphavantage_enabled():
+        _collect_alphavantage(store, cfg, run_id, as_of, counts, log, budget, collect_t0,
+                              alphavantage_fetcher or fetch_alphavantage)
 
 
 def _collect_roic(store, cfg, run_id, as_of, counts, log, budget, collect_t0, fetcher):
@@ -545,6 +562,122 @@ def _collect_simfin(store, cfg, run_id, as_of, counts, log, budget, collect_t0, 
     if deferred:
         counts["simfin_deferred"] = deferred
         log(f"[collect] simfin: 予算のため {deferred} 社を次回へ回します")
+
+
+def _collect_alphavantage(store, cfg, run_id, as_of, counts, log, budget, collect_t0, fetcher):
+    """Alpha Vantage による財務補完収集 (低速キュー。有効条件は
+    環境変数 ALPHA_VANTAGE_API_KEY)。
+
+    対象選定・優先順位・休止・記録は ROIC / SimFin と同じ流儀:
+    (a) 財務レコードが1件も無いコア企業、(b) Yahoo のみで裏取りが無い
+    コア企業 の順。違いは2点だけ:
+    - 対象は SimFin のカバー圏外 (US/DE/CA 以外) に限る。圏内はバルクで
+      一括取得できる SimFin が担い、貴重な 25回/日をそちらに使わない
+    - 1実行で処理する社数は、その日の残枠 (25回/日 − 当日消費済み) で
+      完走できる社数まで。当日消費済みは run_sources の当日の試行行数
+      × 3リクエスト (1社分) で数える (store.source_attempts_on)。
+      残りは次回へ回す (deferred として記録する)
+    枠超過の応答 (RateLimitError) が返ったら、その社を失敗として記録
+    して当日のキューを止める (残りは次回)。通常の失敗はその社だけを
+    失敗として記録し、次へ進む (ROIC と同じ)。いずれも休止には入ら
+    ないため、枠が回復する翌日以降の実行で再試行される。新テーブルは
+    作らず、財務は既存の財務プールに乗る。
+    """
+    coverage = store.financial_sources_by_entity()
+    successes = store.last_source_successes_with_fetch("alphavantage")
+    targets, n_rest, n_unmapped = [], 0, 0
+    for e in cfg.get("entities", {}).get("entities", []):
+        if e.get("tier") != "core" or not e.get("ticker"):
+            continue
+        have = coverage.get(e["id"]) or set()
+        if have and have != {"yahoo"}:
+            continue  # 公式ソース等の裏取りがある企業は補完の対象外 (ROIC と同じ)
+        symbol = alphavantage_symbol(e)
+        if symbol is None:
+            n_unmapped += 1
+            continue
+        # 休止は「成功して1件以上取れた」ときだけ (ROIC の規則をそのまま
+        # 適用)。接尾辞の誤り等で0件の空振りを成功として休むと、その社は
+        # 30日閉じ込められる
+        att = successes.get(("alphavantage", f"{e['id']}-alphavantage"))
+        if att is not None and (att[1] or 0) > 0:
+            last = parse_date((att[0] or "")[:10])
+            if last is not None and (as_of - last).days < ALPHAVANTAGE_SKIP_DAYS:
+                n_rest += 1
+                continue
+        targets.append((1 if have else 0, e, symbol))
+    targets.sort(key=lambda t: t[0])  # 安定ソート: 財務ゼロ (0) を先に (ROIC と同じ)
+    counts["alphavantage_targets"] = len(targets)
+    counts["alphavantage_skipped_rest"] = n_rest
+    counts["alphavantage_skipped_unmapped"] = n_unmapped
+    if n_unmapped:
+        log(f"[collect] alphavantage: SimFin 圏内または接尾辞変換できないため "
+            f"{n_unmapped} 社を対象外にしました")
+    # その日の残枠。当日すでに他実行 (手動実行の重なり等) で消費した分を
+    # 差し引くため、この実行の上限は日次上限 (8社) 以下に下がりうる
+    used_today = store.source_attempts_on("alphavantage", as_of.isoformat()) \
+        * AV_REQUESTS_PER_COMPANY
+    remaining = AV_DAILY_REQUEST_LIMIT - used_today
+    allowed = min(AV_MAX_COMPANIES_PER_DAY, max(0, remaining) // AV_REQUESTS_PER_COMPANY)
+    counts["alphavantage_used_today"] = used_today
+    counts["alphavantage_allowed"] = allowed
+    now = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    chash = cfg.get("config_hash")
+    done = 0
+    for _prio, e, symbol in targets:
+        if done >= allowed or (budget and time.monotonic() - collect_t0 > budget):
+            counts["alphavantage_deferred"] = len(targets) - done
+            log(f"[collect] alphavantage: 枠/予算のため {len(targets) - done} 社を次回へ回します")
+            break
+        done += 1
+        qname = f"{e['id']}-alphavantage"
+        t0 = time.monotonic()
+        err, raws, rate_limited = None, [], False
+        try:
+            raws = fetcher(symbol, 5, ALPHAVANTAGE_LOOKBACK_DAYS, as_of) or []
+        except AvRateLimitError as ex:
+            err = redact(f"{type(ex).__name__}: {ex}")[:300]
+            rate_limited = True
+            log(f"::warning::source alphavantage / {qname} rate limited: {err}")
+        except Exception as ex:
+            err = redact(f"{type(ex).__name__}: {ex}")[:300]
+            log(f"::warning::source alphavantage / {qname} failed: {err}")
+        fetched = len(raws) if err is None else 0
+        new = dups = invalid = 0
+        if err is None:
+            for raw in raws:
+                try:
+                    rec, _problems = normalize(raw, now)
+                    if rec is None:
+                        invalid += 1
+                        continue
+                    cid, is_new = store.upsert_candidate(rec, run_id)
+                    store.set_entities(cid, [{"entity_id": e["id"], "strength": "strong",
+                                              "matched_by": "alphavantage",
+                                              "matched_alias": symbol}])
+                    store.set_links_hash(cid, chash)
+                    new += is_new
+                    dups += (not is_new)
+                except Exception as ex:
+                    invalid += 1
+                    log(f"::warning::source alphavantage / {qname}: record skipped: "
+                        f"{redact(f'{type(ex).__name__}: {ex}')[:200]}")
+        elapsed = round(time.monotonic() - t0, 3)
+        store.add_run_source(run_id, "alphavantage", qname, fetched, new, dups, invalid,
+                             err is None, err, elapsed)
+        for k, v in (("fetched", fetched), ("new", new), ("duplicates", dups), ("invalid", invalid)):
+            counts[k] += v
+        counts["sources_ok" if err is None else "sources_failed"] += 1
+        log(f"[collect] alphavantage/{qname}: fetched={fetched} new={new} dup={dups} invalid={invalid}"
+            + (f" ERROR={err}" if err else ""))
+        if rate_limited:
+            # 当日の枠は回復しない。残りの対象は失敗として記録せず、
+            # 次回 (翌日以降) のキューにそのまま残す
+            rest = len(targets) - done
+            if rest:
+                counts["alphavantage_deferred"] = rest
+                log(f"[collect] alphavantage: 枠超過のため残り {rest} 社を次回へ回します")
+            break
 
 
 # 実証・実装の段階を示す語。理論のみの資料には少なく、TRLを決めやすい候補の目印になる

@@ -1086,7 +1086,7 @@ class ZeroRiskBatchTests(unittest.TestCase):
         # 保留の内訳は見出しと同じ母数 (display_status が hold のもの) だけを
         # 数える (評価 hold でも review 表示のものまで数えると内訳が合わない)
         self.assertIn('p.display_status === "hold" && p.long', app)
-        self.assertIn("企業未特定", index)
+        self.assertIn("企業を特定できず", index)
         self.assertIn("根拠不足", index)
         # 採点基準へのリンクは一覧では検索と統計の間 (.pagelinks) に、
         # 詳細ではフッターに置く (ヘッダーはタイトル周りを空ける)

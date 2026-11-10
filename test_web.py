@@ -174,3 +174,25 @@ class ExportTests(StoreFixture):
         self.assertIn("background:#db2777", bodies[0])
         self.assertIn("color:#fff", bodies[0])
         self.assertIn("border-color:transparent", bodies[0])
+    def test_hold_stat_breakdown_label_and_title(self):
+        # 統計枠「保留」の内訳ラベルは実態に寄せる: 「企業未特定」は企業リンクが
+        # 無いという意味に読めるが、実際は資料の中で対象企業を一意に定められ
+        # なかった hold (リンクの有無とは別) を数えている。ラベルを
+        # 「企業を特定できず」に改め、title に両内訳の定義を入れる。
+        # 数値の入れ先 (#c3u / #c3e) と集計は不変。
+        import re
+        html = (T.ROOT / "web" / "index.html").read_text(encoding="utf-8")
+        self.assertNotIn("企業未特定", html)
+        self.assertIn(
+            '企業を特定できず <span id="c3u">0</span>件 / '
+            '根拠不足 <span id="c3e">0</span>件', html)
+        m = re.search(r'<div class="stat y" data-st="hold" title="([^"]*)"',
+                      html)
+        self.assertIsNotNone(m)
+        title = m.group(1)
+        self.assertIn("企業を特定できず＝資料の中で対象企業を一意に定められなかった",
+                      title)
+        self.assertIn("企業リンクの有無とは別の分類", title)
+        self.assertIn(
+            "根拠不足＝対象企業は特定できていますが、必須項目の根拠が"
+            "資料にありませんでした", title)

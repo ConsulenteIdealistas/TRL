@@ -88,6 +88,13 @@ EXCHANGE_BY_MARKET = {
 }
 US_EXCHANGES = ("NASDAQ", "NYSE", "AMEX")
 
+# 辞書ティッカーと ROIC 側の表記が食い違う銘柄の上書き (識別子単位)。
+# QinetiQ は LSE の TIDM 自体が "QQ." (末尾ドット付き) で、ROIC 自社
+# サイトの表記も LSE:QQ. 。辞書の "QQ" のままでは一致せず、live
+# (2026-11-10) で 0 件だった。辞書側は他ソース (Yahoo 等) が "QQ" を
+# 使うため触らず、ROIC の照会だけをここで寄せる。
+SYMBOL_OVERRIDES = {"LSE:QQ": "LSE:QQ."}
+
 
 def roic_symbol(entity):
     """entities の1社 → ROIC 識別子。変換できない場合は None
@@ -104,7 +111,8 @@ def roic_symbol(entity):
     prefix = EXCHANGE_BY_MARKET.get(entity.get("market"))
     if not prefix:
         return None
-    return f"{prefix}:{ticker}"
+    symbol = f"{prefix}:{ticker}"
+    return SYMBOL_OVERRIDES.get(symbol, symbol)
 
 
 def _resolve_us(ticker, http):

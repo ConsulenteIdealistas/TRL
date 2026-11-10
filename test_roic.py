@@ -72,6 +72,8 @@ class RoicFetcherTests(unittest.TestCase):
         self.assertEqual(roic.roic_symbol({"market": "DE", "ticker": "SAP"}), "XETR:SAP")
         self.assertEqual(roic.roic_symbol({"market": "DK", "ticker": "NOVO-B"}), "CPH:NOVO-B")
         self.assertEqual(roic.roic_symbol({"market": "GB", "ticker": "OXB"}), "LSE:OXB")
+        # QinetiQ は ROIC 側の表記が末尾ドット付き "QQ." (辞書は "QQ" のまま)
+        self.assertEqual(roic.roic_symbol({"market": "GB", "ticker": "QQ"}), "LSE:QQ.")
         # US は取引所が決まらないため裸ティッカー (取得時に検索で解決)
         self.assertEqual(roic.roic_symbol({"market": "US", "ticker": "aapl"}), "AAPL")
         # 変換できない市場・ティッカーなしは None
@@ -107,6 +109,18 @@ class RoicFetcherTests(unittest.TestCase):
         n2, _ = normalize(recs[1], "2026-04-15T00:00:00+00:00")
         self.assertEqual(n1["keys"][0], "srcid:roic:TYO:3174-2026-03-31")
         self.assertNotEqual(n1["keys"][0], n2["keys"][0])
+
+    def test_fetch_qinetiq_dotted_symbol(self):
+        # 回帰: "LSE:QQ" では ROIC 側に無く0件だった (2026-11-10 live)。
+        # 上書き後の "LSE:QQ." で照会し、識別子もドット付きで残ること
+        http = make_http()
+        symbol = roic.roic_symbol({"market": "GB", "ticker": "QQ"})
+        recs = roic.fetch_roic(symbol, 5, 400, date(2026, 4, 15), http=http)
+        self.assertEqual(len(recs), 2)
+        self.assertTrue(recs[0]["source_id"].startswith("LSE:QQ.-"))
+        stmt_urls = [u for u, _p, _h in http.calls if "/fundamental/" in u]
+        self.assertTrue(stmt_urls)
+        self.assertTrue(all("LSE:QQ." in u for u in stmt_urls))
 
     def test_fetch_drops_periods_outside_lookback(self):
         http = make_http()

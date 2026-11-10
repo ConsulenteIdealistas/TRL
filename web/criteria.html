@@ -37,6 +37,17 @@ table.ntbl small,.doc small{color:var(--muted)}
 <h3 class="doch3">長期評価の重み</h3><table class="ntbl"><thead><tr><th>項目</th><th>重み</th><th>必須</th></tr></thead><tbody><tr><td>技術成熟度<br><small>technology_readiness</small></td><td>30</td><td>必須</td></tr><tr><td>技術的優位性<br><small>technological_advantage</small></td><td>15</td><td></td></tr><tr><td>収益化能力<br><small>monetization</small></td><td>20</td><td>必須</td></tr><tr><td>市場成長性<br><small>market_growth</small></td><td>15</td><td></td></tr><tr><td>財務的持続可能性<br><small>financial_sustainability</small></td><td>10</td><td></td></tr><tr><td>競争優位性の持続性<br><small>moat_durability</small></td><td>10</td><td></td></tr></tbody></table>
 <h3 class="doch3">イベント評価の重み</h3><table class="ntbl"><thead><tr><th>項目</th><th>重み</th><th>必須</th></tr></thead><tbody><tr><td>触媒の質<br><small>catalyst_quality</small></td><td>25</td><td>必須</td></tr><tr><td>期待ギャップ<br><small>expectation_gap</small></td><td>25</td><td>必須</td></tr><tr><td>未織り込み度<br><small>not_priced_in</small></td><td>20</td><td>必須</td></tr><tr><td>タイミングの実現性<br><small>timing_feasibility</small></td><td>10</td><td></td></tr><tr><td>需給<br><small>supply_demand</small></td><td>10</td><td></td></tr><tr><td>下値耐性<br><small>downside_resilience</small></td><td>10</td><td></td></tr></tbody></table>
 <h3 class="doch3">総合点の帯域</h3><table class="ntbl"><thead><tr><th>総合点</th><th>帯域</th><th></th></tr></thead><tbody><tr><td>0–19</td><td>極めて弱い</td><td><small>extremely_weak</small></td></tr><tr><td>20–39</td><td>弱い</td><td><small>weak</small></td></tr><tr><td>40–59</td><td>中程度・不確実</td><td><small>moderate_uncertain</small></td></tr><tr><td>60–79</td><td>強い</td><td><small>strong</small></td></tr><tr><td>80–100</td><td>非常に強い</td><td><small>very_strong</small></td></tr></tbody></table>
+<h2 class="doch">現在地（フェーズ）の定義（表示専用、phases/v1）</h2>
+<p class="hint">現在地は、最新の長期評価の代表 TRL から決定的に導出する表示専用の分類です。採点・選定・企業の層（tier）の判定には使われません。3つの障壁（魔の川・死の谷・ダーウィンの海）の定義は NEDO「NEDO によるプロジェクトマネジメントの進化に向けて」により、TRL との対応の境界は NEDO の TRL 文言の切れ目（TRL 3「技術コンセプトの確認、要素技術の構想」と TRL 4「各開発要素の製作と性能確認」の間、TRL 6「実証システムの導入環境に近い環境での実証」と TRL 7「製品候補の製作」の間）に置きます。障壁の区間には「移行の手前側の最終レベル」を割り当てるため、TRL の9レベルはちょうど1つの区間に属します。</p>
+<table class="ntbl"><thead><tr><th>現在地</th><th>TRL</th><th>定義</th></tr></thead><tbody>
+<tr><td>研究期</td><td>1〜2</td><td>科学的な基本原理・現象の発見・確認と、その定式化・応用可能性の確認の段階。製作はまだ始まらない。</td></tr>
+<tr><td>魔の川</td><td>3</td><td>技術コンセプトの確認・要素技術の構想の段階。研究側でできる最終段で、次段から開発要素の製作が始まるため、魔の川の移行期にある。</td></tr>
+<tr><td>開発期</td><td>4〜5</td><td>各開発要素の製作と性能確認から、全てを統合した実証システム（試作品）の製作まで。</td></tr>
+<tr><td>死の谷</td><td>6</td><td>実証システムを導入環境に近い環境で実証する段階。開発側の最終段で、次段の製品候補に向けて、死の谷の移行期にある。</td></tr>
+<tr><td>事業化期</td><td>7〜8</td><td>製品候補の製作と導入環境での実証（TRL 7）、製品の製作と販売（パイロットライン、TRL 8）の段階。</td></tr>
+<tr><td>ダーウィンの海</td><td>9</td><td>商品化・大量生産の段階。市場に晒され、ダーウィンの海の最中にある。市場で生き残るかどうかは TRL からは判定しない。</td></tr>
+</tbody></table>
+<p class="hint">各障壁に対する状態は、前駆期（その障壁に差し掛かる前）／移行期（その障壁の移行の最中）／定着期（その障壁を越え、次の段階に定着した）で表します。ダーウィンの海に定着期は定義しません。市場での生存は技術の成熟では決まらず、TRL 9 から「市場で生き残った」とは言えないためです（評価規程の3原則のうち原則1・原則3と同じ考え方）。</p>
 <article class="doc">
 <p>本規程は、TRL 投資分析システム（以下「本システム」）の評価規則の正本である。
 パイプラインが実際に使う規則と、読者が読む規則を同一にする（ホワイト

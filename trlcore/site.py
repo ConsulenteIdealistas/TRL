@@ -7,6 +7,7 @@ from urllib.parse import quote_plus
 from .config import ROOT
 from .dates import parse_date
 from .http import redact
+from .phases import phase_for_trl
 from .pipeline import select_for_eval
 from .review import adjusted_view
 from .summarize import PAPER_SOURCES, extract_summary
@@ -53,6 +54,46 @@ def _split_missing(texts):
     return miss, wait
 
 
+def _gen_config(extra, ev):
+    """評価の世代 (規程版) の正本を返す。
+
+    評価保存時に固定された as_evaluated の config_version を優先する
+    (評価行の config_version は recalc で現行版に付け替わりうるため。
+    ISSUES-2 の G-1 / G-2)。as_evaluated が無い古い評価は評価行の
+    config_version にフォールバックし、どちらも無ければ None。
+    """
+    ae = extra.get("as_evaluated")
+    if isinstance(ae, dict) and ae.get("config_version"):
+        return str(ae["config_version"])
+    if "config_version" in ev.keys() and ev["config_version"]:
+        return str(ev["config_version"])
+    return None
+
+
+def _gen_for_site(ev, extra, cfg):
+    """評価の世代 (表示用)。prompts は prompt_versions_json から版文字列
+    だけを抜いたもの。current は export 時点の現行版と一致するかで、
+    版数比較の規則は表示側に持たせない (tiers の reasons と同じ流儀)。
+    世代が取れなければ評価ごと None (バッジを出さない)。"""
+    config = _gen_config(extra, ev)
+    if not config:
+        return None
+    prompts = {}
+    raw = {}
+    if "prompt_versions_json" in ev.keys():
+        try:
+            raw = json.loads(ev["prompt_versions_json"] or "{}")
+        except (TypeError, ValueError):
+            raw = {}
+    if isinstance(raw, dict):
+        for k, v in raw.items():
+            ver = v.get("version") if isinstance(v, dict) else v
+            if isinstance(ver, str) and ver:
+                prompts[str(k)] = ver
+    return {"config": config, "prompts": prompts,
+            "current": config == cfg["config_version"]}
+
+
 def _ev_for_site(ev, cfg):
     if not ev:
         return None
@@ -81,7 +122,7 @@ def _ev_for_site(ev, cfg):
         trl["missing_info"] = _m
         trl["awaiting_info"] = _w
     total_orig, band_orig = _as_evaluated(extra, ev)
-    return {
+    out = {
         "status": ev["status"], "total": ev["total"], "band": ev["band"], "as_of": ev["as_of"],
         # 評価当時の総合点・帯域 (重み改訂で再計算されても変わらない非破壊の記録)
         "total_orig": total_orig, "band_orig": band_orig,
@@ -102,7 +143,16 @@ def _ev_for_site(ev, cfg):
         # 評価の来歴: 実際に採点したプロバイダとモデルをサイトでも判別できるようにする
         "llm_provider": ev["llm_provider"] if "llm_provider" in ev.keys() else None,
         "llm_model": ev["llm_model"] if "llm_model" in ev.keys() else None,
+        # 評価の世代 (その評価に使われた規程・プロンプトの版)。正本の
+        # 取り方は _gen_for_site を参照。世代が取れない評価は None
+        "gen": _gen_for_site(ev, extra, cfg),
     }
+    # 現在地 (フェーズ): 最新 long 評価の代表 TRL からの決定的な導出で、
+    # 表示専用 (phases/v1)。event 評価と、TRL が無い評価には付かない
+    if ev["kind"] == "long":
+        lv = trl.get("level") if isinstance(trl, dict) else None
+        out["phase"] = phase_for_trl(lv)
+    return out
 
 
 # 保留の主因の切り分けに使う、LLM が理由文・不足文へ明記する「企業を特定
@@ -149,6 +199,9 @@ def _prev_for_site(ev):
     return {
         "evaluated_at": ev["evaluated_at"], "status": ev["status"],
         "total": ev["total"], "band": ev["band"],
+        # 前回評価の世代 (規程版)。表示中の評価と異なる場合に、前回比へ
+        # 「世代が異なる」注記を出すために使う (版の正本は _gen_config)
+        "gen_config": _gen_config(extra, ev),
         "trl_level": trl.get("level"),
         "items": {k: (v.get("score") if isinstance(v, dict)
                       and isinstance(v.get("score"), (int, float))

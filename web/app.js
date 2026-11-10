@@ -74,6 +74,39 @@ const dtText = e => {
   const rs = (e.derived_reasons || []).filter(Boolean);
   return rs.length ? `Conditional（${rs.join("／")}）` : l;
 };
+// フェーズ (phases/v1) の表示名・定義。trlcore/phases.py の定義が正本で、
+// ここはその転記 (境界を変えるときは phases.py のルール版を上げて同期させる)
+const PHL = {research: "研究期", devil_river: "魔の川", development: "開発期", valley_of_death: "死の谷", commercialization: "事業化期", darwinian_sea: "ダーウィンの海"};
+const PHO = ["research", "devil_river", "development", "valley_of_death", "commercialization", "darwinian_sea"];  // トラック・フィルタの並び (TRL 順)
+const PHB = {devil_river: "魔の川", valley_of_death: "死の谷", darwinian_sea: "ダーウィンの海"};
+const PHBD = {devil_river: "「魔の川」と呼ばれる研究開発段階の不確実性（NEDO）。研究から開発へ進めるかどうかの関門", valley_of_death: "「死の谷」と呼ばれる、研究開発後の事業化に要する調達、生産、流通の体制構築や資金調達の困難（NEDO）", darwinian_sea: "「ダーウィンの海」と呼ばれる市場獲得における生存競争の困難（NEDO）"};
+const PHS = {before: "前駆期", in: "移行期", crossed: "定着期"};
+const GEN_NOTE = "世代は、その評価に使われた規程・プロンプトの版です。世代の異なる評価どうしの点数差には、技術の変化ではなく物差し自体の変化が含まれます。";
+// 世代表示は既定 OFF (監査的な情報で、常時表示は通常の読みのノイズになる)。
+// 現在地表示は既定 ON (日常の読みの補助が目的)
+let showGen = false;
+try { showGen = localStorage.getItem("trl-showgen") === "1"; } catch (e) { /* 保存不可なら既定のまま */ }
+let showPhase = true;
+try { showPhase = localStorage.getItem("trl-showphase") !== "0"; } catch (e) { /* 保存不可なら既定のまま */ }
+const phaseOf = p => (p.long && p.long.phase) || null;
+function genBadge(ev) {
+  // 世代バッジ。世代に優劣はないため色は付けず、現行かどうかも文字列だけで区別する
+  if (!showGen || !ev || !ev.gen) return "";
+  const pr = Object.entries(ev.gen.prompts || {}).map(([k, v]) => `${k} ${v}`).join(" / ");
+  const head = ev.gen.current ? `現行世代 ${ev.gen.config}` : `世代 ${ev.gen.config}`;
+  return `<span class="genb" title="${esc(GEN_NOTE)}">${esc(head)}${pr ? `（${esc(pr)}）` : ""}</span>`;
+}
+function phaseBlockHtml(ph) {
+  // 現在地の進捗トラックと、障壁ごとの状態行 (詳細・ドロワー用)。
+  // 区間の幅は TRL レベル数に比例させる (style.css の .ptrack)
+  if (!ph) return "";
+  const track = PHO.map(z => `<span class="pseg ${z === ph.zone ? "cur" : ""}" title="${esc(PHL[z])}"></span>`).join("");
+  const legend = PHO.map(z => z === ph.zone ? `<b>${esc(PHL[z])}</b>` : esc(PHL[z])).join(" → ");
+  const rows = Object.keys(PHB).map(k => `<li><b>${esc(PHB[k])}</b><span>${esc(PHS[ph.barriers[k]] || "")} — ${esc(PHBD[k])}</span></li>`).join("");
+  return `<div class="ptrack">${track}</div><p class="plegend">${legend}</p>`
+    + `<ul class="pts">${rows}</ul>`
+    + `<p class="hint">ダーウィンの海に定着期は定義しません（市場での生存は TRL からは判定できないため）。現在地は代表 TRL から導出した表示専用の分類です（phases/v1）。障壁の定義は NEDO によります。</p>`;
+}
 const STGO = ["rd", "demo", "production", "commercial"];
 const TAGO = [...CO, "photonics", "medtech", "earth_observation", "constellation", "space_transport", "lunar", "debris_removal", "mrna", "cell_therapy", "gene_therapy", "antibody", "radiopharm", "vaccine", "regenerative_medicine", "diagnostics", "drug_ai", "surgical_robot", "power_semi", "advanced_packaging", "memory", "semi_equipment", "ai_infra", "voice_ai", "industrial_robotics", "warehouse_automation", "autonomous_mobility", "humanoid", "hydrogen", "ess", "ev_charging", "solid_state_battery", "battery_materials", "perovskite", "fusion", "smr", "quantum_computing", "quantum_comm", "quantum_sensing"];  // タグの表示順 (分野の後に固有タグ)
 const tagLabel = t => CL[t] || TL[t] || t;
@@ -92,7 +125,7 @@ function trl(t, d) {
     Array.from({length: 9}, (_, i) => `<span class="seg ${k && i < t ? "f" : ""}"></span>`).join("")}</div></div>`;
 }
 const trlSel = new Set();  // TRL絞り込みの選択状態: レベル1〜9と "u"(未確定) の集合。空なら絞らない
-const stSel = new Set(), dirSel = new Set(), mkSel = new Set(), scSel = new Set(), tagSel = new Set(), stgSel = new Set(), tierSel = new Set();  // 状態・方向性・国・分野・タグ・段階・企業の層の選択状態 (空なら絞らない)
+const stSel = new Set(), dirSel = new Set(), mkSel = new Set(), scSel = new Set(), tagSel = new Set(), stgSel = new Set(), tierSel = new Set(), phaseSel = new Set();  // 状態・方向性・国・分野・タグ・段階・企業の層・現在地の選択状態 (空なら絞らない)
 const ownSel = new Set();  // 自分の表示 (新着・注目) の選択状態。グループ内は OR で効く
 function inR(t) {
   if (!trlSel.size) return true;
@@ -114,6 +147,7 @@ function filtered() {
     && (!tagSel.size || p.entities.some(e => (e.tags || []).some(t => tagSel.has(t))))
     && (!stgSel.size || p.entities.some(e => stgSel.has(e.stage)))
     && (!tierSel.size || p.entities.some(e => tierSel.has(dtierOf(e))))
+    && (!phaseSel.size || (phaseOf(p) && phaseSel.has(phaseOf(p).zone)))
     && (!ownSel.size || (ownSel.has("new") && isNewEval(p)) || (ownSel.has("pin") && pins.has(p.id))));
   const byStatus = (a, b) => (SO[a.display_status] - SO[b.display_status])
     || ((ok(lvl(b)) ? lvl(b) : -1) - (ok(lvl(a)) ? lvl(a) : -1))
@@ -147,6 +181,7 @@ function facetChips() {
   fill("fgc", tagSel, new Set(base.flatMap(p => p.entities.flatMap(e => e.tags || []))), TAGO, {...CL, ...TL});
   fill("fstc", stgSel, new Set(base.flatMap(p => p.entities.map(e => e.stage).filter(Boolean))), STGO, STG);
   fill("ftierc", tierSel, new Set(base.flatMap(p => p.entities.map(dtierOf))), ["core", "conditional", "look", "see"], DTL);
+  fill("fphc", phaseSel, new Set(base.map(p => phaseOf(p)).filter(Boolean).map(ph => ph.zone)), PHO, PHL);
   syncTagN();
 }
 function sc(p, k) { const it = p.long && p.long.items[k]; return it ? it.score : null; }
@@ -178,6 +213,9 @@ function prevCmp(ev, curTrl) {
   const pv = ev.prev;
   if (!pv) return "";
   const head = [`前回評価: ${jst(pv.evaluated_at)}（${SL[pv.status] || pv.status}）`];
+  // 世代が異なる前回比は、点数差に物差し自体の変化が含まれる。スイッチの
+  // 状態によらず常時注記する (P-5)
+  if (ev.gen && pv.gen_config && pv.gen_config !== ev.gen.config) head.push("（世代が異なる）");
   const parts = [];
   if (pv.trl_level != null || curTrl != null) {
     // TRL の昇降だけは色と矢印で示す (総合点は良い悪いの含みを持たせないため無色)
@@ -198,7 +236,7 @@ function card(p) {
   const ents = p.entities.filter(e => e.strength === "strong").length;
   const facet = facetText(p);
   const diffTxt = prevDiffTxt(p);
-  return `<article class="card ${s ? "sel" : ""}" data-id="${esc(p.id)}"><div class="main"><div style="min-width:0"><div class="top"><span class="${src(p.source)}">${srcName(p.source)}</span><span class="date">${esc(p.published || "")}</span>${LANG === "ja" && srcOf(p) ? `<span class="date">訳: ${esc(srcOf(p))}</span>` : ""}${p.long && p.long.llm_model ? `<span class="date">評価: ${esc(p.long.llm_model)}</span>` : ""}${isNewEval(p) ? `<span class="nw">新着</span>` : ""}</div><h3 class="title">${esc(dispT(p))}</h3><p class="abs">${esc(dispA(p))}</p><div class="tags">${(p.fields || []).slice(0, 4).map(t => `<span class="tag">${esc(t)}</span>`).join("")}</div><div class="mi"><span>技術成熟度 <strong>${fmtScore(sc(p, "technology_readiness"))}</strong></span><span>技術的優位性 <strong>${fmtScore(sc(p, "technological_advantage"))}</strong></span><span>関連企業 <strong>${ents ? ents + "社" : "未特定"}</strong></span>${facet ? `<span>国・分野 <strong>${esc(facet)}</strong></span>` : ""}${diffTxt ? `<span>前回比 <strong>${esc(diffTxt)}</strong></span>` : ""}${evShort(p) ? `<span>イベント評価 <strong>${esc(evShort(p))}</strong></span>` : ""}</div></div><div class="side">${stB(p.display_status)}${dirB(p)}${trl(lvl(p))}<button type="button" class="pin ${pins.has(p.id) ? "on" : ""}" data-pin="${esc(p.id)}" aria-pressed="${pins.has(p.id) ? "true" : "false"}" title="注目ピン (この端末に保存)">${pins.has(p.id) ? "★" : "☆"}</button></div></div><div class="foot"><span>${p.long && p.long.critical_missing.length ? `必須の不足 ${p.long.critical_missing.length}件` : p.display_status === "pending" ? (p.next_up ? "次回評価予定" : "評価待ち") : p.display_status === "rejected" ? "除外" + (p.screen_reason ? ": " + (SR[p.screen_reason] || p.screen_reason) : "") : ""}</span><span class="facts"><button type="button" class="clink" data-ccite="${esc(p.id)}">出典コピー</button><button type="button" class="clink" data-clink="${esc(p.id)}">リンクコピー</button><a class="tg" href="detail.html?id=${encodeURIComponent(p.id)}">詳細を見る →</a></span></div></article>`;
+  return `<article class="card ${s ? "sel" : ""}" data-id="${esc(p.id)}"><div class="main"><div style="min-width:0"><div class="top"><span class="${src(p.source)}">${srcName(p.source)}</span><span class="date">${esc(p.published || "")}</span>${LANG === "ja" && srcOf(p) ? `<span class="date">訳: ${esc(srcOf(p))}</span>` : ""}${p.long && p.long.llm_model ? `<span class="date">評価: ${esc(p.long.llm_model)}</span>` : ""}${genBadge(p.long) || genBadge(p.event)}${isNewEval(p) ? `<span class="nw">新着</span>` : ""}</div><h3 class="title">${esc(dispT(p))}</h3><p class="abs">${esc(dispA(p))}</p><div class="tags">${(p.fields || []).slice(0, 4).map(t => `<span class="tag">${esc(t)}</span>`).join("")}</div><div class="mi"><span>技術成熟度 <strong>${fmtScore(sc(p, "technology_readiness"))}</strong></span><span>技術的優位性 <strong>${fmtScore(sc(p, "technological_advantage"))}</strong></span><span>関連企業 <strong>${ents ? ents + "社" : "未特定"}</strong></span>${facet ? `<span>国・分野 <strong>${esc(facet)}</strong></span>` : ""}${diffTxt ? `<span>前回比 <strong>${esc(diffTxt)}</strong></span>` : ""}${evShort(p) ? `<span>イベント評価 <strong>${esc(evShort(p))}</strong></span>` : ""}</div></div><div class="side">${stB(p.display_status)}${dirB(p)}${trl(lvl(p))}${showPhase && phaseOf(p) ? `<span class="phz">TRL ${phaseOf(p).trl} · ${esc(PHL[phaseOf(p).zone] || "")}</span>` : ""}<button type="button" class="pin ${pins.has(p.id) ? "on" : ""}" data-pin="${esc(p.id)}" aria-pressed="${pins.has(p.id) ? "true" : "false"}" title="注目ピン (この端末に保存)">${pins.has(p.id) ? "★" : "☆"}</button></div></div><div class="foot"><span>${p.long && p.long.critical_missing.length ? `必須の不足 ${p.long.critical_missing.length}件` : p.display_status === "pending" ? (p.next_up ? "次回評価予定" : "評価待ち") : p.display_status === "rejected" ? "除外" + (p.screen_reason ? ": " + (SR[p.screen_reason] || p.screen_reason) : "") : ""}</span><span class="facts"><button type="button" class="clink" data-ccite="${esc(p.id)}">出典コピー</button><button type="button" class="clink" data-clink="${esc(p.id)}">リンクコピー</button><a class="tg" href="detail.html?id=${encodeURIComponent(p.id)}">詳細を見る →</a></span></div></article>`;
 }
 function scoreRow(k, it) {
   const v = it && typeof it.score === "number" && isFinite(it.score) ? it.score : null;
@@ -307,7 +345,9 @@ function mdNote(p) {
   if (!L) return "";
   const lv = lvl(p);
   const e0 = (p.entities || [])[0] || {};
-  const ver = (META.config && META.config.version) || "";
+  // 評価基準の版は、その評価自身の世代 (gen) を正とする (G-3)。gen が無い
+  // 旧データでは export 時点の現行版にフォールバックする
+  const ver = (L.gen && L.gen.config) || (META.config && META.config.version) || "";
   const fm = ["---", "type: evaluation", `candidate: "${p.id}"`];
   if (e0.entity_id) fm.push(`company: "${e0.entity_id}"`);
   fm.push(`status: "${p.display_status}"`);
@@ -369,15 +409,15 @@ function detail() {
   const waitAll = L ? [...new Set(Object.entries(L.items).filter(([k]) => !REF.includes(k)).flatMap(([, i]) => i.awaiting_info || []))] : [];
   const q = p.queue && p.queue.long;
   const total = L && L.total != null ? `${L.total} / 100(${esc(L.band || "")})` : "未確定";
-  $("#det").innerHTML = `<div class="dc"><header class="dh"><div class="top"><span class="${src(p.source)}">${srcName(p.source)}</span>${stB(p.display_status)}${isNewEval(p) ? `<span class="nw">新着</span>` : ""}<button type="button" class="pin ${pins.has(p.id) ? "on" : ""}" id="pint" aria-pressed="${pins.has(p.id) ? "true" : "false"}" title="注目ピン (この端末に保存)">${pins.has(p.id) ? "★" : "☆"}</button></div><h3>${esc(dispT(p))}</h3><div class="mi"><span>公開日 ${esc(p.published || "—")}</span>${L ? `<span>評価日 ${esc(jst(L.evaluated_at))}</span>` : ""}${p.eval_count ? `<span>評価 ${p.eval_count} 回目</span>` : ""}${LL && LL.llm_model ? `<span>評価モデル ${esc(LL.llm_model)}</span>` : ""}</div></header>
+  $("#det").innerHTML = `<div class="dc"><header class="dh"><div class="top"><span class="${src(p.source)}">${srcName(p.source)}</span>${stB(p.display_status)}${isNewEval(p) ? `<span class="nw">新着</span>` : ""}<button type="button" class="pin ${pins.has(p.id) ? "on" : ""}" id="pint" aria-pressed="${pins.has(p.id) ? "true" : "false"}" title="注目ピン (この端末に保存)">${pins.has(p.id) ? "★" : "☆"}</button></div><h3>${esc(dispT(p))}</h3><div class="mi"><span>公開日 ${esc(p.published || "—")}</span>${L ? `<span>評価日 ${esc(jst(L.evaluated_at))}</span>` : ""}${p.eval_count ? `<span>評価 ${p.eval_count} 回目</span>` : ""}${LL && LL.llm_model ? `<span>評価モデル ${esc(LL.llm_model)}</span>` : ""}${genBadge(L) || genBadge(EV)}</div>${showGen && L && L.gen && !L.gen.current ? `<p class="note" style="margin-top:8px">${esc(GEN_NOTE)}</p>` : ""}</header>
 <section class="ds"><h4>研究概要</h4><p>${esc(dispA(p)) || "（要旨なし）"}</p>${LANG === "ja" && srcOf(p) ? `<p class="hint">日本語訳: ${esc(srcOf(p))}</p>` : ""}<div class="acts"><button class="btn sec" type="button" id="cpyo">原文をコピー</button>${(p.title_ja || p.abstract_ja) ? `<button class="btn sec" type="button" id="cpyj">日本語訳をコピー</button>` : ""}</div></section>
-<section class="ds"><h4>技術成熟度（TRL）</h4>${trl(lvl(p), 1)}${tr && tr.reason ? `<p>${esc(tr.reason)}</p>` : ""}${tr && tr.level == null && tr.missing_info.length ? `<p class="hint">不足: ${tr.missing_info.map(esc).join(" / ")}</p>` : ""}${tr && tr.awaiting_info && tr.awaiting_info.length ? `<p class="hint">結果待ち: ${tr.awaiting_info.map(esc).join(" / ")}</p>` : ""}<p class="hint">TRLは資料から根拠付きで判断できた場合のみ表示します。技術成熟度スコアからの換算はしません。</p></section>
+<section class="ds"><h4>技術成熟度（TRL）</h4>${trl(lvl(p), 1)}${tr && tr.reason ? `<p>${esc(tr.reason)}</p>` : ""}${tr && tr.level == null && tr.missing_info.length ? `<p class="hint">不足: ${tr.missing_info.map(esc).join(" / ")}</p>` : ""}${tr && tr.awaiting_info && tr.awaiting_info.length ? `<p class="hint">結果待ち: ${tr.awaiting_info.map(esc).join(" / ")}</p>` : ""}<p class="hint">TRLは資料から根拠付きで判断できた場合のみ表示します。技術成熟度スコアからの換算はしません。</p>${showPhase && L && L.phase ? `<p style="margin-top:10px">現在地: <b>${esc(PHL[L.phase.zone] || "")}</b>（TRL ${L.phase.trl}）</p>${phaseBlockHtml(L.phase)}` : ""}</section>
 <section class="ds"><h4>技術評価</h4>${L ? G.technology.map(k => scoreRow(k, L.items[k])).join("") : `<p class="hint">未評価です。</p>`}</section>
 <section class="ds"><h4>事業評価</h4>${L && L.business_stage === "pre_stage" ? `<p class="note">この技術は前商業段階(TRL 3以下)のため、事業項目は「段階未達」として不足とは区別しています。点が付いている項目はそのまま表示します。</p>` : ""}${L ? G.business.map(k => scoreRow(k, L.items[k])).join("") : `<p class="hint">未評価です。</p>`}${L && !strong.length ? `<p class="note">関連企業が特定できていないため、企業固有の項目は算出されません。総合点は6項目すべてが揃うまで確定せず、重みの再配分もしません。</p>` : ""}</section>
 ${L && REF.some(k => L.items[k]) ? `<section class="ds"><h4>参考項目</h4><p class="note">参考項目は採点して表示しますが、総合点・必須判定には含めません。根拠が無い場合は未算出となり、それを理由に保留にもなりません。</p>${REF.filter(k => L.items[k]).map(k => scoreRow(k, L.items[k])).join("")}</section>` : ""}
 <section class="ds"><h4>総合点（長期）</h4><p>${total}</p>${L && L.total_scope === "technology" ? `<p class="note">これは技術評価の総合点です。事業項目は段階未達のため対象外で、技術軸の項目だけで算出しています。</p>` : ""}${holdCauseTxt(L) ? `<p class="note">${esc(holdCauseTxt(L))}</p>` : ""}${L && L.total_orig != null && L.total != null && L.total_orig !== L.total ? `<p class="note">評価当時の総合点は ${L.total_orig}${L.band_orig ? `（${esc(L.band_orig)}）` : ""} でした。上の総合点は、重みの改訂に合わせて現行の物差しで計算し直した値です。</p>` : ""}${L ? `<div class="acts"><button class="btn sec" type="button" id="cpye">評価をコピー</button><button class="btn obsidian" type="button" id="cpym">Markdownでコピー</button></div>` : ""}</section>
 ${auditSectionHtml(p)}
-${EV ? `<section class="ds"><h4>イベント評価（短期）</h4>${Object.keys(EV.items).map(k => scoreRow(k, EV.items[k])).join("")}<p>総合点 ${EV.total != null ? EV.total + " / 100(" + esc(EV.band || "") + ")" : "未確定（保留）"}</p></section>` : ""}
+${EV ? `<section class="ds"><h4>イベント評価（短期）</h4>${genBadge(EV) ? `<p style="margin-bottom:8px">${genBadge(EV)}</p>` : ""}${Object.keys(EV.items).map(k => scoreRow(k, EV.items[k])).join("")}<p>総合点 ${EV.total != null ? EV.total + " / 100(" + esc(EV.band || "") + ")" : "未確定（保留）"}</p></section>` : ""}
 ${L && L.prev ? `<section class="ds"><h4>前回評価との比較</h4>${prevCmp(L, lvl(p))}</section>` : ""}
 <section class="ds"><h4>材料の方向性</h4>${L && L.direction ? `<p>${dirB(p)} ${esc(L.direction.reason || "")}</p><p class="hint">方向性は点数やTRLとは独立に、資料が示す出来事の追い風・逆風を判定したものです。</p>` : `<p class="hint">未判定です（方向を決める出来事が資料に無いか、旧基準の評価です）。</p>`}</section>
 <section class="ds"><h4>不足している観点</h4>${L && L.critical_missing.length ? `<p class="m" style="color:#a96500;font-weight:700">必須項目の不足: ${L.critical_missing.map(k => esc(label(k))).join("、")}</p>` : ""}${pts(missAll, 1)}${waitAll.length ? `<p class="hint">結果待ち（不足ではなく、治験の結果公表など時間の経過でしか解けないもの）:</p><ul class="pts">${waitAll.map(x => `<li><b>◷</b><span>${esc(x)}</span></li>`).join("")}</ul>` : ""}${q && q.next_sources.length ? `<p class="hint">次に確認する情報源: ${q.next_sources.map(esc).join(" / ")}</p>` : ""}${q && q.reeval_conditions.length ? `<p class="hint">再評価の条件: ${q.reeval_conditions.map(esc).join(" / ")}</p>` : ""}</section>
@@ -578,7 +618,7 @@ function bindChips(id, set, after) {
   });
 }
 const syncTagN = () => { $("#fgn").textContent = tagSel.size ? `（${tagSel.size}件選択中）` : ""; };
-const CHIPG = [["fsc", stSel], ["fdc", dirSel], ["fmc", mkSel], ["fcc", scSel], ["fstc", stgSel], ["ftierc", tierSel], ["fown", ownSel]];
+const CHIPG = [["fsc", stSel], ["fdc", dirSel], ["fmc", mkSel], ["fcc", scSel], ["fstc", stgSel], ["ftierc", tierSel], ["fphc", phaseSel], ["fown", ownSel]];
 CHIPG.forEach(([id, set]) => bindChips(id, set));
 bindChips("fgc", tagSel, syncTagN);
 const syncTrlUI = () => document.querySelectorAll("#ftc button").forEach(b => {
@@ -614,6 +654,20 @@ $("#fl").addEventListener("change", () => { LANG = $("#fl").value; try { localSt
 const syncTh = () => { $("#fth").value = document.documentElement.dataset.theme === "light" ? "light" : "dark"; };
 $("#fth").addEventListener("change", () => { document.documentElement.dataset.theme = $("#fth").value; try { localStorage.setItem("trl-theme", $("#fth").value); } catch (e) { /* 保存できなくても切替は効く */ } });
 syncTh();
+// 世代表示・現在地表示のスイッチ。状態は localStorage (trl-showgen /
+// trl-showphase) で詳細ページと共有する
+function applyViewSwitches() {
+  const sg = $("#swgen"), sp = $("#swphase");
+  if (sg) sg.checked = showGen;
+  if (sp) sp.checked = showPhase;
+  const fi = $("#fphaseitem");
+  if (fi) fi.hidden = !showPhase;
+  // 現在地表示を切ったら、見えないフィルタが効いたままにならないよう選択も落とす
+  if (!showPhase && phaseSel.size) { phaseSel.clear(); syncChips("fphc", phaseSel); }
+}
+$("#swgen").addEventListener("change", () => { showGen = $("#swgen").checked; try { localStorage.setItem("trl-showgen", showGen ? "1" : "0"); } catch (e) { /* 保存できなくても切替は効く */ } render(); });
+$("#swphase").addEventListener("change", () => { showPhase = $("#swphase").checked; try { localStorage.setItem("trl-showphase", showPhase ? "1" : "0"); } catch (e) { /* 保存できなくても切替は効く */ } applyViewSwitches(); render(); });
+applyViewSwitches();
 $("#rs").addEventListener("click", () => { $("#q").value = ""; [...CHIPG, ["fgc", tagSel]].forEach(([id, set]) => { set.clear(); syncChips(id, set); }); syncTagN(); trlSel.clear(); $("#ftn").value = ""; $("#ftm").value = ""; syncTrlUI(); $("#fo").value = "status"; sel = P[0] ? P[0].id : null; render(); });
 $("#list").addEventListener("click", e => {
   const pb = e.target.closest("[data-pin]");

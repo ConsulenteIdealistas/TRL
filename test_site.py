@@ -1035,7 +1035,9 @@ class ZeroRiskBatchTests(unittest.TestCase):
         ev_keys = {"status", "total", "band", "as_of", "evaluated_at", "items",
                    "critical_missing", "errors", "trl_level", "trl_levels", "direction", "axes",
                    "business_stage", "total_scope", "llm_provider", "llm_model",
-                   "prev", "hold_cause", "total_orig", "band_orig"}
+                   "prev", "hold_cause", "total_orig", "band_orig",
+                   # 世代 (gen) と現在地 (phase) は表示専用の意図的な追加
+                   "gen", "phase"}
         for c in data["candidates"]:
             self.assertLessEqual(set(c), cand_keys)
             if c["long"]:
@@ -1365,3 +1367,83 @@ class SummaryExtractTests(unittest.TestCase):
         got = summarize.extract_summary("新薬の試験", ja)
         self.assertIsNotNone(got)
         self.assertIn("68%", got)
+
+
+class GenPhaseExportTests(StoreFixture):
+    """世代 (gen) と現在地 (phase) の export (ISSUES-2 の G-2、phases/v1)。
+
+    世代の正本は as_evaluated の config_version で、評価行の版は recalc で
+    付け替わりうるため次善のフォールバックに留める。phase は long 評価の
+    代表 TRL からの導出で、event には付かない。"""
+
+    def _row(self, **kw):
+        row = {"kind": "long", "status": "final", "total": 55.0,
+               "band": "中程度・不確実", "as_of": "2026-11-01",
+               "evaluated_at": "2026-11-01T00:00:00+00:00",
+               "items_json": "{}", "errors_json": "[]",
+               "extra_json": "{}", "prompt_versions_json": "{}",
+               "config_version": "2026.11.2",
+               "llm_provider": "gemini", "llm_model": "m"}
+        row.update(kw)
+        return row
+
+    def test_gen_prefers_as_evaluated_over_row_version(self):
+        # recalc で行の版が現行版に付け替わっていても、世代は当時の版を指す
+        extra = {"as_evaluated": {"total": 50.0, "band": "中程度・不確実",
+                                  "config_version": "2026.10.0"}}
+        ev = self._row(extra_json=json.dumps(extra),
+                       prompt_versions_json=json.dumps(
+                           {"extract": {"name": "extract", "version": "v1"},
+                            "long": {"version": "v2"}}))
+        gen = site_mod._ev_for_site(ev, cfg_with())["gen"]
+        self.assertEqual(gen["config"], "2026.10.0")
+        self.assertEqual(gen["prompts"], {"extract": "v1", "long": "v2"})
+        self.assertFalse(gen["current"])
+
+    def test_gen_falls_back_to_row_version(self):
+        gen = site_mod._ev_for_site(self._row(), cfg_with())["gen"]
+        self.assertEqual(gen["config"], "2026.11.2")
+        self.assertEqual(gen["prompts"], {})
+        self.assertTrue(gen["current"])
+
+    def test_gen_absent_without_any_version(self):
+        ev = self._row(config_version=None)
+        self.assertIsNone(site_mod._ev_for_site(ev, cfg_with())["gen"])
+
+    def test_gen_survives_broken_prompt_versions(self):
+        ev = self._row(prompt_versions_json="{broken")
+        gen = site_mod._ev_for_site(ev, cfg_with())["gen"]
+        self.assertEqual(gen["prompts"], {})
+
+    def test_phase_only_on_long_with_trl(self):
+        extra = {"trl_level": {"level": 6, "reason": "r"}}
+        ev = self._row(extra_json=json.dumps(extra))
+        out = site_mod._ev_for_site(ev, cfg_with())
+        self.assertEqual(out["phase"]["zone"], "valley_of_death")
+        self.assertEqual(out["phase"]["barriers"]["devil_river"], "crossed")
+        # event 評価には phase キー自体が付かない
+        ev_event = self._row(kind="event", extra_json=json.dumps(extra))
+        self.assertNotIn("phase", site_mod._ev_for_site(ev_event, cfg_with()))
+        # TRL が無い long 評価では phase は None (表示しない)
+        out_none = site_mod._ev_for_site(self._row(), cfg_with())
+        self.assertIsNone(out_none["phase"])
+
+    def test_prev_gen_config_uses_same_source(self):
+        extra = {"trl_level": {"level": 3},
+                 "as_evaluated": {"total": 40.0, "band": "弱い",
+                                  "config_version": "2026.09.0"}}
+        prev = site_mod._prev_for_site(self._row(extra_json=json.dumps(extra)))
+        self.assertEqual(prev["gen_config"], "2026.09.0")
+
+    def test_build_attaches_current_gen(self):
+        # パイプラインで作った評価には、現行世代として gen が付く
+        data = self.build(Mock(make_llm_fn()))
+        longs = [c["long"] for c in data["candidates"] if c.get("long")]
+        self.assertTrue(longs)
+        for ev in longs:
+            self.assertIsNotNone(ev["gen"])
+            self.assertEqual(ev["gen"]["config"], data["config"]["version"])
+            self.assertTrue(ev["gen"]["current"])
+            self.assertEqual(ev["gen"]["prompts"],
+                             {"extract": "v3", "long": "v3"})
+            self.assertIn("phase", ev)

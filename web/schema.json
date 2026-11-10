@@ -80,7 +80,20 @@
     "llm_model"
   ],
   "evaluation_optional": [
-    "adjustment"
+    "adjustment",
+    "gen",
+    "phase"
+  ],
+  "gen": [
+    "config",
+    "prompts",
+    "current"
+  ],
+  "phase": [
+    "v",
+    "trl",
+    "zone",
+    "barriers"
   ],
   "adjustment": [
     "field",

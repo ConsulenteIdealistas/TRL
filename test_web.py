@@ -153,19 +153,23 @@ class ExportTests(StoreFixture):
         for sel in sels:
             self.assertIn(".on", sel)
         self.assertNotIn(":not(.on)", css)
-        # 各状態の .on は状態色のソリッド塗り+白文字+枠透明 (全マッチ共通)
+        # 各状態の .on は状態色のソリッド塗り+白文字+枠透明 (全マッチ共通。
+        # 保留のみ黄色塗り+濃色文字の例外あり。下の text_colors を参照)
         fills = {"final": "#087b5a", "positive": "#087b5a",
-                 "review": "#087eaf", "hold": "#a96500", "mixed": "#a96500",
+                 "review": "#087eaf", "hold": "#eab308", "mixed": "#a96500",
                  "pending": "#c87a00", "error": "#b52f49",
                  "negative": "#b52f49", "rejected": "#607080",
                  "none": "#607080"}
+        # 保留は黄色 (#eab308) 塗りで白文字が読めないため、そのチップだけ
+        # 文字色を濃色 (#422006) にする例外
+        text_colors = {"hold": "#422006"}
         for v, color in fills.items():
             bodies = re.findall(
                 r'button\[data-v="%s"\]\.on[^{]*\{([^}]*)\}' % v, css)
             self.assertTrue(bodies, v)
             for body in bodies:
                 self.assertIn("background:" + color, body)
-                self.assertIn("color:#fff", body)
+                self.assertIn("color:" + text_colors.get(v, "#fff"), body)
                 self.assertIn("border-color:transparent", body)
         # 「判定済み」は :root の --pk 実値 (#db2777) で塗る。ダーク側の
         # 文字色用 --pk (#f472b6) は白文字が沈むため塗りに使わない
@@ -236,3 +240,47 @@ class ExportTests(StoreFixture):
             self.assertIn("reference_items", text)
             self.assertIn("<h4>参考項目</h4>", text)
             self.assertIn("総合点・必須判定には含めません", text)
+    def test_generation_and_phase_display(self):
+        # 世代表示 (スイッチ式・既定 OFF) と現在地 (フェーズ、既定 ON) の配線。
+        # 世代は色で序列を作らず文字列のみ、前回比の世代差注記は常時 (P-5)。
+        # フェーズのラベル・定義は trlcore/phases.py の転記で、定義は
+        # criteria.html に出典つきで載せる (P-7)
+        web = T.ROOT / "web"
+        html = (web / "index.html").read_text(encoding="utf-8")
+        app = (web / "app.js").read_text(encoding="utf-8")
+        det = (web / "detail.html").read_text(encoding="utf-8")
+        css = (web / "style.css").read_text(encoding="utf-8")
+        crit = (web / "criteria.html").read_text(encoding="utf-8")
+        schema = json.loads((web / "schema.json").read_text(encoding="utf-8"))
+        for text in (html, det):
+            self.assertIn('id="swgen"', text)
+            self.assertIn('id="swphase"', text)
+        for text in (app, det):
+            self.assertIn("trl-showgen", text)
+            self.assertIn("trl-showphase", text)
+            self.assertIn("genBadge", text)
+            self.assertIn("現行世代", text)
+            self.assertIn("物差し自体の変化が含まれます", text)
+            self.assertIn("（世代が異なる）", text)
+            self.assertIn("phaseBlockHtml", text)
+            self.assertIn('before: "前駆期", in: "移行期", crossed: "定着期"', text)
+            self.assertIn('darwinian_sea: "ダーウィンの海"', text)
+            # Markdown コピーの評価基準は評価自身の世代を正とする (G-3)
+            self.assertIn("gen && L.gen.config", text.replace("LL.gen", "L.gen"))
+        # 主ページ: 現在地フィルタとカードの現在地チップ、進捗トラック
+        self.assertIn('id="fphc"', html)
+        self.assertIn("phaseSel", app)
+        self.assertIn("phaseOf(p).trl", app)
+        # トラックの幅は TRL レベル数に比例 (2:1:2:1:2:1)
+        self.assertIn("grid-template-columns:2fr 1fr 2fr 1fr 2fr 1fr", css)
+        self.assertIn(".genb{", css)
+        # 定義の掲載 (出典 NEDO と、海に定着期を置かない理由)
+        self.assertIn("現在地（フェーズ）の定義（表示専用、phases/v1）", crit)
+        self.assertIn("NEDO", crit)
+        self.assertIn("ダーウィンの海に定着期は定義しません", crit)
+        self.assertIn("前駆期", crit)
+        # export との契約に gen / phase を追加する
+        self.assertIn("gen", schema["evaluation_optional"])
+        self.assertIn("phase", schema["evaluation_optional"])
+        self.assertEqual(schema["gen"], ["config", "prompts", "current"])
+        self.assertEqual(schema["phase"], ["v", "trl", "zone", "barriers"])

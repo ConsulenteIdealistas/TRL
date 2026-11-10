@@ -1,4 +1,4 @@
-:root{--green:#00bd83;--gd:#008e66;--gs:#e4fbf2;--cyan:#00bfe8;--cs:#e5f9ff;--ink:#142d40;--muted:#6b8190;--line:#dce9ee;--surface:#fff;--bg:#f3f8fa;--sub:#536a79;--field:#fbfdfe;--sel:#f2fff9;--yc:#b38600;--rc:#e01e1e;--xc:#64748b;--vc:#7c3aed;--pk:#db2777;--r:18px;--sh:0 8px 28px rgba(24,72,90,.055);color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+:root{--green:#00bd83;--gd:#008e66;--gs:#e4fbf2;--cyan:#00bfe8;--cs:#e5f9ff;--ink:#142d40;--muted:#6b8190;--line:#dce9ee;--surface:#fff;--bg:#f3f8fa;--sub:#536a79;--field:#fbfdfe;--sel:#f2fff9;--yc:#b38600;--rc:#e01e1e;--xc:#64748b;--vc:#7c3aed;--pk:#db2777;--accent:#4a6cf7;--r:18px;--sh:0 8px 28px rgba(24,72,90,.055);color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 @media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--gd:#2fdba4;--gs:#0f3a30;--cs:#0d3541;--ink:#e3eef3;--muted:#8da3b0;--line:#27404d;--surface:#14232c;--bg:#0c171d;--sub:#a5bac6;--field:#0f1d25;--sel:#103329;--yc:#ffd60a;--rc:#ff5147;--xc:#94a3b8;--vc:#a78bfa;--pk:#f472b6;color-scheme:dark}}
 :root[data-theme="dark"]{--gd:#2fdba4;--gs:#0f3a30;--cs:#0d3541;--ink:#e3eef3;--muted:#8da3b0;--line:#27404d;--surface:#14232c;--bg:#0c171d;--sub:#a5bac6;--field:#0f1d25;--sel:#103329;--yc:#ffd60a;--rc:#ff5147;--xc:#94a3b8;--vc:#a78bfa;--pk:#f472b6;color-scheme:dark}
 html{height:100%}*{box-sizing:border-box}
@@ -44,8 +44,8 @@ h2{margin:0;font-size:19px;letter-spacing:-.4px}
 .tagBox summary{cursor:pointer}
 .tagBox .tn{color:var(--gd);font-weight:700;margin-left:6px}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
-.chips button{min-width:40px;min-height:42px;padding:6px 10px;border:1px solid var(--line);border-radius:10px;background:var(--field);color:var(--sub);font-weight:700}
-.chips button.on{border-color:var(--gd);background:var(--gs);color:var(--gd)}
+.chips button{min-width:40px;min-height:42px;padding:6px 11px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--sub);font-size:12px;font-weight:750;cursor:pointer}
+.chips button.on{color:#fff;border-color:transparent;background:var(--accent,#4a6cf7)}
 /* 評価状態・方向性チップは、統計やバッジと同じ状態色で色分けする (色の言語を揃える)。
    未選択でも色文字で薄く示し、選択時はバッジと同じ淡色背景+同系色にする。
    未評価だけはバッジ (灰) でなく統計の数字色 (橙) に合わせる */

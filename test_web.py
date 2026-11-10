@@ -119,3 +119,22 @@ class ExportTests(StoreFixture):
         self.assertIn('viewState.sort === "kind"', js)
         self.assertIn('q.get("k") === "all"', js)
         self.assertIn("sbadge lngk", js)  # 両方表示で長期カードにも種別バッジ
+    def test_filter_chips_match_watch_pill_style(self):
+        # 主ページのフィルタチップはウォッチページの .dchip (スイッチ) に
+        # 揃える: ピル型 (999px) で、選択時は accent のソリッド塗り+白文字。
+        # min-height/min-width はタップターゲット確保のため主ページ側に残す。
+        import re
+        css = (T.ROOT / "web" / "style.css").read_text(encoding="utf-8")
+        watch = (T.ROOT / "web" / "watch.html").read_text(encoding="utf-8")
+        self.assertIn(".dchip{", watch)  # 揃える先 (ウォッチのピル型チップ)
+        base = re.search(r"\.chips button\{([^}]*)\}", css).group(1)
+        for decl in ("border-radius:999px", "padding:6px 11px",
+                     "background:var(--surface)", "font-size:12px",
+                     "font-weight:750", "min-height:42px", "min-width:40px"):
+            self.assertIn(decl, base)
+        on = re.search(r"\.chips button\.on\{([^}]*)\}", css).group(1)
+        self.assertIn("background:var(--accent,#4a6cf7)", on)
+        self.assertIn("color:#fff", on)
+        self.assertIn("border-color:transparent", on)
+        # --accent は style.css 側でも定義し、両テーマで解決できるようにする
+        self.assertIn("--accent:#4a6cf7", css)

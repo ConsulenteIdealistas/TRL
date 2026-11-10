@@ -1,4 +1,4 @@
-"""追加分のテスト(一時エラーの扱い・抽出再利用・export・Webとの契約)。実行: python -m unittest test_site -v"""
+"""追加分のテスト(一時エラーの扱い・抽出再利用・export)。Web ページ自体の構造チェックは test_web.py に分離。実行: python -m unittest test_site -v"""
 import copy
 import json
 import os
@@ -10,22 +10,9 @@ from unittest import mock
 
 import trl as T
 from trlcore import site as site_mod
-from test_trl import AS_OF, CFG, EXTRACTION, LONG_KEYS, Mock, assessment, make_llm_fn, raw
-
-
-def cfg_with(**llm):
-    c = dict(CFG)
-    c["scoring"] = copy.deepcopy(CFG["scoring"])
-    c["scoring"]["llm"] = dict(T.LLM_DEFAULTS, **llm)
-    c["sources"] = {"defaults": {"max_results": 5, "lookback_days": 30},
-                    "queries": [{"name": "q", "arxiv": "a"}]}
-    return c
-
-
-def fetch_n(n):
-    def arx(q, k, days, as_of):
-        return [raw(sid=f"2610.{i:04d}", title=f"Paper {i}") for i in range(1, n + 1)]
-    return {"arxiv": arx}
+from testutil import (AS_OF, CFG, EXTRACTION, LONG_KEYS, Mock,
+                      StoreFixture, assessment, cfg_with, fetch_n,
+                      make_llm_fn, raw)
 
 
 class RetryTests(unittest.TestCase):
@@ -604,20 +591,8 @@ class PipelineResilienceTests(unittest.TestCase):
         s2.close()
 
 
-class ExportTests(unittest.TestCase):
-    def setUp(self):
-        self.tmp = tempfile.TemporaryDirectory()
-        self.store = T.Store(Path(self.tmp.name) / "d" / "trl.sqlite")
+class ExportTests(StoreFixture):
 
-    def tearDown(self):
-        self.store.close()
-        self.tmp.cleanup()
-
-    def build(self, llm, n=3):
-        cfg = cfg_with()
-        T.run_pipeline(self.store, cfg, llm, as_of=AS_OF, kinds=("long",), fetchers=fetch_n(n), sources=("arxiv",),
-                       today=AS_OF, log=lambda *_: None)
-        return T.build_site_data(self.store, cfg, datetime(2026, 10, 26, tzinfo=timezone.utc))
 
     def test_statuses_derived_from_data(self):
         # 必須項目(monetization)が欠ける → hold / 必須は揃い任意項目だけ欠ける → review / 全部揃う → final
@@ -803,26 +778,6 @@ class ExportTests(unittest.TestCase):
         self.assertNotIn("__TRL_SUM_KEY__", detail)
         self.assertNotIn("generativelanguage", detail)
 
-    def test_search_suggest_is_touch_friendly(self):
-        # スマホでサジェストが効くための配線: タップは pointerdown、候補は入力欄の直下、
-        # 入力欄は iOS が拡大しない 16px。どれか欠けると実機でタップがずれる/候補が離れる。
-        html = (T.ROOT / "web" / "index.html").read_text(encoding="utf-8")
-        js = (T.ROOT / "web" / "app.js").read_text(encoding="utf-8")
-        css = (T.ROOT / "web" / "style.css").read_text(encoding="utf-8")
-        self.assertIn('class="qin"', html)
-        self.assertIn('addEventListener("pointerdown"', js)
-        self.assertIn("compositionend", js)
-        # 変換を確定しても候補が消えたままにならないこと (確定後に再表示、blur の消去タイマーは解除可能に)
-        self.assertIn("compositionstart", js)
-        self.assertIn("sugHideTimer", js)
-        self.assertIn('addEventListener("focus"', js)
-        self.assertIn(".qin{position:relative", css)
-        self.assertIn("font-size:16px", css)
-        # 候補リストがヒーローの下端で切り取られないこと (overflow:hidden があると
-        # 絶対配置の候補がヒーローの箱の外側で見えなくなる)
-        import re
-        hero = re.search(r"\.hero\{([^}]*)\}", css).group(1)
-        self.assertNotIn("overflow:hidden", hero)
 
     def test_pre_stage_final_flows_to_site(self):
         def fn(p):
@@ -1011,93 +966,6 @@ class ExportTests(unittest.TestCase):
         data = T.build_site_data(self.store, cfg_with(), datetime(2026, 10, 26, tzinfo=timezone.utc))
         c = next(x for x in data["candidates"] if x["id"] == cid)
         self.assertNotIn("audit", c)
-
-    def test_audit_review_page_exists_and_linked(self):
-        # 監査ページの存在と、一覧・詳細からの導線 (採点基準リンクと同格)
-        web = T.ROOT / "web"
-        page = (web / "audit.html").read_text(encoding="utf-8")
-        js = (web / "audit.js").read_text(encoding="utf-8")
-        self.assertIn("audit.js", page)
-        self.assertIn("反映用 JSON をコピー", page)
-        self.assertIn("trl-review", js)
-        self.assertIn("review_inbox", js + page)
-        # 状態の絞り込み・並び替えと、処分種別を含む8枠の統計。
-        # ヘッダーには採点基準/監査リンクを置かない (他ページと同形)
-        self.assertIn('id="stateFilters"', page)
-        self.assertIn('id="sortSel"', page)
-        self.assertIn("data-sfilter", js)
-        for key in ("dconfirmed", "dfalse", "dwatch"):
-            self.assertIn(key, js)
-        for label in ("要確認", "グレー", "処分済み", "再評価予約", "調整済み",
-                      "問題あり", "誤検知", "様子見"):
-            self.assertIn(label, js)
-        for label in ("TRL 高い順", "TRL 低い順", "新しい順", "古い順"):
-            self.assertIn(label, page)
-        self.assertNotIn('<a href="criteria.html">採点基準</a>', page)
-        self.assertNotIn('<a href="audit.html">監査</a>', page)
-        # 記事 (詳細) と監査カードの相互遷移: 詳細に監査セクションと
-        # 監査ページへの深いリンク、監査側は ?c= で該当カードへ移動する
-        app = (web / "app.js").read_text(encoding="utf-8")
-        self.assertIn("auditSectionHtml", app)
-        self.assertIn("audit.html?c=", app)
-        self.assertIn('id="card-', js)
-        self.assertIn('get("c")', js)
-        self.assertIn("記事（詳細ページ）を見る", js)
-        # イベント監査の表示: 種別切替と audit_event の利用、E1/E2 のラベル
-        self.assertIn("audit_event", js)
-        self.assertIn("data-kind", js)
-        self.assertIn("イベント評価", js)
-        self.assertIn("E1:", js)
-        self.assertIn("E2:", js)
-        self.assertIn("audit_event", app)
-        # 一覧は検索と統計の間の .pagelinks に短いリンク、詳細はフッター
-        # のみ (ヘッダーは両ページともリンクなしで揃える)
-        index = (web / "index.html").read_text(encoding="utf-8")
-        self.assertIn('<nav class="pagelinks"><a href="criteria.html">採点基準</a>'
-                      '<a href="audit.html">監査</a><a href="watch.html">ウォッチ・参考</a></nav>', index)
-        self.assertIn('<a href="audit.html">監査（要確認の処分）</a>', index)
-        # ウォッチ・参考ページも同格に存在し、一覧から辿れる
-        wpage = (web / "watch.html").read_text(encoding="utf-8")
-        self.assertIn("watch.js", wpage)
-        self.assertIn('<a href="watch.html">ウォッチ・参考（未評価の監視企業）</a>', index)
-        detail = (web / "detail.html").read_text(encoding="utf-8")
-        self.assertIn('<a href="audit.html">監査（要確認の処分）</a>', detail)
-        self.assertNotIn('<a href="audit.html">監査</a>', detail)
-        # export でページ一式 (HTML/JS) も配布される
-        self.build(Mock(make_llm_fn()))
-        out = Path(self.tmp.name) / "site"
-        T.export_site(self.store, cfg_with(), out)
-        names = {p.name for p in out.iterdir()}
-        self.assertIn("audit.html", names)
-        self.assertIn("audit.js", names)
-        self.assertIn("watch.html", names)
-        self.assertIn("watch.js", names)
-        # ウォッチ・参考の同梱データ (tier が watch / reference の企業だけ)
-        data = json.loads((out / "data.json").read_text(encoding="utf-8"))
-        self.assertIn("watch_companies", data)
-        self.assertTrue(all(c["tier"] in ("watch", "reference")
-                            for c in data["watch_companies"]))
-
-    def test_kind_sort_on_index_and_audit_pages(self):
-        # 一覧: 並び順に種別別 (長期→短期) があり、種別は明示 kind を第一に、
-        # 無ければ長期評価の有無で決める (書き出しに kind は無いため、
-        # 未評価の候補は長期側に寄る)
-        web = T.ROOT / "web"
-        index = (web / "index.html").read_text(encoding="utf-8")
-        app = (web / "app.js").read_text(encoding="utf-8")
-        self.assertIn('<option value="kind">種別別（長期→短期）</option>', index)
-        self.assertIn("const kindOf", app)
-        self.assertIn('o === "kind"', app)
-        # 監査: 種別の「両方」表示と種別順。表示単位は候補×種別のカードで、
-        # 統計・チップ・種別チップの件数はすべてカード単位に揃える
-        page = (web / "audit.html").read_text(encoding="utf-8")
-        js = (web / "audit.js").read_text(encoding="utf-8")
-        self.assertIn('<option value="kind">種別順</option>', page)
-        self.assertIn('["all", "両方"]', js)
-        self.assertIn("function cards()", js)
-        self.assertIn('viewState.sort === "kind"', js)
-        self.assertIn('q.get("k") === "all"', js)
-        self.assertIn("sbadge lngk", js)  # 両方表示で長期カードにも種別バッジ
 
 
 class ZeroRiskBatchTests(unittest.TestCase):

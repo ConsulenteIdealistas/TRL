@@ -29,6 +29,7 @@ from .scoring import TECH_ITEMS, compute as scoring_compute
 
 AUDIT_CHECKS = ("A1", "A2", "A3", "A4", "A5", "A6", "A7",
                 "A8", "A9", "A10", "A11", "A12", "A13", "A14", "A15",
+                "A16", "A17",
                 "E1", "E2")
 
 def _loads(s, default):
@@ -227,8 +228,14 @@ RULES_FILENAME = "audit_rules.json"
 # A8 以降は監査要項 (~/workspace/trl-audit/AUDIT_REQUIREMENTS.md、2026-11-06)
 # の8分類に対応する決定的チェック: A8=⑦反証 / A9=⑥証拠充足 / A10=②時点 /
 # A11=⑤数値 / A12=①出典形式 / A13=⑧スコア再計算 / A14=③企業帰属。
+# A16/A17 (v4.2、FREEZE-PLAN A8 の「監査観測」2点): A16=TRL レベルと
+# technology_readiness 点数帯域の乖離、A17=単一出所 (新世代の
+# constraint_codes に single_source) で 59 超。どちらもグレー観測で、
+# 上書きも hold もしない。A17 はコードを持つ新世代の項目だけが対象
+# (旧世代へ新世代前提の監査を機械適用しない。FREEZE-PLAN C 節)
 RULES_CHECKS = ("A1", "A2", "A3", "A4", "A6", "A7",
-                "A8", "A9", "A10", "A11", "A12", "A13", "A14", "A15")
+                "A8", "A9", "A10", "A11", "A12", "A13", "A14", "A15",
+                "A16", "A17")
 # event 評価の監査。A10/A12 は long と共通 (時点・出典形式)。E1/E2 は
 # 実測した価格反応 (extra.market_reaction) との整合を見る (監査要項の
 # event 監査節、ISA 520 の分析的手続きが発想の出典)
@@ -659,6 +666,72 @@ def _check_a15(inp, chk, ext_text, out):
                   f"として記録する。"})
 
 
+# TRL レベル → technology_readiness 点数の許容帯域 (帯域 index)。
+# 帯域自体は scoring の 5 帯域 (0-19/20-39/40-59/60-79/80-100) への
+# 紐付けであり、ここはレベルと帯域の対応だけを置く (規程第12条)
+_TRL_LEVEL_BANDS = {1: (0,), 2: (0,), 3: (1,), 4: (2,), 5: (2, 3),
+                    6: (3,), 7: (4,), 8: (4,), 9: (4,)}
+
+
+def _score_band_index(score):
+    for i, (lo, hi) in enumerate(((0, 19), (20, 39), (40, 59),
+                                   (60, 79), (80, 100))):
+        if lo <= score <= hi:
+            return i
+    return None
+
+
+def _check_a16(inp, chk, ext_text, out):
+    """A16 TRL レベルと項目点帯域の乖離の観測 (監査要項⑧、規程第12条)。
+    technology_readiness の点数帯が、判定された TRL レベルの許容帯を
+    外れていたらグレーで観測する (上書きも hold もしない)。TRL レベル
+    または項目点が無い評価 (旧世代含む) は対象外。"""
+    trl = inp.get("trl_level") or {}
+    level = trl.get("level") if isinstance(trl, dict) else None
+    item = (inp.get("items") or {}).get("technology_readiness") or {}
+    score = item.get("score") if isinstance(item, dict) else None
+    if not isinstance(level, int) or isinstance(level, bool) \
+            or not isinstance(score, (int, float)) or isinstance(score, bool):
+        return
+    allowed = _TRL_LEVEL_BANDS.get(level)
+    band = _score_band_index(score)
+    if allowed is None or band is None or band in allowed:
+        return
+    spans = "/".join(f"{lo}-{hi}" for lo, hi in
+                     (((0, 19), (20, 39), (40, 59), (60, 79), (80, 100))[b]
+                      for b in allowed))
+    out.append({
+        "check": "A16", "item": "technology_readiness", "verdict": "gray",
+        "rule": f"level:{level},score:{score}",
+        "detail": f"TRL レベル {level} に対して technology_readiness が "
+                  f"{score} 点で、許容帯 ({spans}) を外れている。乖離の"
+                  f"観測であり、点数やレベルの上書きはしない。"})
+
+
+def _check_a17(inp, chk, ext_text, out):
+    """A17 単一出所の高得点の観測 (監査要項⑧、規程第12条3)。新世代
+    (long.v3) が constraint_codes に single_source を記録した項目が、
+    目安 59 (帯域 40-59 の上限) を超えていたらグレーで観測する
+    (上書きも hold もしない)。コードを持たない旧世代の項目は対象外
+    (新世代前提の監査を旧世代へ機械適用しない。FREEZE-PLAN C 節)。"""
+    cap = chk.get("cap", 59)
+    for key, item in (inp.get("items") or {}).items():
+        if not isinstance(item, dict):
+            continue
+        codes = item.get("constraint_codes")
+        score = item.get("score")
+        if not isinstance(codes, list) or "single_source" not in codes:
+            continue
+        if isinstance(score, (int, float)) and not isinstance(score, bool) \
+                and score > cap:
+            out.append({
+                "check": "A17", "item": key, "verdict": "gray",
+                "rule": f"single_source,score>{cap}",
+                "detail": f"{key} は根拠が単一出所 (single_source) なのに "
+                          f"{score} 点で、目安 {cap} を超えている。観測"
+                          f"であり、点数の上書きはしない。"})
+
+
 def _check_e1(inp, chk, ext_text, out):
     """E1 反応整合 (event 監査)。独立に実測した価格反応が強く出ている
     (z >= z_threshold) のに、not_priced_in が高得点 (「織り込まれて
@@ -707,6 +780,7 @@ _CHECK_FUNCS = {"A1": _check_a1, "A2": _check_a2, "A3": _check_a3,
                 "A8": _check_a8, "A9": _check_a9, "A10": _check_a10,
                 "A11": _check_a11, "A12": _check_a12, "A13": _check_a13,
                 "A14": _check_a14, "A15": _check_a15,
+                "A16": _check_a16, "A17": _check_a17,
                 "E1": _check_e1, "E2": _check_e2}
 
 

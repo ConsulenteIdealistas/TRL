@@ -19,6 +19,21 @@ EXTRACT_LISTS = ("facts", "inferences", "forecasts", "hypotheses", "counter_poin
 
 STATEMENT_LISTS = ("facts", "inferences", "forecasts", "hypotheses")
 
+# 抽出 v3 の claim 共通封筒 (凍結バッチ A1〜A5・A10、FREEZE-PLAN)。
+# リスト名から決まる kind はコードが付与する (LLM に重複させない)。
+CLAIM_LISTS = ("facts", "inferences", "forecasts", "hypotheses", "counter_points")
+CLAIM_KINDS = {"facts": "fact", "inferences": "inference", "forecasts": "forecast",
+               "hypotheses": "hypothesis", "counter_points": "counter"}
+CLAIM_STATUSES = ("observed", "completed", "ongoing", "planned", "announced",
+                  "delayed", "failed", "terminated", "withdrawn", "corrected",
+                  "retracted", "superseded")
+SUBJECT_TYPES = ("company", "product", "technology", "component", "platform",
+                 "substance", "other")
+SUBJECT_ROLES = ("primary", "supporting", "comparator", "other")
+POLARITIES = ("positive", "negative", "neutral")
+FACET_KEYS = ("study", "deployment", "regulatory", "ip")
+EVENT_STATUSES = ("anticipated", "occurred", "delayed", "cancelled", "completed")
+
 
 def validate_extraction(obj):
     errors = []
@@ -29,6 +44,12 @@ def validate_extraction(obj):
         for i, it in enumerate(obj.get(k) or []):
             if not isinstance(it, dict) or not str(it.get("statement", "")).strip():
                 errors.append(f"extraction.{k}[{i}]:statement_required")
+    # counter_points は v3 から claim 構造。文字列の要素も受け付ける
+    # (正規化で claim 化する)。dict なら statement が必須。
+    for i, it in enumerate(obj.get("counter_points") or []):
+        if not isinstance(it, str) and not (
+                isinstance(it, dict) and str(it.get("statement", "")).strip()):
+            errors.append(f"extraction.counter_points[{i}]:statement_required")
     # 技術帰属 (監査要項④): facts の subject は原文スパンの文字列でのみ受け付ける。
     # 欠落は許容する (帰属を特定できない fact もありうるため、監査側で未分類として扱う)
     for i, it in enumerate(obj.get("facts") or []):
@@ -36,6 +57,106 @@ def validate_extraction(obj):
                 and not isinstance(it["subject"], str):
             errors.append(f"extraction.facts[{i}]:subject_must_be_string")
     return errors
+
+
+def _clean_claim(it):
+    """claim 共通封筒の正規化。statement 以外は全て任意で、型の合わない値や
+    語彙外の値は落とすだけにする (抽出を失敗させない。parse_direction と
+    同じ流儀)。旧形式の要素 (subject だけの fact 等) もそのまま通る。"""
+    out = {"statement": str(it.get("statement") or "").strip()}
+    for f in ("quote", "source", "subject", "event_date", "period_start", "period_end"):
+        v = it.get(f)
+        if isinstance(v, str) and v.strip():
+            out[f] = v.strip()
+    for f, vocab in (("subject_type", SUBJECT_TYPES), ("subject_role", SUBJECT_ROLES),
+                     ("polarity", POLARITIES), ("status", CLAIM_STATUSES)):
+        if it.get(f) in vocab:
+            out[f] = it[f]
+    if isinstance(it.get("grounded"), bool):
+        out["grounded"] = it["grounded"]
+    if isinstance(it.get("subject_aliases"), list):
+        aliases = [x.strip() for x in it["subject_aliases"]
+                   if isinstance(x, str) and x.strip()]
+        if aliases:
+            out["subject_aliases"] = aliases
+    rel = []
+    if isinstance(it.get("relations"), list):
+        for r in it["relations"]:
+            if isinstance(r, dict) and str(r.get("predicate") or "").strip() \
+                    and str(r.get("object") or "").strip():
+                e = {"predicate": str(r["predicate"]).strip(),
+                     "object": str(r["object"]).strip()}
+                if isinstance(r.get("object_type"), str) and r["object_type"].strip():
+                    e["object_type"] = r["object_type"].strip()
+                rel.append(e)
+    if rel:
+        out["relations"] = rel
+    qs = []
+    if isinstance(it.get("quantities"), list):
+        for q in it["quantities"]:
+            if isinstance(q, dict) and str(q.get("metric") or "").strip() \
+                    and str(q.get("value") or "").strip():
+                e = {"metric": str(q["metric"]).strip(), "value": str(q["value"]).strip()}
+                for f in ("comparator", "unit", "currency", "period", "quote"):
+                    if isinstance(q.get(f), str) and q[f].strip():
+                        e[f] = q[f].strip()
+                qs.append(e)
+    if qs:
+        out["quantities"] = qs
+    ids = []
+    if isinstance(it.get("identifiers"), list):
+        for d in it["identifiers"]:
+            if isinstance(d, dict) and str(d.get("value") or "").strip():
+                ids.append({"type": str(d.get("type") or "other").strip(),
+                            "value": str(d["value"]).strip()})
+    if ids:
+        out["identifiers"] = ids
+    fac = {}
+    if isinstance(it.get("facets"), dict):
+        for fk in FACET_KEYS:
+            fv = it["facets"].get(fk)
+            if isinstance(fv, dict):
+                clean = {}
+                for k, v in fv.items():
+                    if isinstance(v, bool) or v is None:
+                        continue
+                    if isinstance(v, (int, float)):
+                        clean[k] = v
+                    elif isinstance(v, str) and v.strip():
+                        clean[k] = v.strip()
+                if clean:
+                    fac[fk] = clean
+    if fac:
+        out["facets"] = fac
+    return out
+
+
+def normalize_extraction(obj):
+    """抽出結果を v3 の claim 構造へ正規化し、局所 ID (C1, C2, ...) と
+    kind をコードで付与する (A1・A6 のトレーサビリティの土台)。
+    missing_info は文字列リストのまま残す。"""
+    out = dict(obj)
+    n = 0
+    for key in CLAIM_LISTS:
+        claims = []
+        for it in obj.get(key) or []:
+            if isinstance(it, str):
+                it = {"statement": it}
+            if not isinstance(it, dict):
+                continue
+            c = _clean_claim(it)
+            if not c["statement"]:
+                continue
+            n += 1
+            c["id"] = f"C{n}"
+            c["kind"] = CLAIM_KINDS[key]
+            claims.append(c)
+        out[key] = claims
+    ps = obj.get("primary_subjects")
+    out["primary_subjects"] = [x.strip() for x in ps
+                               if isinstance(x, str) and x.strip()] \
+        if isinstance(ps, list) else []
+    return out
 
 
 def _nonempty_list(v):
@@ -66,9 +187,18 @@ def _validate_one_item(key, it, scores, details, errors):
     for f in ("counter_evidence", "missing_info"):
         if it.get(f) is not None and not isinstance(it.get(f), list):
             errors.append(f"{f}:must_be_list:{key}")
+    # トレーサビリティ (凍結バッチ A6・A9): 根拠 claim ID・制約コード・
+    # 減点コード・不足コード。任意項目で、あれば list として取り込む。
+    # 未知のコードはそのまま保存し、監査側で未分類として扱う (A9 の拡張規則)
+    for f in ("basis_claim_ids", "constraint_codes", "deduction_codes", "missing_codes"):
+        if it.get(f) is not None and not isinstance(it.get(f), list):
+            errors.append(f"{f}:must_be_list:{key}")
     details[key] = {"score": score, "reason": it.get("reason", ""), "evidence": ev or [],
                     "counter_evidence": it.get("counter_evidence") or [],
                     "missing_info": it.get("missing_info") or []}
+    for f in ("basis_claim_ids", "constraint_codes", "deduction_codes", "missing_codes"):
+        if isinstance(it.get(f), list):
+            details[key][f] = [str(x) for x in it[f]]
 
 
 def validate_assessment(obj, kind, cfg):
@@ -116,6 +246,8 @@ def parse_trl_level(v):
     lv = v.get("level")
     out = {"level": None, "reason": str(v.get("reason") or ""), "evidence": v.get("evidence") or [],
            "missing_info": v.get("missing_info") or []}
+    if isinstance(v.get("basis_claim_ids"), list):
+        out["basis_claim_ids"] = [str(x) for x in v["basis_claim_ids"]]
     if lv is None:
         return out, []
     if isinstance(lv, bool) or not isinstance(lv, int) or not 1 <= lv <= 9:
@@ -130,6 +262,47 @@ def parse_trl_level(v):
         errs.append("trl_level:evidence_required")
     out["level"] = lv
     return out, errs
+
+
+def parse_trl_levels(v):
+    """技術ごとの TRL (long v3、凍結バッチ A2)。代表値 (trl_level) を決める
+    既存規律は変えず、内訳を補助情報として保持する。任意項目のため、
+    壊れた要素は捨てるだけで評価自体は失敗させない (parse_direction と
+    同じ流儀)。subject が無く level が範囲外の要素は捨てる。"""
+    if not isinstance(v, list):
+        return []
+    out = []
+    for it in v:
+        if not isinstance(it, dict):
+            continue
+        subj = str(it.get("subject") or "").strip()
+        lv = it.get("level")
+        if not subj or (lv is not None and (isinstance(lv, bool)
+                                            or not isinstance(lv, int)
+                                            or not 1 <= lv <= 9)):
+            continue
+        e = {"subject": subj, "level": lv}
+        for f in ("environment", "repetition", "duration", "reason"):
+            if isinstance(it.get(f), str) and it[f].strip():
+                e[f] = it[f].strip()
+        if isinstance(it.get("basis_claim_ids"), list):
+            e["basis_claim_ids"] = [str(x) for x in it["basis_claim_ids"]]
+        out.append(e)
+    return out
+
+
+def normalize_event(ev):
+    """event v3 の構造化フィールド (凍結バッチ A7) の正規化。status は
+    制御語彙のみ残し、date_window / expectation / actual は dict のとき
+    だけ残す。旧形式 (これらが無い) はそのまま通る。"""
+    if not isinstance(ev, dict):
+        return ev
+    if ev.get("status") is not None and ev.get("status") not in EVENT_STATUSES:
+        ev["status"] = None
+    for f in ("date_window", "expectation", "actual"):
+        if f in ev and not isinstance(ev.get(f), dict):
+            ev.pop(f)
+    return ev
 
 
 DIRECTIONS = ("positive", "negative", "mixed")
@@ -167,7 +340,7 @@ def run_extraction(cand, cfg, llm, as_of, prompt_dir=None):
     errs = validate_extraction(obj)
     if errs:
         raise LLMError("invalid extraction: " + ",".join(errs[:5]))
-    return obj, {"name": "extract", "version": p["version"], "sha": p["sha"]}
+    return normalize_extraction(obj), {"name": "extract", "version": p["version"], "sha": p["sha"]}
 
 
 def _used_model(llm):
@@ -225,6 +398,9 @@ def evaluate_one(cand, kind, cfg, llm, as_of, extraction=None, extract_meta=None
                     trl, trl_errs = parse_trl_level(obj.get("trl_level"))
                     errs = errs + trl_errs
                     result["extra"]["trl_level"] = trl
+                    levels = parse_trl_levels(obj.get("trl_levels"))
+                    if levels:
+                        result["extra"]["trl_levels"] = levels
                     result["extra"]["direction"] = parse_direction(obj.get("direction"))
             if not errs:
                 break
@@ -236,7 +412,7 @@ def evaluate_one(cand, kind, cfg, llm, as_of, extraction=None, extract_meta=None
             result["errors"] = errs
             return result
         if kind == "event":
-            ev = obj.get("event") or {}
+            ev = normalize_event(obj.get("event") or {})
             result["event"] = ev
             reaction_ok = bool(market_reaction and market_reaction[0]
                                and market_reaction[0].get("available"))

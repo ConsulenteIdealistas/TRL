@@ -353,13 +353,14 @@ class AuditRulesTests(unittest.TestCase):
 
     def test_load_rules(self):
         r = T.load_rules()
-        self.assertEqual(r["version"], "v4.1")
+        self.assertEqual(r["version"], "v4.2")
         self.assertEqual(len(r["sha"]), 12)
         self.assertEqual(r["sha"], T.load_rules()["sha"])  # 同じファイルでは安定
         # A5 は規則化しない (対象外)。それ以外とポジティブ監査 P1〜P6 が載っている
         self.assertEqual(set(r["rules"]["checks"]),
                          {"A1", "A2", "A3", "A4", "A6", "A7", "A8", "A9",
                           "A10", "A11", "A12", "A13", "A14", "A15",
+                          "A16", "A17",
                           "E1", "E2",
                           "P1", "P2", "P3", "P4", "P5", "P6"})
 
@@ -766,7 +767,7 @@ class AuditRulesTests(unittest.TestCase):
         self.assertGreaterEqual(res1["flags"], 1)
         rows = self.store.audit_results(res1["batch"])
         self.assertEqual(len(rows), 2)
-        self.assertEqual(rows[0]["auditor_model"], "rules/v4.1")
+        self.assertEqual(rows[0]["auditor_model"], "rules/v4.2")
         self.assertEqual(rows[0]["prompt_sha"], T.load_rules()["sha"])
         # 同じ規則 (同じ sha) では再監査しない
         res2 = T.run_audit_rules(self.store, CFG, limit=10, log=lambda *_: None)
@@ -794,8 +795,51 @@ class AuditRulesTests(unittest.TestCase):
         text = T.build_audit_report(self.store, res["batch"])
         self.assertIn("# 監査レポート", text)
         self.assertIn("要確認あり 1件", text)
-        self.assertIn("グレーあり 1件", text)
+        # グレーは A4 (報告グレー) と A16 (両件: level 8 に対して項目点 70 が
+        # 許容帯 80-100 の外) で、グレーありは2件
+        self.assertIn("グレーあり 2件", text)
         self.assertIn("## グレー一覧", text)
         self.assertIn("報告フラグ", text)
         self.assertIn("A6", text)
         self.assertIn("A4", text)
+
+    # --- A16/A17 (v4.2、FREEZE-PLAN A8 の監査観測2点) ---
+
+    def test_a16_fires_when_band_diverges(self):
+        # level 8 の許容帯は 80-100。項目点 70 は帯域 60-79 で外れる
+        _, eid = self._mk_eval("A16発火")
+        entries = self._only(self._audit_one(eid), "A16")
+        self.assertEqual(len(entries), 1)
+        self.assertEqual(entries[0]["verdict"], "gray")
+        self.assertEqual(entries[0]["item"], "technology_readiness")
+
+    def test_a16_silent_when_in_band(self):
+        # level 5 は 40-79 が許容 (項目点 70 は帯域 60-79 で内側)
+        _, eid = self._mk_eval("A16不発", trl={"level": 5, "reason": "r",
+                                              "evidence": [], "missing_info": []})
+        self.assertEqual(self._only(self._audit_one(eid), "A16"), [])
+
+    def test_a16_silent_without_level_or_score(self):
+        # 旧世代形式 (trl_level 自体が無い) でも監査は落ちず、A16 は黙る
+        _, eid = self._mk_eval("A16旧形式", trl={})
+        self.assertEqual(self._only(self._audit_one(eid), "A16"), [])
+
+    def test_a17_fires_only_with_single_source_code(self):
+        it = self._item(score=85)
+        it["constraint_codes"] = ["single_source"]
+        _, eid = self._mk_eval("A17発火", items={"monetization": it})
+        entries = self._only(self._audit_one(eid), "A17")
+        self.assertEqual(len(entries), 1)
+        self.assertEqual(entries[0]["verdict"], "gray")
+
+    def test_a17_silent_at_or_below_cap(self):
+        it = self._item(score=59)
+        it["constraint_codes"] = ["single_source"]
+        _, eid = self._mk_eval("A17境界", items={"monetization": it})
+        self.assertEqual(self._only(self._audit_one(eid), "A17"), [])
+
+    def test_a17_silent_for_legacy_items_without_codes(self):
+        # 旧世代の項目 (constraint_codes が無い) は高得点でも対象外:
+        # 新世代前提の監査を旧世代へ機械適用しない (FREEZE-PLAN C 節)
+        _, eid = self._mk_eval("A17旧世代", items={"monetization": self._item(score=95)})
+        self.assertEqual(self._only(self._audit_one(eid), "A17"), [])

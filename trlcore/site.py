@@ -70,6 +70,10 @@ def _ev_for_site(ev, cfg):
                          for e in (v.get("evidence") or []) if isinstance(e, dict)],
             "counter_evidence": [str(x) for x in (v.get("counter_evidence") or [])],
             "missing_info": miss, "awaiting_info": wait}
+        # トレーサビリティ (v3 世代の任意フィールド。旧世代では欠落したまま)
+        for f in ("basis_claim_ids", "constraint_codes", "deduction_codes", "missing_codes"):
+            if isinstance(v.get(f), list) and v[f]:
+                out_items[k][f] = [str(x) for x in v[f]]
     trl = extra.get("trl_level")
     if isinstance(trl, dict) and trl.get("missing_info"):
         trl = dict(trl)
@@ -89,6 +93,8 @@ def _ev_for_site(ev, cfg):
         # 混ざっていた場合に備えてログと同じ秘匿処理を通す
         "errors": [redact(str(e)) for e in json.loads(ev["errors_json"] or "[]")] if ev["status"] == "error" else [],
         "trl_level": trl,
+        # 技術ごとの TRL 内訳 (v3 世代の任意フィールド。旧世代では None)
+        "trl_levels": extra.get("trl_levels") if isinstance(extra.get("trl_levels"), list) else None,
         "direction": extra.get("direction") if ev["status"] != "error" else None,  # error 評価の方向性は出さない (一覧・詳細で共通)
         "axes": extra.get("axes"),
         "business_stage": extra.get("business_stage"),

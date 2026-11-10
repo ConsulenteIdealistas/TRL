@@ -1,5 +1,5 @@
 {
- "config_version": "2026.11.1",
+ "config_version": "2026.11.2",
  "recalc_on_run": true,
  "long": {
   "weights": {
@@ -90,8 +90,8 @@
   "eval_workers": 4
  },
  "prompts": {
-  "extract": "v2",
-  "long": "v2",
-  "event": "v2"
+  "extract": "v3",
+  "long": "v3",
+  "event": "v3"
  }
 }

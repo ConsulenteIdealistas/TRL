@@ -637,6 +637,38 @@ class ExportTests(StoreFixture):
         cand3 = [c for c in data3["candidates"] if c["id"] == cid][0]
         self.assertNotIn("prev", cand3["long"])
 
+    def test_v3_trace_fields_exported_and_legacy_safe(self):
+        # 凍結バッチ: v3 世代の trl_levels と項目コードは export に素通しし、
+        # 旧世代の評価 (どちらも無い) では欠落したまま壊れない
+        data = self.build(Mock(make_llm_fn(long_scores={k: 65 for k in LONG_KEYS})), n=1)
+        cand = data["candidates"][0]
+        self.assertIsNone(cand["long"]["trl_levels"])  # 旧形式の評価には無い
+        self.assertNotIn("basis_claim_ids", cand["long"]["items"]["technology_readiness"])
+        cid = cand["id"]
+        ev2 = {"kind": "long", "as_of": AS_OF.isoformat(), "status": "final", "total": 65.0,
+               "band": {"label": "strong"},
+               "items": {k: {"score": 65, "reason": "r",
+                             "evidence": [{"ref": "https://example.org/x", "summary": "s",
+                                           "kind": "fact"}],
+                             "counter_evidence": [], "missing_info": []} for k in LONG_KEYS},
+               "extraction": None, "event": None, "prompt_versions": {}, "config_version": "x",
+               "config_hash": "x", "llm_provider": "gemini", "llm_model": "m", "input_hash": "h9",
+               "errors": [],
+               "extra": {"trl_level": {"level": 6, "reason": "r", "evidence": [], "missing_info": []},
+                         "trl_levels": [{"subject": "主技術", "level": 6,
+                                         "basis_claim_ids": ["C1"]}]}}
+        ev2["items"]["technology_readiness"]["basis_claim_ids"] = ["C1"]
+        ev2["items"]["technology_readiness"]["constraint_codes"] = ["single_source"]
+        self.store.add_evaluation("r9", cid, ev2)
+        data2 = T.build_site_data(self.store, cfg_with(), datetime(2026, 10, 26, tzinfo=timezone.utc))
+        long2 = [c for c in data2["candidates"] if c["id"] == cid][0]["long"]
+        self.assertEqual(long2["trl_levels"], [{"subject": "主技術", "level": 6,
+                                                "basis_claim_ids": ["C1"]}])
+        self.assertEqual(long2["items"]["technology_readiness"]["basis_claim_ids"], ["C1"])
+        self.assertEqual(long2["items"]["technology_readiness"]["constraint_codes"],
+                         ["single_source"])
+        self.assertNotIn("constraint_codes", long2["items"]["monetization"])  # 非空のときだけ付く
+
     def test_hold_cause_split_exported(self):
         # 保留の主因の内訳 (Issue 2 の表示策): 企業を特定できないケースと、
         # 特定できているが根拠が無いケースを、理由文の明記から切り分ける
@@ -1001,7 +1033,7 @@ class ZeroRiskBatchTests(unittest.TestCase):
                      "display_status", "eval_count", "next_up", "long", "event",
                      "entities", "related_news", "related_financials", "queue", "summary"}
         ev_keys = {"status", "total", "band", "as_of", "evaluated_at", "items",
-                   "critical_missing", "errors", "trl_level", "direction", "axes",
+                   "critical_missing", "errors", "trl_level", "trl_levels", "direction", "axes",
                    "business_stage", "total_scope", "llm_provider", "llm_model",
                    "prev", "hold_cause", "total_orig", "band_orig"}
         for c in data["candidates"]:

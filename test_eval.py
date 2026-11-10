@@ -624,5 +624,170 @@ class MarketReactionTests(unittest.TestCase):
         tmp.cleanup()
 
 
+class FreezeV3Tests(unittest.TestCase):
+    """凍結バッチ (A1〜A10): v3 世代の構造化と旧世代との混在互換。"""
+
+    cand = {"id": "c1", "title": "T", "abstract": "A" * 300, "url": "u", "source": "arxiv",
+            "published": "2026-10-10", "fields": []}
+
+    def test_prompts_are_v3(self):
+        self.assertEqual(CFG["config_version"], "2026.11.2")
+        self.assertEqual(CFG["scoring"]["prompts"],
+                         {"extract": "v3", "long": "v3", "event": "v3"})
+
+    def test_extract_v3_prompt_anchors(self):
+        text = load_prompt("extract", "v3")["text"]
+        for anchor in ("quote", "primary_subjects", "quantities", "identifiers",
+                       "facets", "grounded", "取りこぼし防止", "経営陣の就任・退任"):
+            self.assertIn(anchor, text)
+
+    def test_long_v3_prompt_anchors(self):
+        text = load_prompt("long", "v3")["text"]
+        for anchor in ("trl_levels", "basis_claim_ids", "constraint_codes",
+                       "deduction_codes", "missing_codes", "防衛・軍事技術",
+                       "硬い上限ではない", "TAM", "原資は現預金に短期投資"):
+            self.assertIn(anchor, text)
+
+    def test_normalize_extraction_envelope(self):
+        obj = {"facts": [{"statement": "第2相で主要評価項目を達成した",
+                          "quote": "主要評価項目を達成", "source": "u",
+                          "subject": "候補薬X", "subject_type": "substance",
+                          "subject_role": "primary", "polarity": "positive",
+                          "status": "completed", "event_date": "2026-09-01",
+                          "quantities": [{"metric": "症例数", "value": "120", "unit": "例"}],
+                          "identifiers": [{"type": "NCT", "value": "NCT01234567"}],
+                          "facets": {"study": {"phase": "Phase 2"}}}],
+               "inferences": [{"statement": "推論1", "subject_type": "bogus",
+                               "status": "bogus"}],
+               "forecasts": [], "hypotheses": [],
+               "counter_points": [{"statement": "安全性の懸念", "grounded": True}],
+               "missing_info": ["長期データ"],
+               "primary_subjects": [" 候補薬X ", ""]}
+        out = T.normalize_extraction(obj)
+        f = out["facts"][0]
+        self.assertEqual((f["id"], f["kind"]), ("C1", "fact"))
+        self.assertEqual(f["quote"], "主要評価項目を達成")
+        self.assertEqual(f["subject_type"], "substance")
+        self.assertEqual(f["status"], "completed")
+        self.assertEqual(f["quantities"][0]["value"], "120")
+        self.assertEqual(f["identifiers"][0]["value"], "NCT01234567")
+        self.assertEqual(f["facets"]["study"]["phase"], "Phase 2")
+        inf = out["inferences"][0]
+        self.assertEqual((inf["id"], inf["kind"]), ("C2", "inference"))
+        self.assertNotIn("subject_type", inf)  # 語彙外は落とすだけ
+        self.assertNotIn("status", inf)
+        cp = out["counter_points"][0]
+        self.assertEqual((cp["id"], cp["kind"], cp["grounded"]), ("C3", "counter", True))
+        self.assertEqual(out["missing_info"], ["長期データ"])  # 文字列リストのまま
+        self.assertEqual(out["primary_subjects"], ["候補薬X"])
+
+    def test_normalize_extraction_legacy_shape(self):
+        # 旧世代 (v2 以前) の抽出: subject のみの fact と文字列の counter_points
+        legacy = {"facts": [{"statement": "f", "source": "u", "subject": "製品A"}],
+                  "inferences": [], "forecasts": [], "hypotheses": [],
+                  "counter_points": ["文字列の反証"], "missing_info": []}
+        self.assertEqual(T.validate_extraction(legacy), [])
+        out = T.normalize_extraction(legacy)
+        self.assertEqual((out["facts"][0]["id"], out["facts"][0]["kind"]), ("C1", "fact"))
+        self.assertEqual(out["facts"][0]["subject"], "製品A")
+        self.assertEqual(out["counter_points"][0]["statement"], "文字列の反証")
+        self.assertEqual(out["counter_points"][0]["kind"], "counter")
+        self.assertEqual(out["primary_subjects"], [])
+
+    def test_validate_extraction_counter_dict_needs_statement(self):
+        obj = dict(EXTRACTION, counter_points=[{"quote": "引用のみ"}])
+        self.assertTrue(any("counter_points" in e for e in T.validate_extraction(obj)))
+        obj2 = dict(EXTRACTION, counter_points=["文字列は可", {"statement": "構造化も可"}])
+        self.assertEqual(T.validate_extraction(obj2), [])
+
+    def test_parse_trl_levels_lenient(self):
+        v = [{"subject": "主技術", "level": 6, "environment": "実環境",
+              "basis_claim_ids": ["C1"]},
+             {"subject": "", "level": 3},            # subject 無しは捨てる
+             {"subject": "副技術", "level": 99},     # 範囲外は捨てる
+             "not-a-dict",
+             {"subject": "第三技術", "level": None}]  # level null は残す
+        out = T.parse_trl_levels(v)
+        self.assertEqual([e["subject"] for e in out], ["主技術", "第三技術"])
+        self.assertEqual(out[0]["basis_claim_ids"], ["C1"])
+        self.assertIsNone(out[1]["level"])
+        self.assertEqual(T.parse_trl_levels(None), [])
+        self.assertEqual(T.parse_trl_levels({"subject": "x"}), [])
+
+    def test_normalize_event_vocab(self):
+        evv = T.normalize_event({"classification": 2, "status": "occurred",
+                                 "date_window": {"start": "2026-11-01"},
+                                 "expectation": {"value": "承認"}, "actual": "文字列"})
+        self.assertEqual(evv["status"], "occurred")
+        self.assertEqual(evv["date_window"], {"start": "2026-11-01"})
+        self.assertNotIn("actual", evv)  # dict でない構造化値は落とす
+        self.assertIsNone(T.normalize_event({"status": "bogus"})["status"])
+        legacy = {"classification": 1, "market_expectation": "x"}
+        self.assertEqual(T.normalize_event(dict(legacy)), legacy)  # 旧形式は素通し
+
+    def test_item_trace_fields_roundtrip(self):
+        obj = assessment(LONG_KEYS, {k: 60 for k in LONG_KEYS})
+        it = obj["items"]["technology_readiness"]
+        it["basis_claim_ids"] = ["C1", "C2"]
+        it["constraint_codes"] = ["single_source", "unknown_code_xyz"]  # 未知コードも保存
+        it["deduction_codes"] = ["no_repetition"]
+        it["missing_codes"] = []
+        scores, details, errors = T.validate_assessment(obj, "long", CFG)
+        self.assertEqual(errors, [])
+        d = details["technology_readiness"]
+        self.assertEqual(d["basis_claim_ids"], ["C1", "C2"])
+        self.assertEqual(d["constraint_codes"], ["single_source", "unknown_code_xyz"])
+        self.assertEqual(d["deduction_codes"], ["no_repetition"])
+        self.assertEqual(d["missing_codes"], [])  # 空リストも list として取り込む
+
+    def test_item_trace_field_must_be_list(self):
+        obj = assessment(LONG_KEYS, {k: 60 for k in LONG_KEYS})
+        obj["items"]["monetization"]["constraint_codes"] = "single_source"
+        _, _, errors = T.validate_assessment(obj, "long", CFG)
+        self.assertIn("constraint_codes:must_be_list:monetization", errors)
+
+    def test_evaluate_one_long_keeps_levels_and_codes(self):
+        def fn(prompt):
+            if "長期成長評価" not in prompt:
+                return json.dumps(EXTRACTION)
+            obj = assessment(LONG_KEYS, {k: 60 for k in LONG_KEYS})
+            obj["items"]["technology_readiness"]["basis_claim_ids"] = ["C1"]
+            obj["items"]["technology_readiness"]["constraint_codes"] = ["single_source"]
+            obj["trl_level"] = {"level": 6, "reason": "実証済み",
+                                "evidence": [{"ref": "https://example.org/x",
+                                              "summary": "要約", "kind": "fact"}],
+                                "basis_claim_ids": ["C1"]}
+            obj["trl_levels"] = [{"subject": "主技術", "level": 6, "basis_claim_ids": ["C1"]},
+                                 {"subject": "副技術", "level": 99}]
+            return json.dumps(obj)
+        r = ev.evaluate_one(self.cand, "long", CFG, Mock(fn), AS_OF)
+        self.assertEqual(r["status"], "final")
+        self.assertEqual(r["extra"]["trl_levels"],
+                         [{"subject": "主技術", "level": 6, "basis_claim_ids": ["C1"]}])
+        self.assertEqual(r["extra"]["trl_level"]["basis_claim_ids"], ["C1"])
+        self.assertEqual(r["items"]["technology_readiness"]["constraint_codes"],
+                         ["single_source"])
+        self.assertEqual(r["prompt_versions"]["long"]["version"], "v3")
+        self.assertEqual(r["prompt_versions"]["extract"]["version"], "v3")
+
+    def test_evaluate_one_event_structured(self):
+        r = ev.evaluate_one(self.cand, "event", CFG,
+                            Mock(make_llm_fn(event_scores={k: 60 for k in EVENT_KEYS},
+                                             event={"classification": 2,
+                                                    "market_expectation": "市場は未織り込みと見る",
+                                                    "status": "occurred",
+                                                    "date_window": {"start": "2026-11-01",
+                                                                    "end": "2027-04-30"},
+                                                    "expectation": {"metric": "承認",
+                                                                    "value": "承認取得"},
+                                                    "actual": "文字列"})),
+                            AS_OF)
+        self.assertEqual(r["event"]["status"], "occurred")
+        self.assertEqual(r["event"]["date_window"]["end"], "2027-04-30")
+        self.assertEqual(r["event"]["expectation"]["value"], "承認取得")
+        self.assertNotIn("actual", r["event"])
+        self.assertEqual(r["prompt_versions"]["event"]["version"], "v3")
+
+
 if __name__ == "__main__":
     unittest.main()

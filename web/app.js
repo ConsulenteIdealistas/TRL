@@ -102,9 +102,15 @@ function filtered() {
   const byStatus = (a, b) => (SO[a.display_status] - SO[b.display_status])
     || ((ok(lvl(b)) ? lvl(b) : -1) - (ok(lvl(a)) ? lvl(a) : -1))
     || String(b.published || "").localeCompare(String(a.published || ""));
+  // 種別: 候補に明示の kind があればそれを第一に、無ければ長期評価が
+  // あるものを長期、短期 (event) 評価だけのものを短期とする。どちらも
+  // 無い未評価の候補は長期側に寄せる (書き出しに kind は含まれない)
+  const kindOf = p => (p.kind === "long" || p.kind === "event") ? p.kind
+    : (p.long || !p.event) ? "long" : "event";
   r.sort((a, b) => o === "status" ? byStatus(a, b)
     : o === "market" ? (ord(marketOf(a), MO) - ord(marketOf(b), MO)) || byStatus(a, b)
     : o === "sector" ? (ord(sectorOf(a), CO) - ord(sectorOf(b), CO)) || byStatus(a, b)
+    : o === "kind" ? ((kindOf(a) === "event") - (kindOf(b) === "event")) || byStatus(a, b)
     : o === "trl" ? (ok(lvl(b)) ? lvl(b) : -1) - (ok(lvl(a)) ? lvl(a) : -1)
     : o === "trl_asc" ? (ok(lvl(a)) ? lvl(a) : 99) - (ok(lvl(b)) ? lvl(b) : 99)
     : o === "date_asc" ? String(a.published || "9999").localeCompare(String(b.published || "9999"))

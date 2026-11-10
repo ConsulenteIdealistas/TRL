@@ -1078,6 +1078,27 @@ class ExportTests(unittest.TestCase):
         self.assertTrue(all(c["tier"] in ("watch", "reference")
                             for c in data["watch_companies"]))
 
+    def test_kind_sort_on_index_and_audit_pages(self):
+        # 一覧: 並び順に種別別 (長期→短期) があり、種別は明示 kind を第一に、
+        # 無ければ長期評価の有無で決める (書き出しに kind は無いため、
+        # 未評価の候補は長期側に寄る)
+        web = T.ROOT / "web"
+        index = (web / "index.html").read_text(encoding="utf-8")
+        app = (web / "app.js").read_text(encoding="utf-8")
+        self.assertIn('<option value="kind">種別別（長期→短期）</option>', index)
+        self.assertIn("const kindOf", app)
+        self.assertIn('o === "kind"', app)
+        # 監査: 種別の「両方」表示と種別順。表示単位は候補×種別のカードで、
+        # 統計・チップ・種別チップの件数はすべてカード単位に揃える
+        page = (web / "audit.html").read_text(encoding="utf-8")
+        js = (web / "audit.js").read_text(encoding="utf-8")
+        self.assertIn('<option value="kind">種別順</option>', page)
+        self.assertIn('["all", "両方"]', js)
+        self.assertIn("function cards()", js)
+        self.assertIn('viewState.sort === "kind"', js)
+        self.assertIn('q.get("k") === "all"', js)
+        self.assertIn("sbadge lngk", js)  # 両方表示で長期カードにも種別バッジ
+
 
 class ZeroRiskBatchTests(unittest.TestCase):
     """ゼロリスク改善バッチ (完全性・機密性・ACID・観測) のテスト。"""

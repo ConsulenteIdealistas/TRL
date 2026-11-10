@@ -72,9 +72,19 @@ async function copyText(t) {
 }
 
 let DATA = null;
-const blocksOf = p => (viewState.kind === "event" ? p.audit_event : p.audit) || [];
-const evOf = p => viewState.kind === "event" ? p.event : p.long;
-function audited() { return (DATA.candidates || []).filter(p => blocksOf(p).length); }
+const blocksOf = (p, k) => ((k === "event" ? p.audit_event : p.audit) || []);
+const evOf = (p, k) => (k === "event" ? p.event : p.long);
+/* 表示単位は「候補 × 種別」のカード。種別が all (両方) のときは長期・
+   イベントの両方のカードが並び、両方の監査がある候補は2枚になる。
+   件数の単位は常にこのカードで、統計枠・チップ・一覧で揃える */
+function cards() {
+  const ks = viewState.kind === "all" ? ["long", "event"] : [viewState.kind];
+  const out = [];
+  for (const p of DATA.candidates || []) for (const k of ks) {
+    if (blocksOf(p, k).length) out.push({p, kind: k});
+  }
+  return out;
+}
 
 /* カードの状態 (絞り込みとバッジ用)。要確認/グレーは「未処分が残っている」
    もの、処分済みは「全エントリ処分済み」のものとして数える */
@@ -82,25 +92,31 @@ const viewState = {filter: "all", sort: "default", kind: "long"};
 const SFILTERS = [["all", "すべて"], ["flag", "要確認"], ["gray", "グレー"],
   ["done", "処分済み"], ["dconfirmed", "問題あり"], ["dfalse", "誤検知"],
   ["dwatch", "様子見"], ["reserved", "再評価予約"], ["adjusted", "調整済み"]];
-function cardState(p) {
+function cardState(c) {
+  const blocks = blocksOf(c.p, c.kind);
   let flagOpen = 0, grayOpen = 0, total = 0, decided = 0;
   const disp = {confirmed: 0, false_positive: 0, watch: 0};
-  for (const a of blocksOf(p)) for (const e of a.entries) {
+  for (const a of blocks) for (const e of a.entries) {
     total++;
     const d = decisionOf(a, e);
     if (d && d.disposition) { decided++; if (d.disposition in disp) disp[d.disposition]++; }
     else if (e.verdict === "gray") grayOpen++; else flagOpen++;
   }
-  const evalId = blocksOf(p)[0].evaluation_id;
+  const evalId = blocks[0].evaluation_id;
   return {flagOpen, grayOpen, done: total > 0 && decided === total, disp,
-          reserved: !!(review.reeval[p.id] && review.reeval[p.id].on),
+          // 予約は候補単位の記録だが、両方表示では長期カードにだけ付ける
+          // (イベントカードへ重ねると同じ予約を二重に数えるため)。
+          // 単独表示での数え方は従来どおり。調整は長期評価だけの概念で、
+          // イベント側の評価 ID では引けないため自然に付かない
+          reserved: !!(review.reeval[c.p.id] && review.reeval[c.p.id].on)
+                    && (c.kind === "long" || viewState.kind !== "all"),
           adjusted: !!review.adjustments[evalId]};
 }
 function applyView(list) {
   const f = viewState.filter;
-  const out = list.filter(p => {
+  const out = list.filter(c => {
     if (f === "all") return true;
-    const st = cardState(p);
+    const st = cardState(c);
     return f === "flag" ? st.flagOpen > 0 : f === "gray" ? st.grayOpen > 0 :
            f === "done" ? st.done :
            f === "dconfirmed" ? st.disp.confirmed > 0 :
@@ -108,20 +124,22 @@ function applyView(list) {
            f === "dwatch" ? st.disp.watch > 0 :
            f === "reserved" ? st.reserved : st.adjusted;
   });
-  const trlOf = p => { const lv = viewState.kind === "long" && p.long && p.long.trl_level ? p.long.trl_level.level : null; return ok(lv) ? lv : null; };
-  const dateOf = p => { const L = evOf(p); return (L && L.evaluated_at) || ""; };
+  const trlOf = c => { const lv = c.kind === "long" && c.p.long && c.p.long.trl_level ? c.p.long.trl_level.level : null; return ok(lv) ? lv : null; };
+  const dateOf = c => { const L = evOf(c.p, c.kind); return (L && L.evaluated_at) || ""; };
   if (viewState.sort === "trl-desc") out.sort((a, b) => (trlOf(b) ?? -1) - (trlOf(a) ?? -1));
   else if (viewState.sort === "trl-asc") out.sort((a, b) => (trlOf(a) ?? 99) - (trlOf(b) ?? 99));
   else if (viewState.sort === "new") out.sort((a, b) => dateOf(b).localeCompare(dateOf(a)));
   else if (viewState.sort === "old") out.sort((a, b) => dateOf(a).localeCompare(dateOf(b)));
+  else if (viewState.sort === "kind") out.sort((a, b) =>
+    ((a.kind === "event") - (b.kind === "event")) || dateOf(b).localeCompare(dateOf(a)));
   return out;
 }
 function renderControls() {
   const counts = {all: 0, flag: 0, gray: 0, done: 0, dconfirmed: 0, dfalse: 0,
                   dwatch: 0, reserved: 0, adjusted: 0};
-  for (const p of audited()) {
+  for (const c of cards()) {
     counts.all++;
-    const st = cardState(p);
+    const st = cardState(c);
     if (st.flagOpen) counts.flag++;
     if (st.grayOpen) counts.gray++;
     if (st.done) counts.done++;
@@ -131,10 +149,12 @@ function renderControls() {
     if (st.reserved) counts.reserved++;
     if (st.adjusted) counts.adjusted++;
   }
+  // 種別チップの件数もカード単位: 「両方」は長期カード+イベントカードの総数
   const kindCounts = {long: (DATA.candidates || []).filter(p => (p.audit || []).length).length,
                       event: (DATA.candidates || []).filter(p => (p.audit_event || []).length).length};
+  kindCounts.all = kindCounts.long + kindCounts.event;
   const kf = $("#kindFilters");
-  if (kf) kf.innerHTML = [["long", "長期評価"], ["event", "イベント評価"]].map(([k, label]) =>
+  if (kf) kf.innerHTML = [["long", "長期評価"], ["event", "イベント評価"], ["all", "両方"]].map(([k, label]) =>
     `<button type="button" class="fchip" data-kind="${k}" aria-pressed="${viewState.kind === k ? "true" : "false"}">${label} ${kindCounts[k]}</button>`).join("");
   $("#stateFilters").innerHTML = SFILTERS.map(([v, label]) =>
     `<button type="button" class="fchip" data-sfilter="${v}" aria-pressed="${viewState.filter === v ? "true" : "false"}">${label} ${counts[v]}</button>`).join("");
@@ -145,23 +165,26 @@ function renderControls() {
 function renderCov() {
   // 枠の数字は絞り込みチップと必ず一致させる: すべて「評価 (カード) の数」
   // で数える (エントリ数で数えると同じラベルで数字が食い違うため)。
-  // 処分済み = 全エントリを処分した評価、問題あり等 = その処分を含む評価
-  const flagE = new Set(), grayE = new Set();
-  let done = 0;
+  // 処分済み = 全エントリを処分した評価、問題あり等 = その処分を含む評価。
+  // 両方表示でも単位はカード (候補×種別) のまま数える
+  let flagN = 0, grayN = 0, done = 0;
   const byDisp = {confirmed: 0, false_positive: 0, watch: 0};
-  for (const p of audited()) {
-    const st = cardState(p);
-    for (const a of blocksOf(p)) for (const e of a.entries) {
-      if (e.verdict === "gray") grayE.add(a.evaluation_id); else flagE.add(a.evaluation_id);
+  for (const c of cards()) {
+    const st = cardState(c);
+    let hasFlag = false, hasGray = false;
+    for (const a of blocksOf(c.p, c.kind)) for (const e of a.entries) {
+      if (e.verdict === "gray") hasGray = true; else hasFlag = true;
     }
+    if (hasFlag) flagN++;
+    if (hasGray) grayN++;
     if (st.done) done++;
     for (const k of Object.keys(byDisp)) if (st.disp[k]) byDisp[k]++;
   }
   const reev = Object.values(review.reeval).filter(r => r && r.on).length;
   const adj = Object.keys(review.adjustments).length;
   $("#cov").innerHTML =
-    `<div class="stat y"><small>要確認のある評価</small><strong>${flagE.size}</strong><em>件</em></div>` +
-    `<div class="stat x"><small>グレーのある評価</small><strong>${grayE.size}</strong><em>件</em></div>` +
+    `<div class="stat y"><small>要確認のある評価</small><strong>${flagN}</strong><em>件</em></div>` +
+    `<div class="stat x"><small>グレーのある評価</small><strong>${grayN}</strong><em>件</em></div>` +
     `<div class="stat v"><small>処分済み</small><strong>${done}</strong><em>件の評価</em></div>` +
     `<div class="stat r"><small>問題あり</small><strong>${byDisp.confirmed}</strong><em>件の評価</em></div>` +
     `<div class="stat g"><small>誤検知</small><strong>${byDisp.false_positive}</strong><em>件の評価</em></div>` +
@@ -216,8 +239,9 @@ function adjustHtml(p, evalId) {
   </div>`;
 }
 
-function cardHtml(p) {
-  const L = evOf(p);
+function cardHtml(c) {
+  const p = c.p, k = c.kind;
+  const L = evOf(p, k);
   const title = p.title_ja || p.title;
   const entNames = (p.entities || []).map(e => e.name).filter(Boolean).join("、");
   const sectors = [...new Set((p.entities || []).map(e => CL[e.sector] || e.sector).filter(Boolean))].join("・");
@@ -228,18 +252,21 @@ function cardHtml(p) {
   const ev = [];
   if (L) {
     if (L.total !== null && L.total !== undefined) ev.push(`総合点 ${esc(L.total)}${L.band ? `（${esc(L.band)}）` : ""}`);
-    if (viewState.kind === "long") {
+    if (k === "long") {
       const lv = L.trl_level ? L.trl_level.level : null;
       ev.push(`TRL ${ok(lv) ? lv : "未確定"}`);
     }
     if (L.llm_model) ev.push(`評価: ${esc(L.llm_model)}`);
     if (L.evaluated_at) ev.push(jst(L.evaluated_at));
   }
-  const evalId = blocksOf(p)[0].evaluation_id;
-  const stKey = viewState.kind === "event" && L ? L.status : p.display_status;
+  const evalId = blocksOf(p, k)[0].evaluation_id;
+  const stKey = k === "event" && L ? L.status : p.display_status;
   const resv = review.reeval[p.id];
   const resvOn = !!(resv && resv.on);
-  return `<section class="panel acard" id="card-${esc(p.id)}">
+  // 予約ボタンも両方表示では長期カードにだけ出す (状態の付け方と揃える)
+  const showResv = k === "long" || viewState.kind !== "all";
+  // 両方表示で同じ候補のカードが2枚あるときはイベント側の id を分ける
+  return `<section class="panel acard" id="card-${esc(p.id)}${viewState.kind === "all" && k === "event" ? "--event" : ""}">
     <div class="ahead">
       <div style="min-width:0">
         <a class="atitle" href="detail.html?id=${encodeURIComponent(p.id)}">${esc(title)}</a>
@@ -248,8 +275,9 @@ function cardHtml(p) {
       <span class="st st-${esc(stKey || "")}">${esc(SL[stKey] || stKey || "")}</span>
     </div>
     ${ev.length ? `<div class="ameta">元評価: ${ev.join(" ・ ")}</div>` : ""}
-    ${(() => { const st = cardState(p); const b = [];
-      if (viewState.kind === "event") b.push(`<span class="sbadge evk">イベント評価</span>`);
+    ${(() => { const st = cardState(c); const b = [];
+      if (k === "event" && viewState.kind !== "long") b.push(`<span class="sbadge evk">イベント評価</span>`);
+      if (k === "long" && viewState.kind === "all") b.push(`<span class="sbadge lngk">長期評価</span>`);
       if (st.flagOpen) b.push(`<span class="sbadge flag">要確認 ${st.flagOpen}</span>`);
       if (st.grayOpen) b.push(`<span class="sbadge gray">グレー ${st.grayOpen}</span>`);
       if (st.done) b.push(`<span class="sbadge done">処分済み</span>`);
@@ -257,21 +285,21 @@ function cardHtml(p) {
       if (st.adjusted) b.push(`<span class="sbadge adj">調整済み</span>`);
       return b.length ? `<div class="srow">${b.join("")}</div>` : ""; })()}
     <div class="ameta"><a class="tg" href="detail.html?id=${encodeURIComponent(p.id)}">記事（詳細ページ）を見る →</a></div>
-    ${blocksOf(p).map(auditBlockHtml).join("")}
-    <div class="aops">
-      <div class="adjrow">
+    ${blocksOf(p, k).map(auditBlockHtml).join("")}
+    ${showResv || k === "long" ? `<div class="aops">
+      ${showResv ? `<div class="adjrow">
         <button type="button" class="btn quiet resv" data-reeval="${esc(p.id)}" aria-pressed="${resvOn ? "true" : "false"}">${resvOn ? "再評価: 予約済み（タップで解除）" : "再評価を予約する"}</button>
         <span class="hint">処分で「問題あり」にした評価の作り直しは、再評価（経路A）で行います。</span>
-      </div>
-      ${viewState.kind === "long" ? adjustHtml(p, evalId) : ""}
-    </div>
+      </div>` : ""}
+      ${k === "long" ? adjustHtml(p, evalId) : ""}
+    </div>` : ""}
   </section>`;
 }
 
 function render() {
   renderCov();
   renderControls();
-  const all = audited();
+  const all = cards();
   const list = applyView(all);
   $("#list").innerHTML = list.length ? list.map(cardHtml).join("")
     : `<div class="empty">${all.length ? "この状態のカードはありません。" : "監査が付いた評価はまだありません。"}</div>`;
@@ -391,22 +419,23 @@ $("#copyBtn").addEventListener("click", async () => {
     return;
   }
   DATA = d;
-  // 詳細ページからの遷移: ?k=event でイベント側を開く。?c= の候補が
-  // 現在の種別に無ければ、監査がある側へ切り替える
+  // 詳細ページからの遷移: ?k=event でイベント側、?k=all で両方を開く。
+  // ?c= の候補が現在の種別に無ければ、監査がある側へ切り替える
   const q = new URLSearchParams(location.search);
-  if (q.get("k") === "event" || q.get("k") === "long") viewState.kind = q.get("k");
+  if (q.get("k") === "event" || q.get("k") === "long" || q.get("k") === "all") viewState.kind = q.get("k");
   render();
   const target = q.get("c");
-  if (target && !audited().some(p => p.id === target)) {
+  const hasCard = id => cards().some(c => c.p.id === id);
+  if (target && !hasCard(target) && viewState.kind !== "all") {
     const other = viewState.kind === "event" ? "long" : "event";
-    const has = (DATA.candidates || []).some(p => p.id === target &&
-      ((other === "event" ? p.audit_event : p.audit) || []).length);
+    const has = (DATA.candidates || []).some(p => p.id === target && blocksOf(p, other).length);
     if (has) { viewState.kind = other; render(); }
   }
-  if (target && audited().some(p => p.id === target)) {
+  if (target && hasCard(target)) {
     viewState.filter = "all";
     render();
-    const el = document.getElementById("card-" + target);
+    const el = document.getElementById("card-" + target)
+      || document.getElementById("card-" + target + "--event");
     if (el) {
       el.scrollIntoView({block: "start"});
       el.classList.add("hl");

@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS candidates(
   status TEXT NOT NULL DEFAULT 'new', screen_reason TEXT, last_eval_at TEXT,
   retry_count INTEGER NOT NULL DEFAULT 0, first_seen_run TEXT,
   title_ja TEXT, abstract_ja TEXT, translation_src TEXT, media_url TEXT);
-CREATE TABLE IF NOT EXISTS identifiers(key TEXT PRIMARY KEY, candidate_id TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS identifiers(key TEXT PRIMARY KEY, candidate_id TEXT NOT NULL) WITHOUT ROWID;
 CREATE TABLE IF NOT EXISTS candidate_versions(
   id INTEGER PRIMARY KEY AUTOINCREMENT, candidate_id TEXT, title TEXT, abstract TEXT,
   published TEXT, source TEXT, superseded_at TEXT, run_id TEXT);
@@ -147,6 +147,7 @@ class Store:
 
     def _migrate(self):
         """既存DBに後から追加した列を足す(CREATE TABLE IF NOT EXISTS では増えないため)。"""
+        self._identifiers_without_rowid()
         cols = {r[1] for r in self.conn.execute("PRAGMA table_info(evaluations)")}
         if "extra_json" not in cols:
             self.conn.execute("ALTER TABLE evaluations ADD COLUMN extra_json TEXT")
@@ -158,6 +159,36 @@ class Store:
         if cmpcols and "actual_model" not in cmpcols:
             self.conn.execute("ALTER TABLE compare_results ADD COLUMN actual_model TEXT")
         self.conn.commit()
+
+    def _identifiers_without_rowid(self):
+        """identifiers を WITHOUT ROWID 形へ移行する (冪等)。
+
+        TEXT 主キーの rowid テーブルではキーがテーブル本体と主キー索引
+        (sqlite_autoindex) の両方に載り、実量の約2.2倍になる
+        (trl-db-cleanup/COMPRESSION.md 実測: 本体+索引 9.74MB に対し
+        ペイロード 4.48MB)。WITHOUT ROWID では主キーの B-tree が本体を
+        兼ね、二重格納が消える。読み手は全て key / candidate_id 経由で
+        rowid 依存が無いため、テーブル名・列・型を保ったまま再構築する。
+        移行済み (新規DBは SCHEMA で最初からこの形) なら何もしない。"""
+        row = self.conn.execute(
+            "SELECT sql FROM sqlite_master WHERE type='table' AND name='identifiers'"
+        ).fetchone()
+        if row is None or not row[0] or "WITHOUT ROWID" in row[0].upper():
+            return
+        self.conn.execute("BEGIN IMMEDIATE")
+        try:
+            self.conn.execute(
+                "CREATE TABLE identifiers_wor("
+                "key TEXT PRIMARY KEY, candidate_id TEXT NOT NULL) WITHOUT ROWID")
+            self.conn.execute(
+                "INSERT INTO identifiers_wor(key, candidate_id) "
+                "SELECT key, candidate_id FROM identifiers")
+            self.conn.execute("DROP TABLE identifiers")
+            self.conn.execute("ALTER TABLE identifiers_wor RENAME TO identifiers")
+            self.conn.execute("COMMIT")
+        except Exception:
+            self.conn.execute("ROLLBACK")
+            raise
 
     def set_translation(self, cid, title_ja, abstract_ja, title_by=None, abstract_by=None):
         """訳文と、その出典(どの経路で訳したか)を保存する。出典は項目別に記録する。"""

@@ -10,6 +10,7 @@ import copy
 import io
 import json
 import os
+import sqlite3
 import tempfile
 import unittest
 import urllib.error
@@ -224,6 +225,60 @@ class FinancialPoolTests(unittest.TestCase):
         res = ev.evaluate_one(cand, "long", CFG, UsedModelMock(make_llm_fn()), AS_OF)
         self.assertEqual(res["llm_model"], "fallback-model")
         self.assertEqual(res["extraction_model"], "fallback-model")
+
+
+class IdentifiersWithoutRowidTests(unittest.TestCase):
+    """identifiers の WITHOUT ROWID 化: 新規DBの形と既存DBの移行・冪等性。"""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.path = Path(self.tmp.name) / "t.sqlite"
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def _form(self, store):
+        return store.conn.execute(
+            "SELECT sql FROM sqlite_master WHERE type='table' AND name='identifiers'"
+        ).fetchone()[0]
+
+    def test_fresh_db_is_without_rowid(self):
+        store = Store(self.path)
+        self.assertIn("WITHOUT ROWID", self._form(store).upper())
+        store.close()
+
+    def test_legacy_db_migrates_and_is_idempotent(self):
+        rows = [("url:https://example.com/a", "c1"),
+                ("doi:10.1000/xyz", "c1"),
+                ("gaux:acme:title", "c2")]
+        conn = sqlite3.connect(str(self.path))
+        conn.execute("CREATE TABLE identifiers(key TEXT PRIMARY KEY, candidate_id TEXT NOT NULL)")
+        conn.executemany("INSERT INTO identifiers VALUES(?,?)", rows)
+        conn.commit()
+        conn.close()
+
+        store = Store(self.path)  # 開いた時点で移行される
+        self.assertIn("WITHOUT ROWID", self._form(store).upper())
+        got = sorted(map(tuple, store.conn.execute(
+            "SELECT key, candidate_id FROM identifiers")))
+        self.assertEqual(got, sorted(rows))
+        # 主キー索引 (二重格納) が残っていない
+        self.assertEqual(store.conn.execute(
+            "SELECT COUNT(*) FROM sqlite_master "
+            "WHERE type='index' AND tbl_name='identifiers'").fetchone()[0], 0)
+        # 重複排除の挙動: 既存キーは INSERT OR IGNORE で上書きされない
+        store.conn.execute("INSERT OR IGNORE INTO identifiers VALUES(?,?)",
+                           (rows[0][0], "other"))
+        self.assertEqual(store.conn.execute(
+            "SELECT candidate_id FROM identifiers WHERE key=?",
+            (rows[0][0],)).fetchone()[0], "c1")
+        store.close()
+
+        store = Store(self.path)  # 再オープンしても壊れない (冪等)
+        got = sorted(map(tuple, store.conn.execute(
+            "SELECT key, candidate_id FROM identifiers")))
+        self.assertEqual(got, sorted(rows))
+        store.close()
 
 
 class DedupeStoreTests(unittest.TestCase):

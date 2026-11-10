@@ -1386,9 +1386,13 @@ def run_pipeline(store, cfg, llm, *, as_of, sources=("pubmed", "arxiv"), kinds=(
     # 翻訳は専用 API (Azure → DeepL → Google) で行い、評価用 LLM には任せない
     usage_before = usage_totals(store, today)
     counts["translated"], counts["translation_chars"] = translate_display_set(store, cfg, today, log)
-    # ウォッチ・参考の一次情報 (論文・治験のみ、ニュースは訳さない) も同じ
-    # 月次予算の内側で訳す。使用量の台帳は表示セットと合算する
-    counts["translated_watch"], watch_stats = translate_watch_queue(store, cfg, today, log)
+    # ウォッチ・参考の一次情報 (論文・治験のみ、ニュースは訳さない) も、
+    # Azure の月枠から導く実行予算の内側で訳す。この実行で表示セットが
+    # 使った分を spent_before として渡し、二重に枠を数えない。使用量の
+    # 台帳は表示セットと合算する
+    counts["translated_watch"], watch_stats = translate_watch_queue(
+        store, cfg, today, log,
+        spent_before=sum(counts["translation_chars"].values()))
     for _name, _chars in watch_stats.items():
         counts["translation_chars"][_name] = counts["translation_chars"].get(_name, 0) + _chars
     # 無料枠のしきい値を跨いだら記録とログに残す (azure/google は月次累計、deepl は通算)

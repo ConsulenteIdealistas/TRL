@@ -53,8 +53,8 @@ h2{margin:0;font-size:19px;letter-spacing:-.4px}
    塗り色を統計やバッジと同じ状態色に置き換える。ダークでも同じ塗りで統一 */
 #fsc button[data-v="final"].on,#fdc button[data-v="positive"].on{background:#087b5a;color:#fff;border-color:transparent}
 #fsc button[data-v="review"].on{background:#087eaf;color:#fff;border-color:transparent}
-/* 保留だけは黄色 (#eab308) で塗り、白文字では読めないため文字は濃色にする */
-#fsc button[data-v="hold"].on{background:#eab308;color:#422006;border-color:transparent}
+/* 保留は #E1BE12 で塗り、白文字にする (2026-11-11 泰崇の指定) */
+#fsc button[data-v="hold"].on{background:#E1BE12;color:#fff;border-color:transparent}
 #fdc button[data-v="mixed"].on{background:#a96500;color:#fff;border-color:transparent}
 #fsc button[data-v="pending"].on{background:#c87a00;color:#fff;border-color:transparent}
 #fsc button[data-v="error"].on,#fdc button[data-v="negative"].on{background:#b52f49;color:#fff;border-color:transparent}

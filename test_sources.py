@@ -232,12 +232,54 @@ class NewSourceParseTests(unittest.TestCase):
                              {"title": "google", "abstract": "google"})
             # 2回目は未訳が無いので 0 件
             self.assertEqual(T.translate_watch_queue(store, cfg, AS_OF, log=lambda *_: None, http=g_http), (0, {}))
-            # 月次予算を極小にすると在庫があっても止まる
+            # Azure の月枠を極小にすると在庫があっても止まる
             rec, _ = T.normalize(raw(source="pubmed", sid="W9", title="Watch Paper Zeta"), T.now_iso())
             cid9, _ = store.upsert_candidate(rec, "rX")
             store.set_entities(cid9, [{"entity_id": "watch_co", "strength": "strong"}])
-            with um.patch("trlcore.translate.WATCH_MONTHLY_BUDGET", 1):
+            with um.patch("trlcore.translate.AZURE_MONTHLY_QUOTA", 1):
                 self.assertEqual(T.translate_watch_queue(store, cfg, AS_OF, log=lambda *_: None, http=g_http), (0, {}))
+        store.close()
+        tmp.cleanup()
+
+    def test_watch_queue_window_and_budget(self):
+        # 表示窓 (企業ごとの一次情報・新しい順15件) の外と、prune の paper
+        # 窓 (180日) を出た材料はキューに入らない。1実行の予算は Azure の
+        # 月枠を当月の残り実行回数で割って導く (件数の上限は無い)
+        from trlcore import translate as TT
+        tmp = tempfile.TemporaryDirectory()
+        store = T.Store(Path(tmp.name) / "d.sqlite")
+        cfg = dict(CFG)
+        cfg["entities"] = {"entities": [
+            {"id": "watch_co", "name": "Watch Co", "tier": "watch", "market": "US", "sector": "bio"},
+            {"id": "core_co", "name": "Core Co", "tier": "core", "market": "US", "sector": "bio"}]}
+        ids = {}
+        # watch_co に新しい順で 17 件 (表示窓は 15 件まで)
+        for i in range(17):
+            rec, _ = T.normalize(raw(source="pubmed", sid=f"W{i:02d}",
+                                     title=f"Watch Paper Number {i:02d}",
+                                     published=f"2026-10-{20 - i:02d}"), T.now_iso())
+            cid, _ = store.upsert_candidate(rec, "rX")
+            store.set_entities(cid, [{"entity_id": "watch_co", "strength": "strong"}])
+            ids[f"W{i:02d}"] = cid
+        # core_co に paper 窓 (AS_OF - 180日 = 2026-04-23) を出た材料。
+        # prune の N-2 と同じく、対象は screening 済み (screened) の paper
+        rec, _ = T.normalize(raw(source="pubmed", sid="OLD", title="Core Paper Ancient",
+                                 published="2026-01-15"), T.now_iso())
+        cid_old, _ = store.upsert_candidate(rec, "rX")
+        store.set_entities(cid_old, [{"entity_id": "core_co", "strength": "strong"}])
+        store.conn.execute("UPDATE candidates SET status='screened' WHERE id=?", (cid_old,))
+        store.conn.commit()
+        todo = TT._watch_todo(store, cfg, AS_OF)
+        got = {item[0] for item in todo}
+        self.assertEqual(len(todo), 15)
+        self.assertNotIn(ids["W15"], got)  # 16件目 (表示窓の外)
+        self.assertNotIn(ids["W16"], got)  # 17件目 (表示窓の外)
+        self.assertNotIn(cid_old, got)     # paper 窓の外
+        # 予算の導出: 使用量ゼロなら (月枠 200万字) ÷ (当月の残り実行回数)。
+        # AS_OF = 2026-10-20 (火) で、残りは今日 + 水木金 + 翌週の火〜金 = 8回
+        self.assertEqual(TT.watch_run_budget(store, AS_OF), 2_000_000 // 8)
+        self.assertEqual(TT.watch_run_budget(store, AS_OF, spent_before=400_000),
+                         (2_000_000 - 400_000) // 8)
         store.close()
         tmp.cleanup()
 

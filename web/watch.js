@@ -20,6 +20,13 @@ const dtier = c => c.derived_tier || (c.tier === "reference" ? "see" : "look");
 let companies = [];
 const state = {q: "", tier: "", markets: new Set(), sectors: new Set(), tags: new Set(), sort: "latest"};
 
+// 表示言語は主ページ・詳細ページと共通 (localStorage の trl-lang)。
+// 既定は日本語訳 (訳がある場合) で、スイッチで原文表示に切り替える。
+// 訳が無い材料はスイッチの状態に依らず原文のみになる
+let LANG = localStorage.getItem("trl-lang") || "ja";
+const dispT = m => LANG === "ja" && m.title_ja ? m.title_ja : m.title;
+const dispA = m => LANG === "ja" && m.abstract_ja ? m.abstract_ja : m.abstract || "";
+
 function haystack(c) {
   const parts = [c.name, c.ticker || "", ML[c.market] || "", CL[c.sector] || "",
     ...(c.tags || []), ...(c.tags || []).map(tagLabel),
@@ -54,14 +61,19 @@ function matMd(c, m) {
 }
 
 function matHtml(c, m) {
-  const abs = m.abstract_ja
-    ? `<p class="mabs"><strong>和訳抄録</strong><br>${esc(m.abstract_ja)}</p>` +
-      (m.abstract ? `<details><summary>抄録（原文）</summary><p class="mabs">${esc(m.abstract)}</p></details>` : "")
-    : (m.abstract ? `<p class="mabs">${esc(m.abstract)}</p>` : "");
+  // 主表示は表示言語 (dispT/dispA) に従い、もう一方の言語は見出し下の
+  // 副題と <details> に回す。訳が無い材料はどちらでも原文のみ
+  const main = dispA(m);
+  const other = LANG === "ja" ? (m.abstract || "") : (m.abstract_ja || "");
+  const abs = main
+    ? `<p class="mabs">${LANG === "ja" && m.abstract_ja ? "<strong>和訳抄録</strong><br>" : ""}${esc(main)}</p>` +
+      (other && other !== main ? `<details><summary>${LANG === "ja" ? "抄録（原文）" : "抄録（和訳）"}</summary><p class="mabs">${esc(other)}</p></details>` : "")
+    : "";
+  const sub = LANG === "ja" ? m.title : (m.title_ja || "");
   return `<article class="mat">
     <div class="mrow"><span class="${esc(SRC_CLASS[m.source] || "")}">${esc(srcName(m.source))}</span><span>${esc(m.published || "日付不明")}</span>${m.strength === "weak" ? "<span>・弱</span>" : ""}</div>
-    <h4 class="mt">${m.url ? `<a href="${esc(m.url)}" target="_blank" rel="noopener">${esc(m.title)}</a>` : esc(m.title)}</h4>
-    ${m.title_ja ? `<p class="mja">${esc(m.title_ja)}</p>` : ""}
+    <h4 class="mt">${m.url ? `<a href="${esc(m.url)}" target="_blank" rel="noopener">${esc(dispT(m))}</a>` : esc(dispT(m))}</h4>
+    ${sub && sub !== dispT(m) ? `<p class="mja">${esc(sub)}</p>` : ""}
     ${m.summary ? `<p class="msum"><strong>要点（抄録から抽出）</strong><br>${esc(m.summary)}</p>` : ""}
     ${abs}
     <div class="mops"><button type="button" class="btn" data-ccite="${m.id}">出典コピー</button>${m.url ? `<button type="button" class="btn" data-clink="${m.id}">リンクコピー</button>` : ""}<button type="button" class="btn" data-copy="${m.id}">コピー</button><button type="button" class="btn" data-md="${m.id}">Markdown</button></div>
@@ -187,6 +199,18 @@ async function init() {
   initChipsOnly();
   $("#q").addEventListener("input", e => { state.q = e.target.value; render(); });
   $("#sort").addEventListener("change", e => { state.sort = e.target.value; render(); });
+  const fl = $("#fl");
+  fl.value = LANG;
+  fl.addEventListener("change", e => {
+    LANG = e.target.value === "orig" ? "orig" : "ja";
+    localStorage.setItem("trl-lang", LANG);
+    // 開いているカードの材料はその場で描き直す (閉じているカードは
+    // 次に開くときに新しい言語で描かれる)
+    document.querySelectorAll(".wcard.open [data-mat]").forEach(box => {
+      const c = companies.find(x => x.id === box.dataset.mat);
+      if (c) renderMats(box, c);
+    });
+  });
   render();
 }
 init();

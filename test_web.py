@@ -154,22 +154,20 @@ class ExportTests(StoreFixture):
             self.assertIn(".on", sel)
         self.assertNotIn(":not(.on)", css)
         # 各状態の .on は状態色のソリッド塗り+白文字+枠透明 (全マッチ共通。
-        # 保留のみ黄色塗り+濃色文字の例外あり。下の text_colors を参照)
+        # 保留の塗りは #E1BE12 で白文字に統一する (2026-11-11 泰崇の指定。
+        # それ以前は #eab308+濃色文字の例外だった)
         fills = {"final": "#087b5a", "positive": "#087b5a",
-                 "review": "#087eaf", "hold": "#eab308", "mixed": "#a96500",
+                 "review": "#087eaf", "hold": "#E1BE12", "mixed": "#a96500",
                  "pending": "#c87a00", "error": "#b52f49",
                  "negative": "#b52f49", "rejected": "#607080",
                  "none": "#607080"}
-        # 保留は黄色 (#eab308) 塗りで白文字が読めないため、そのチップだけ
-        # 文字色を濃色 (#422006) にする例外
-        text_colors = {"hold": "#422006"}
         for v, color in fills.items():
             bodies = re.findall(
                 r'button\[data-v="%s"\]\.on[^{]*\{([^}]*)\}' % v, css)
             self.assertTrue(bodies, v)
             for body in bodies:
                 self.assertIn("background:" + color, body)
-                self.assertIn("color:" + text_colors.get(v, "#fff"), body)
+                self.assertIn("color:#fff", body)
                 self.assertIn("border-color:transparent", body)
         # 「判定済み」は :root の --pk 実値 (#db2777) で塗る。ダーク側の
         # 文字色用 --pk (#f472b6) は白文字が沈むため塗りに使わない
@@ -227,6 +225,19 @@ class ExportTests(StoreFixture):
         # 監査カードに導出 tier を併記する (W-9)
         audit = (web / "audit.js").read_text(encoding="utf-8")
         self.assertIn("dtLabelA", audit)
+    def test_watch_page_language_toggle(self):
+        # ウォッチページにも原文/日本語の切替を置く。主ページ・詳細と
+        # 同じ localStorage キー (trl-lang) を共有し、既定は日本語訳。
+        # 材料の見出し・抄録は dispT/dispA 経由で描く
+        web = T.ROOT / "web"
+        page = (web / "watch.html").read_text(encoding="utf-8")
+        js = (web / "watch.js").read_text(encoding="utf-8")
+        self.assertIn('<select id="fl" class="tsel">', page)
+        self.assertIn('<option value="ja">日本語訳</option>', page)
+        self.assertIn('<option value="orig">原文</option>', page)
+        self.assertIn("trl-lang", js)
+        self.assertIn("dispT", js)
+        self.assertIn("dispA", js)
     def test_reference_item_display(self):
         # 参考項目 (規程第13条): 詳細・ドロワーとも「参考項目」として分離表示し、
         # 不足の集計 (missAll) からは外す。ラベルは3ページで共通

@@ -13,6 +13,8 @@ Azure を本命にするのは無料枠(F0: 月200万字)が毎月リセット�
 import json
 import os
 import re
+from collections import Counter
+from datetime import timedelta
 
 from .http import http_fetch
 
@@ -251,11 +253,26 @@ def translate_display_set(store, cfg, today, log=print, http=http_fetch):
 # 対象は一次情報のみ (論文と治験)。ニュースは訳さない (ノイズが多く、
 # 読む価値は一次情報側にあるという判断。2026-11-06 泰崇)。
 # 経路は Azure 主・Google 予備で、DeepL の一回限り枠は温存して使わない。
-# 上限と予算は 2026-11-06 の確定値: 1実行 50件、翻訳全体の月次予算 150万字
-# (Azure F0 の月 200万字に対し、表示セットの余地を残すための天井)。
-WATCH_MAX_PER_RUN = 50
-WATCH_MONTHLY_BUDGET = 1_500_000
+#
+# 1実行の予算 (2026-11-11 泰崇の承認で、件数上限 50件/回から文字数予算へ
+# 変更): Azure F0 の月枠 200万字から当月の使用済み (表示セット込み) を
+# 引き、当月の残り実行回数で割った文字数をこの実行の上限とする
+# (watch_run_budget)。月枠そのものが天井になるため月途中で枯渇せず、
+# 月内の過不足は残り回数への割り直しで自動的に均される。件数の上限は
+# 置かない (律速は文字数だけ)。
+AZURE_MONTHLY_QUOTA = 2_000_000
 WATCH_SOURCES = ("pubmed", "openalex", "arxiv", "trials")
+# ウォッチページの表示窓 (site._watch_companies と同じ定義・同じ並び)。
+# site → pipeline → translate の import 方向の都合で import できないため
+# 値を写し、site.py の WATCH_PRIMARY_CAP / WATCH_NEWS_SOURCES と揃える。
+# 窓の外 (企業ごとの一次情報で 16件目以降) は訳しても表示されない。
+WATCH_DISPLAY_CAP = 15
+WATCH_NEWS_SOURCES = ("gnews", "prtimes")
+# prune の paper 保持期限と同じ窓 (読みの実効窓 90日 ×2 = 180日。
+# trl-db-cleanup/DESIGN.md §4、store.prune の N-2 と同じ導出)。この窓を
+# 出た screened の paper は N-2 の有効化後に削除されるため、表示窓の
+# 内側でも訳さない。
+WATCH_PAPER_WINDOW_DAYS = 180
 
 
 def _watch_todo(store, cfg, today):
@@ -263,13 +280,33 @@ def _watch_todo(store, cfg, today):
 
     優先順位は ウォッチ > 参考 > core の未訳分 (表示セットは先行フェーズの
     担当なので除く)。同じ層では企業ラウンドロビン (材料の多い企業が
-    枠を独占しない)、企業内は新しい順。"""
+    枠を独占しない)、企業内は新しい順。
+    適格条件として、予算を使っても意味の無い材料を先に落とす:
+    - ウォッチ・参考は、ウォッチページの表示窓 (企業ごとの一次情報の
+      新しい順 15件) の内側だけ。窓の外は訳しても表示されない。
+    - 全層共通で、prune の paper 保持窓 (180日) を出た screened の
+      paper は落とす。N-2 の有効化後に削除される材料のため。"""
     skip = display_ids(store, cfg, today)
     tiers = {e["id"]: e.get("tier") or "core"
              for e in (cfg.get("entities") or {}).get("entities", [])}
     links = {}
     for cid, eid in store.conn.execute("SELECT candidate_id, entity_id FROM candidate_entities"):
         links.setdefault(cid, []).append(eid)
+    # 表示窓の順位: watch/reference 企業ごとに、一次情報 (ニュース以外) を
+    # site._watch_companies と同じ並び (published 新しい順・NULL は最後、
+    # 同点は id 順) で数えた順位
+    rank = {}
+    seen = Counter()
+    for eid, cid, source in store.conn.execute(
+            "SELECT ce.entity_id, c.id, c.source FROM candidate_entities ce"
+            " JOIN candidates c ON c.id = ce.candidate_id"
+            " WHERE c.status != 'rejected'"
+            " ORDER BY ce.entity_id, (c.published IS NULL), c.published DESC, c.id"):
+        if tiers.get(eid) not in ("watch", "reference") or source in WATCH_NEWS_SOURCES:
+            continue
+        rank[(eid, cid)] = seen[eid]
+        seen[eid] += 1
+    paper_cut = (today - timedelta(days=WATCH_PAPER_WINDOW_DAYS)).isoformat()
     srcs = ",".join("?" * len(WATCH_SOURCES))
     rows = store.conn.execute(
         f"SELECT id FROM candidates WHERE source IN ({srcs}) AND status != 'rejected'"
@@ -297,6 +334,19 @@ def _watch_todo(store, cfg, today):
         want_title, want_abs = _wants(c)
         if not (want_title or want_abs):
             continue
+        # prune の paper 窓を出た材料は訳さない (削除予定の材料に予算を
+        # 使わない)。保護対象 (評価付き・未解決レビュー) は prune でも
+        # 消えず、評価付きは表示セット側の担当でここには来ない
+        if (c.get("info_type") == "paper" and c.get("status") == "screened"
+                and c.get("published") and c["published"] < paper_cut):
+            continue
+        # ウォッチ・参考は表示窓の内側だけ (リンク先企業のどれか1社でも
+        # 窓の内側なら対象)
+        if bucket in (0, 1):
+            tier_name = "watch" if bucket == 0 else "reference"
+            if not any(rank.get((e, cid), WATCH_DISPLAY_CAP) < WATCH_DISPLAY_CAP
+                       for e in linked if tiers.get(e, "core") == tier_name):
+                continue
         company = min(e for e in linked if tiers.get(e, "core") == ("watch" if bucket == 0 else "reference" if bucket == 1 else "core"))
         chars = (len(c["title"]) if want_title else 0) + (len(c["abstract"]) if want_abs else 0)
         groups.setdefault((bucket, company), []).append(
@@ -316,21 +366,48 @@ def _watch_todo(store, cfg, today):
     return ordered
 
 
-def translate_watch_queue(store, cfg, today, log=print, http=http_fetch):
+def _remaining_runs(today):
+    """当月の残り実行回数。定期実行 (main.yaml の cron) は火〜金 06:30 JST
+    で、今日の分を含む。手動実行の日は定期が無くても今日を1回と数える
+    (この実行自体が枠を使うため)。"""
+    n, d = 0, today
+    while d.month == today.month:
+        if d == today or d.weekday() in (1, 2, 3, 4):
+            n += 1
+        d += timedelta(days=1)
+    return max(n, 1)
+
+
+def watch_run_budget(store, today, spent_before=0):
+    """この実行のウォッチキュー予算 (文字数)。
+
+    Azure F0 の月枠 (AZURE_MONTHLY_QUOTA) から、当月の使用済み
+    (azure+google の月次累計に、この実行で表示セットが既に使った分
+    spent_before を加えたもの) を引き、当月の残り実行回数で割る。
+    割り当ては残り枠の内側でしか行わないため月枠を超えることは無く、
+    月内の過不足は残り回数への割り直しで自動的に均される。"""
+    used = usage_totals(store, today)
+    month_used = used.get("azure", 0) + used.get("google", 0) + spent_before
+    rest = AZURE_MONTHLY_QUOTA - month_used
+    if rest <= 0:
+        return 0
+    return rest // _remaining_runs(today)
+
+
+def translate_watch_queue(store, cfg, today, log=print, http=http_fetch, spent_before=0):
     """ウォッチ・参考 (と残りの core) の一次情報の未訳分を予算内で訳す。
 
-    -> (訳した件数, 段ごとの翻訳文字数)。月次予算は翻訳全体 (azure+google
-    の月次累計) に対して効かせ、表示セットの枠を食い潰さない。"""
+    -> (訳した件数, 段ごとの翻訳文字数)。予算は watch_run_budget の導出
+    (Azure の月枠 − 当月の使用済み) ÷ 当月の残り実行回数。表示セットの
+    枠を食い潰さないよう、spent_before にこの実行の表示セット分を
+    受け取る。"""
     chain = _backends(http, exclude={"deepl"})
     if not chain:
         return 0, {}
-    used = usage_totals(store, today)
-    month_used = used.get("azure", 0) + used.get("google", 0)
+    budget = watch_run_budget(store, today, spent_before)
     todo, spent = [], 0
     for item in _watch_todo(store, cfg, today):
-        if len(todo) >= WATCH_MAX_PER_RUN:
-            break
-        if month_used + spent + item[4] > WATCH_MONTHLY_BUDGET:
+        if spent + item[4] > budget:
             continue  # 予算に収まる小さい材料が後ろにあれば拾う
         spent += item[4]
         todo.append(item[:4])

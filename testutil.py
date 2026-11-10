@@ -13,6 +13,9 @@ from trl import *  # noqa
 # (ESEF) 経由で実ネットワークへ出ないようにする。ESEF 自体のテスト
 # (test_esef) は対象範囲だけ明示的に有効化する
 os.environ.setdefault("TRL_ESEF_DISABLE", "1")
+# スイス収集 (EQS / GlobeNewswire) も同じ理由で既定で無効化する。
+# test_swiss は対象範囲だけ明示的に有効化する
+os.environ.setdefault("TRL_SWISS_DISABLE", "1")
 from types import SimpleNamespace as NS
 
 scoring = NS(compute=T.compute, validate_items=T.validate_items, band_for=T.band_for, item_keys=T.item_keys)

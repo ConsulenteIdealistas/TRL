@@ -81,6 +81,8 @@ Python 標準ライブラリのみで動作し、運用はスマホのブラウ�
 | `edgar` | SEC EDGAR の財務数値（XBRL、US＋20-F 提出企業） | **プール専用** |
 | `roic` | ROIC.ai の財務数値（年次、キー登録時のみ・財務の穴埋めと裏取り） | **プール専用** |
 | `esef` | filings.xbrl.org の ESEF 年次報告の財務数値（XBRL、LEI を持つコア企業・収集後段のバッチ） | **プール専用** |
+| `eqs` | EQS News のスイス企業の決算発表（記事フッターの ISIN で同定・収集後段のバッチ） | **プール専用** |
+| `gnw` | GlobeNewswire のスイス企業の決算発表（会社別フィード・収集後段のバッチ） | **プール専用** |
 
 ソース別の取得期間（lookback）: trials 180日 / yahoo・edgar 400日 / prtimes 90日 / pubmed・openalex 365日 / edinet 45日。その他は既定30日・最大20件。浅い日（後述）は発見系ソース（pubmed / trials / openalex / prtimes / edinet）の窓を4日に切り詰めます。
 
@@ -326,7 +328,7 @@ trlcore/                本体パッケージ
   pipeline.py           収集→選定→評価→書き出しの統括
   store.py              SQLite (候補・評価・識別子・実行記録)
   normalize.py          正規化と重複排除キー
-  sources/              各ソースのフェッチャ (pubmed/arxiv/gnews/prtimes/trials/yahoo/openalex/edinet/edgar/roic/simfin/alphavantage/esef)
+  sources/              各ソースのフェッチャ (pubmed/arxiv/gnews/prtimes/trials/yahoo/openalex/edinet/edgar/roic/simfin/alphavantage/esef/swiss)
   evaluate.py           LLM 応答の検証・評価の実行
   scoring.py            スコア計算 (二軸化・バンド)
   llm.py                LLM プロバイダ (gemini のみ, 代替モデル)
@@ -365,6 +367,7 @@ test_*.py / testutil.py   テスト (共通フィクスチャは testutil.py、�
 | 企業辞書 (entities.py / entities/) | test_entities.py |
 | ROIC (sources/roic.py) | test_roic.py (+ test_sources.py) |
 | ESEF (sources/esef.py) | test_esef.py |
+| スイス収集 (sources/swiss.py) | test_swiss.py |
 | パイプライン・ストア・基盤 (pipeline.py / store.py / normalize.py / http.py 等) | test_trl.py (+ 収集段に触る場合は test_sources.py) |
 
 ## 既知の制約・設計判断
@@ -376,5 +379,6 @@ test_*.py / testutil.py   テスト (共通フィクスチャは testutil.py、�
 - **OpenAlex は機関ID登録済みの14社のみ**が対象です。機関レコードが無い企業は PubMed/arXiv 側で拾います。
 - **event 評価の限界**: 株価反応データは導入済みですが、市場コンセンサス予想そのものは材料にありません（反応は「予想との差」の代理として扱います）。導入前の hold は自動では再評価されず、必要なら再評価キューで拾います。
 - **TDnet は見送り済み**: 公式 API は索引のみで高額、本文は PDF 中心で現在の構成（標準ライブラリのみ）では抽出できないため採用していません。
-- **未実装**: 特許・IR 資料の本文解析、過去イベントの事後検証、AI 採点の妥当性検証。財務補間の残り2社（SimFin / Alpha Vantage。キーは登録済み）、ESEF 収集器（EU+英国119社、導入決定済み）、スイス10社の EQS + GlobeNewswire 収集器（採用決定済み）は実装待ちです。
+- **スイス収集は EQS + GlobeNewswire の2ワイヤ併用**（収集後段のバッチ）: スイスは ESEF 対象外で Yahoo の数値抽出も無いため、スイス10社の決算発表をこの2ワイヤの和集合で拾い、数値が本文で確認できた発表だけを財務プールに入れます。EQS は記事フッターの ISIN で企業を同定します。GlobeNewswire の会社別フィードはトークンの確認済みが2社（Basilea / Molecular Partners）のみで、残り8社は EQS のみでカバーします（未対応は実行統計に記録されます）。
+- **未実装**: 特許・IR 資料の本文解析、過去イベントの事後検証、AI 採点の妥当性検証。財務補間の残り2社（SimFin / Alpha Vantage。キーは登録済み）、ESEF 収集器（EU+英国119社、導入決定済み）は実装待ちです。
 - 失敗した情報源は Actions ログの `::warning::` とレポートに表示されます。全情報源が失敗したときだけジョブが失敗します。

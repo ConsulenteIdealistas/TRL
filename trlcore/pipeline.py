@@ -25,6 +25,7 @@ from .sources.alphavantage import (DAILY_REQUEST_LIMIT as AV_DAILY_REQUEST_LIMIT
                                    alphavantage_enabled, alphavantage_symbol,
                                    fetch_alphavantage)
 from .sources.esef import esef_enabled, fetch_esef
+from .sources.swiss import SWISS_COMPANIES, fetch_eqs, fetch_gnw, swiss_enabled
 from .translate import crossed_thresholds, translate_display_set, translate_watch_queue, usage_totals
 from .config import ROOT
 from .review import INBOX_NAME, import_inbox_file
@@ -121,6 +122,12 @@ ESEF_LOOKBACK_DAYS = 400
 # コア企業を「未登録」として数えるための市場集合
 ESEF_MARKETS = frozenset({"GB", "DE", "FR", "SE", "FI", "DK", "NL", "NO", "ES", "BE",
                           "IT", "IE", "PT", "CZ", "GR", "AT", "PL"})
+# スイス収集 (EQS / GlobeNewswire。詳細は _collect_swiss と sources/swiss)。
+# 休止は財務系の標準間隔 (EDGAR / EDINET) と同じ20日: ワイヤの決算発表は
+# 半期・年次のため、財務系の確認間隔に合わせれば発表を取りこぼさない。
+# 取得窓は財務プールの窓 (related_financials の400日)
+SWISS_SKIP_DAYS = 20
+SWISS_LOOKBACK_DAYS = 400
 # 1回の実行で対象にする社数に上限は置かない: コストは社数ではなく市場数
 # (最大3市場×3ファイル) で決まり、対象社を増やしても追加ダウンロードは
 # 発生しないため、上限で切ると「バルクを落としたのに一部しか使わない」
@@ -212,7 +219,7 @@ def _apply_shallow_windows(cfg):
 
 def collect(store, cfg, run_id, as_of, sources, fetchers, counts, log, budget_cap=None,
             roic_fetcher=None, simfin_fetcher=None, alphavantage_fetcher=None,
-            esef_fetcher=None):
+            esef_fetcher=None, swiss_fetchers=None):
     d = cfg["sources"]["defaults"]
     now = datetime.now(timezone.utc).isoformat(timespec="seconds")
     jobs = [(sname, q) for q in cfg["sources"]["queries"] for sname in sources if q.get(sname)]
@@ -393,6 +400,11 @@ def collect(store, cfg, run_id, as_of, sources, fetchers, counts, log, budget_ca
     if esef_enabled():
         _collect_esef(store, cfg, run_id, as_of, counts, log, budget, collect_t0,
                       esef_fetcher or fetch_esef)
+    # スイス収集 (EQS / GlobeNewswire): 後段バッチの最後に回す
+    # (ゲートは swiss_enabled)
+    if swiss_enabled():
+        _collect_swiss(store, cfg, run_id, as_of, counts, log, budget, collect_t0,
+                       swiss_fetchers or {"eqs": fetch_eqs, "gnw": fetch_gnw})
 
 
 def _collect_roic(store, cfg, run_id, as_of, counts, log, budget, collect_t0, fetcher):
@@ -775,6 +787,101 @@ def _collect_esef(store, cfg, run_id, as_of, counts, log, budget, collect_t0, fe
             counts[k] += v
         counts["sources_ok" if err is None else "sources_failed"] += 1
         log(f"[collect] esef/{qname}: fetched={fetched} new={new} dup={dups} invalid={invalid}"
+            + (f" ERROR={err}" if err else ""))
+
+
+# 実証・実装の段階を示す語。理論のみの資料には少なく、TRLを決めやすい候補の目印になる
+DEMO_SIGNAL_TERMS = ("demonstrat", "prototype", "proof-of-concept", "proof of concept",
+                     "experimental", "in vivo", "first-in-human", "実証", "試作", "臨床")
+
+
+def _collect_swiss(store, cfg, run_id, as_of, counts, log, budget, collect_t0, fetchers):
+    """スイス10社の決算発表を EQS / GlobeNewswire の2ワイヤから取得する
+    後段バッチ (調査: ~/workspace/trl-swiss-sweep/RESULTS.md)。
+
+    対象は辞書の market=CH の全社 (tier を問わない: 財務候補は評価プール
+    だけでなくウォッチ側の材料にもなる)。企業リンクは ROIC と同じく生成元
+    そのものを strong で付ける (EQS は記事フッターの ISIN で同定済み、
+    GlobeNewswire は会社別フィードが同定)。記録の流儀 (run_sources /
+    counts) は _collect_roic に揃え、「静かな0件」の検知にもそのまま乗る。
+    休止は「成功して1件以上取れた」クエリだけが対象で、取得0件の成功では
+    休まない (ROIC の英国 LON の教訓と同じ: 同定情報の誤りを長期間
+    閉じ込めないため)。GNW フィードが未確認の会社は未対応として数える。
+    """
+    entities = [e for e in cfg.get("entities", {}).get("entities", [])
+                if e.get("market") == "CH"]
+    successes = {w: store.last_source_successes_with_fetch(w) for w in ("eqs", "gnw")}
+    now = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    chash = cfg.get("config_hash")
+    targets = []
+    n_rest = n_unmapped = n_gnw_unmapped = 0
+    for e in entities:
+        comp = SWISS_COMPANIES.get(e["id"])
+        if comp is None:
+            n_unmapped += 1
+            continue
+        for wire in ("eqs", "gnw"):
+            if wire == "gnw" and not comp.get("gnw_feed"):
+                n_gnw_unmapped += 1
+                continue
+            att = successes[wire].get((wire, f"{e['id']}-{wire}"))
+            if att is not None and (att[1] or 0) > 0:
+                last = parse_date((att[0] or "")[:10])
+                if last is not None and (as_of - last).days < SWISS_SKIP_DAYS:
+                    n_rest += 1
+                    continue
+            targets.append((e, comp, wire))
+    counts["swiss_targets"] = len({e["id"] for e in entities
+                                   if e["id"] in SWISS_COMPANIES})
+    counts["swiss_skipped_rest"] = n_rest
+    if n_unmapped:
+        counts["swiss_skipped_unmapped"] = n_unmapped
+        log(f"[collect] swiss: 対応表に無い CH 企業 {n_unmapped} 社を対象外にしました")
+    if n_gnw_unmapped:
+        counts["swiss_gnw_unmapped"] = n_gnw_unmapped
+        log(f"[collect] swiss: GlobeNewswire フィード未確認のため {n_gnw_unmapped} 社は EQS のみで取得します")
+    done = 0
+    for e, comp, wire in targets:
+        if budget and time.monotonic() - collect_t0 > budget:
+            counts["swiss_deferred"] = len(targets) - done
+            log(f"[collect] swiss: 予算のため {len(targets) - done} クエリを次回へ回します")
+            break
+        done += 1
+        qname = f"{e['id']}-{wire}"
+        t0 = time.monotonic()
+        err, raws = None, []
+        try:
+            raws = fetchers[wire](e["id"], 5, SWISS_LOOKBACK_DAYS, as_of) or []
+        except Exception as ex:
+            err = redact(f"{type(ex).__name__}: {ex}")[:300]
+            log(f"::warning::source {wire} / {qname} failed: {err}")
+        fetched = len(raws) if err is None else 0
+        new = dups = invalid = 0
+        if err is None:
+            for raw in raws:
+                try:
+                    rec, _problems = normalize(raw, now)
+                    if rec is None:
+                        invalid += 1
+                        continue
+                    cid, is_new = store.upsert_candidate(rec, run_id)
+                    alias = comp["isin"] if wire == "eqs" else comp["gnw_feed"]
+                    store.set_entities(cid, [{"entity_id": e["id"], "strength": "strong",
+                                              "matched_by": wire, "matched_alias": alias}])
+                    store.set_links_hash(cid, chash)
+                    new += is_new
+                    dups += (not is_new)
+                except Exception as ex:
+                    invalid += 1
+                    log(f"::warning::source {wire} / {qname}: record skipped: "
+                        f"{redact(f'{type(ex).__name__}: {ex}')[:200]}")
+        elapsed = round(time.monotonic() - t0, 3)
+        store.add_run_source(run_id, wire, qname, fetched, new, dups, invalid,
+                             err is None, err, elapsed)
+        for k, v in (("fetched", fetched), ("new", new), ("duplicates", dups), ("invalid", invalid)):
+            counts[k] += v
+        counts["sources_ok" if err is None else "sources_failed"] += 1
+        log(f"[collect] {wire}/{qname}: fetched={fetched} new={new} dup={dups} invalid={invalid}"
             + (f" ERROR={err}" if err else ""))
 
 

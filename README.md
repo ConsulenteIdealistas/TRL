@@ -338,9 +338,28 @@ scoring.json            配点・必須項目・バンド・スクリーニン�
 sources.json            キーワード集合・生成パラメータ・トピック
 extract.v1.md / long.v1.md / event.v2.md   プロンプト (event.v1.md は凍結)
 web/                    画面 (index.html / detail.html / watch.html / audit.html / criteria.html / app.js / watch.js / audit.js / style.css / schema.json)
-test_trl.py / test_entities.py / test_site.py / test_roic.py   テスト
+test_*.py / testutil.py   テスト (共通フィクスチャは testutil.py、下記の実行範囲を参照)
 .github/workflows/main.yaml   ワークフロー
 ```
+
+### テストの実行範囲
+
+変更の反復時は、関係するファイルだけを実行してよい。**push 前は必ず全件**
+(`python3 -m unittest discover -s . -p "test_*.py"`) を実行する。
+
+| 変更の種類 | 実行するテスト |
+|---|---|
+| 収集 (trlcore/sources/・収集段の制御) | test_sources.py |
+| 評価・採点 (scoring.py / evaluate.py / prompts.py / プロンプト / market.py) | test_eval.py |
+| 監査 (audit.py / audit_positive.py / audit_rules.json) | test_audit.py |
+| 監査の API 照合 (audit_api.py) | test_audit_api.py |
+| export・サイト生成 (site.py) | test_site.py |
+| web/ のページ構造・JS | test_web.py |
+| 監査レビュー (review.py・review_inbox) | test_review.py |
+| tier 導出 (tiers.py) | test_tiers.py |
+| 企業辞書 (entities.py / entities/) | test_entities.py |
+| ROIC (sources/roic.py) | test_roic.py (+ test_sources.py) |
+| パイプライン・ストア・基盤 (pipeline.py / store.py / normalize.py / http.py 等) | test_trl.py (+ 収集段に触る場合は test_sources.py) |
 
 ## 既知の制約・設計判断
 

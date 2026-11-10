@@ -118,3 +118,20 @@ class StoreFixture(unittest.TestCase):
         T.run_pipeline(self.store, cfg, llm, as_of=AS_OF, kinds=("long",), fetchers=fetch_n(n), sources=("arxiv",),
                        today=AS_OF, log=lambda *_: None)
         return T.build_site_data(self.store, cfg, datetime(2026, 10, 26, tzinfo=timezone.utc))
+
+
+# ClinicalTrials.gov の studies 応答サンプル (元は test_trl.py にあったもの)
+TRIALS_DATA = {"studies": [{
+    "protocolSection": {
+        "identificationModule": {"nctId": "NCT00000001", "officialTitle": "Phase 1 study of PD-1",
+                                 "briefTitle": "PD-1 study"},
+        "descriptionModule": {"briefSummary": "A first-in-human study. " * 12,
+                              "detailedDescription": "Dose escalation in patients."},
+        "statusModule": {"overallStatus": "RECRUITING",
+                         "lastUpdatePostDateStruct": {"date": "2026-10-01"},
+                         "startDateStruct": {"date": "2026-05-01"}},
+        "designModule": {"phases": ["PHASE1"]},
+        "conditionsModule": {"conditions": ["Cancer"]},
+        "armsInterventionsModule": {"interventions": [{"name": "PD-1"}]},
+        "sponsorCollaboratorsModule": {"leadSponsor": {"name": "PeptiDream Inc."}},
+    }}]}

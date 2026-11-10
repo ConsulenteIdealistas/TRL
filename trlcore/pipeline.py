@@ -36,6 +36,12 @@ from .evaluate import evaluate_one, input_hash
 from .market import build_market_reaction
 
 
+# DB 掃除の段階投入 (trl-db-cleanup/DESIGN.md §4): N-1 (invalid_items の
+# 世代掃除) とブレーキ B-1/B-2 (履歴系180日) は常時有効。N-2 (paper の
+# 保持期限) は N-1 の効きを 1 実行観察してから有効化する — 有効化は
+# この値を 180 (読みの実効窓 90日 ×2) に変えるだけ。
+PRUNE_PAPER_DAYS = None
+
 DEFAULT_FETCHERS = {"pubmed": pubmed_fetch, "arxiv": arxiv_fetch, "gnews": gnews_fetch,
                     "prtimes": prtimes_fetch, "trials": trials_fetch, "edinet": edinet_fetch,
                     "edgar": edgar_fetch,
@@ -1335,8 +1341,10 @@ def run_pipeline(store, cfg, llm, *, as_of, sources=("pubmed", "arxiv"), kinds=(
         counts["translation_alerts"] = alerts
     # 古い材料の削除 (DB の単調増加を抑える。評価済み・キュー入りは消さない)
     pruned = store.prune(today, entity_markets={
-        e["id"]: e.get("market") or "JP" for e in (cfg.get("entities") or {}).get("entities", [])})
-    if pruned["total"] or pruned["extraction_cache"]:
+        e["id"]: e.get("market") or "JP" for e in (cfg.get("entities") or {}).get("entities", [])},
+        config_hash=cfg.get("config_hash"), paper_days=PRUNE_PAPER_DAYS)
+    if any(pruned[k] for k in ("total", "extraction_cache", "invalid_items",
+                               "invalid_stale_generation", "run_sources", "llm_calls")):
         counts["pruned"] = pruned
         log(f"[prune] 古い材料を削除しました: {pruned}")
     # 辞書から消えた alias で作られたリンクの掃除 (同名別組織への誤リンク対策)

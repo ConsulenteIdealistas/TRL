@@ -1453,6 +1453,107 @@ class PruneTests(unittest.TestCase):
             store.close()
 
 
+class PruneCleanupTests(unittest.TestCase):
+    """DB 掃除の拡張ルール (trl-db-cleanup/DESIGN.md §4)。記録系には触らない。"""
+
+    def _add(self, store, sid, source="pubmed", info_type="paper", published="2026-01-01",
+             status="screened"):
+        rec, _ = normalize(raw(source=source, sid=sid, info_type=info_type,
+                               published=published, url=f"https://example.com/{sid}",
+                               abstract="材料テキスト"), "2026-10-20T00:00:00+00:00")
+        cid, _ = store.upsert_candidate(rec, "r0")
+        if status:
+            store.set_status(cid, status)
+        return cid
+
+    def test_prune_invalid_stale_generation(self):
+        with tempfile.TemporaryDirectory() as td:
+            store = T.Store(Path(td) / "d.sqlite")
+            ins = ("INSERT INTO invalid_items(key, published, config_hash, first_seen, last_seen) "
+                   "VALUES(?,?,?,?,?)")
+            # 旧世代: last_seen が新しくても読み手 (現行世代のみ) が無いので消える (N-1)
+            store.conn.execute(ins, ("old-gen", "2026-10-01", "gen-old", "2026-10-15", "2026-10-15"))
+            # 現行世代・新しい: 残る
+            store.conn.execute(ins, ("cur-fresh", "2026-10-01", "gen-cur", "2026-10-15", "2026-10-15"))
+            # 現行世代・180日超: 既存の last_seen 規則で消える
+            store.conn.execute(ins, ("cur-stale", "2026-01-01", "gen-cur", "2026-01-10", "2026-01-10"))
+            store.conn.commit()
+            counts = store.prune(AS_OF, entity_markets={}, config_hash="gen-cur")
+            self.assertEqual(counts["invalid_stale_generation"], 1)
+            self.assertEqual(counts["invalid_items"], 1)
+            keys = {r[0] for r in store.conn.execute("SELECT key FROM invalid_items")}
+            self.assertEqual(keys, {"cur-fresh"})
+            # config_hash を渡さなければ世代掃除は働かない (安全側)
+            store.conn.execute(ins, ("old-gen2", "2026-10-01", "gen-old", "2026-10-15", "2026-10-15"))
+            store.conn.commit()
+            counts = store.prune(AS_OF, entity_markets={})
+            self.assertEqual(counts["invalid_stale_generation"], 0)
+            keys = {r[0] for r in store.conn.execute("SELECT key FROM invalid_items")}
+            self.assertEqual(keys, {"cur-fresh", "old-gen2"})
+            store.close()
+
+    def test_prune_paper_rule_and_protection(self):
+        with tempfile.TemporaryDirectory() as td:
+            store = T.Store(Path(td) / "d.sqlite")
+            old_paper = self._add(store, "old-paper", published="2026-01-01")
+            new_paper = self._add(store, "new-paper", published="2026-10-01")
+            eval_paper = self._add(store, "eval-paper", published="2026-01-01")
+            store.conn.execute("INSERT INTO evaluations(run_id, candidate_id, kind, status) "
+                               "VALUES('r0', ?, 'long', 'ok')", (eval_paper,))
+            store.conn.commit()
+            # 既定 (paper_days=None) では paper は消えない (段階投入)
+            counts = store.prune(AS_OF, entity_markets={}, paper_days=None)
+            self.assertEqual(counts["paper"], 0)
+            self.assertIsNotNone(store.get_candidate(old_paper))
+            # 有効化すると news と同じ保護集合の下で古い screened だけ消える (N-2)
+            counts = store.prune(AS_OF, entity_markets={}, paper_days=180)
+            self.assertEqual(counts["paper"], 1)
+            self.assertIsNone(store.get_candidate(old_paper))
+            self.assertIsNotNone(store.get_candidate(new_paper))
+            self.assertIsNotNone(store.get_candidate(eval_paper))  # 評価済みは保護
+            store.close()
+
+    def test_prune_history_brakes_keep_runs(self):
+        with tempfile.TemporaryDirectory() as td:
+            store = T.Store(Path(td) / "d.sqlite")
+            c = store.conn
+            c.execute("INSERT INTO runs(run_id, started_at, status) VALUES('r-old', '2026-01-01T00:00:00+00:00', 'ok')")
+            c.execute("INSERT INTO runs(run_id, started_at, status) VALUES('r-new', '2026-10-19T00:00:00+00:00', 'ok')")
+            c.execute("INSERT INTO run_sources(run_id, source, fetched) VALUES('r-old', 'pubmed', 3)")
+            c.execute("INSERT INTO run_sources(run_id, source, fetched) VALUES('r-new', 'pubmed', 5)")
+            c.execute("INSERT INTO llm_calls(run_id, created_at) VALUES('r-old', '2026-01-01T00:00:00+00:00')")
+            c.execute("INSERT INTO llm_calls(run_id, created_at) VALUES('r-new', '2026-10-19T00:00:00+00:00')")
+            c.commit()
+            counts = store.prune(AS_OF, entity_markets={})
+            self.assertEqual(counts["run_sources"], 1)
+            self.assertEqual(counts["llm_calls"], 1)
+            rows = {r[0] for r in c.execute("SELECT run_id FROM run_sources")}
+            self.assertEqual(rows, {"r-new"})
+            # runs 本体は集計の索引として消さない (B-1 は run_sources だけが対象)
+            runs = {r[0] for r in c.execute("SELECT run_id FROM runs")}
+            self.assertEqual(runs, {"r-old", "r-new"})
+            store.close()
+
+    def test_prune_dry_run_counts_only(self):
+        with tempfile.TemporaryDirectory() as td:
+            store = T.Store(Path(td) / "d.sqlite")
+            old_paper = self._add(store, "old-paper", published="2026-01-01")
+            store.conn.execute(
+                "INSERT INTO invalid_items(key, published, config_hash, first_seen, last_seen) "
+                "VALUES('old-gen', '2026-10-01', 'gen-old', '2026-10-15', '2026-10-15')")
+            store.conn.commit()
+            counts = store.prune(AS_OF, entity_markets={}, config_hash="gen-cur",
+                                 paper_days=180, dry_run=True)
+            self.assertEqual(counts["paper"], 1)
+            self.assertEqual(counts["invalid_stale_generation"], 1)
+            self.assertIsNotNone(store.get_candidate(old_paper))  # 消えていない
+            n = store.conn.execute("SELECT COUNT(*) FROM invalid_items").fetchone()[0]
+            self.assertEqual(n, 1)
+            self.assertEqual(counts["db_bytes_before"], counts["db_bytes_after"])
+            self.assertGreater(counts["db_bytes_before"], 0)
+            store.close()
+
+
 class ReportWarningTests(unittest.TestCase):
     def test_report_surfaces_failed_and_quiet_zero(self):
         # 「静かな0件」と収集失敗は、レポートの頭で見えることが検知の前提

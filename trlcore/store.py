@@ -138,6 +138,7 @@ def _j(x):
 class Store:
     def __init__(self, path):
         Path(path).parent.mkdir(parents=True, exist_ok=True)
+        self.path = Path(path)
         self.conn = sqlite3.connect(str(path), factory=_DeferrableConnection)
         self.conn.row_factory = sqlite3.Row
         self.conn.execute("PRAGMA journal_mode=DELETE")  # -wal/-shm を作らない(コミット対象を1ファイルに)
@@ -570,15 +571,45 @@ class Store:
         return {"evaluations": n_eval, "queue": n_queue, "candidates_reset": cur.rowcount}
 
     def prune(self, as_of, entity_markets=None, news_days=180, disclosure_days=800,
-              rejected_days=180, cache_days=180):
+              rejected_days=180, cache_days=180, config_hash=None, paper_days=None,
+              history_days=180, dry_run=False):
         """古い材料を削除し、DB の単調増加を抑える。
 
         対象は「プール専用の材料」と「除外済み」と「旧キー形式の重複」だけに限る。
         評価が付いた候補と、未解決のレビューキューにある候補は決して消さない
         (サイト表示と再評価の前提になるため)。保持期間は利用側の窓の2倍に取る:
         ニュースは関連プール (90日) の2倍で180日、財務は財務プール (400日) の2倍で800日。
+
+        拡張ルール (trl-db-cleanup/DESIGN.md §4。記録系の evaluations /
+        audit_results / review 系 / compare_results / runs 本体には触らない):
+        - N-1: invalid_items の世代掃除。読み手 invalid_keys() は現行世代
+          (config_hash) の行だけを引くため、旧世代の行には保持根拠が無い。
+          config_hash が渡された場合だけ有効で、既存の last_seen 180日と併用 (OR)。
+        - N-2: paper (screened) の保持期限。paper_days が None の間は無効
+          (段階投入: N-1 の観察後に呼び出し側が日数を渡して有効化する)。
+          有効時は news と同じ導出 (読みの実効窓 90日 ×2)・同じ保護集合。
+        - B-1/B-2: 履歴系のブレーキ。run_sources / llm_calls に診断窓
+          (90日) の2倍で180日を掛け、単調増加を止める。runs 本体は
+          集計 (counts_json) を保持する索引として消さない。
+        dry_run=True では数えるだけで消さず、VACUUM もしない。
+        削除前後のファイルサイズを counts の db_bytes_before / db_bytes_after
+        に記録する (dry_run では両者は同値)。
         """
         c = self.conn
+
+        def _size():
+            try:
+                return self.path.stat().st_size
+            except OSError:
+                return None
+
+        def sweep(count_sql, delete_sql, params):
+            """単純な1テーブル削除の実行 (dry_run では数だけ)。"""
+            if dry_run:
+                return c.execute(count_sql, params).fetchone()[0]
+            return c.execute(delete_sql, params).rowcount
+
+        size_before = _size()
         protected = {r[0] for r in c.execute("SELECT DISTINCT candidate_id FROM evaluations")}
         protected |= {r[0] for r in c.execute(
             "SELECT candidate_id FROM review_queue WHERE resolved_at IS NULL")}
@@ -602,27 +633,63 @@ class Store:
                                 " (published IS NULL AND substr(retrieved_at,1,10) < ?))",
                                 (rej_cut, rej_cut)):
             add(cid, "rejected")
+        if paper_days is not None:  # N-2 (段階投入: 既定は無効)
+            paper_cut = (as_of - timedelta(days=paper_days)).isoformat()
+            for (cid,) in c.execute("SELECT id FROM candidates WHERE info_type='paper' "
+                                    "AND status='screened' AND published IS NOT NULL "
+                                    "AND published < ?", (paper_cut,)):
+                add(cid, "paper")
         for cid in self._stale_yahoo_key_ids(entity_markets or {}):
             add(cid, "stale_yahoo_keys")
-        counts = {"news": 0, "disclosure": 0, "rejected": 0, "stale_yahoo_keys": 0}
+        counts = {"news": 0, "disclosure": 0, "rejected": 0, "paper": 0, "stale_yahoo_keys": 0}
         for cid, reason in targets.items():
-            c.execute("DELETE FROM candidate_entities WHERE candidate_id=?", (cid,))
-            c.execute("DELETE FROM identifiers WHERE candidate_id=?", (cid,))
-            c.execute("DELETE FROM candidate_versions WHERE candidate_id=?", (cid,))
-            c.execute("DELETE FROM candidates WHERE id=?", (cid,))
+            if not dry_run:
+                c.execute("DELETE FROM candidate_entities WHERE candidate_id=?", (cid,))
+                c.execute("DELETE FROM identifiers WHERE candidate_id=?", (cid,))
+                c.execute("DELETE FROM candidate_versions WHERE candidate_id=?", (cid,))
+                c.execute("DELETE FROM candidates WHERE id=?", (cid,))
             counts[reason] += 1
         cache_cut = (as_of - timedelta(days=cache_days)).isoformat()
-        cur = c.execute("DELETE FROM extraction_cache WHERE substr(created_at,1,10) < ?", (cache_cut,))
-        counts["extraction_cache"] = cur.rowcount
-        cur = c.execute("DELETE FROM invalid_items WHERE substr(last_seen,1,10) < ?", (cache_cut,))
-        counts["invalid_items"] = cur.rowcount
-        counts["total"] = sum(counts[k] for k in ("news", "disclosure", "rejected", "stale_yahoo_keys"))
-        c.commit()
-        if counts["total"]:
-            try:
-                c.execute("VACUUM")
-            except Exception:
-                pass  # ファイルが縮まないだけ (行の削除は完了している)
+        counts["extraction_cache"] = sweep(
+            "SELECT COUNT(*) FROM extraction_cache WHERE substr(created_at,1,10) < ?",
+            "DELETE FROM extraction_cache WHERE substr(created_at,1,10) < ?", (cache_cut,))
+        # N-1 を先に数える/消す。両規則に当たる行は世代掃除側に寄せる
+        # (dry_run では第2規則の数えから現行世代以外を除き、実削除の順序と揃える)。
+        if config_hash is not None:
+            counts["invalid_stale_generation"] = sweep(
+                "SELECT COUNT(*) FROM invalid_items WHERE config_hash != ?",
+                "DELETE FROM invalid_items WHERE config_hash != ?", (config_hash,))
+            inv_where = "substr(last_seen,1,10) < ? AND config_hash = ?"
+            inv_params = (cache_cut, config_hash)
+        else:
+            counts["invalid_stale_generation"] = 0
+            inv_where = "substr(last_seen,1,10) < ?"
+            inv_params = (cache_cut,)
+        counts["invalid_items"] = sweep(
+            f"SELECT COUNT(*) FROM invalid_items WHERE {inv_where}",
+            f"DELETE FROM invalid_items WHERE {inv_where}", inv_params)
+        hist_cut = (as_of - timedelta(days=history_days)).isoformat()
+        old_runs = "run_id IN (SELECT run_id FROM runs WHERE substr(started_at,1,10) < ?)"
+        counts["run_sources"] = sweep(
+            f"SELECT COUNT(*) FROM run_sources WHERE {old_runs}",
+            f"DELETE FROM run_sources WHERE {old_runs}", (hist_cut,))
+        counts["llm_calls"] = sweep(
+            "SELECT COUNT(*) FROM llm_calls WHERE substr(created_at,1,10) < ?",
+            "DELETE FROM llm_calls WHERE substr(created_at,1,10) < ?", (hist_cut,))
+        counts["total"] = sum(counts[k] for k in
+                              ("news", "disclosure", "rejected", "paper", "stale_yahoo_keys"))
+        if not dry_run:
+            c.commit()
+            freed = (counts["total"] + counts["invalid_items"]
+                     + counts["invalid_stale_generation"]
+                     + counts["run_sources"] + counts["llm_calls"])
+            if freed:
+                try:
+                    c.execute("VACUUM")
+                except Exception:
+                    pass  # ファイルが縮まないだけ (行の削除は完了している)
+        counts["db_bytes_before"] = size_before
+        counts["db_bytes_after"] = size_before if dry_run else _size()
         return counts
 
     def prune_stale_links(self, entities):

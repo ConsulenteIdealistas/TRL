@@ -114,6 +114,11 @@ def main(argv=None):
     pr = sub.add_parser("prune")
     pr.add_argument("--data-dir", default="data")
     pr.add_argument("--as-of")
+    pr.add_argument("--dry-run", action="store_true",
+                    help="削除せず件数だけを数える (本番での初回観察用)")
+    pr.add_argument("--paper-days", type=int, default=None,
+                    help="N-2 (paper 保持期限) をこの日数で試す/適用する。"
+                         "既定は無効 (段階投入は pipeline 側の定数が正)")
     pg = sub.add_parser("purge")
     pg.add_argument("--data-dir", default="data")
     pg.add_argument("--evaluations", action="store_true",
@@ -272,9 +277,11 @@ def main(argv=None):
     if a.cmd == "prune":
         as_of_p = parse_date(a.as_of) if getattr(a, "as_of", None) else datetime.now(timezone.utc).date()
         counts = store.prune(as_of_p, entity_markets={
-            e["id"]: e.get("market") or "JP" for e in (cfg.get("entities") or {}).get("entities", [])})
+            e["id"]: e.get("market") or "JP" for e in (cfg.get("entities") or {}).get("entities", [])},
+            config_hash=cfg.get("config_hash"), paper_days=a.paper_days,
+            dry_run=a.dry_run)
         store.close()
-        print(f"[prune] {counts}")
+        print(f"[prune] {'(dry-run) ' if a.dry_run else ''}{counts}")
         return 0
     if a.cmd == "queue":
         for x in store.list_queue():

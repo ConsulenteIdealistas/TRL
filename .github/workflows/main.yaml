@@ -91,9 +91,8 @@ jobs:
           python-version: "3.12"
       - name: Tests
         run: python -m unittest test_trl test_entities test_site -v
-      - name: Restore data branch
-        env:
-          TOKEN: ${{ github.token }}
+      - name: Check data branch
+        id: data_branch
         run: |
           set +e
           git ls-remote --exit-code --heads origin data >/dev/null 2>&1
@@ -101,28 +100,41 @@ jobs:
           set -e
 
           if [ "$rc" -eq 0 ]; then
-            git clone -q --depth 1 --branch data "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git" _data
+            echo "exists=true" >> "$GITHUB_OUTPUT"
           elif [ "$rc" -eq 2 ]; then
-            mkdir -p _data
+            echo "exists=false" >> "$GITHUB_OUTPUT"
           else
             echo "::error::Could not check data branch (rc=$rc). Aborting to protect data"
             exit 1
           fi
-          if [ "$rc" -eq 0 ]; then
-            # data ブランチがあるのに trl.sqlite が無い・壊れている状態で進むと、
-            # 空の DB が新規作成されて履歴が上書きされるため、ここで止める
-            if [ ! -f _data/trl.sqlite ]; then
-              echo "::error::data branch exists but trl.sqlite is missing. Aborting to protect data"
-              exit 1
-            fi
-            python3 -c "import sqlite3; r = sqlite3.connect('file:_data/trl.sqlite?mode=ro', uri=True).execute('PRAGMA integrity_check').fetchone()[0]; assert r == 'ok', r" || { echo "::error::trl.sqlite failed the integrity check. Aborting to protect data"; exit 1; }
+      - name: Restore data branch
+        if: steps.data_branch.outputs.exists == 'true'
+        uses: actions/checkout@v6
+        with:
+          ref: data
+          path: _data
+          # Persist の push が資格情報を読めずに落ちるのを防ぐため、checkout の
+          # 資格情報を _data の git 設定に保持する。トークンを URL に埋め込む
+          # 手動受け渡し (旧方式) は使わない (AC-1)
+          persist-credentials: true
+      - name: Prepare data directory
+        if: steps.data_branch.outputs.exists != 'true'
+        run: mkdir -p _data
+      - name: Verify data branch contents
+        if: steps.data_branch.outputs.exists == 'true'
+        run: |
+          # data ブランチがあるのに trl.sqlite が無い・壊れている状態で進むと、
+          # 空の DB が新規作成されて履歴が上書きされるため、ここで止める
+          if [ ! -f _data/trl.sqlite ]; then
+            echo "::error::data branch exists but trl.sqlite is missing. Aborting to protect data"
+            exit 1
           fi
+          python3 -c "import sqlite3; r = sqlite3.connect('file:_data/trl.sqlite?mode=ro', uri=True).execute('PRAGMA integrity_check').fetchone()[0]; assert r == 'ok', r" || { echo "::error::trl.sqlite failed the integrity check. Aborting to protect data"; exit 1; }
       - name: Run pipeline
         env:
           TRL_LLM_PROVIDER: ${{ vars.TRL_LLM_PROVIDER }}
           TRL_LLM_MODEL: ${{ vars.TRL_LLM_MODEL }}
           TRL_LLM_FALLBACK_MODEL: ${{ vars.TRL_LLM_FALLBACK_MODEL }}
-          TRL_LLM_FALLBACK_MODEL_2: ${{ vars.TRL_LLM_FALLBACK_MODEL_2 }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           NCBI_API_KEY: ${{ secrets.NCBI_API_KEY }}
           OPENALEX_API_KEY: ${{ secrets.OPENALEX_API_KEY }}
@@ -202,8 +214,6 @@ jobs:
           path: _site
       - name: Persist data (preserve history)
         if: always()
-        env:
-          TOKEN: ${{ github.token }}
         run: |
           if [ ! -d _data ]; then
             echo "No data directory to persist"
@@ -219,7 +229,13 @@ jobs:
 
           if [ ! -d .git ]; then
             git init -q -b data
-            git remote add origin "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+            git remote add origin "https://github.com/${GITHUB_REPOSITORY}.git"
+            # data ブランチが無く checkout できなかった場合の初期化経路。
+            # トークンを URL に埋め込む旧方式は使わず、ルートの checkout が
+            # 保持した資格情報 (extraheader) を引き継ぐ
+            if AUTH_HEADER=$(git -C "$GITHUB_WORKSPACE" config --get "http.https://github.com/.extraheader" 2>/dev/null); then
+              git config "http.https://github.com/.extraheader" "$AUTH_HEADER"
+            fi
           fi
 
           git config user.name github-actions
@@ -235,13 +251,20 @@ jobs:
           git commit -q -m "data $(date -u +%FT%TZ)"
           # push の一時的な失敗でその回の収集・評価が失われないよう、3回まで試す
           for i in 1 2 3; do
-            if git push -q origin data; then
+            if git push -q origin HEAD:data; then
               exit 0
             fi
             echo "push failed (attempt $i), retrying..."
             sleep 5
           done
-          echo "::error::Could not persist data after 3 attempts"
+          # backup (AC-1): 通常の push が非 fast-forward 等で 3 回とも失敗した場合の
+          # 最終手段。その回の収集・評価が丸ごと失われるよりは、force push で
+          # 自実行のコミットを data ブランチへ保存する
+          echo "::warning::Normal push failed after 3 attempts; falling back to force push to avoid losing this run's data"
+          if git push -q --force origin HEAD:data; then
+            exit 0
+          fi
+          echo "::error::Could not persist data after 3 attempts and the force-push fallback"
           exit 1
 
   deploy:

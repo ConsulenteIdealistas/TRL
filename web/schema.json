@@ -17,7 +17,8 @@
     "version",
     "hash",
     "long_weights",
-    "item_groups"
+    "item_groups",
+    "reference_items"
   ],
   "candidate": [
     "id",

@@ -38,6 +38,7 @@ const SL = {final: "選定可能", review: "要追加調査", hold: "保留", pe
 const SR = {abstract_too_short: "要旨が短いため評価対象外", published_after_as_of: "実行基準日より後の公表のため対象外"};  // 除外 (screening) の理由
 const IL = {technology_readiness: "技術成熟度", technological_advantage: "技術的優位性", monetization: "収益化能力",
   market_growth: "市場成長性", financial_sustainability: "財務的持続可能性", moat_durability: "競争優位性の持続性",
+  management_execution: "経営陣・実行力",
   catalyst_quality: "触媒の質", expectation_gap: "期待ギャップ", not_priced_in: "未織り込み度",
   timing_feasibility: "タイミングの実現性", supply_demand: "需給", downside_resilience: "下値耐性"};
 const $ = s => document.querySelector(s);
@@ -51,7 +52,7 @@ const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "
 const safeUrl = u => /^https?:\/\//i.test(String(u || "")) ? String(u) : "#";
 const ok = t => Number.isInteger(t) && t >= 1 && t <= 9;
 const SRC_CLASS = {arxiv: "s-arxiv", pubmed: "s-pubmed", gnews: "s-gnews", prtimes: "s-prtimes", trials: "s-trials", edinet: "s-edinet", yahoo: "s-yahoo", openalex: "s-openalex", edgar: "s-edgar"};
-const SRC_LABEL = {arxiv: "arXiv", pubmed: "PubMed", gnews: "News", prtimes: "PR TIMES", trials: "ClinicalTrials", edinet: "EDINET", yahoo: "Yahoo Finance", openalex: "OpenAlex", edgar: "SEC EDGAR", roic: "ROIC.ai", simfin: "SimFin"};
+const SRC_LABEL = {arxiv: "arXiv", pubmed: "PubMed", gnews: "News", prtimes: "PR TIMES", trials: "ClinicalTrials", edinet: "EDINET", yahoo: "Yahoo Finance", openalex: "OpenAlex", edgar: "SEC EDGAR", roic: "ROIC.ai"};
 const ML = {JP: "日本", US: "米国", GB: "英国", CH: "スイス", DE: "ドイツ", DK: "デンマーク", SE: "スウェーデン", IT: "イタリア", CA: "カナダ", AU: "オーストラリア", ES: "スペイン", FR: "フランス", NL: "オランダ", FI: "フィンランド", NO: "ノルウェー", BE: "ベルギー", IN: "インド", SG: "シンガポール", NZ: "ニュージーランド", PL: "ポーランド", AT: "オーストリア", TW: "台湾", HK: "香港", IE: "アイルランド", PT: "ポルトガル", CZ: "チェコ", GR: "ギリシャ"};
 const CL = {space: "宇宙", bio: "バイオ", semiconductor: "半導体", ai: "AI", robotics: "ロボティクス", energy: "エネルギー・蓄電池", quantum: "量子技術", defense: "防衛"};
 const TL = {photonics: "フォトニクス", medtech: "医療機器", earth_observation: "地球観測", constellation: "衛星コンステレーション", space_transport: "宇宙輸送", lunar: "月面開発", debris_removal: "デブリ除去", mrna: "mRNA", cell_therapy: "細胞治療", gene_therapy: "遺伝子治療・ゲノム編集", antibody: "抗体医薬", radiopharm: "放射性医薬品", vaccine: "ワクチン", regenerative_medicine: "再生医療", diagnostics: "診断", drug_ai: "創薬AI", surgical_robot: "手術ロボット", power_semi: "パワー半導体", advanced_packaging: "先端パッケージング", memory: "メモリ", semi_equipment: "半導体製造装置", ai_infra: "AIインフラ・データセンター", voice_ai: "音声AI", industrial_robotics: "産業用ロボット・自動化", warehouse_automation: "倉庫・物流自動化", autonomous_mobility: "自律移動・ドローン", humanoid: "ヒューマノイド", hydrogen: "水素・燃料電池", ess: "蓄電・ESS", ev_charging: "EV充電", solid_state_battery: "全固体電池", battery_materials: "電池材料", perovskite: "ペロブスカイト太陽電池", fusion: "核融合", smr: "SMR", quantum_computing: "量子コンピュータ", quantum_comm: "量子通信・暗号", quantum_sensing: "量子センシング"};
@@ -318,13 +319,14 @@ async function load() {
   lt.textContent = LANG === "ja" ? "原文で表示" : "日本語訳で表示";
   lt.onclick = () => { LANG = LANG === "ja" ? "orig" : "ja"; try { localStorage.setItem("trl-lang", LANG); } catch (e) { /* 保存できなくても切替は効く */ } load(); };
   const G = d.config.item_groups;
+  const REF = (d.config && d.config.reference_items) || [];  // 参考項目 (総合点・不足集計に含めない)
   const LL = p.long && p.long.status !== "error" ? p.long : null;
   const EV = p.event && p.event.status !== "error" ? p.event : null;
   const tr = LL && LL.trl_level;
   const lvl = tr ? tr.level : null;
   const strong = p.entities.filter(e => e.strength === "strong");
-  const missAll = LL ? [...new Set(Object.values(LL.items).flatMap(i => i.missing_info))] : [];
-  const waitAll = LL ? [...new Set(Object.values(LL.items).flatMap(i => i.awaiting_info || []))] : [];
+  const missAll = LL ? [...new Set(Object.entries(LL.items).filter(([k]) => !REF.includes(k)).flatMap(([, i]) => i.missing_info))] : [];
+  const waitAll = LL ? [...new Set(Object.entries(LL.items).filter(([k]) => !REF.includes(k)).flatMap(([, i]) => i.awaiting_info || []))] : [];
   const q = p.queue && p.queue.long;
   const total = LL && LL.total != null ? `${LL.total} / 100(${esc(LL.band || "")})` : "未確定";
   const ADJ = LL && LL.adjustment ? LL.adjustment : null;
@@ -337,6 +339,7 @@ async function load() {
 <section class="ds"><h4>技術成熟度（TRL）</h4>${trl(ADJ ? ADJ.to_value : lvl)}${ADJ ? `<p class="note">監査レビューでの調整により、TRL は元の ${ADJ.from_value} から ${ADJ.to_value} に読み替えています。理由: ${esc(ADJ.reason)}（総合点・帯域も、読み替え後の TRL で計算し直した値を表示しています）</p>` : ""}${tr && tr.reason ? `<p>${esc(tr.reason)}</p>` : ""}${tr && tr.level == null && tr.missing_info.length ? `<p class="hint">不足: ${tr.missing_info.map(esc).join(" / ")}</p>` : ""}${tr && tr.awaiting_info && tr.awaiting_info.length ? `<p class="hint">結果待ち: ${tr.awaiting_info.map(esc).join(" / ")}</p>` : ""}<p class="hint">TRLは資料から根拠付きで判断できた場合のみ表示します。技術成熟度スコアからの換算はしません。</p></section>
 <section class="ds"><h4>技術評価</h4>${LL ? G.technology.map(k => scoreRow(k, LL.items[k])).join("") : `<p class="hint">未評価です。</p>`}</section>
 <section class="ds"><h4>事業評価</h4>${LL && LL.business_stage === "pre_stage" ? `<p class="note">この技術は前商業段階(TRL 3以下)のため、事業項目は「段階未達」として不足とは区別しています。点が付いている項目はそのまま表示します。</p>` : ""}${LL ? G.business.map(k => scoreRow(k, LL.items[k])).join("") : `<p class="hint">未評価です。</p>`}${LL && !strong.length ? `<p class="note">関連企業が特定できていないため、企業固有の項目は算出されません。総合点は6項目すべてが揃うまで確定せず、重みの再配分もしません。</p>` : ""}</section>
+${LL && REF.some(k => LL.items[k]) ? `<section class="ds"><h4>参考項目</h4><p class="note">参考項目は採点して表示しますが、総合点・必須判定には含めません。根拠が無い場合は未算出となり、それを理由に保留にもなりません。</p>${REF.filter(k => LL.items[k]).map(k => scoreRow(k, LL.items[k])).join("")}</section>` : ""}
 ${EV ? `<section class="ds"><h4>イベント評価（短期）</h4>${Object.keys(EV.items).map(k => scoreRow(k, EV.items[k])).join("")}<p>総合点 ${EV.total != null ? EV.total + " / 100(" + esc(EV.band || "") + ")" : "未確定"}</p>${EV.prev ? prevCmp(EV, null) : ""}</section>` : ""}
 <section class="ds"><h4>総合点（長期）</h4><p>${totalMain}</p>${ADJ ? `<p class="note">この総合点は TRL 調整（${ADJ.from_value} → ${ADJ.to_value}）を反映し、項目点と読み替え後の TRL から計算し直した値です。元の総合点は ${total} でした。理由: ${esc(ADJ.reason)}</p>` : ""}${scopeMain === "technology" ? `<p class="note">これは技術評価の総合点です。事業項目は段階未達のため対象外で、技術軸の項目だけで算出しています。</p>` : ""}${holdCauseTxt(LL) ? `<p class="note">${esc(holdCauseTxt(LL))}</p>` : ""}${LL && LL.total_orig != null && LL.total != null && LL.total_orig !== LL.total ? `<p class="note">評価当時の総合点は ${LL.total_orig}${LL.band_orig ? `（${esc(LL.band_orig)}）` : ""} でした。上の総合点は、重みの改訂に合わせて現行の物差しで計算し直した値です。</p>` : ""}${LL ? `<div class="acts"><button class="btn sec" type="button" id="cpye">評価をコピー</button><button class="btn obsidian" type="button" id="cpym">Markdownでコピー</button></div>` : ""}</section>
 ${LL && LL.prev ? `<section class="ds"><h4>前回評価との比較</h4>${prevCmp(LL, lvl)}</section>` : ""}

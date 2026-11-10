@@ -26,6 +26,7 @@ ITEM_LABELS = {
     "technology_readiness": "技術成熟度", "technological_advantage": "技術的優位性",
     "monetization": "収益化", "market_growth": "市場成長",
     "financial_sustainability": "財務持続性", "moat_durability": "参入障壁の持続性",
+    "management_execution": "経営陣・実行力（参考）",
     "catalyst_quality": "材料の質", "expectation_gap": "期待との差",
     "not_priced_in": "未織り込み", "timing_feasibility": "時期の現実性",
     "supply_demand": "需給", "downside_resilience": "下落耐性",

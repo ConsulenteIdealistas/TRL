@@ -108,6 +108,31 @@ class ScoringTests(unittest.TestCase):
         for s, label in exp:
             self.assertEqual(scoring.band_for(s, CFG)["label"], label, s)
 
+    def test_reference_item_not_in_total_or_missing(self):
+        # 参考項目 (経営陣・実行力) は総合点・missing に一切影響しない
+        items = {k: 80 for k in LONG_KEYS}
+        items["management_execution"] = 0
+        r = scoring.compute(items, "long", CFG)
+        self.assertEqual((r["status"], r["total"]), ("final", 80.0))
+        items["management_execution"] = None  # null でも hold しない
+        r = scoring.compute(items, "long", CFG)
+        self.assertEqual((r["status"], r["total"]), ("final", 80.0))
+        self.assertNotIn("management_execution", r["missing"])
+        self.assertNotIn("management_execution", r["critical_missing"])
+
+    def test_reference_item_range_validated(self):
+        items = {k: 50 for k in LONG_KEYS}
+        items["management_execution"] = 101
+        self.assertIn("out_of_range:management_execution", scoring.validate_items(items, "long", CFG))
+        items["management_execution"] = 50
+        self.assertEqual(scoring.validate_items(items, "long", CFG), [])
+
+    def test_reference_overlap_rejected(self):
+        bad = copy.deepcopy(CFG)
+        bad["scoring"]["long"]["reference"] = ["monetization"]
+        with self.assertRaises(ConfigError):
+            validate_config(bad)
+
     def test_long_and_event_not_averaged(self):
         # 2系統の結果は別々に返り、合成関数は存在しない
         self.assertFalse(hasattr(scoring, "combine"))
@@ -234,6 +259,26 @@ class PromptTests(unittest.TestCase):
                        "結果待ち：", "将来予測が無いことだけを理由に null にしない"):
             self.assertIn(anchor, text)
 
+    def test_long_prompt_contains_reference_item(self):
+        # 規程第13条: 経営陣・実行力の参考項目 (総合点・必須判定に含めない)
+        text = load_prompt("long", CFG["scoring"]["prompts"]["long"])["text"]
+        for anchor in ("management_execution", "経営陣・実行力", "参考項目",
+                       "総合点・軸別点・必須判定・不足判定には含めません"):
+            self.assertIn(anchor, text)
+
+    def test_long_prompt_observational_study_rule(self):
+        # 規程第11条 (C-4 で B類として明文化) の観察研究の位置づけが同期していること
+        text = load_prompt("long", CFG["scoring"]["prompts"]["long"])["text"]
+        for anchor in ("市販後観察研究・レジストリは、その対象製品の TRL 9 の証拠になり得る",
+                       "観察研究という研究形式自体が段階を下げることはない"):
+            self.assertIn(anchor, text)
+
+    def test_extract_prompt_contains_subject(self):
+        # 監査要項④ (技術帰属): facts に subject を原文スパンのまま併記する指示
+        text = load_prompt("extract", CFG["scoring"]["prompts"]["extract"])["text"]
+        for anchor in ("subject", "原文に現れる形のまま", "帰属"):
+            self.assertIn(anchor, text)
+
     def test_long_prompt_contains_low_band_procedure(self):
         # TRL 1〜3 が null に逃げないための判定手順・原則・具体例が欠けないこと
         text = load_prompt("long", CFG["scoring"]["prompts"]["long"])["text"]
@@ -288,6 +333,30 @@ class ValidationTests(unittest.TestCase):
         self.assertEqual(ev.validate_extraction({"facts": [{"statement": "x"}], "inferences": [], "forecasts": [],
                                                  "hypotheses": [], "counter_points": [], "missing_info": []}), [])
 
+    def test_extraction_subject_validation(self):
+        # 技術帰属 (監査要項④): subject は文字列なら受け付け、欠落も許容する
+        base = {"facts": [{"statement": "x", "subject": "製品A"}], "inferences": [], "forecasts": [],
+                "hypotheses": [], "counter_points": [], "missing_info": []}
+        self.assertEqual(ev.validate_extraction(base), [])
+        base["facts"][0]["subject"] = 123
+        self.assertTrue(any("subject" in e for e in ev.validate_extraction(base)))
+
+    def test_reference_item_assessment(self):
+        a = assessment(LONG_KEYS)
+        a["items"]["management_execution"] = item(70)
+        s, d, e = ev.validate_assessment(a, "long", CFG)
+        self.assertEqual(e, [])
+        self.assertEqual(s["management_execution"], 70)
+        # 参考項目が欠落していてもエラーにはせず null として記録する
+        s, d, e = ev.validate_assessment(assessment(LONG_KEYS), "long", CFG)
+        self.assertEqual(e, [])
+        self.assertIsNone(s["management_execution"])
+        self.assertIsNone(d["management_execution"]["score"])
+        # 得点があるのに根拠が無い場合は採点項目と同じ規律でエラー
+        a = assessment(LONG_KEYS)
+        a["items"]["management_execution"] = item(70, with_evidence=False)
+        self.assertIn("evidence_required:management_execution", ev.validate_assessment(a, "long", CFG)[2])
+
 
 class EvaluateOneTests(unittest.TestCase):
     cand = {"id": "c1", "title": "T", "abstract": "A" * 300, "url": "u", "source": "arxiv",
@@ -300,6 +369,31 @@ class EvaluateOneTests(unittest.TestCase):
         r = self.run_it(long_scores={k: 60 for k in LONG_KEYS})
         self.assertEqual((r["status"], r["total"], r["band"]["label"]), ("final", 60.0, "strong"))
         self.assertEqual(set(r["prompt_versions"]), {"extract", "long"})
+
+    def _fn_with_reference(self, ref_value):
+        def fn(prompt):
+            if "長期成長評価" in prompt:
+                obj = assessment(LONG_KEYS, {k: 60 for k in LONG_KEYS})
+                if ref_value is not ...:
+                    obj["items"]["management_execution"] = item(ref_value)
+                return json.dumps(obj)
+            return json.dumps(EXTRACTION)
+        return fn
+
+    def test_long_reference_item_scored_not_in_total(self):
+        # 参考項目に高得点が付いても総合点は6項目だけで決まる
+        r = ev.evaluate_one(self.cand, "long", CFG, Mock(self._fn_with_reference(90)), AS_OF)
+        self.assertEqual((r["status"], r["total"]), ("final", 60.0))
+        self.assertEqual(r["items"]["management_execution"]["score"], 90)
+
+    def test_long_reference_item_null_or_absent_still_final(self):
+        # 参考項目が null でも、出力自体が無くても、評価は確定する
+        r = ev.evaluate_one(self.cand, "long", CFG, Mock(self._fn_with_reference(None)), AS_OF)
+        self.assertEqual((r["status"], r["total"]), ("final", 60.0))
+        self.assertIsNone(r["items"]["management_execution"]["score"])
+        r = ev.evaluate_one(self.cand, "long", CFG, Mock(self._fn_with_reference(...)), AS_OF)
+        self.assertEqual((r["status"], r["total"]), ("final", 60.0))
+        self.assertIsNone(r["items"]["management_execution"]["score"])
 
     def _flaky_fn(self, calls, always_bad=False):
         def fn(prompt):

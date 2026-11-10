@@ -757,6 +757,12 @@ class ExportTests(StoreFixture):
         self.assertEqual(set(data["config"]["item_groups"]["technology"]), set(T.TECH_ITEMS))
         json.dumps(data, ensure_ascii=False)  # シリアライズ可能
 
+    def test_config_includes_reference_items(self):
+        # 参考項目 (規程第13条) は config に同梱され、重み・必須には現れない
+        data = self.build(Mock(make_llm_fn()))
+        self.assertEqual(data["config"]["reference_items"], ["management_execution"])
+        self.assertNotIn("management_execution", data["config"]["long_weights"])
+
     def test_export_writes_site_without_schema_file(self):
         self.build(Mock(make_llm_fn()))
         out = Path(self.tmp.name) / "site"

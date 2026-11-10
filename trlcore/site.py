@@ -439,7 +439,10 @@ def build_site_data(store, cfg, now=None):
         "config": {"version": cfg["config_version"], "hash": cfg["config_hash"],
                    "long_weights": long_w,
                    "item_groups": {"technology": [k for k in long_w if k in TECH_ITEMS],
-                                   "business": [k for k in long_w if k not in TECH_ITEMS]}},
+                                   "business": [k for k in long_w if k not in TECH_ITEMS]},
+                   # 参考項目 (規程第13条): 総合点・必須判定に含めない項目。
+                   # 表示側が「参考」として分離し、不足の集計からも外すために使う
+                   "reference_items": list(cfg["scoring"]["long"].get("reference") or [])},
         "candidates": cands,
         "watch_companies": _watch_companies(store, cfg, ent_derived, ent_reasons)}
 

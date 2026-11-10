@@ -223,3 +223,16 @@ class ExportTests(StoreFixture):
         # 監査カードに導出 tier を併記する (W-9)
         audit = (web / "audit.js").read_text(encoding="utf-8")
         self.assertIn("dtLabelA", audit)
+    def test_reference_item_display(self):
+        # 参考項目 (規程第13条): 詳細・ドロワーとも「参考項目」として分離表示し、
+        # 不足の集計 (missAll) からは外す。ラベルは3ページで共通
+        web = T.ROOT / "web"
+        det = (web / "detail.html").read_text(encoding="utf-8")
+        app = (web / "app.js").read_text(encoding="utf-8")
+        audit = (web / "audit.js").read_text(encoding="utf-8")
+        for text in (det, app, audit):
+            self.assertIn('management_execution: "経営陣・実行力"', text)
+        for text in (det, app):
+            self.assertIn("reference_items", text)
+            self.assertIn("<h4>参考項目</h4>", text)
+            self.assertIn("総合点・必須判定には含めません", text)

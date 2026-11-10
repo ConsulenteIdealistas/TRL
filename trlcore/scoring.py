@@ -21,16 +21,24 @@ def item_keys(kind, cfg):
     return list(cfg["scoring"][kind]["weights"].keys())
 
 
+def reference_items(kind, cfg):
+    """参考項目 (規程第13条): 採点・表示するが総合点・軸別点・必須判定・
+    不足判定には含めない項目。欠けていても hold にはしない。"""
+    return list((cfg["scoring"][kind].get("reference") or []))
+
+
 def validate_items(items, kind, cfg):
-    """items: {key: score|None}。形式エラーの一覧を返す(null は許容)。"""
+    """items: {key: score|None}。形式エラーの一覧を返す(null は許容)。
+    参考項目は未知項目としては扱わず、値域だけを検証する (欠落は許容)。"""
     errors = []
     keys = set(item_keys(kind, cfg))
+    allowed = keys | set(reference_items(kind, cfg))
     for k in keys - set(items):
         errors.append(f"missing_item:{k}")
-    for k in set(items) - keys:
+    for k in set(items) - allowed:
         errors.append(f"unknown_item:{k}")
     for k, v in items.items():
-        if k not in keys or v is None:
+        if k not in allowed or v is None:
             continue
         if isinstance(v, bool) or not isinstance(v, (int, float)):
             errors.append(f"not_a_number:{k}")
@@ -54,7 +62,9 @@ def _axis_total(items, weights):
 
 def compute(items, kind, cfg, trl_level=None):
     """-> {status: final|hold|error, total, band, missing, critical_missing, errors,
-    axes, business_stage, total_scope}"""
+    axes, business_stage, total_scope}
+    集計は weights の項目だけで行う。参考項目 (reference) が items に
+    含まれていても、総合点・軸別点・missing には一切影響しない。"""
     errors = validate_items(items, kind, cfg)
     base = {"axes": None, "business_stage": None, "total_scope": None}
     if errors:

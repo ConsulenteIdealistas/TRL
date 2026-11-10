@@ -5,7 +5,7 @@ import json
 from .errors import HttpError, LLMError, ResponseShapeError
 from .dates import freshness_info
 from .http import redact
-from .scoring import compute, item_keys
+from .scoring import compute, item_keys, reference_items
 from .prompts import load_prompt, render
 from .llm import extract_json
 from .market import format_reaction
@@ -29,11 +29,46 @@ def validate_extraction(obj):
         for i, it in enumerate(obj.get(k) or []):
             if not isinstance(it, dict) or not str(it.get("statement", "")).strip():
                 errors.append(f"extraction.{k}[{i}]:statement_required")
+    # 技術帰属 (監査要項④): facts の subject は原文スパンの文字列でのみ受け付ける。
+    # 欠落は許容する (帰属を特定できない fact もありうるため、監査側で未分類として扱う)
+    for i, it in enumerate(obj.get("facts") or []):
+        if isinstance(it, dict) and "subject" in it and it["subject"] is not None \
+                and not isinstance(it["subject"], str):
+            errors.append(f"extraction.facts[{i}]:subject_must_be_string")
     return errors
 
 
 def _nonempty_list(v):
     return isinstance(v, list) and any(str(x).strip() for x in v)
+
+
+def _validate_one_item(key, it, scores, details, errors):
+    """1項目分の検証 (採点項目・参考項目で共通の規律)。"""
+    score = it.get("score")
+    if score is not None and (isinstance(score, bool) or not isinstance(score, (int, float))
+                              or score != score or score in (float("inf"), float("-inf"))):
+        # 型の検証はここで行う(範囲 0-100 は scoring 側の out_of_range が担当)
+        errors.append(f"bad_score:{key}")
+    scores[key] = score
+    ev = it.get("evidence")
+    if score is not None:
+        if not str(it.get("reason", "")).strip():
+            errors.append(f"reason_required:{key}")
+        if not isinstance(ev, list) or not ev:
+            errors.append(f"evidence_required:{key}")
+        else:
+            for j, e in enumerate(ev):
+                if not isinstance(e, dict) or not str(e.get("ref", "")).strip() \
+                        or not str(e.get("summary", "")).strip() or e.get("kind") not in EVIDENCE_KINDS:
+                    errors.append(f"bad_evidence:{key}[{j}]")
+    elif not _nonempty_list(it.get("missing_info")):
+        errors.append(f"missing_info_required_for_null:{key}")
+    for f in ("counter_evidence", "missing_info"):
+        if it.get(f) is not None and not isinstance(it.get(f), list):
+            errors.append(f"{f}:must_be_list:{key}")
+    details[key] = {"score": score, "reason": it.get("reason", ""), "evidence": ev or [],
+                    "counter_evidence": it.get("counter_evidence") or [],
+                    "missing_info": it.get("missing_info") or []}
 
 
 def validate_assessment(obj, kind, cfg):
@@ -47,31 +82,18 @@ def validate_assessment(obj, kind, cfg):
         if not isinstance(it, dict):
             errors.append(f"missing_item:{key}")
             continue
-        score = it.get("score")
-        if score is not None and (isinstance(score, bool) or not isinstance(score, (int, float))
-                                  or score != score or score in (float("inf"), float("-inf"))):
-            # 型の検証はここで行う(範囲 0-100 は scoring 側の out_of_range が担当)
-            errors.append(f"bad_score:{key}")
-        scores[key] = score
-        ev = it.get("evidence")
-        if score is not None:
-            if not str(it.get("reason", "")).strip():
-                errors.append(f"reason_required:{key}")
-            if not isinstance(ev, list) or not ev:
-                errors.append(f"evidence_required:{key}")
-            else:
-                for j, e in enumerate(ev):
-                    if not isinstance(e, dict) or not str(e.get("ref", "")).strip() \
-                            or not str(e.get("summary", "")).strip() or e.get("kind") not in EVIDENCE_KINDS:
-                        errors.append(f"bad_evidence:{key}[{j}]")
-        elif not _nonempty_list(it.get("missing_info")):
-            errors.append(f"missing_info_required_for_null:{key}")
-        for f in ("counter_evidence", "missing_info"):
-            if it.get(f) is not None and not isinstance(it.get(f), list):
-                errors.append(f"{f}:must_be_list:{key}")
-        details[key] = {"score": score, "reason": it.get("reason", ""), "evidence": ev or [],
-                        "counter_evidence": it.get("counter_evidence") or [],
-                        "missing_info": it.get("missing_info") or []}
+        _validate_one_item(key, it, scores, details, errors)
+    # 参考項目 (規程第13条): 出力があれば採点項目と同じ規律で検証して取り込む。
+    # 欠落していてもエラーにはせず null として記録する (参考項目の不足で
+    # 評価自体を失敗・保留にしない)
+    for key in reference_items(kind, cfg):
+        it = items.get(key)
+        if isinstance(it, dict):
+            _validate_one_item(key, it, scores, details, errors)
+        else:
+            scores[key] = None
+            details[key] = {"score": None, "reason": "", "evidence": [],
+                            "counter_evidence": [], "missing_info": []}
     for f in ("next_sources", "reeval_conditions"):
         if obj.get(f) is not None and not isinstance(obj.get(f), list):
             errors.append(f"{f}:must_be_list")

@@ -16,6 +16,7 @@ const SL = {final: "選定可能", review: "要追加調査", hold: "保留", pe
 const CL = {space: "宇宙", bio: "バイオ", semiconductor: "半導体", ai: "AI", robotics: "ロボティクス", energy: "エネルギー・蓄電池", quantum: "量子技術", defense: "防衛"};
 const IL = {technology_readiness: "技術成熟度", technological_advantage: "技術的優位性", monetization: "収益化能力",
   market_growth: "市場成長性", financial_sustainability: "財務的持続可能性", moat_durability: "競争優位性の持続性",
+  management_execution: "経営陣・実行力",
   trl_level: "TRL判定", counter_points: "反証", candidate: "候補の時点", total: "総合点", companies: "企業帰属"};
 const CHK = {A1: "原則1: 商用展開とTRLの混同", A2: "原則2: TRL 9 の継続証拠", A3: "原則3: TRLからの推論",
   A4: "TRL 9 の根拠が商用展開のみ", A5: "点と理由の整合", A6: "欠落判定（材料プール外）", A7: "減点理由の具体性",

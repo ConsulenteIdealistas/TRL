@@ -230,16 +230,18 @@ class AuditTests(unittest.TestCase):
         # (config_hash) は audit.v1.md の有無・内容で一切変わらない
         with tempfile.TemporaryDirectory() as td:
             d = Path(td)
-            for name in ("scoring.json", "sources.json", "extract.v1.md",
-                         "long.v1.md", "event.v1.md"):
+            prompts = CFG["scoring"]["prompts"]
+            for name in ("scoring.json", "sources.json") + tuple(
+                    f"{k}.{v}.md" for k, v in prompts.items()):
                 (d / name).write_bytes((T.ROOT / name).read_bytes())
             h1 = load_config(d)["config_hash"]  # audit.v1.md が無くても読める
             (d / "audit.v1.md").write_text("# 監査側ファイルのダミー\n", encoding="utf-8")
             self.assertEqual(load_config(d)["config_hash"], h1)  # 置いても不変
             (d / "audit.v1.md").write_text("# 監査側ファイルのダミー\n追記\n", encoding="utf-8")
             self.assertEqual(load_config(d)["config_hash"], h1)  # 本文の改訂でも不変
-            (d / "long.v1.md").write_text(
-                (d / "long.v1.md").read_text(encoding="utf-8") + "\n追記\n", encoding="utf-8")
+            long_name = f"long.{prompts['long']}.md"  # 現行の評価プロンプトを改訂する
+            (d / long_name).write_text(
+                (d / long_name).read_text(encoding="utf-8") + "\n追記\n", encoding="utf-8")
             self.assertNotEqual(load_config(d)["config_hash"], h1)  # 評価側は従来どおり変化
 
     def test_build_audit_input(self):

@@ -26,13 +26,13 @@ table.ntbl small,.doc small{color:var(--muted)}
 </style>
 </head>
 <body>
-<header class="topbar"><a class="brand" href="index.html"><span class="mark">T</span><span>TRL<span class="light"> Explorer</span></span></a><div class="meta">Research Intelligence</div></header>
+<header class="topbar"><a class="brand" href="index.html"><span class="mark">T</span><span>TRL<span class="light"> Explorer</span></span></a><div class="meta"><span class="dot"></span>Research Intelligence</div></header>
 <main class="ws">
 <p style="margin:0 0 12px"><a class="tg" href="index.html">← 一覧に戻る</a></p>
 <section class="panel docwrap">
 <h1 class="doct">採点基準</h1>
-<p class="hint">このページでは、評価の規則（評価規程）と、現在使っている数値（重み・帯域）を公開しています。規程は草案 v0.1（2026-11-02 起草、2026-11-04 に第15条4項を追加）で、未確定事項は [要確定] と明記されています。数値の正本は scoring.json です。</p>
-<h2 class="doch">現行の数値（別表 scoring.json、config_version 2026.11.0）</h2>
+<p class="hint">このページでは、評価の規則（評価規程）と、現在使っている数値（重み・帯域）を公開しています。規程は v0.2（2026-11-10 に C-1〜C-4 を確定し、第13条の参考項目を実装）で、正本は repo 内 codex/EVALUATION_CODE.md です。未確定事項は [要確定] と明記されています。数値の正本は scoring.json です。</p>
+<h2 class="doch">現行の数値（別表 scoring.json、config_version 2026.11.1）</h2>
 <p class="hint">重みは試行中です。導出の考え方は下の規程 第17条にあります。</p>
 <h3 class="doch3">長期評価の重み</h3><table class="ntbl"><thead><tr><th>項目</th><th>重み</th><th>必須</th></tr></thead><tbody><tr><td>技術成熟度<br><small>technology_readiness</small></td><td>30</td><td>必須</td></tr><tr><td>技術的優位性<br><small>technological_advantage</small></td><td>15</td><td></td></tr><tr><td>収益化能力<br><small>monetization</small></td><td>20</td><td>必須</td></tr><tr><td>市場成長性<br><small>market_growth</small></td><td>15</td><td></td></tr><tr><td>財務的持続可能性<br><small>financial_sustainability</small></td><td>10</td><td></td></tr><tr><td>競争優位性の持続性<br><small>moat_durability</small></td><td>10</td><td></td></tr></tbody></table>
 <h3 class="doch3">イベント評価の重み</h3><table class="ntbl"><thead><tr><th>項目</th><th>重み</th><th>必須</th></tr></thead><tbody><tr><td>触媒の質<br><small>catalyst_quality</small></td><td>25</td><td>必須</td></tr><tr><td>期待ギャップ<br><small>expectation_gap</small></td><td>25</td><td>必須</td></tr><tr><td>未織り込み度<br><small>not_priced_in</small></td><td>20</td><td>必須</td></tr><tr><td>タイミングの実現性<br><small>timing_feasibility</small></td><td>10</td><td></td></tr><tr><td>需給<br><small>supply_demand</small></td><td>10</td><td></td></tr><tr><td>下値耐性<br><small>downside_resilience</small></td><td>10</td><td></td></tr></tbody></table>
@@ -43,7 +43,9 @@ table.ntbl small,.doc small{color:var(--muted)}
 ボックス化）ため、評価プロンプト・集計コード・設定ファイルは本規程に
 従い、本規程と食い違う場合は本規程を正とする。</p>
 <ul>
-<li>状態: 草案（2026-11-02 起草）。未確定事項は [要確定] と明記する。</li>
+<li>状態: v0.2（2026-11-10、C-1〜C-4 確定・第13条実装）。正本は本ファイル
+  （repo 内 codex/）とし、workspace 側は控えとする（C-2）。未確定事項は
+  [要確定] と明記する。</li>
 <li>数値の正本: 重み・帯域・ゲート日数などの数値は <code>scoring.json</code> を別表とし、
   本規程はその意味と導出のみを定める。ただし第5章の重み表は導出過程を
   示すためのもので、効力は scoring.json の値が持つ。</li>
@@ -68,9 +70,10 @@ table.ntbl small,.doc small{color:var(--muted)}
 <h3>第3条（点数の性質）</h3>
 <p>点数および TRL は評価尺度であり、成功確率・株価上昇確率・投資利益率では
 ない。</p>
-<h3>第4条（用語の定義）[要確定: 名称]</h3>
+<h3>第4条（用語の定義）</h3>
+<p>[名称は 2026-11-10 に C-1（案A）で確定]</p>
 <ol>
-<li><strong>TRL レベル</strong>: 資料の主題である技術・製品・候補物質について、根拠に
+<li><strong>TRLレベル</strong>: 資料の主題である技術・製品・候補物質について、根拠に
    基づいて判定する 1〜9 の段階（第3章）。スコアから換算しない。根拠が
    無い場合は「未確定」とし、数値は置かない。</li>
 <li><strong>技術成熟度スコア</strong>: 長期評価の項目 technology_readiness の 0〜100 点。
@@ -154,7 +157,7 @@ table.ntbl small,.doc small{color:var(--muted)}
 </ol>
 <h3>第11条（セクター別附則）</h3>
 <p>各セクターの段階の読み替えとエッジルールは、評価プロンプト
-（long.v1.md [セクター別の運用]）の現行文を正とし、本条には要点と
+（long.v2.md [セクター別の運用]）の現行文を正とし、本条には要点と
 典拠のみを記す。全文の取り込みは起草の次段で行う [要作業]。</p>
 <ul>
 <li><strong>バイオ・医薬</strong> [典拠: FDA / EMA / PMDA の開発フェーズと承認制度]:
@@ -211,7 +214,7 @@ table.ntbl small,.doc small{color:var(--muted)}
    数値が資料に無い場合は推測で付けず null とする。</li>
 <li>moat_durability（堀の持続性）: 障壁の複合性で決める。</li>
 </ol>
-<h3>第13条（参考項目: 経営陣・実行力）[新設・未実装]</h3>
+<h3>第13条（参考項目: 経営陣・実行力）</h3>
 <p>Payne スコアカード法で最大の重み（30%）を持つ「経営陣」は、本システム
 の証拠プールでは観測範囲が限られるため、参考項目として新設する。
 - 定義: 経営陣の経歴、過去の事業化・承認取得・提携の実行実績、経営陣の
@@ -219,16 +222,24 @@ table.ntbl small,.doc small{color:var(--muted)}
 - 位置づけ: 採点し表示するが、総合点・軸別点・必須判定・不足判定には
   含めない。証拠が無ければ null とし、それを理由に hold しない。
 - 格上げ（総合点への算入）は、証拠が実際にどれだけ得られるかを観測
-  したうえで、別途改訂により判断する。</p>
+  したうえで、別途改訂により判断する。
+[実装: 2026-11-10 の A類バッチで実装済み。long.v2 に項目定義と採点
+アンカーを追加し、scoring.json の long.reference に登録した
+（config_version 2026.11.1）。export では config.reference_items として
+同梱し、表示は詳細・ドロワーの「参考項目」に分離して不足の集計からも
+外している。欠落した出力は検証でエラーにせず null として記録する]</p>
 <h3>第14条（イベント評価の項目）</h3>
 <p>今後1〜6か月のイベント評価は、長期評価と独立に次の6項目を採点する:
 catalyst_quality（材料の質）、expectation_gap（市場予想との乖離）、
 not_priced_in（未織り込み度）、timing_feasibility（時期の実現可能性）、
 supply_demand（需給構造）、downside_resilience（下落耐性）。
 市場予想や株価の裏付けが資料に無い場合、expectation_gap と
-not_priced_in は null とする。ただし株価反応データ（材料の公開日を挟んだ
-反応リターン・標準化反応・出来高倍率を決定的に計算したもの）が資料にある
-場合は、その数値を乖離・織り込み度の根拠としてよい。アンカー全文は event.v2.md を正とする。</p>
+not_priced_in は null とする。ただし株価反応データ（材料の公開日を
+挟んだ反応リターン・標準化反応・出来高倍率を決定的に計算したもの）が
+資料にある場合は、その数値を乖離・織り込み度の根拠としてよい。
+アンカー全文は event.v2.md を正とする（v1 は凍結）。
+[本条の株価反応データの扱いは 2026-11-06 の event.v2 導入時に criteria
+ページ側へ先に反映されていたものを、2026-11-10 に正本へ取り込んだ]</p>
 <h3>第15条（採点の共通ルール）</h3>
 <ol>
 <li>根拠が無い項目は null とし、0 点で埋めない。null でない項目には
@@ -242,7 +253,9 @@ not_priced_in は null とする。ただし株価反応データ（材料の公
    等の漠然とした理由だけでは減点しない。不足の数え方は第7条に従う
    （原理的に含まれない情報は不足として数えず、結果待ちは区別する）。
    TRL レベルの判定理由についても同様とする。
-   [2026-11-04 泰崇の指示で追加。プロンプトへの反映は次回改訂時]</li>
+   [2026-11-04 泰崇の指示で追加。2026-11-06 の決定により、プロンプトへは
+   反映せず、担保は規則監査 A7 に一本化する（LLM の遵守能力への懸念から。
+   プロンプト変更に伴う purge も回避できる）]</li>
 </ol>
 <h2>第5章 集計規程</h2>
 <h3>第16条（二軸集計と段階未達）</h3>
@@ -406,11 +419,11 @@ EPO）、公的採択（NEDO / AMED）。追加は実取得による裏取りと
 <tbody>
 <tr>
 <td>第3章 TRL 判定</td>
-<td>long.v1.md [共通定義][判定手順][判定ルール][セクター別の運用]</td>
+<td>long.v2.md [共通定義][判定手順][判定ルール][セクター別の運用]</td>
 </tr>
 <tr>
 <td>第4章 項目・アンカー</td>
-<td>long.v1.md / event.v2.md [採点アンカー]</td>
+<td>long.v2.md / event.v2.md [採点アンカー]</td>
 </tr>
 <tr>
 <td>第5章 集計・重み・帯域</td>
@@ -418,7 +431,7 @@ EPO）、公的採択（NEDO / AMED）。追加は実取得による裏取りと
 </tr>
 <tr>
 <td>第6章 direction</td>
-<td>long.v1.md</td>
+<td>long.v2.md</td>
 </tr>
 <tr>
 <td>第7章 運用</td>
@@ -426,12 +439,21 @@ EPO）、公的採択（NEDO / AMED）。追加は実取得による裏取りと
 </tr>
 <tr>
 <td>第2章 証拠・不足</td>
-<td>long.v1.md [不足の扱い]、trlcore/site.py</td>
+<td>long.v2.md [不足の扱い]、trlcore/site.py</td>
+</tr>
+<tr>
+<td>監査要項④ 技術帰属</td>
+<td>extract.v2.md [subject]、trlcore/evaluate.py</td>
 </tr>
 </tbody>
 </table>
 <h2>変更履歴</h2>
 <ul>
+<li>v0.2（2026-11-10）: C-1〜C-4 を確定（名称は案A、規程の正本を repo 内
+  codex/ とする、サイト掲載は規程本文まで、観察研究明記は B類として
+  確定）。A類バッチとして第13条（経営陣・実行力の参考項目）を実装し、
+  抽出に技術帰属（subject）を追加（extract.v2）、観察研究の明記を
+  long.v2 へ同期した。config_version は 2026.11.1 に上げた。</li>
 <li>v0.1（2026-11-02）: 初版草案。現行運用の明文化（B 類）を主体とし、
   第13条（経営陣・実行力の参考項目）と第17条（重みの候補値）は
   未実装の改訂案として含む。</li>

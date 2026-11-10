@@ -29,6 +29,12 @@ def validate_config(cfg):
         for r in sec["required"]:
             if r not in w:
                 raise ConfigError(f"{kind}: required item {r} not in weights")
+        ref = sec.get("reference") or []
+        if not isinstance(ref, list) or any(not isinstance(r, str) or not r for r in ref):
+            raise ConfigError(f"{kind}: reference must be a list of item keys")
+        for r in ref:
+            if r in w or r in sec["required"]:
+                raise ConfigError(f"{kind}: reference item {r} overlaps weights/required")
     bands = sc["bands"]
     if bands[0]["min"] != 0 or bands[-1]["max"] != 100:
         raise ConfigError("bands must cover 0..100")
@@ -295,7 +301,7 @@ def required_files(config_dir=None):
         prompts = {}
     names = list(CONFIG_FILES) + [f"{n}.{v}.md" for n, v in prompts.items()]
     if not prompts:
-        names += ["extract.v1.md", "long.v1.md", "event.v1.md"]  # scoring.json が読めないときの既定
+        names += ["extract.v2.md", "long.v2.md", "event.v2.md"]  # scoring.json が読めないときの既定
     return [(n, (d / n).is_file()) for n in names]
 
 

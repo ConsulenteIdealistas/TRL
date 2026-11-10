@@ -1,5 +1,5 @@
 {
- "config_version": "2026.11.0",
+ "config_version": "2026.11.1",
  "recalc_on_run": true,
  "long": {
   "weights": {
@@ -13,6 +13,9 @@
   "required": [
    "technology_readiness",
    "monetization"
+  ],
+  "reference": [
+   "management_execution"
   ]
  },
  "event": {
@@ -87,8 +90,8 @@
   "eval_workers": 4
  },
  "prompts": {
-  "extract": "v1",
-  "long": "v1",
+  "extract": "v2",
+  "long": "v2",
   "event": "v2"
  }
 }

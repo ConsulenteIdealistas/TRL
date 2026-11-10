@@ -12,7 +12,8 @@ const SL = {final: "選定可能", review: "要追加調査", hold: "保留", pe
 const SR = {abstract_too_short: "要旨が短いため評価対象外", published_after_as_of: "実行基準日より後の公表のため対象外"};  // 除外 (screening) の理由
 const SO = {final: 0, review: 1, hold: 2, pending: 3, error: 4, rejected: 5};  // おすすめ順での状態の優先度
 const IL = {technology_readiness: "技術成熟度", technological_advantage: "技術的優位性", monetization: "収益化能力",
-  market_growth: "市場成長性", financial_sustainability: "財務的持続可能性", moat_durability: "競争優位性の持続性"};
+  market_growth: "市場成長性", financial_sustainability: "財務的持続可能性", moat_durability: "競争優位性の持続性",
+  management_execution: "経営陣・実行力"};
 const ACH = {A1: "商用展開とTRLの混同", A2: "TRL 9 の継続証拠", A3: "TRLからの推論", A4: "TRL 9 の根拠が商用展開のみ",
   A5: "点と理由の整合", A6: "欠落判定（材料プール外）", A7: "減点理由の具体性", A8: "反証の欠落",
   A9: "根拠のない高得点", A10: "時点の不整合", A11: "数値の原文照合", A12: "出典リンクの形式",
@@ -48,7 +49,7 @@ const safeUrl = u => /^https?:\/\//i.test(String(u || "")) ? String(u) : "#";
 const ok = t => Number.isInteger(t) && t >= 1 && t <= 9;
 const lvl = p => (p.long && p.long.trl_level && p.long.trl_level.level) ?? null;
 const SRC_CLASS = {arxiv: "s-arxiv", pubmed: "s-pubmed", gnews: "s-gnews", trials: "s-trials", edinet: "s-edinet", yahoo: "s-yahoo", openalex: "s-openalex", prtimes: "s-prtimes", edgar: "s-edgar"};
-const SRC_LABEL = {arxiv: "arXiv", pubmed: "PubMed", gnews: "News", trials: "ClinicalTrials", edinet: "EDINET", yahoo: "Yahoo Finance", openalex: "OpenAlex", prtimes: "PR TIMES", edgar: "SEC EDGAR", roic: "ROIC.ai", simfin: "SimFin"};
+const SRC_LABEL = {arxiv: "arXiv", pubmed: "PubMed", gnews: "News", trials: "ClinicalTrials", edinet: "EDINET", yahoo: "Yahoo Finance", openalex: "OpenAlex", prtimes: "PR TIMES", edgar: "SEC EDGAR", roic: "ROIC.ai"};
 const src = s => "badge " + (SRC_CLASS[s] || "");
 const srcName = s => SRC_LABEL[s] || esc(s);
 const stB = s => `<span class="st ${s === "final" ? "st-final" : "st-" + esc(s)}">${SL[s] || esc(s)}</span>`;
@@ -358,12 +359,13 @@ function detail() {
   const p = P.find(x => x.id === sel);
   if (!p) { $("#det").innerHTML = `<div class="ph"><i>⌕</i><h3>論文が選択されていません</h3><p class="hint">検索条件を変更するか、一覧から論文を選択してください。</p></div>`; return; }
   const LL = p.long, G = META.config.item_groups;
+  const REF = (META.config && META.config.reference_items) || [];  // 参考項目 (総合点・不足集計に含めない)
   const L = LL && LL.status !== "error" ? LL : null;  // error は評価結果ではないので点数欄には出さない
   const EV = p.event && p.event.status !== "error" ? p.event : null;
   const tr = L && L.trl_level;
   const strong = p.entities.filter(e => e.strength === "strong");
-  const missAll = L ? [...new Set(Object.values(L.items).flatMap(i => i.missing_info))] : [];
-  const waitAll = L ? [...new Set(Object.values(L.items).flatMap(i => i.awaiting_info || []))] : [];
+  const missAll = L ? [...new Set(Object.entries(L.items).filter(([k]) => !REF.includes(k)).flatMap(([, i]) => i.missing_info))] : [];
+  const waitAll = L ? [...new Set(Object.entries(L.items).filter(([k]) => !REF.includes(k)).flatMap(([, i]) => i.awaiting_info || []))] : [];
   const q = p.queue && p.queue.long;
   const total = L && L.total != null ? `${L.total} / 100(${esc(L.band || "")})` : "未確定";
   $("#det").innerHTML = `<div class="dc"><header class="dh"><div class="top"><span class="${src(p.source)}">${srcName(p.source)}</span>${stB(p.display_status)}${isNewEval(p) ? `<span class="nw">新着</span>` : ""}<button type="button" class="pin ${pins.has(p.id) ? "on" : ""}" id="pint" aria-pressed="${pins.has(p.id) ? "true" : "false"}" title="注目ピン (この端末に保存)">${pins.has(p.id) ? "★" : "☆"}</button></div><h3>${esc(dispT(p))}</h3><div class="mi"><span>公開日 ${esc(p.published || "—")}</span>${L ? `<span>評価日 ${esc(jst(L.evaluated_at))}</span>` : ""}${p.eval_count ? `<span>評価 ${p.eval_count} 回目</span>` : ""}${LL && LL.llm_model ? `<span>評価モデル ${esc(LL.llm_model)}</span>` : ""}</div></header>
@@ -371,6 +373,7 @@ function detail() {
 <section class="ds"><h4>技術成熟度（TRL）</h4>${trl(lvl(p), 1)}${tr && tr.reason ? `<p>${esc(tr.reason)}</p>` : ""}${tr && tr.level == null && tr.missing_info.length ? `<p class="hint">不足: ${tr.missing_info.map(esc).join(" / ")}</p>` : ""}${tr && tr.awaiting_info && tr.awaiting_info.length ? `<p class="hint">結果待ち: ${tr.awaiting_info.map(esc).join(" / ")}</p>` : ""}<p class="hint">TRLは資料から根拠付きで判断できた場合のみ表示します。技術成熟度スコアからの換算はしません。</p></section>
 <section class="ds"><h4>技術評価</h4>${L ? G.technology.map(k => scoreRow(k, L.items[k])).join("") : `<p class="hint">未評価です。</p>`}</section>
 <section class="ds"><h4>事業評価</h4>${L && L.business_stage === "pre_stage" ? `<p class="note">この技術は前商業段階(TRL 3以下)のため、事業項目は「段階未達」として不足とは区別しています。点が付いている項目はそのまま表示します。</p>` : ""}${L ? G.business.map(k => scoreRow(k, L.items[k])).join("") : `<p class="hint">未評価です。</p>`}${L && !strong.length ? `<p class="note">関連企業が特定できていないため、企業固有の項目は算出されません。総合点は6項目すべてが揃うまで確定せず、重みの再配分もしません。</p>` : ""}</section>
+${L && REF.some(k => L.items[k]) ? `<section class="ds"><h4>参考項目</h4><p class="note">参考項目は採点して表示しますが、総合点・必須判定には含めません。根拠が無い場合は未算出となり、それを理由に保留にもなりません。</p>${REF.filter(k => L.items[k]).map(k => scoreRow(k, L.items[k])).join("")}</section>` : ""}
 <section class="ds"><h4>総合点（長期）</h4><p>${total}</p>${L && L.total_scope === "technology" ? `<p class="note">これは技術評価の総合点です。事業項目は段階未達のため対象外で、技術軸の項目だけで算出しています。</p>` : ""}${holdCauseTxt(L) ? `<p class="note">${esc(holdCauseTxt(L))}</p>` : ""}${L && L.total_orig != null && L.total != null && L.total_orig !== L.total ? `<p class="note">評価当時の総合点は ${L.total_orig}${L.band_orig ? `（${esc(L.band_orig)}）` : ""} でした。上の総合点は、重みの改訂に合わせて現行の物差しで計算し直した値です。</p>` : ""}${L ? `<div class="acts"><button class="btn sec" type="button" id="cpye">評価をコピー</button><button class="btn obsidian" type="button" id="cpym">Markdownでコピー</button></div>` : ""}</section>
 ${auditSectionHtml(p)}
 ${EV ? `<section class="ds"><h4>イベント評価（短期）</h4>${Object.keys(EV.items).map(k => scoreRow(k, EV.items[k])).join("")}<p>総合点 ${EV.total != null ? EV.total + " / 100(" + esc(EV.band || "") + ")" : "未確定（保留）"}</p></section>` : ""}

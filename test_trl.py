@@ -957,7 +957,8 @@ class IntegrationTests(unittest.TestCase):
         self.assertEqual(len(q), 2)
         self.assertIn("monetization", q[0]["reason"])
         ev1 = store.evaluations_for_run(r1["run_id"], "long")[0]
-        self.assertEqual(json.loads(ev1["prompt_versions_json"])["long"]["version"], "v1")
+        self.assertEqual(json.loads(ev1["prompt_versions_json"])["long"]["version"],
+                         CFG["scoring"]["prompts"]["long"])
         self.assertEqual(ev1["config_version"], CFG["config_version"])
         store.close()
 
@@ -1292,8 +1293,8 @@ class RepoFilesTests(unittest.TestCase):
 
     def test_prompt_files_named_by_scoring_json_are_required(self):
         names = [n for n, _ in T.required_files()]
-        for n in ("extract.v1.md", "long.v1.md", "event.v2.md"):
-            self.assertIn(n, names)
+        for n, v in CFG["scoring"]["prompts"].items():
+            self.assertIn(f"{n}.{v}.md", names)
 
 
 class SourcesSchemaTests(unittest.TestCase):

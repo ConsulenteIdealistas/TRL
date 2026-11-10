@@ -17,6 +17,7 @@ from .sources.edgar import edgar_fetch
 from .sources.yahoo import yahoo_fetch
 from .sources.openalex import openalex_fetch
 from .sources.roic import fetch_roic, roic_enabled, roic_symbol
+from .sources.simfin import fetch_simfin_bulk, simfin_enabled, simfin_market, simfin_ticker
 from .translate import crossed_thresholds, translate_display_set, translate_watch_queue, usage_totals
 from .config import ROOT
 from .review import INBOX_NAME, import_inbox_file
@@ -90,6 +91,17 @@ ROIC_MAX_PER_RUN = 10
 # 取得する期間の下限は財務プールの窓 (related_financials の400日) に合わせる。
 # それより古い年次はプールに入らないため、取っても材料にならない
 ROIC_LOOKBACK_DAYS = 400
+# SimFin バルク補完収集 (US/DE/CA の四半期・TTM。詳細は _collect_simfin)。
+# 休止は ROIC と同じ30日: 四半期・TTM は四半期単位でしか変わらず、無料
+# バルクは遅延つきのため、これより短い間隔で取り直しても新しい期間は
+# まず増えない。成功の定義も ROIC と同じく「1件以上取れたときだけ」
+SIMFIN_SKIP_DAYS = 30
+# 取得窓は ROIC と同じく財務プールの窓 (related_financials の400日)
+SIMFIN_LOOKBACK_DAYS = 400
+# 1回の実行で対象にする社数に上限は置かない: コストは社数ではなく市場数
+# (最大3市場×3ファイル) で決まり、対象社を増やしても追加ダウンロードは
+# 発生しないため、上限で切ると「バルクを落としたのに一部しか使わない」
+# 無駄になる。歯止めは市場単位の予算判定 (予算超過なら市場ごと次回へ)
 
 
 def _yahoo_resting(q, as_of, attempts, periods, retrievals=None):
@@ -176,7 +188,7 @@ def _apply_shallow_windows(cfg):
 
 
 def collect(store, cfg, run_id, as_of, sources, fetchers, counts, log, budget_cap=None,
-            roic_fetcher=None):
+            roic_fetcher=None, simfin_fetcher=None):
     d = cfg["sources"]["defaults"]
     now = datetime.now(timezone.utc).isoformat(timespec="seconds")
     jobs = [(sname, q) for q in cfg["sources"]["queries"] for sname in sources if q.get(sname)]
@@ -345,6 +357,10 @@ def collect(store, cfg, run_id, as_of, sources, fetchers, counts, log, budget_ca
     if roic_enabled():
         _collect_roic(store, cfg, run_id, as_of, counts, log, budget, collect_t0,
                       roic_fetcher or fetch_roic)
+    # 財務補完 (SimFin バルク): ROIC の後段。キーがある場合だけ回す
+    if simfin_enabled():
+        _collect_simfin(store, cfg, run_id, as_of, counts, log, budget, collect_t0,
+                        simfin_fetcher or fetch_simfin_bulk)
 
 
 def _collect_roic(store, cfg, run_id, as_of, counts, log, budget, collect_t0, fetcher):
@@ -431,6 +447,104 @@ def _collect_roic(store, cfg, run_id, as_of, counts, log, budget, collect_t0, fe
         counts["sources_ok" if err is None else "sources_failed"] += 1
         log(f"[collect] roic/{qname}: fetched={fetched} new={new} dup={dups} invalid={invalid}"
             + (f" ERROR={err}" if err else ""))
+
+
+def _collect_simfin(store, cfg, run_id, as_of, counts, log, budget, collect_t0, fetcher):
+    """SimFin バルク CSV による財務補完収集 (有効条件は SIMFIN_API_KEY)。
+
+    対象選定・優先順位・休止・記録は ROIC (_collect_roic) と同じ流儀:
+    (a) 財務レコードが1件も無いコア企業、(b) Yahoo のみで裏取りが無い
+    コア企業 の順で、対象は SimFin のカバー市場 (US/DE/CA) の企業に限る。
+    違いは取得単位: 銘柄単位ではなく市場単位でバルクを落とすため、対象を
+    市場でまとめ、fetcher を市場ごとに1回だけ呼んで結果を社ごとに配る。
+    記録は社ごと (query={id}-simfin) に ROIC と同じ形で残すため、休止判定
+    (成功して1件以上取れたときだけ休む) と「静かな0件」の検知にそのまま
+    乗る。市場のダウンロードが失敗したら、その市場の対象社全員を失敗と
+    して記録する (0件で握りつぶさず、休止にも入らないため次回再試行)。
+    新テーブルは作らず、財務は既存の財務プールに乗る。
+    """
+    coverage = store.financial_sources_by_entity()
+    successes = store.last_source_successes_with_fetch("simfin")
+    targets, n_rest, n_unmapped = [], 0, 0
+    for e in cfg.get("entities", {}).get("entities", []):
+        if e.get("tier") != "core" or not e.get("ticker"):
+            continue
+        have = coverage.get(e["id"]) or set()
+        if have and have != {"yahoo"}:
+            continue  # 公式ソース等の裏取りがある企業は補完の対象外 (ROIC と同じ)
+        market = simfin_market(e)
+        if market is None:
+            n_unmapped += 1
+            continue
+        # 休止は「成功して1件以上取れた」ときだけ (ROIC の規則をそのまま
+        # 適用)。バルクに対象社が無い・遅延で新しい期間が無い等で0件の
+        # 空振りを成功として休むと、その社は30日閉じ込められる
+        att = successes.get(("simfin", f"{e['id']}-simfin"))
+        if att is not None and (att[1] or 0) > 0:
+            last = parse_date((att[0] or "")[:10])
+            if last is not None and (as_of - last).days < SIMFIN_SKIP_DAYS:
+                n_rest += 1
+                continue
+        targets.append((1 if have else 0, e, market, simfin_ticker(e)))
+    targets.sort(key=lambda t: t[0])  # 安定ソート: 財務ゼロ (0) を先に (ROIC と同じ)
+    counts["simfin_targets"] = len(targets)
+    counts["simfin_skipped_rest"] = n_rest
+    counts["simfin_skipped_unmapped"] = n_unmapped
+    if n_unmapped:
+        log(f"[collect] simfin: カバー市場 (US/DE/CA) 外のため {n_unmapped} 社を対象外にしました")
+    now = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    chash = cfg.get("config_hash")
+    by_market = {}
+    for item in targets:
+        by_market.setdefault(item[2], []).append(item)
+    deferred = 0
+    for market in sorted(by_market):
+        group = by_market[market]
+        if budget and time.monotonic() - collect_t0 > budget:
+            deferred += len(group)
+            continue
+        t0 = time.monotonic()
+        err, by_ticker = None, {}
+        try:
+            by_ticker = fetcher(market, [t[3] for t in group],
+                                SIMFIN_LOOKBACK_DAYS, as_of) or {}
+        except Exception as ex:
+            err = redact(f"{type(ex).__name__}: {ex}")[:300]
+            log(f"::warning::source simfin / market={market} failed: {err}")
+        for _prio, e, _m, ticker in group:
+            qname = f"{e['id']}-simfin"
+            raws = [] if err is not None else (by_ticker.get(ticker) or [])
+            fetched = len(raws) if err is None else 0
+            new = dups = invalid = 0
+            if err is None:
+                for raw in raws:
+                    try:
+                        rec, _problems = normalize(raw, now)
+                        if rec is None:
+                            invalid += 1
+                            continue
+                        cid, is_new = store.upsert_candidate(rec, run_id)
+                        store.set_entities(cid, [{"entity_id": e["id"], "strength": "strong",
+                                                  "matched_by": "simfin",
+                                                  "matched_alias": f"{market}:{ticker}"}])
+                        store.set_links_hash(cid, chash)
+                        new += is_new
+                        dups += (not is_new)
+                    except Exception as ex:
+                        invalid += 1
+                        log(f"::warning::source simfin / {qname}: record skipped: "
+                            f"{redact(f'{type(ex).__name__}: {ex}')[:200]}")
+            elapsed = round(time.monotonic() - t0, 3)
+            store.add_run_source(run_id, "simfin", qname, fetched, new, dups, invalid,
+                                 err is None, err, elapsed)
+            for k, v in (("fetched", fetched), ("new", new), ("duplicates", dups), ("invalid", invalid)):
+                counts[k] += v
+            counts["sources_ok" if err is None else "sources_failed"] += 1
+            log(f"[collect] simfin/{qname}: fetched={fetched} new={new} dup={dups} invalid={invalid}"
+                + (f" ERROR={err}" if err else ""))
+    if deferred:
+        counts["simfin_deferred"] = deferred
+        log(f"[collect] simfin: 予算のため {deferred} 社を次回へ回します")
 
 
 # 実証・実装の段階を示す語。理論のみの資料には少なく、TRLを決めやすい候補の目印になる

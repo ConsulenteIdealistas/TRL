@@ -15,7 +15,7 @@ Python 標準ライブラリのみで動作し、運用はスマホのブラウ�
 - 分野別: バイオ 185 / エネルギー・蓄電池 83 / 半導体 68 / AI 52 / 宇宙 43 / ロボティクス 41 / 防衛 16 / 量子技術 12（ほかに分野を跨ぐタグ: 語彙36種・延べ290件、フォトニクス 15 / 医療機器 40 等）
 - 市場別: US 139 / JP 49 / IN 36 / SE 25 / DE 24 / GB 24 / AU 23 / CA 21 / FR 21 / PL 16 / ES 12 / FI 12 / NO 12 / CH 10 / DK 10 / GR 10 / AT 9 / IT 9 / HK 8 / NL 7 / BE 5 / SG 5 / CZ 4 / NZ 3 / TW 3 / PT 2 / IE 1
 - 設定バージョン: `2026.11.0`（設定とプロンプトの内容ハッシュを評価ごとに記録し、変更の追跡はハッシュで行う）
-- テスト: 346件（`test_trl.py` / `test_entities.py` / `test_site.py` / `test_roic.py`、CI でも毎回実行）
+- テスト: 448件（`test_trl.py` / `test_entities.py` / `test_site.py` / `test_roic.py` / `test_simfin.py` 等、CI でも毎回実行）
 
 ## 全体像
 
@@ -80,6 +80,7 @@ Python 標準ライブラリのみで動作し、運用はスマホのブラウ�
 | `edinet` | EDINET 開示・財務数値（JP のみ） | **プール専用** |
 | `edgar` | SEC EDGAR の財務数値（XBRL、US＋20-F 提出企業） | **プール専用** |
 | `roic` | ROIC.ai の財務数値（年次、キー登録時のみ・財務の穴埋めと裏取り） | **プール専用** |
+| `simfin` | SimFin バルク CSV の財務数値（US/DE/CA の四半期・TTM、キー登録時のみ・財務の穴埋めと裏取り。無料バルクは遅延つき） | **プール専用** |
 
 ソース別の取得期間（lookback）: trials 180日 / yahoo・edgar 400日 / prtimes 90日 / pubmed・openalex 365日 / edinet 45日。その他は既定30日・最大20件。浅い日（後述）は発見系ソース（pubmed / trials / openalex / prtimes / edinet）の窓を4日に切り詰めます。
 
@@ -95,7 +96,7 @@ Python 標準ライブラリのみで動作し、運用はスマホのブラウ�
 ニュースと財務は単体では評価せず、同一企業の論文・治験を評価するときに根拠としてプロンプトへ同梱します。
 
 - **関連事業ニュース**: 同一企業（製品リンク経由を含む）の直近90日・最大8件。出典の種別（origin=企業発表 `prtimes` / 報道 `gnews`）を付け、両方で確認できる事実は信頼度を高く、企業発表のみの事実は割り引くようプロンプトで指示します。
-- **関連財務根拠**: 財務数値を含む開示のみ、直近400日・最大2件。論文・治験の抄録に存在しない売上・利益・現預金などの公表数値が `financial_sustainability` / `monetization` の根拠になります。実働ソースは Yahoo Finance・EDINET・SEC EDGAR で、ROIC.ai（`ROIC_API_KEY` 登録時）が年次財務の穴埋めと裏取りを補います。
+- **関連財務根拠**: 財務数値を含む開示のみ、直近400日・最大2件。論文・治験の抄録に存在しない売上・利益・現預金などの公表数値が `financial_sustainability` / `monetization` の根拠になります。実働ソースは Yahoo Finance・EDINET・SEC EDGAR で、ROIC.ai（`ROIC_API_KEY` 登録時）が年次財務の穴埋めと裏取りを、SimFin（`SIMFIN_API_KEY` 登録時）が US/DE/CA の四半期・TTM 財務（バルク CSV を市場ごとに一括取得し対象社分を抽出。無料バルクは遅延つきのため履歴の穴埋めが主）で補います。補完収集（ROIC / SimFin）の対象は財務ゼロの企業 → Yahoo のみの企業の順で、成功（1件以上取得）したら30日休み、0件・失敗は休止に入らず次回再試行します。
 - **財務系の取得間隔**: 財務は四半期単位でしか変化しないため、毎回は取りに行きません（実行統計の `financial_skipped` に数えます）。EDGAR・EDINET は前回の取得成功から20日以内の企業のクエリを休みます。Yahoo は決算周期に合わせ、保存済みの最新決算の期末 +97日（次の四半期末 + 発表が始まる目安）を過ぎた企業だけを取りに行きます（期末の記録が無い企業は発見のため20日間隔）。失敗したクエリは成功として記録されないため間隔の対象にならず、次回も試行されます。あわせて Yahoo・EDINET の取得はコア企業のみです（ウォッチ企業の財務は評価対象にならないため）。
 - Google News の記事 URL は直接開けない仕様のため、サイトでは記事タイトルをタイトル検索リンクに、媒体名を媒体サイトへのリンクにして表示します。
 
@@ -284,7 +285,7 @@ long 評価では、点数・TRL とは独立に「その資料が示す出来�
 | GEMINI_API_KEY | Secret | LLM のキー |
 | ROIC_API_KEY | Secret | ROIC.ai（財務の穴埋め・裏取り） |
 | ALPHA_VANTAGE_API_KEY | Secret | Alpha Vantage（登録済み・収集器は実装待ち） |
-| SIMFIN_API_KEY | Secret | SimFin（登録済み・収集器は実装待ち） |
+| SIMFIN_API_KEY | Secret | SimFin（US/DE/CA の四半期・TTM 財務、バルク CSV） |
 | OPENALEX_API_KEY | Secret | OpenAlex（推奨） |
 | NCBI_API_KEY | Secret | PubMed（任意、レート上限が上がる） |
 | AZURE_TRANSLATOR_KEY | Secret | 翻訳・第1段 |
@@ -310,7 +311,7 @@ python3 trl.py export        # サイト書き出し (data.json + web/, --out �
 python3 trl.py queries       # 生成クエリの一覧
 python3 trl.py check-config  # 設定の検証とハッシュ表示
 python3 trl.py purge --evaluations  # 評価とキューを全削除し候補を未評価に戻す (候補・収集物・実行履歴は残る)
-python3 -m unittest test_trl test_entities test_site test_roic   # テスト
+python3 -m unittest test_trl test_entities test_site test_roic test_simfin   # テスト
 ```
 
 ## ファイル構成
@@ -323,7 +324,7 @@ trlcore/                本体パッケージ
   pipeline.py           収集→選定→評価→書き出しの統括
   store.py              SQLite (候補・評価・識別子・実行記録)
   normalize.py          正規化と重複排除キー
-  sources/              各ソースのフェッチャ (pubmed/arxiv/gnews/prtimes/trials/yahoo/openalex/edinet/edgar/roic)
+  sources/              各ソースのフェッチャ (pubmed/arxiv/gnews/prtimes/trials/yahoo/openalex/edinet/edgar/roic/simfin)
   evaluate.py           LLM 応答の検証・評価の実行
   scoring.py            スコア計算 (二軸化・バンド)
   llm.py                LLM プロバイダ (gemini のみ, 代替モデル)
@@ -360,6 +361,7 @@ test_*.py / testutil.py   テスト (共通フィクスチャは testutil.py、�
 | tier 導出 (tiers.py) | test_tiers.py |
 | 企業辞書 (entities.py / entities/) | test_entities.py |
 | ROIC (sources/roic.py) | test_roic.py (+ test_sources.py) |
+| SimFin (sources/simfin.py) | test_simfin.py (+ test_sources.py) |
 | パイプライン・ストア・基盤 (pipeline.py / store.py / normalize.py / http.py 等) | test_trl.py (+ 収集段に触る場合は test_sources.py) |
 
 ## 既知の制約・設計判断
@@ -371,5 +373,5 @@ test_*.py / testutil.py   テスト (共通フィクスチャは testutil.py、�
 - **OpenAlex は機関ID登録済みの14社のみ**が対象です。機関レコードが無い企業は PubMed/arXiv 側で拾います。
 - **event 評価の限界**: 株価反応データは導入済みですが、市場コンセンサス予想そのものは材料にありません（反応は「予想との差」の代理として扱います）。導入前の hold は自動では再評価されず、必要なら再評価キューで拾います。
 - **TDnet は見送り済み**: 公式 API は索引のみで高額、本文は PDF 中心で現在の構成（標準ライブラリのみ）では抽出できないため採用していません。
-- **未実装**: 特許・IR 資料の本文解析、過去イベントの事後検証、AI 採点の妥当性検証。財務補間の残り2社（SimFin / Alpha Vantage。キーは登録済み）、ESEF 収集器（EU+英国119社、導入決定済み）、スイス10社の EQS + GlobeNewswire 収集器（採用決定済み）は実装待ちです。
+- **未実装**: 特許・IR 資料の本文解析、過去イベントの事後検証、AI 採点の妥当性検証。財務補間の残り1社（Alpha Vantage。キーは登録済み）、ESEF 収集器（EU+英国119社、導入決定済み）、スイス10社の EQS + GlobeNewswire 収集器（採用決定済み）は実装待ちです。
 - 失敗した情報源は Actions ログの `::warning::` とレポートに表示されます。全情報源が失敗したときだけジョブが失敗します。

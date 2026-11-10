@@ -33,7 +33,7 @@
       "ticker": "9926",
       "exchange": "HKEX",
       "sector": "bio",
-      "tier": "watch",
+      "tier": "core",
       "market": "HK",
       "watch": {
         "news_name": "Akeso",

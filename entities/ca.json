@@ -448,7 +448,7 @@
       "ticker": "DML",
       "exchange": "TSX",
       "sector": "energy",
-      "tier": "watch",
+      "tier": "core",
       "market": "CA",
       "watch": {
         "news_name": "Denison Mines",
@@ -470,7 +470,7 @@
       "ticker": "PNG",
       "exchange": "TSXV",
       "sector": "robotics",
-      "tier": "watch",
+      "tier": "core",
       "market": "CA",
       "watch": {
         "news_name": "Kraken Robotics",

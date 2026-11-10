@@ -511,7 +511,7 @@
    "ticker": "HAG",
    "exchange": "Xetra",
    "sector": "defense",
-   "tier": "watch",
+   "tier": "core",
    "market": "DE",
    "watch": {
     "news_name": "Hensoldt",
@@ -533,7 +533,7 @@
    "ticker": "R3NK",
    "exchange": "Xetra",
    "sector": "defense",
-   "tier": "watch",
+   "tier": "core",
    "market": "DE",
    "watch": {
     "news_name": "RENK Group",

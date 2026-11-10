@@ -350,7 +350,7 @@
       "ticker": "IKA",
       "exchange": "LSE",
       "sector": "energy",
-      "tier": "watch",
+      "tier": "core",
       "market": "GB",
       "watch": {
         "news_name": "Ilika plc",

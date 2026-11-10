@@ -475,7 +475,7 @@
    "ticker": "BBAI",
    "exchange": "NYSE",
    "sector": "ai",
-   "tier": "watch",
+   "tier": "core",
    "market": "US",
    "watch": {
     "news_name": "BigBear.ai",
@@ -1157,7 +1157,7 @@
     "quantum_computing",
     "quantum_comm"
    ],
-   "tier": "watch",
+   "tier": "core",
    "market": "US",
    "watch": {
     "news_name": "IonQ, Inc.",
@@ -1712,7 +1712,7 @@
    "tags": [
     "earth_observation"
    ],
-   "tier": "watch",
+   "tier": "core",
    "market": "US",
    "watch": {
     "news_name": "Satellogic Inc.",
@@ -1838,7 +1838,7 @@
    "tags": [
     "power_semi"
    ],
-   "tier": "watch",
+   "tier": "core",
    "market": "US",
    "watch": {
     "news_name": "Navitas Semiconductor Corporation",
@@ -2352,7 +2352,7 @@
    "ticker": "LEU",
    "exchange": "NYSE",
    "sector": "energy",
-   "tier": "watch",
+   "tier": "core",
    "market": "US",
    "watch": {
     "news_name": "Centrus Energy",
@@ -2398,7 +2398,7 @@
    "ticker": "MP",
    "exchange": "NYSE",
    "sector": "energy",
-   "tier": "watch",
+   "tier": "core",
    "market": "US",
    "watch": {
     "news_name": "MP Materials",
@@ -2442,7 +2442,7 @@
    "ticker": "OKLO",
    "exchange": "NYSE",
    "sector": "energy",
-   "tier": "watch",
+   "tier": "core",
    "market": "US",
    "watch": {
     "news_name": "Oklo",
@@ -2693,7 +2693,7 @@
    "tags": [
     "gene_therapy"
    ],
-   "tier": "watch",
+   "tier": "core",
    "market": "US",
    "watch": {
     "news_name": "uniQure",
@@ -3084,7 +3084,7 @@
    "ticker": "OUST",
    "exchange": "NASDAQ",
    "sector": "robotics",
-   "tier": "watch",
+   "tier": "core",
    "market": "US",
    "watch": {
     "news_name": "Ouster",
@@ -3178,7 +3178,7 @@
    "tags": [
     "drug_ai"
    ],
-   "tier": "watch",
+   "tier": "core",
    "market": "US",
    "watch": {
     "news_name": "Relay Therapeutics",
@@ -3203,7 +3203,7 @@
    "tags": [
     "gene_therapy"
    ],
-   "tier": "watch",
+   "tier": "core",
    "market": "US",
    "watch": {
     "news_name": "Rocket Pharmaceuticals",
@@ -3337,7 +3337,7 @@
    "ticker": "INDI",
    "exchange": "NASDAQ",
    "sector": "semiconductor",
-   "tier": "watch",
+   "tier": "core",
    "market": "US",
    "watch": {
     "news_name": "indie Semiconductor",

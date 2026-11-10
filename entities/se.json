@@ -585,7 +585,7 @@
    "ticker": "MILDEF",
    "exchange": "Nasdaq Stockholm",
    "sector": "defense",
-   "tier": "watch",
+   "tier": "core",
    "market": "SE",
    "watch": {
     "news_name": "MilDef",

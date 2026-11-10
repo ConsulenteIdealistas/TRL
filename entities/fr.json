@@ -455,7 +455,7 @@
       "ticker": "EXA",
       "exchange": "Euronext Paris",
       "sector": "defense",
-      "tier": "watch",
+      "tier": "core",
       "market": "FR",
       "watch": {
         "news_name": "Exail Technologies",

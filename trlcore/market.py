@@ -156,15 +156,14 @@ def build_market_reaction(store, cfg, cand, as_of, http=None, log=print):
 
     系列は market_series にキャッシュし、古い・不足の場合だけ取得する。
     どの段階で失敗しても評価自体は止めず、データなしとして進む。"""
-    from .config import YAHOO_SUFFIX
+    from .config import yahoo_suffix
     entities = {e["id"]: e for e in (cfg.get("entities") or {}).get("entities", [])}
     links = store.candidate_entity_ids(cand["id"])
     symbol = entity_name = None
     for eid in links:
         e = entities.get(eid)
         if e and e.get("ticker"):
-            market = e.get("market") or "JP"
-            suffix = YAHOO_SUFFIX.get(market)
+            suffix = yahoo_suffix(e)
             if suffix is None:
                 continue
             symbol = str(e["ticker"]) + suffix

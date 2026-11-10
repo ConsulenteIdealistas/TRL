@@ -596,6 +596,32 @@
     ]
    },
    "stage": "production"
+  },
+  {
+   "id": "curasight",
+   "name": "Curasight A/S",
+   "aliases": [
+    "Curasight",
+    "キュラサイト"
+   ],
+   "ticker": "CURAS",
+   "exchange": "Spotlight Stock Market",
+   "sector": "bio",
+   "tags": [
+    "radiopharm"
+   ],
+   "tier": "watch",
+   "market": "SE",
+   "watch": {
+    "news_name": "Curasight A/S",
+    "extra_keywords": [
+     "uPAR",
+     "theranostics",
+     "uTRACE"
+    ],
+    "sponsor": "Curasight"
+   },
+   "stage": "demo"
   }
  ]
 }

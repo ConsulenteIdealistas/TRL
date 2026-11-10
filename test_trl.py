@@ -2703,6 +2703,21 @@ class EntityQueryGenerationTests(unittest.TestCase):
         self.assertEqual(by_name["au1-yahoo"]["yahoo"], "EOS.AX")
         self.assertNotIn("au1-prtimes", by_name)
 
+    def test_generation_rules_canada_tsxv(self):
+        # カナダは取引所で接尾辞が分かれる (TSX=.TO / TSXV=.V)。辞書の exchange で判定する
+        src = {"keyword_sets": {"robotics": ["決算"]},
+               "keyword_sets_en": {"robotics": ["earnings"]},
+               "entity_watch": {"lookback_days": {}}}
+        ents = {"entities": [
+            {"id": "ca_tsx", "sector": "robotics", "market": "CA", "ticker": "MDA",
+             "exchange": "TSX", "watch": {"news_name": "MDA Space"}},
+            {"id": "ca_tsxv", "sector": "robotics", "market": "CA", "ticker": "PNG",
+             "exchange": "TSXV", "watch": {"news_name": "Kraken Robotics"}},
+        ]}
+        by_name = {q["name"]: q for q in T.build_entity_queries(ents, src)}
+        self.assertEqual(by_name["ca_tsx-yahoo"]["yahoo"], "MDA.TO")
+        self.assertEqual(by_name["ca_tsxv-yahoo"]["yahoo"], "PNG.V")
+
     def test_generation_rules_italy_sweden(self):
         src = {"keyword_sets": {"space": ["決算"]},
                "keyword_sets_it": {"space": ["risultati", "lancio"]},

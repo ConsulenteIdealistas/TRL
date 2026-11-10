@@ -173,6 +173,21 @@ KEYWORD_SETS_BY_MARKET = {"JP": "keyword_sets", "DE": "keyword_sets_de",
                           "IT": "keyword_sets_it", "SE": "keyword_sets_sv",
                           "AT": "keyword_sets_de"}  # オーストリアはドイツ語圏のため DE の集合を使う。PL は英語集合 (ポーランド語集合は未整備で、企業名+英語キーワードで拾う)
 
+# 市場内でも取引所で接尾辞が分かれる場合の上書き (Yahoo のシンボル体系による。
+# カナダは TSX=.TO / TSXV=.V)。判定は辞書の exchange フィールドに従う
+YAHOO_SUFFIX_BY_EXCHANGE = {"TSXV": ".V"}
+
+
+def yahoo_suffix(entity):
+    """企業の Yahoo シンボル接尾辞。市場が既定で、取引所が分かれる市場では exchange を優先する。
+
+    市場が YAHOO_SUFFIX に無い場合は None (呼び出し側のスキップ判定用)。
+    """
+    exch = YAHOO_SUFFIX_BY_EXCHANGE.get(entity.get("exchange") or "")
+    if exch is not None:
+        return exch
+    return YAHOO_SUFFIX.get(entity.get("market") or "JP")
+
 
 def _check_market_maps(market, eid):
     if market not in YAHOO_SUFFIX or (market != "JP" and market not in GNEWS_LOCALE):
@@ -235,7 +250,7 @@ def build_entity_queries(entities, src):
             # 根拠プールに入るのはコア候補と共リンクした候補に限られるため、取得対象から
             # 外してリクエスト数を抑える (300社 → コア180社)
             if e.get("tier", "core") == "core":
-                groups["yahoo"].append({"name": f"{eid}-yahoo", "yahoo": e["ticker"] + YAHOO_SUFFIX[market],
+                groups["yahoo"].append({"name": f"{eid}-yahoo", "yahoo": e["ticker"] + yahoo_suffix(e),
                                         "lookback_days": params.get("yahoo", WATCH_LOOKBACK_DEFAULTS["yahoo"])})
             # EDGAR は米国市場の企業が既定。米国以外でも SEC に 20-F 等を提出する
             # 企業は、米上場ティッカーを edgar_ticker に明示すれば対象に含める

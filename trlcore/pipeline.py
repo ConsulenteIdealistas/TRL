@@ -924,6 +924,17 @@ def select_for_eval(store, cfg, today, limit, retry_failed="no", only_new=False)
     core_ids = {e["id"] for e in (cfg.get("entities") or {}).get("entities", [])
                 if (e.get("tier") or "core") == "core"}
 
+    # 未消化の再評価予約がある候補は、再評価ゲート (14日) の起点を最後の
+    # 評価日時ではなく予約の作成日時 (処分の時点) にする (TA-2)。処分から
+    # 間隔が経つ前に通常選定へ戻してしまうと、処分の意図した再評価時期が
+    # 最後の評価日時に引きずられてずれるため。予約の無い候補は従来どおり
+    reeval_since = {}
+    if hasattr(store, "pending_reeval"):
+        for q in store.pending_reeval():
+            d = parse_date((q.get("created_at") or "")[:10])
+            if d is not None:
+                reeval_since[q["candidate_id"]] = d
+
     for c in store.list_by_status(statuses):
         if c.get("info_type") in ("news", "disclosure"):
             continue  # ニュースと開示(財務スナップショット)は単体評価せず、プールとして同梱する
@@ -945,7 +956,10 @@ def select_for_eval(store, cfg, today, limit, retry_failed="no", only_new=False)
         # 間隔を待たずに優先して再評価する(結果待ちの解消を拾うため)。
         if c["status"] in ("hold", "evaluated"):
             last = parse_date((c["last_eval_at"] or "")[:10])
-            if last and (today - last).days < sc["reeval_after_days"]:
+            # ゲートの起点: 通常は最後の評価日時。未消化の再評価予約が
+            # ある候補は予約の作成日時 (処分日) から数える (TA-2)
+            gate_base = reeval_since.get(c["id"], last)
+            if gate_base and (today - gate_base).days < sc["reeval_after_days"]:
                 upd = parse_date((c.get("material_updated_at") or "")[:10])
                 if not (upd and upd > last):
                     continue
@@ -1099,11 +1113,32 @@ def run_pipeline(store, cfg, llm, *, as_of, sources=("pubmed", "arxiv"), kinds=(
     run_budget = llm_settings(cfg).get("run_budget_sec") or 0
     run_deadline = (t0 + run_budget) if run_budget else None
     if do_collect:
-        cap = None
-        if run_deadline is not None:
-            cap = run_deadline - EVAL_RESERVE_SEC - time.monotonic()
-        collect(store, cfg, run_id, as_of, sources, {**DEFAULT_FETCHERS, **(fetchers or {})}, counts, log,
-                budget_cap=cap)
+        # TA-1: 評価可能候補が 0 件の実行では収集フェーズを丸ごと飛ばす。
+        # 収集は評価の材料集めであり、ゲート (再評価間隔等) で今回評価
+        # できる候補が1件も無いのに集めるだけ集めると、ターンアラウンド
+        # (収集の所要時間) だけが残り、プールも無駄に膨らむ。判定は本番の
+        # 選定 (select_for_eval) を上限なしでそのまま使う (ゲートと矛盾
+        # しない)。ただし候補プール自体が無い (初回実行・空 DB) 場合は
+        # 収集がプールの構築そのものなので飛ばさない。また未スクリーニング
+        # (new) の候補が残っている場合は、この実行のスクリーニングで
+        # 評価可能になりうるため飛ばさない。評価系統が無い実行 (kinds が
+        # 空の収集単体) は、評価に奉仕する収集という前提自体が無いため
+        # 対象外。評価・監査など他のフェーズは通常どおり動く
+        # (引き継ぎ・再評価予約の候補も従来どおり評価される)
+        skip_collect = False
+        if kinds and store.count_candidates() > 0 and not store.list_by_status(["new"]):
+            eligible = select_for_eval(store, cfg, today, 10 ** 9,
+                                       retry_failed=retry_failed, only_new=only_new)
+            skip_collect = not eligible
+        if skip_collect:
+            counts["collect_skipped_no_eligible"] = 1
+            log("[collect] 評価可能候補が 0 件のため収集フェーズをスキップします (TA-1)")
+        else:
+            cap = None
+            if run_deadline is not None:
+                cap = run_deadline - EVAL_RESERVE_SEC - time.monotonic()
+            collect(store, cfg, run_id, as_of, sources, {**DEFAULT_FETCHERS, **(fetchers or {})}, counts, log,
+                    budget_cap=cap)
     # gnews の重複統合 (保守パス)。gtitle 導入前の旧行や日付ゆれで割れた
     # 重複を、収集のたびに可逆な形 (rejected 化 + 識別子の付け替え) で
     # survivor へ寄せる。冪等で、統合すべき重複が無ければ 0 件になる
@@ -1220,6 +1255,10 @@ def run_pipeline(store, cfg, llm, *, as_of, sources=("pubmed", "arxiv"), kinds=(
                 set_budget(None)
 
     from concurrent.futures import ThreadPoolExecutor
+    # RT-2: 評価1候補あたりの所要時間 (候補内の全系統の合計秒) を runs に
+    # 残す。候補ごとの内訳と最小限の要約 (件数・平均・最大) を counts に
+    # 記録し、遅い候補・系統の偏りを後から観測できるようにする
+    eval_elapsed = []
     idx = 0
     while idx < len(selected) and not degraded:
         if st["phase_budget_sec"] and time.monotonic() - phase_t0 > st["phase_budget_sec"]:
@@ -1265,6 +1304,9 @@ def run_pipeline(store, cfg, llm, *, as_of, sources=("pubmed", "arxiv"), kinds=(
         for c, p, per_kind in zip(batch, prepared, batch_results):
             if degraded:
                 break
+            eval_elapsed.append({
+                "candidate_id": c["id"],
+                "seconds": round(sum(s for _k, _r, s, _c in per_kind), 2)})
             # 評価の保存 (本体・キュー・状態) は1トランザクションに束ねる
             with store.defer_commits():
                 ihash = input_hash(c, as_of)
@@ -1303,6 +1345,13 @@ def run_pipeline(store, cfg, llm, *, as_of, sources=("pubmed", "arxiv"), kinds=(
                     store.set_status(c["id"], status, eval_at=datetime.now(timezone.utc).isoformat(timespec="seconds"),
                                      retry_inc=(status == "error"), retry_reset=(status != "error"))
         _flush_llm_records()
+    if eval_elapsed:
+        counts["eval_elapsed_sec"] = eval_elapsed
+        secs = [e["seconds"] for e in eval_elapsed]
+        counts["eval_elapsed_summary"] = {
+            "n": len(secs),
+            "avg_sec": round(sum(secs) / len(secs), 2),
+            "max_sec": max(secs)}
     if degraded in ("llm_fatal_error", "llm_consecutive_failures"):
         log(f"::warning::[eval] LLM APIの失敗が続くため評価フェーズを打ち切ります ({degraded})。未評価の候補は次回に回します")
     if degraded:

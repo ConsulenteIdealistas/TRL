@@ -1,7 +1,6 @@
 """コマンドライン入口。"""
 
 import argparse
-import hashlib
 import os
 from datetime import datetime, timezone
 from pathlib import Path
@@ -18,28 +17,12 @@ from .audit_api import run_audit_api
 from .compare import build_compare_report, run_compare
 
 
-def _verify_db_hash(data_dir):
-    """前回 export が控えたハッシュと DB 実物を照合する。不一致でも止めない
-    (ワークフロー側の integrity_check が本線の防御で、こちらは観測用)。"""
-    db = Path(data_dir) / "trl.sqlite"
-    side = Path(data_dir) / "trl.sqlite.sha256"
-    if not db.is_file() or not side.is_file():
-        return
-    expected = side.read_text(encoding="utf-8").strip()
-    actual = hashlib.sha256(db.read_bytes()).hexdigest()
-    if actual == expected:
-        print("[db] trl.sqlite のハッシュ照合 OK")
-    else:
-        print(f"::warning::[db] trl.sqlite のハッシュが前回 export の記録と一致しません "
-              f"(記録 {expected[:12]}… / 実物 {actual[:12]}…)")
-
-
 def _compare_clients(cfg):
     """モデル比較用の、フォールバックを持たない単一モデルクライアント群。
-    本番と同じ環境変数 (TRL_LLM_MODEL / _FALLBACK_MODEL / _FALLBACK_MODEL_2)
+    本番と同じ環境変数 (TRL_LLM_MODEL / _FALLBACK_MODEL)
     から組み立てる。"""
     clients, seen = [], set()
-    for var in ("TRL_LLM_MODEL", "TRL_LLM_FALLBACK_MODEL", "TRL_LLM_FALLBACK_MODEL_2"):
+    for var in ("TRL_LLM_MODEL", "TRL_LLM_FALLBACK_MODEL"):
         m = os.environ.get(var)
         if m and m not in seen:
             seen.add(m)
@@ -47,7 +30,7 @@ def _compare_clients(cfg):
             # 空になる。未指定だと環境変数の階段を拾い、名札と違うモデルが
             # 応答して比較が汚染される (初回実行で実際に発生した)
             clients.append((f"gemini/{m}", configure_llm(
-                Gemini(m, fallback_model=m, fallback_model_2=m), cfg)))
+                Gemini(m, fallback_model=m), cfg)))
     if not clients:
         g = Gemini()
         g.fallback_models = []  # 既定モデルでも階段は持たせない (比較の前提)
@@ -92,7 +75,8 @@ def main(argv=None):
     q.add_argument("--data-dir", default="data")
     cp = sub.add_parser("compare")
     cp.add_argument("--data-dir", default="data")
-    cp.add_argument("--limit", type=int, default=100)
+    cp.add_argument("--limit", type=int, default=None,
+                    help="比較対象の上限。既定は上限なし (全対象)。明示指定時のみ効く")
     cp.add_argument("--budget-sec", type=int, default=0,
                     help="全体の時間予算 (秒)。0 は無制限")
     cp.add_argument("--as-of")
@@ -194,11 +178,13 @@ def main(argv=None):
         # data-dir を丸ごと data ブランチへ保存するため、Pages 障害時でも
         # 同じデータがブランチ側から読める (可用性の冗長化)
         (Path(a.data_dir) / "data.json").write_bytes((Path(a.out) / "data.json").read_bytes())
-        # DB のハッシュを控える。次回 run の開始時に照合し、data ブランチの
-        # DB が化けていないかを実行側でも検出できるようにする
-        digest = hashlib.sha256(db.read_bytes()).hexdigest()
-        (Path(a.data_dir) / "trl.sqlite.sha256").write_text(digest + "\n", encoding="utf-8")
-        print(f"[export] mirror -> {Path(a.data_dir) / 'data.json'}, db sha256={digest[:12]}…")
+        # DB の照合用サイドカー (trl.sqlite.sha256) は廃止した (RA-1):
+        # export を含まないジョブ (audit / compare) が DB を更新するたびに
+        # 1世代古くなり、正常運用でも照合が一致せず、本物の化けと区別が
+        # つかなくなっていた。DB の健全性はワークフロー Restore 段の
+        # PRAGMA integrity_check と、data ブランチのコミット履歴
+        # (Git 側のオブジェクト検証) で担保する
+        print(f"[export] mirror -> {Path(a.data_dir) / 'data.json'}")
         return 0
     if a.cmd == "vault":
         db = Path(a.data_dir) / "trl.sqlite"
@@ -271,8 +257,6 @@ def main(argv=None):
             with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as f:
                 f.write(text)
         return 0
-    if a.cmd == "run":
-        _verify_db_hash(a.data_dir)
     store = Store(Path(a.data_dir) / "trl.sqlite")
     if a.cmd == "prune":
         as_of_p = parse_date(a.as_of) if getattr(a, "as_of", None) else datetime.now(timezone.utc).date()

@@ -61,16 +61,14 @@ def _fallback_model(model, fallback_model=None):
     return fb if fb and fb != model else None
 
 
-def _fallback_models(model, fallback_model=None, fallback_model_2=None):
-    """代替モデルの階段 (近い順、最大2段)。明示指定が無ければ環境変数
-    TRL_LLM_FALLBACK_MODEL → TRL_LLM_FALLBACK_MODEL_2 の順で集める。
-    主モデルと同名・重複は除く (同じ段を二度試す無駄と、ブレーカーの誤作動を防ぐ)。"""
-    out = []
-    for fb in (fallback_model or os.environ.get("TRL_LLM_FALLBACK_MODEL"),
-               fallback_model_2 or os.environ.get("TRL_LLM_FALLBACK_MODEL_2")):
-        if fb and fb != model and fb not in out:
-            out.append(fb)
-    return out
+def _fallback_models(model, fallback_model=None):
+    """代替モデルの階段 (主の次に試す1段のみ)。明示指定が無ければ環境変数
+    TRL_LLM_FALLBACK_MODEL から読む。主モデルと同名なら無効 (同じ段を
+    二度試す無駄と、ブレーカーの誤作動を防ぐ)。
+    かつて存在した2段目 (TRL_LLM_FALLBACK_MODEL_2) の配管は廃止済みの
+    モデル配置の残骸で、再登録で復活しうるためコードから除去した (X-2)。"""
+    fb = _fallback_model(model, fallback_model)
+    return [fb] if fb else []
 
 
 class _CandidateBudget:
@@ -100,9 +98,9 @@ class _CandidateBudget:
 class Gemini(_CandidateBudget):
     name = "gemini"
 
-    def __init__(self, model=None, http=None, fallback_model=None, fallback_model_2=None):
+    def __init__(self, model=None, http=None, fallback_model=None):
         self.model = model or os.environ.get("TRL_LLM_MODEL") or "gemini-3.8-flash"
-        self.fallback_models = _fallback_models(self.model, fallback_model, fallback_model_2)
+        self.fallback_models = _fallback_models(self.model, fallback_model)
         self.http = http or http_fetch
         self.timeout, self.retries = 120, 2  # configure_llm() で scoring.json の llm 設定に上書き
         self.call_budget = 240  # 同上 (1回の呼び出し全体の時間上限・監査 A-2)
@@ -111,7 +109,7 @@ class Gemini(_CandidateBudget):
             raise LLMError("GEMINI_API_KEY is not set")
         self._tls = threading.local()  # last_model はスレッドごとに保持する (評価は並列実行)
         self.recorder = None  # 計装レコーダ (run 側が設定する。None なら記録しない)
-        self._stage_fails = [0, 0, 0]  # 段ごとの連続失敗数 (段別ブレーカー用)
+        self._stage_fails = [0, 0]  # 段ごとの連続失敗数 (段別ブレーカー用。主 + 代替1段)
         self._stage_lock = threading.Lock()
 
     @property
@@ -126,7 +124,7 @@ class Gemini(_CandidateBudget):
         return getattr(self._tls, "model", None)
 
     def complete(self, prompt, purpose=None, candidate_id=None):
-        # 階段: 主モデル → 代替1 → 代替2。一時的失敗 (503/429 等) のときだけ
+        # 階段: 主モデル → 代替1。一時的失敗 (503/429 等) のときだけ
         # 次段へ降りる。恒常的な失敗 (404/401 等) と時間上限の到達はその場で
         # 投げる (従来どおり)。連続失敗中の段はブレーカーで飛ばす
         stages = [self.model] + self.fallback_models
@@ -218,12 +216,12 @@ class Mock:
         return self.fn(prompt)
 
 
-def get_provider(name, model=None, http=None, fallback_model=None, fallback_model_2=None):
+def get_provider(name, model=None, http=None, fallback_model=None):
     name = (name or "none").lower()
     if name == "none":
         return None
     if name == "gemini":
-        return Gemini(model, http, fallback_model, fallback_model_2)
+        return Gemini(model, http, fallback_model)
     raise LLMError(f"unknown provider: {name}")
 
 

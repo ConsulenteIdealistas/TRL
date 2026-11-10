@@ -13,10 +13,13 @@ from datetime import datetime, timezone
 from .evaluate import evaluate_one, run_extraction
 
 
-def select_compare_candidates(store, limit):
+def select_compare_candidates(store, limit=None):
     """比較対象の候補ID。long 評価の実績がある候補を新しい順に優先し、
-    残りを未評価 (要旨あり・除外とニュースを除く) から新しい順に埋める。"""
-    rows = store.conn.execute(
+    残りを未評価 (要旨あり・除外とニュースを除く) から新しい順に埋める。
+    limit=None (既定) は上限なしで全対象を選ぶ。かつての既定上限 (100) は
+    対象が増えると黙って切り捨て、比較の母集団が偏るため廃止した (TH-2)。
+    明示指定時のみ LIMIT が効く。"""
+    sql = (
         "SELECT c.id FROM candidates c "
         "WHERE c.info_type != 'news' AND c.status != 'rejected' "
         "AND COALESCE(c.abstract, '') != '' "
@@ -25,8 +28,11 @@ def select_compare_candidates(store, limit):
         "               THEN 0 ELSE 1 END), "
         "         (SELECT MAX(e2.evaluated_at) FROM evaluations e2 "
         "          WHERE e2.candidate_id = c.id AND e2.kind = 'long') DESC, "
-        "         c.published DESC "
-        "LIMIT ?", (limit,)).fetchall()
+        "         c.published DESC ")
+    if limit is None:
+        rows = store.conn.execute(sql).fetchall()
+    else:
+        rows = store.conn.execute(sql + "LIMIT ?", (limit,)).fetchall()
     return [r[0] for r in rows]
 
 
@@ -52,7 +58,7 @@ def _baseline(store, cid):
     }, extraction)
 
 
-def run_compare(store, cfg, clients, *, as_of, limit=100, batch=None, budget_sec=None,
+def run_compare(store, cfg, clients, *, as_of, limit=None, batch=None, budget_sec=None,
                 log=print, prompt_dir=None):
     """clients は (label, llm) のリスト。label は結果の行にそのまま残る
     モデルの識別名 (例: gemini/gemini-3.6-flash)。"""

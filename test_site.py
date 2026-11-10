@@ -144,69 +144,64 @@ class FallbackModelTests(unittest.TestCase):
         self.assertTrue(all(o == "main-ok" for o in outs))
         self.assertEqual(g.last_model, "gemini-main")
 
-    def test_fallback_chain_reaches_second_fallback(self):
-        # 主 → 代替1 が両方とも一時的失敗なら、代替2 で応答する
+    def test_fallback_chain_has_only_one_fallback(self):
+        # X-2: 階段は主 → 代替1 のみ。両段とも一時的失敗なら例外になる
+        # (かつての代替2 = FALLBACK_MODEL_2 の配管は除去済み)
         calls = []
 
         def http(url, **kw):
-            for name in ("gemini-sub2", "gemini-main", "gemini-sub"):
+            for name in ("gemini-main", "gemini-sub"):
                 if name in url:
                     calls.append(name)
-                    if name != "gemini-sub2":
-                        raise T.HttpError("HTTP 503 for x", 503)
-                    return json.dumps({"candidates": [{"content": {"parts": [{"text": "fb2"}]}}]}).encode()
+                    raise T.HttpError("HTTP 503 for x", 503)
             raise AssertionError(url)
-        g = T.Gemini(model="gemini-main", http=http, fallback_model="gemini-sub",
-                     fallback_model_2="gemini-sub2")
-        self.assertEqual(g.complete("p"), "fb2")
-        self.assertEqual(calls, ["gemini-main", "gemini-sub", "gemini-sub2"])
-        self.assertEqual(g.last_model, "gemini-sub2")
-        self.assertEqual(g.fallback_models, ["gemini-sub", "gemini-sub2"])
+        g = T.Gemini(model="gemini-main", http=http, fallback_model="gemini-sub")
+        self.assertEqual(g.fallback_models, ["gemini-sub"])
         self.assertEqual(g.fallback_model, "gemini-sub")  # 互換プロパティは1段目
+        with self.assertRaises(T.HttpError):
+            g.complete("p")
+        self.assertEqual(calls, ["gemini-main", "gemini-sub"])
 
     def test_fallback_chain_stops_at_first_success(self):
-        # 代替1 が応答すれば代替2 は呼ばない
+        # 代替1 が応答すればそこで終わる
         calls = []
 
         def http(url, **kw):
             if "gemini-main" in url:
                 calls.append("main")
                 raise T.HttpError("HTTP 503 for x", 503)
-            calls.append("sub2" if "gemini-sub2" in url else "sub")
+            calls.append("sub")
             return json.dumps({"candidates": [{"content": {"parts": [{"text": "ok"}]}}]}).encode()
-        g = T.Gemini(model="gemini-main", http=http, fallback_model="gemini-sub",
-                     fallback_model_2="gemini-sub2")
+        g = T.Gemini(model="gemini-main", http=http, fallback_model="gemini-sub")
         self.assertEqual(g.complete("p"), "ok")
         self.assertEqual(calls, ["main", "sub"])
 
-    def test_stage_breaker_skips_failed_fallback(self):
-        # 主と代替1 が落ち続けると両段ともブレーカーで飛ばされ、代替2 へ直行する
-        counts = {"gemini-main": 0, "gemini-sub": 0, "gemini-sub2": 0}
+    def test_stage_breaker_skips_failed_main(self):
+        # 主が落ち続けるとブレーカーで飛ばされ、代替1 へ直行する
+        counts = {"gemini-main": 0, "gemini-sub": 0}
 
         def http(url, **kw):
-            for name in ("gemini-sub2", "gemini-main", "gemini-sub"):
+            for name in ("gemini-main", "gemini-sub"):
                 if name in url:
                     counts[name] += 1
-                    if name != "gemini-sub2":
+                    if name == "gemini-main":
                         raise T.HttpError("HTTP 503 for x", 503)
-                    return json.dumps({"candidates": [{"content": {"parts": [{"text": "fb2"}]}}]}).encode()
+                    return json.dumps({"candidates": [{"content": {"parts": [{"text": "fb"}]}}]}).encode()
             raise AssertionError(url)
-        g = T.Gemini(model="gemini-main", http=http, fallback_model="gemini-sub",
-                     fallback_model_2="gemini-sub2")
+        g = T.Gemini(model="gemini-main", http=http, fallback_model="gemini-sub")
         for _ in range(5):
-            self.assertEqual(g.complete("p"), "fb2")
+            self.assertEqual(g.complete("p"), "fb")
         self.assertEqual(counts["gemini-main"], 1)  # 1回の失敗で見切られる
-        self.assertEqual(counts["gemini-sub"], 1)
-        self.assertEqual(counts["gemini-sub2"], 5)
+        self.assertEqual(counts["gemini-sub"], 5)
 
-    def test_second_fallback_from_env(self):
-        # 環境変数 TRL_LLM_FALLBACK_MODEL_2 からも2段目を読める
+    def test_second_fallback_env_is_ignored(self):
+        # X-2: 環境変数 TRL_LLM_FALLBACK_MODEL_2 はもう読まない (配管を除去)
         import os
         old = os.environ.get("TRL_LLM_FALLBACK_MODEL_2")
         os.environ["TRL_LLM_FALLBACK_MODEL_2"] = "gemini-env2"
         try:
             g = T.Gemini(model="gemini-main", http=lambda *a, **k: b"{}", fallback_model="gemini-sub")
-            self.assertEqual(g.fallback_models, ["gemini-sub", "gemini-env2"])
+            self.assertEqual(g.fallback_models, ["gemini-sub"])
         finally:
             if old is None:
                 os.environ.pop("TRL_LLM_FALLBACK_MODEL_2", None)
@@ -1078,6 +1073,28 @@ class ZeroRiskBatchTests(unittest.TestCase):
         self.store.conn.commit()
         self.assertEqual(self.store.orphan_report(), {"identifiers": 1, "evaluations": 1})
 
+    def test_orphan_report_covers_newer_tables(self):
+        # AC-4: 後から増えたテーブル群 (監査・レビュー・tier) も監視対象
+        self.store.conn.execute(
+            "INSERT INTO audit_results(evaluation_id, candidate_id) VALUES (999, 'ghost')")
+        self.store.conn.execute(
+            "INSERT INTO review_decisions(evaluation_id, audit_id) VALUES (999, 999)")
+        self.store.conn.execute(
+            "INSERT INTO evaluation_adjustments(evaluation_id) VALUES (999)")
+        self.store.conn.execute(
+            "INSERT INTO reeval_queue(candidate_id) VALUES ('ghost')")
+        self.store.conn.execute(
+            "INSERT INTO tier_snapshots(entity_id) VALUES ('ghost-entity')")
+        self.store.conn.commit()
+        out = self.store.orphan_report()
+        # audit_results は evaluation_id と candidate_id の2参照とも孤児で合算2
+        self.assertEqual(out["audit_results"], 2)
+        # review_decisions は evaluation_id と audit_id の2参照とも孤児で合算2
+        self.assertEqual(out["review_decisions"], 2)
+        self.assertEqual(out["evaluation_adjustments"], 1)
+        self.assertEqual(out["reeval_queue"], 1)
+        self.assertEqual(out["tier_snapshots"], 1)
+
     def test_defer_commits_bundles_and_rolls_back(self):
         rec, _ = T.normalize(raw(sid="2610.7777", title="Tx paper"), T.now_iso())
         with self.assertRaises(RuntimeError):
@@ -1287,6 +1304,18 @@ class CompareModelsTests(unittest.TestCase):
         self.assertEqual(n_fast, 3)
         self.assertLessEqual(n_slow, 1)
 
+    def test_compare_candidates_unlimited_by_default(self):
+        # TH-2: 既定は上限なし (全対象)。明示指定時のみ limit が効く
+        cfg = self._baseline(3)
+        all_ids = T.select_compare_candidates(self.store)
+        self.assertEqual(len(all_ids), 3)
+        self.assertEqual(T.select_compare_candidates(self.store, None), all_ids)
+        self.assertEqual(len(T.select_compare_candidates(self.store, 2)), 2)
+        res = T.run_compare(self.store, cfg, [("gemini/a", Mock(make_llm_fn(
+            long_scores={k: 60 for k in LONG_KEYS})))],
+            as_of=AS_OF, log=lambda *_: None)
+        self.assertEqual(res["selected"], 3)  # run_compare の既定も上限なし
+
     def test_compare_clients_have_no_fallback_ladder(self):
         # 本番の環境変数が残っていても比較クライアントは階段を持たない
         # (持つと名札と違うモデルが応答し、初回実行のように比較が汚染される)
@@ -1299,9 +1328,10 @@ class CompareModelsTests(unittest.TestCase):
                "CLOUDFLARE_ACCOUNT_ID": "", "CLOUDFLARE_API_TOKEN": ""}
         with umock.patch.dict(os.environ, env):
             clients = trl_cli._compare_clients(cfg_with())
+        # X-2: TRL_LLM_FALLBACK_MODEL_2 はもう読まないため、環境変数に
+        # 残っていてもクライアントは生まれない
         self.assertEqual([label for label, _ in clients],
-                         ["gemini/gemini-3.6-flash", "gemini/gemini-3.5-flash-lite",
-                          "gemini/gemini-3.5-flash"])
+                         ["gemini/gemini-3.6-flash", "gemini/gemini-3.5-flash-lite"])
         for _label, client in clients:
             self.assertEqual(client.fallback_models, [])
 

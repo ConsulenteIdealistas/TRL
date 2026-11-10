@@ -149,6 +149,7 @@ class Store:
         """既存DBに後から追加した列を足す(CREATE TABLE IF NOT EXISTS では増えないため)。"""
         self._identifiers_without_rowid()
         self._purge_legacy_llm_audit()
+        self._purge_legacy_llm_audit_calls()
         cols = {r[1] for r in self.conn.execute("PRAGMA table_info(evaluations)")}
         if "extra_json" not in cols:
             self.conn.execute("ALTER TABLE evaluations ADD COLUMN extra_json TEXT")
@@ -204,6 +205,22 @@ class Store:
         self.conn.execute(
             "DELETE FROM audit_results WHERE auditor_provider = 'gemini'")
 
+    def _purge_legacy_llm_audit_calls(self):
+        """廃止済み LLM 監査の呼出し記録 (llm_calls の purpose が監査系の行)
+        を抹消する (冪等)。
+
+        LLM 監査は 2026-11-06 に完全廃止した。監査結果本体
+        (audit_results の gemini 行) の抹消 (_purge_legacy_llm_audit) と
+        同じ経路・同じ理由 (撤廃したものの記録は残さない。2026-11-11 の
+        泰崇の明示承認、対象はこのカテゴリ限定) で、その呼出し計装
+        (llm_calls) も残さない。対象 purpose は監査系の
+        'audit' / 'audit_extract' / 'audit_scoring' のみで、通常の評価の
+        呼出し記録 (extract / assess 等) には触らない。削除後は対象行が
+        0 件になるため再実行しても何も起きない。"""
+        self.conn.execute(
+            "DELETE FROM llm_calls WHERE purpose IN "
+            "('audit', 'audit_extract', 'audit_scoring')")
+
     def set_translation(self, cid, title_ja, abstract_ja, title_by=None, abstract_by=None):
         """訳文と、その出典(どの経路で訳したか)を保存する。出典は項目別に記録する。"""
         row = self.conn.execute("SELECT translation_src FROM candidates WHERE id=?", (cid,)).fetchone()
@@ -244,19 +261,34 @@ class Store:
         """参照先の候補・実行が存在しない行 (孤児) の件数をテーブル別に返す。
         スキーマに外部キーがあるのは candidate_entities だけで、強制も既定で
         無効なため、定期的な検査で静かな腐敗を検出する。削除はしない。"""
+        # テーブル -> [(参照元列, 参照先テーブル, 参照先列), ...]。
+        # 参照先が複数あるテーブル (audit_results 等) は全ての参照を
+        # 数え、テーブル単位に合算する。tier_snapshots の entity_id は
+        # 企業辞書 (設定側) が正本で DB 内に親テーブルが無いため、DB 内で
+        # 企業 id を保持する唯一の台帳 candidate_entities を参照先にする
         targets = {
-            "identifiers": ("candidate_id", "candidates", "id"),
-            "candidate_entities": ("candidate_id", "candidates", "id"),
-            "evaluations": ("candidate_id", "candidates", "id"),
-            "review_queue": ("candidate_id", "candidates", "id"),
-            "llm_calls": ("candidate_id", "candidates", "id"),
-            "run_sources": ("run_id", "runs", "run_id"),
+            "identifiers": [("candidate_id", "candidates", "id")],
+            "candidate_entities": [("candidate_id", "candidates", "id")],
+            "evaluations": [("candidate_id", "candidates", "id")],
+            "review_queue": [("candidate_id", "candidates", "id")],
+            "llm_calls": [("candidate_id", "candidates", "id")],
+            "run_sources": [("run_id", "runs", "run_id")],
+            "audit_results": [("evaluation_id", "evaluations", "id"),
+                              ("candidate_id", "candidates", "id")],
+            "review_decisions": [("evaluation_id", "evaluations", "id"),
+                                 ("audit_id", "audit_results", "id")],
+            "evaluation_adjustments": [("evaluation_id", "evaluations", "id")],
+            "reeval_queue": [("candidate_id", "candidates", "id")],
+            "tier_snapshots": [("entity_id", "candidate_entities", "entity_id")],
         }
         out = {}
-        for table, (col, ref_table, ref_col) in targets.items():
-            n = self.conn.execute(
-                f"SELECT COUNT(*) FROM {table} WHERE {col} IS NOT NULL "
-                f"AND {col} NOT IN (SELECT {ref_col} FROM {ref_table})").fetchone()[0]
+        for table, checks in targets.items():
+            n = 0
+            for col, ref_table, ref_col in checks:
+                n += self.conn.execute(
+                    f"SELECT COUNT(*) FROM {table} AS t "
+                    f"LEFT JOIN {ref_table} AS r ON t.{col} = r.{ref_col} "
+                    f"WHERE t.{col} IS NOT NULL AND r.{ref_col} IS NULL").fetchone()[0]
             if n:
                 out[table] = n
         return out

@@ -313,6 +313,61 @@ class LegacyLlmAuditPurgeTests(unittest.TestCase):
         store.close()
 
 
+class LegacyLlmAuditCallsPurgeTests(unittest.TestCase):
+    """X-3: 廃止済み LLM 監査の呼出し記録 (llm_calls の監査系 purpose) の
+    起動時抹消と冪等性。通常の呼出し記録には触らない。"""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.path = Path(self.tmp.name) / "t.sqlite"
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def _purposes(self, store):
+        return sorted(r[0] for r in store.conn.execute(
+            "SELECT purpose FROM llm_calls"))
+
+    def test_audit_purposes_purged_others_kept_idempotent(self):
+        store = Store(self.path)
+        for purpose in ("audit", "audit_extract", "audit_scoring",
+                        "extract", "assess", "event"):
+            store.record_llm_call("r1", {"candidate_id": "c1", "purpose": purpose,
+                                         "provider": "gemini", "model": "m",
+                                         "seconds": 1.0, "ok": True})
+        store.close()
+
+        store = Store(self.path)  # 開いた時点で監査系だけが抹消される
+        self.assertEqual(self._purposes(store), ["assess", "event", "extract"])
+        store.close()
+
+        store = Store(self.path)  # 再オープンしても変わらない (冪等)
+        self.assertEqual(self._purposes(store), ["assess", "event", "extract"])
+        store.close()
+
+
+class DbHashSidecarRemovalTests(unittest.TestCase):
+    """RA-1: DB 照合系 (サイドカー書出しと _verify_db_hash) の撤去。"""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.data = Path(self.tmp.name) / "data"
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def test_export_writes_no_sha256_sidecar(self):
+        from trlcore import cli
+        self.assertFalse(hasattr(cli, "_verify_db_hash"))
+        store = Store(self.data / "trl.sqlite")
+        store.close()
+        out = Path(self.tmp.name) / "site"
+        rc = cli.main(["export", "--data-dir", str(self.data), "--out", str(out)])
+        self.assertEqual(rc, 0)
+        self.assertTrue((out / "data.json").is_file())
+        self.assertFalse((self.data / "trl.sqlite.sha256").exists())
+
+
 class DedupeStoreTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
@@ -836,6 +891,36 @@ class NewsPoolTests(unittest.TestCase):
         self.assertIn(fresh, sel_ids)
         store.close()
 
+    def test_selection_reeval_reservation_restarts_gate(self):
+        # TA-2: 未消化の再評価予約がある候補は、14日ゲートを最後の評価日時
+        # ではなく予約の作成日時 (処分日) から数える
+        store = Store(self.path)
+
+        def add_hold(sid, eval_at):
+            rec, _ = normalize(raw(sid=sid), "2026-10-20T00:00:00+00:00")
+            cid, _ = store.upsert_candidate(rec, "r0")
+            store.set_entities(cid, link_entities(rec, CFG.get("entities", {})))
+            store.set_status(cid, "hold", eval_at=eval_at)
+            return cid
+
+        # 最後の評価から20日経過 (通常ゲートは通過) だが、予約は3日前
+        # (AS_OF=2026-10-20 基準) → ゲート内なので選ばれない
+        reserved = add_hold("2610.9511", "2026-09-30T00:00:00+00:00")
+        store.enqueue_reeval("uuid-ta2-a", reserved, "監査レビューでの予約")
+        store.conn.execute("UPDATE reeval_queue SET created_at='2026-10-17T00:00:00+00:00' "
+                           "WHERE candidate_id=?", (reserved,))
+        store.conn.commit()
+        # 予約が20日前なら、処分日基準でもゲートを通過して選ばれる
+        old_reserved = add_hold("2610.9512", "2026-09-01T00:00:00+00:00")
+        store.enqueue_reeval("uuid-ta2-b", old_reserved, "監査レビューでの予約")
+        store.conn.execute("UPDATE reeval_queue SET created_at='2026-09-30T00:00:00+00:00' "
+                           "WHERE candidate_id=?", (old_reserved,))
+        store.conn.commit()
+        sel_ids = [c["id"] for c in select_for_eval(store, CFG, AS_OF, 10)]
+        self.assertNotIn(reserved, sel_ids)
+        self.assertIn(old_reserved, sel_ids)
+        store.close()
+
     def test_purge_resets_evaluated_candidates(self):
         # final 到達候補のステータスは 'evaluated'。purge のリセット対象に含めないと
         # 評価だけ消えて候補が二度と再評価されないまま取り残される
@@ -1070,6 +1155,47 @@ class IntegrationTests(unittest.TestCase):
         text = build_report(store, r3["run_id"])
         self.assertIn("65.0", text)
         self.assertIn("投資利益率ではありません", text)
+        store.close()
+
+    def test_collect_skipped_when_no_eligible_candidates(self):
+        # TA-1: プールはあるが評価可能候補が 0 件 (全候補が再評価ゲート内)
+        # の実行では、収集フェーズを丸ごと飛ばす
+        store = Store(self.path)
+        llm = Mock(make_llm_fn(long_scores={k: 65 for k in LONG_KEYS}))
+        r1 = run_pipeline(store, self.cfg(), llm, as_of=AS_OF, kinds=("long",), fetchers=self.fetchers(),
+                          today=AS_OF, log=lambda *_: None)
+        self.assertGreater(r1["counts"]["selected"], 0)
+        calls = []
+
+        def counting_fetchers():
+            f = self.fetchers()
+            return {k: (lambda q, n, d, a, _f=fn, _k=k: (calls.append(_k), _f(q, n, d, a))[1])
+                    for k, fn in f.items()}
+
+        r2 = run_pipeline(store, self.cfg(), llm, as_of=AS_OF, kinds=("long",),
+                          fetchers=counting_fetchers(), today=AS_OF, log=lambda *_: None)
+        self.assertEqual(r2["counts"].get("collect_skipped_no_eligible"), 1)
+        self.assertEqual(r2["counts"]["fetched"], 0)
+        self.assertEqual(calls, [])  # fetcher は1回も呼ばれていない
+        self.assertEqual(r2["counts"]["selected"], 0)
+        store.close()
+
+    def test_eval_elapsed_recorded_per_candidate(self):
+        # RT-2: 評価1候補あたりの所要時間が counts に残る (内訳 + 要約)
+        store = Store(self.path)
+        llm = Mock(make_llm_fn(long_scores={k: 65 for k in LONG_KEYS}))
+        r = run_pipeline(store, self.cfg(), llm, as_of=AS_OF, kinds=("long",), fetchers=self.fetchers(),
+                         today=AS_OF, log=lambda *_: None)
+        elapsed = r["counts"].get("eval_elapsed_sec")
+        self.assertTrue(elapsed)
+        self.assertEqual(len(elapsed), r["counts"]["selected"])
+        self.assertTrue(all(set(e) == {"candidate_id", "seconds"} for e in elapsed))
+        self.assertTrue(all(isinstance(e["seconds"], (int, float)) and e["seconds"] >= 0
+                            for e in elapsed))
+        summary = r["counts"].get("eval_elapsed_summary")
+        self.assertEqual(summary["n"], len(elapsed))
+        self.assertEqual(summary["max_sec"], max(e["seconds"] for e in elapsed))
+        self.assertGreaterEqual(summary["avg_sec"], 0)
         store.close()
 
     def test_llm_calls_recorded_from_worker_threads(self):

@@ -18,6 +18,8 @@ from .sources.yahoo import yahoo_fetch
 from .sources.openalex import openalex_fetch
 from .sources.roic import fetch_roic, roic_enabled, roic_symbol
 from .translate import crossed_thresholds, translate_display_set, translate_watch_queue, usage_totals
+from .config import ROOT
+from .review import INBOX_NAME, import_inbox_file
 from .entities import entity_screen, link_entities
 from .prompts import load_prompt
 from .llm import llm_settings
@@ -617,6 +619,15 @@ def run_pipeline(store, cfg, llm, *, as_of, sources=("pubmed", "arxiv"), kinds=(
     def _flush_llm_records():
         while llm_records:
             store.record_llm_call(run_id, llm_records.pop(0))
+    # 監査レビューの橋 (段階B): リポジトリ直下の review_inbox.json があれば、
+    # 処分・再評価予約・TRL 調整を DB の追加層へ取り込む。選定 (再評価
+    # キュー) と、この実行の後に作られる export (調整の反映) の両方に
+    # 効かせるため、実行の早い段階で取り込む。ファイルが無ければ何もしない
+    imp = import_inbox_file(store, ROOT / INBOX_NAME, log=log)
+    if imp:
+        taken = {k: v for k, v in imp.items() if v}
+        if taken:
+            counts["review_import"] = taken
     if cfg["scoring"].get("recalc_on_run"):
         # 重み等の集計変更 (規程の A2 類) を保存済み評価へ反映する。再計算の
         # 来歴は各評価の extra_json に残る (trlcore/recalc)
@@ -679,6 +690,28 @@ def run_pipeline(store, cfg, llm, *, as_of, sources=("pubmed", "arxiv"), kinds=(
         selected = (handover + [c for c in selected if c["id"] not in handover_ids])[:limit]
         counts["handover"] = len([c for c in selected if c["id"] in handover_ids])
         log(f"[eval] 前回の未完の選定 {counts['handover']} 件を引き継ぎました")
+    # 再評価キュー (監査レビュー経路A・段階B): DB に取り込まれた予約を
+    # 選定の最優先で先頭に差し込む。通常の選定ゲート (14日ルール等) は
+    # バイパスするが、上限 (limit) の内数として扱い別枠にはしない
+    # (滞留対策の回転数を食い潰さないため。設計書5・9節)
+    queue_front = []
+    pending = store.pending_reeval()
+    if pending:
+        core_ids = {e["id"] for e in (cfg.get("entities") or {}).get("entities", [])
+                    if (e.get("tier") or "core") == "core"}
+        for q in pending:
+            c = store.get_candidate(q["candidate_id"])
+            if not c or c["status"] == "rejected" or c.get("info_type") in ("news", "disclosure"):
+                continue
+            linked = {e["entity_id"] for e in c.get("entities", [])}
+            if not linked or not (linked & core_ids):
+                continue
+            queue_front.append(c)
+    if queue_front:
+        front_ids = {c["id"] for c in queue_front}
+        selected = (queue_front + [c for c in selected if c["id"] not in front_ids])[:limit]
+        counts["reeval_queue"] = len([c for c in selected if c["id"] in front_ids])
+        log(f"[eval] 再評価キューの予約 {counts['reeval_queue']} 件を選定の先頭に入れました")
     counts["selected"] = len(selected)
     # 選定は実行の途中で死んでも残るよう、この時点で run レコードへ記録する。
     # 上限で外れた引き継ぎ分も連鎖が切れないよう一緒に入れる
@@ -817,6 +850,19 @@ def run_pipeline(store, cfg, llm, *, as_of, sources=("pubmed", "arxiv"), kinds=(
     if degraded:
         counts["llm_degraded"] = degraded
     _flush_llm_records()
+    # 再評価キューの消化印: この実行で実際に新しい評価が保存された予約だけを
+    # 消化済みにする。API 失敗などで評価が残らなかった予約は未完了のまま
+    # 次回に残る (予約が静かに消えないように)
+    if queue_front:
+        done_ids = {e["candidate_id"] for e in store.evaluations_for_run(run_id)}
+        marked = 0
+        for c in queue_front:
+            if c["id"] in done_ids:
+                store.mark_reeval_done(c["id"])
+                marked += 1
+        if marked:
+            counts["reeval_queue_done"] = marked
+            log(f"[eval] 再評価キューの予約 {marked} 件を消化済みにしました")
     # 翻訳は専用 API (Azure → DeepL → Google) で行い、評価用 LLM には任せない
     usage_before = usage_totals(store, today)
     counts["translated"], counts["translation_chars"] = translate_display_set(store, cfg, today, log)

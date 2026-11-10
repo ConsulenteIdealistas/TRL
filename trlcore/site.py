@@ -8,6 +8,7 @@ from .config import ROOT
 from .dates import parse_date
 from .http import redact
 from .pipeline import select_for_eval
+from .review import adjusted_view
 from .summarize import PAPER_SOURCES, extract_summary
 
 
@@ -342,6 +343,14 @@ def build_site_data(store, cfg, now=None):
             event_ev["prev"] = _prev_for_site(store.prev_evaluation(cid, "event", event_row["id"]))
         if long_ev is not None and long_row["status"] == "hold":
             long_ev["hold_cause"] = _hold_cause(long_ev)
+        # TRL 調整 (監査レビュー経路B・段階B): 有効な調整があれば、読み替え後の
+        # TRL で機械的に再導出した値を併記用に同梱する。元の値 (total・band・
+        # trl_level) は書き換えず、表示側が「調整後の値 (元: ○)」の形で出す。
+        # 調整は最新の long 評価にだけ付く (旧評価への調整は対象から外れる)
+        if long_row is not None:
+            adj = adjusted_view(store, cfg, long_row)
+            if adj:
+                long_ev["adjustment"] = adj
         seen, ents = set(), []
         for e in c["entities"]:
             key = (e["entity_id"], e["strength"], e["product_name"])

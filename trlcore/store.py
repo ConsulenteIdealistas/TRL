@@ -74,6 +74,16 @@ CREATE TABLE IF NOT EXISTS review_queue(
   candidate_id TEXT, kind TEXT, reason TEXT, missing_json TEXT, next_sources_json TEXT,
   reeval_conditions_json TEXT, last_eval_at TEXT, versions_json TEXT, created_at TEXT,
   updated_at TEXT, resolved_at TEXT, PRIMARY KEY(candidate_id, kind));
+CREATE TABLE IF NOT EXISTS review_decisions(
+  id INTEGER PRIMARY KEY AUTOINCREMENT, source_id TEXT, evaluation_id INTEGER,
+  audit_id INTEGER, check_name TEXT, item TEXT, auditor TEXT,
+  disposition TEXT, note TEXT, decided_at TEXT, created_at TEXT);
+CREATE TABLE IF NOT EXISTS evaluation_adjustments(
+  id INTEGER PRIMARY KEY AUTOINCREMENT, source_id TEXT, evaluation_id INTEGER,
+  field TEXT, from_value INTEGER, to_value INTEGER, reason TEXT, created_at TEXT);
+CREATE TABLE IF NOT EXISTS reeval_queue(
+  id INTEGER PRIMARY KEY AUTOINCREMENT, source_id TEXT, candidate_id TEXT,
+  reason TEXT, created_at TEXT, done_at TEXT);
 CREATE TABLE IF NOT EXISTS runs(
   run_id TEXT PRIMARY KEY, started_at TEXT, finished_at TEXT, config_version TEXT, config_hash TEXT,
   as_of TEXT, params_json TEXT, counts_json TEXT, status TEXT, duration_sec REAL);
@@ -915,6 +925,79 @@ class Store:
                 d[k[:-5]] = json.loads(d.pop(k) or "null")
             out.append(d)
         return out
+
+    # --- 監査レビュー (段階B): 処分・調整・再評価予約の追加層 ---
+    # 設計: REVIEW_DESIGN.md (監査レビュー+調整レイヤー)。3テーブルとも
+    # append-only で、元評価・監査の行には触らない。取り込みの冪等性は
+    # ページ側が発行する source_id (UUID) で担保する: 同じ source_id で
+    # 内容が同じなら二重に入れず、内容が変わっていれば (処分の変更・
+    # 調整の変更・取り消し) 新しい行を足し、「最新の行が有効」とする
+    def add_review_decision(self, rec):
+        """処分を1件記録する。新規に記録できたら True、同一内容の再送なら False。"""
+        row = self.conn.execute(
+            "SELECT disposition, note FROM review_decisions WHERE source_id=? "
+            "ORDER BY id DESC LIMIT 1", (rec["source_id"],)).fetchone()
+        if row and row[0] == rec["disposition"] and (row[1] or "") == (rec.get("note") or ""):
+            return False
+        self.conn.execute(
+            "INSERT INTO review_decisions(source_id,evaluation_id,audit_id,check_name,item,"
+            "auditor,disposition,note,decided_at,created_at) VALUES(?,?,?,?,?,?,?,?,?,?)",
+            (rec["source_id"], rec["evaluation_id"], rec.get("audit_id"), rec.get("check"),
+             rec.get("item"), rec.get("auditor"), rec["disposition"], rec.get("note") or "",
+             rec.get("decided_at"), now_iso()))
+        self.conn.commit()
+        return True
+
+    def add_adjustment(self, rec):
+        """TRL 調整を1件記録する。新規に記録できたら True、同一内容の再送なら False。"""
+        row = self.conn.execute(
+            "SELECT to_value, reason FROM evaluation_adjustments WHERE source_id=? "
+            "ORDER BY id DESC LIMIT 1", (rec["source_id"],)).fetchone()
+        if row and row[0] == rec["to_value"] and (row[1] or "") == (rec.get("reason") or ""):
+            return False
+        self.conn.execute(
+            "INSERT INTO evaluation_adjustments(source_id,evaluation_id,field,from_value,"
+            "to_value,reason,created_at) VALUES(?,?,?,?,?,?,?)",
+            (rec["source_id"], rec["evaluation_id"], rec.get("field") or "trl_level",
+             rec.get("from_value"), rec["to_value"], rec.get("reason") or "", now_iso()))
+        self.conn.commit()
+        return True
+
+    def latest_adjustment(self, evaluation_id):
+        """評価への最新の調整行 (無ければ None)。その行が有効か (取り消しは
+        to_value が元の TRL と同じ行で表す) の判定は trlcore/review 側で行う。"""
+        row = self.conn.execute(
+            "SELECT * FROM evaluation_adjustments WHERE evaluation_id=? "
+            "ORDER BY id DESC LIMIT 1", (evaluation_id,)).fetchone()
+        return dict(row) if row else None
+
+    def enqueue_reeval(self, source_id, candidate_id, reason):
+        """再評価予約をキューに入れる。同じ source_id の取り込み済み、または
+        その候補に未完了の予約が既にある場合は何もせず False。"""
+        if source_id and self.conn.execute(
+                "SELECT 1 FROM reeval_queue WHERE source_id=?", (source_id,)).fetchone():
+            return False
+        if self.conn.execute(
+                "SELECT 1 FROM reeval_queue WHERE candidate_id=? AND done_at IS NULL",
+                (candidate_id,)).fetchone():
+            return False
+        self.conn.execute(
+            "INSERT INTO reeval_queue(source_id,candidate_id,reason,created_at) VALUES(?,?,?,?)",
+            (source_id, candidate_id, reason, now_iso()))
+        self.conn.commit()
+        return True
+
+    def pending_reeval(self):
+        """未完了の再評価予約を取り込み順に返す。"""
+        return [dict(r) for r in self.conn.execute(
+            "SELECT * FROM reeval_queue WHERE done_at IS NULL ORDER BY id")]
+
+    def mark_reeval_done(self, candidate_id):
+        """その候補の未完了の予約を消化済みにする (実際に再評価された時点で呼ぶ)。"""
+        self.conn.execute(
+            "UPDATE reeval_queue SET done_at=? WHERE candidate_id=? AND done_at IS NULL",
+            (now_iso(), candidate_id))
+        self.conn.commit()
 
     # --- runs ---
     def start_run(self, run_id, config_version, config_hash, as_of, params):

@@ -77,6 +77,22 @@
     "llm_provider",
     "llm_model"
   ],
+  "evaluation_optional": [
+    "adjustment"
+  ],
+  "adjustment": [
+    "field",
+    "from_value",
+    "to_value",
+    "reason",
+    "adjusted_at",
+    "status",
+    "total",
+    "band",
+    "axes",
+    "business_stage",
+    "total_scope"
+  ],
   "item": [
     "score",
     "reason",

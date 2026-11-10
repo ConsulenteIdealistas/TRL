@@ -2,10 +2,12 @@
 /* 監査レビューページ (段階A): data.json の audit (最新の long 評価に紐づく
    監査結果) を読み、要確認/グレーへの処分・再評価の予約・TRL の読み替え
    (調整) を端末内 (localStorage: trl-review) に記録する。
-   DB への反映は段階B で review_inbox.json 経由になるため、このページは
-   記録と「反映用 JSON」の書き出しまでを担う。元の評価・監査の記録は
-   ここでは一切変更しない (非破壊)。調整はこのページ内だけの表示で、
-   一覧・詳細の通常表示には影響しない。 */
+   DB への反映は段階B で review_inbox.json 経由 (パイプライン開始時に
+   取り込み) になるため、このページは記録と「反映用 JSON」の書き出しまでを
+   担う。元の評価・監査の記録はここでは一切変更しない (非破壊)。
+   取り込まれた調整は詳細ページの通常表示に「調整後の値 (元: ○)」の
+   併記として出る。処分の状態表示はこのページ内では localStorage 側の
+   記録が正で、DB 側の取り込み結果はページへは戻らない (段階B の範囲)。 */
 const $ = s => document.querySelector(s);
 const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
 const jst = iso => { try { return new Date(iso).toLocaleString("ja-JP", {timeZone: "Asia/Tokyo", hour12: false}); } catch (e) { return iso; } };
@@ -45,6 +47,11 @@ function newId() {
 const entryKey = (a, e) => `${a.evaluation_id}:${e.check || ""}:${e.item || ""}`;
 const decisionOf = (a, e) => review.decisions[entryKey(a, e)] || null;
 const adjDraft = {};  // 調整の下書き (未設定の選択・理由)。永続化は設定時に行う
+/* 調整の有効判定: 取り消しは記録を消さず「to_value = 元値 (from_value)」の
+   形で残す (設計書3節の統一形)。inbox の取り込み (段階B) は追記専用で、
+   行の不在は「未送信」と区別できないため、消してしまうと DB 側へ取り消しが
+   伝わらない。有効な調整として数えるのは to_value が元値と異なるものだけ */
+const activeAdj = eid => { const a = review.adjustments[eid]; return a && a.to_value !== a.from_value ? a : null; };
 
 function buildInbox() {
   const decisions = Object.values(review.decisions).filter(r => r && r.disposition).map(r => ({
@@ -110,7 +117,7 @@ function cardState(c) {
           // イベント側の評価 ID では引けないため自然に付かない
           reserved: !!(review.reeval[c.p.id] && review.reeval[c.p.id].on)
                     && (c.kind === "long" || viewState.kind !== "all"),
-          adjusted: !!review.adjustments[evalId]};
+          adjusted: !!activeAdj(evalId)};
 }
 function applyView(list) {
   const f = viewState.filter;
@@ -181,7 +188,7 @@ function renderCov() {
     for (const k of Object.keys(byDisp)) if (st.disp[k]) byDisp[k]++;
   }
   const reev = Object.values(review.reeval).filter(r => r && r.on).length;
-  const adj = Object.keys(review.adjustments).length;
+  const adj = Object.values(review.adjustments).filter(a => a && a.to_value !== a.from_value).length;
   $("#cov").innerHTML =
     `<div class="stat y"><small>要確認のある評価</small><strong>${flagN}</strong><em>件</em></div>` +
     `<div class="stat x"><small>グレーのある評価</small><strong>${grayN}</strong><em>件</em></div>` +
@@ -221,14 +228,15 @@ function auditBlockHtml(a) {
 function adjustHtml(p, evalId) {
   const lv = p.long && p.long.trl_level ? p.long.trl_level.level : null;
   if (!ok(lv)) return `<div><strong style="font-size:13px">TRL 調整（読み替え）</strong><p class="hint" style="margin-top:4px">TRL が未確定の評価には読み替えを設定できません。</p></div>`;
-  const adj = review.adjustments[evalId] || null;
+  const rec = review.adjustments[evalId] || null;
+  const adj = rec && rec.to_value !== rec.from_value ? rec : null;
   const draft = adjDraft[evalId] || {};
   const selVal = adj ? adj.to_value : (draft.to ?? "");
-  const reason = adj ? (adj.reason || "") : (draft.reason ?? "");
+  const reason = adj ? (adj.reason || "") : (draft.reason ?? (rec ? rec.reason || "" : ""));
   const opts = `<option value="">読み替え先…</option>` + Array.from({length: 9}, (_, i) => i + 1)
     .map(n => `<option value="${n}" ${String(selVal) === String(n) ? "selected" : ""}>TRL ${n}</option>`).join("");
   return `<div>
-    <div class="adjrow"><strong style="font-size:13px">TRL 調整（読み替え）</strong>${adj ? `<span class="adjnow">調整: TRL ${adj.from_value} → ${adj.to_value}</span>` : ""}</div>
+    <div class="adjrow"><strong style="font-size:13px">TRL 調整（読み替え）</strong>${adj ? `<span class="adjnow">調整: TRL ${adj.from_value} → ${adj.to_value}</span>` : ""}${rec && !adj ? `<span class="hint">取り消し済み（反映用 JSON で DB 側の調整も取り消されます）</span>` : ""}</div>
     <div class="adjrow" style="margin-top:6px">
       <select class="tsel" data-adjsel="${evalId}">${opts}</select>
       <input class="tin" data-adjreason="${evalId}" placeholder="調整理由（必須）" value="${esc(reason)}">
@@ -362,7 +370,13 @@ document.addEventListener("click", ev => {
   }
   const clrBtn = ev.target.closest("[data-adjclear]");
   if (clrBtn) {
-    delete review.adjustments[clrBtn.dataset.adjclear];
+    const rec = review.adjustments[clrBtn.dataset.adjclear];
+    if (rec) {
+      // 取り消しは記録を消さず「to_value = 元値」にして残す (activeAdj 参照)。
+      // 次回の反映用 JSON にこの行が入ることで、DB 側の調整も取り消される
+      rec.to_value = rec.from_value;
+      rec.updated_at = new Date().toISOString();
+    }
     delete adjDraft[clrBtn.dataset.adjclear];
     saveReview(); render();
   }

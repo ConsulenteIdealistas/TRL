@@ -281,6 +281,38 @@ class IdentifiersWithoutRowidTests(unittest.TestCase):
         store.close()
 
 
+class LegacyLlmAuditPurgeTests(unittest.TestCase):
+    """廃止済み LLM 監査 (auditor_provider='gemini') の起動時抹消と冪等性。"""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.path = Path(self.tmp.name) / "t.sqlite"
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def _providers(self, store):
+        return sorted(r[0] for r in store.conn.execute(
+            "SELECT auditor_provider FROM audit_results"))
+
+    def test_gemini_rows_purged_others_kept_idempotent(self):
+        store = Store(self.path)
+        for i, prov in enumerate(("gemini", "rules", "api")):
+            store.add_audit_result({
+                "evaluation_id": 100 + i, "candidate_id": "c1", "run_id": "r1",
+                "auditor_provider": prov, "auditor_model": f"m-{prov}",
+                "prompt_sha": f"sha-{prov}", "flags": [], "summary": ""})
+        store.close()
+
+        store = Store(self.path)  # 開いた時点で gemini 行だけが抹消される
+        self.assertEqual(self._providers(store), ["api", "rules"])
+        store.close()
+
+        store = Store(self.path)  # 再オープンしても変わらない (冪等)
+        self.assertEqual(self._providers(store), ["api", "rules"])
+        store.close()
+
+
 class DedupeStoreTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()

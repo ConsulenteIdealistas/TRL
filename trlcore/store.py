@@ -148,6 +148,7 @@ class Store:
     def _migrate(self):
         """既存DBに後から追加した列を足す(CREATE TABLE IF NOT EXISTS では増えないため)。"""
         self._identifiers_without_rowid()
+        self._purge_legacy_llm_audit()
         cols = {r[1] for r in self.conn.execute("PRAGMA table_info(evaluations)")}
         if "extra_json" not in cols:
             self.conn.execute("ALTER TABLE evaluations ADD COLUMN extra_json TEXT")
@@ -189,6 +190,19 @@ class Store:
         except Exception:
             self.conn.execute("ROLLBACK")
             raise
+
+    def _purge_legacy_llm_audit(self):
+        """廃止済み LLM 監査の記録 (audit_results の auditor_provider='gemini')
+        を抹消する (冪等)。
+
+        LLM 監査は 2026-11-06 に完全廃止した。残存記録は監査の枠を圧迫する
+        だけのノイズであり、監査記録は再現可能なもの (決定的な規則・API
+        照合) だけが正格であるという理由から、非破壊原則の例外として
+        泰崇が抹消を明示承認した (2026-11-11、対象はこのカテゴリ限定)。
+        rules / api の行には触らない。削除後は対象行が 0 件になるため
+        再実行しても何も起きない。"""
+        self.conn.execute(
+            "DELETE FROM audit_results WHERE auditor_provider = 'gemini'")
 
     def set_translation(self, cid, title_ja, abstract_ja, title_by=None, abstract_by=None):
         """訳文と、その出典(どの経路で訳したか)を保存する。出典は項目別に記録する。"""

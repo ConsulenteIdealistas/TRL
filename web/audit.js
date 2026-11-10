@@ -13,6 +13,7 @@ const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "
 const jst = iso => { try { return new Date(iso).toLocaleString("ja-JP", {timeZone: "Asia/Tokyo", hour12: false}); } catch (e) { return iso; } };
 const ok = t => Number.isInteger(t) && t >= 1 && t <= 9;
 const SL = {final: "選定可能", review: "要追加調査", hold: "保留", pending: "未評価", error: "エラー", rejected: "除外"};
+const PL = {rules: "規則監査", api: "API照合"};  // 監査 provider の表示名 (未知の provider は名前をそのまま出す)
 const CL = {space: "宇宙", bio: "バイオ", semiconductor: "半導体", ai: "AI", robotics: "ロボティクス", energy: "エネルギー・蓄電池", quantum: "量子技術", defense: "防衛"};
 const IL = {technology_readiness: "技術成熟度", technological_advantage: "技術的優位性", monetization: "収益化能力",
   market_growth: "市場成長性", financial_sustainability: "財務的持続可能性", moat_durability: "競争優位性の持続性",
@@ -219,7 +220,7 @@ function entryHtml(a, e) {
 }
 
 function auditBlockHtml(a) {
-  const who = a.provider === "rules" ? "規則監査" : "LLM監査";
+  const who = PL[a.provider] || a.provider || "";
   const head = `${who} ${esc(a.auditor || "")}${a.version ? `（版 ${esc(a.version)}）` : ""}`;
   const entries = a.entries.length ? a.entries.map(e => entryHtml(a, e)).join("")
     : `<p class="hint" style="margin-top:8px">この監査では何も挙がりませんでした。</p>`;

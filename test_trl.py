@@ -957,6 +957,39 @@ class NewsPoolTests(unittest.TestCase):
         self.assertIn(fresh, sel_ids)
         store.close()
 
+    def test_selection_reeval_requires_material_update(self):
+        # TH-1 案D: 再評価間隔 (14日) を越えても、材料更新が無い候補は
+        # 自動再評価の対象にならない。旧ルールで適格だった見送り分は
+        # stats に観測用として数える
+        store = Store(self.path)
+
+        def add(sid, status, eval_at, updated=None):
+            rec, _ = normalize(raw(sid=sid), "2026-10-20T00:00:00+00:00")
+            cid, _ = store.upsert_candidate(rec, "r0")
+            store.set_entities(cid, link_entities(rec, CFG.get("entities", {})))
+            store.set_status(cid, status, eval_at=eval_at)
+            if updated:
+                store.conn.execute("UPDATE candidates SET material_updated_at=? WHERE id=?",
+                                   (updated, cid))
+                store.conn.commit()
+            return cid
+
+        # 30日前に評価済み (間隔経過) で材料更新なし → 見送り (観測対象)
+        stale_ev = add("2610.9521", "evaluated", "2026-09-20T00:00:00+00:00")
+        # 30日前に保留、材料更新は評価より前 → 見送り (観測対象)
+        stale_hold = add("2610.9522", "hold", "2026-09-20T00:00:00+00:00",
+                         updated="2026-09-01T00:00:00+00:00")
+        # 30日前に評価済み、材料が評価後に更新 → 再評価対象
+        fresh_ev = add("2610.9523", "evaluated", "2026-09-20T00:00:00+00:00",
+                       updated="2026-10-19T00:00:00+00:00")
+        stats = {}
+        sel_ids = [c["id"] for c in select_for_eval(store, CFG, AS_OF, 10, stats=stats)]
+        self.assertNotIn(stale_ev, sel_ids)
+        self.assertNotIn(stale_hold, sel_ids)
+        self.assertIn(fresh_ev, sel_ids)
+        self.assertEqual(stats.get("reeval_skipped_no_material_update"), 2)
+        store.close()
+
     def test_selection_only_new_mode(self):
         store = Store(self.path)
 
@@ -968,10 +1001,16 @@ class NewsPoolTests(unittest.TestCase):
             return cid
 
         fresh = add("2610.9601", "screened")  # 一度も評価されていない
-        old_hold = add("2610.9602", "hold", eval_at="2026-09-01T00:00:00+00:00")  # 間隔経過済みで通常は再評価対象
+        # 間隔は経過済みだが材料更新が無い候補は、案Dでは再評価対象にならない
+        old_hold = add("2610.9602", "hold", eval_at="2026-09-01T00:00:00+00:00")
+        upd_hold = add("2610.9603", "hold", eval_at="2026-09-01T00:00:00+00:00")
+        store.conn.execute("UPDATE candidates SET material_updated_at=? WHERE id=?",
+                           ("2026-10-19T00:00:00+00:00", upd_hold))
+        store.conn.commit()
         both = [c["id"] for c in select_for_eval(store, CFG, AS_OF, 10)]
         self.assertIn(fresh, both)
-        self.assertIn(old_hold, both)
+        self.assertNotIn(old_hold, both)
+        self.assertIn(upd_hold, both)
         only = [c["id"] for c in select_for_eval(store, CFG, AS_OF, 10, only_new=True)]
         self.assertEqual(only, [fresh])
         store.close()
@@ -1134,7 +1173,7 @@ class IntegrationTests(unittest.TestCase):
         self.assertEqual(ev1["config_version"], CFG["config_version"])
         store.close()
 
-        # 再実行: 候補は増えず、保留は再評価間隔内なので再評価されない。キューは残る
+        # 再実行: 候補は増えず、保留は材料更新が無いので再評価されない。キューは残る
         store = Store(self.path)
         r2 = run_pipeline(store, self.cfg(), llm, as_of=AS_OF, kinds=("long",), fetchers=self.fetchers(),
                           today=AS_OF, log=lambda *_: None)
@@ -1143,10 +1182,14 @@ class IntegrationTests(unittest.TestCase):
         self.assertEqual(r2["counts"]["selected"], 0)
         self.assertEqual(len(store.list_queue()), 2)
 
-        # 間隔経過後に情報が揃えば確定し、キューは解消
-        # 評価日時は実時計で刻まれるため、「間隔経過後」は実日付基準で
-        # 決める (固定日だと実行日が進むにつれて間隔内に戻ってしまう)
+        # 材料更新後に情報が揃えば確定し、キューは解消
+        # (案D: 自動再評価は材料更新がある場合に限る)。評価日時は実時計で
+        # 刻まれるため、材料更新の印は実日付の翌日に置く (固定日だと
+        # 実行日が進むにつれて評価日時より前になってしまう)
         later = date.today() + timedelta(days=15)
+        upd = (date.today() + timedelta(days=1)).isoformat()
+        store.conn.execute("UPDATE candidates SET material_updated_at=? WHERE status='hold'", (upd,))
+        store.conn.commit()
         llm2 = Mock(make_llm_fn(long_scores={k: 65 for k in LONG_KEYS}))
         r3 = run_pipeline(store, self.cfg(), llm2, as_of=AS_OF, kinds=("long",), do_collect=False, today=later,
                           log=lambda *_: None)
@@ -1276,6 +1319,11 @@ class IntegrationTests(unittest.TestCase):
         cfg2 = self.cfg()
         cfg2["scoring"] = json.loads(json.dumps(CFG["scoring"]))
         cfg2["scoring"]["llm"] = {**(cfg2["scoring"].get("llm") or {}), "run_budget_sec": 1}
+        # 案Dでは時間経過だけでは再評価されないため、材料更新があった
+        # 状況を模す (評価日時は実時計なので印は実日付の翌日)
+        upd = (date.today() + timedelta(days=1)).isoformat()
+        store.conn.execute("UPDATE candidates SET material_updated_at=? WHERE status='evaluated'", (upd,))
+        store.conn.commit()
         r2 = run_pipeline(store, cfg2, llm, as_of=AS_OF, kinds=("long",), do_collect=False,
                           today=date.today() + timedelta(days=15), log=lambda *_: None)
         # 締め切り (1秒) のため評価は打ち切られる (選定は run レコードに記録される)

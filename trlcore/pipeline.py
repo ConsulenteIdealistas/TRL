@@ -904,7 +904,7 @@ def has_demo_signal(c):
     return any(t in text for t in DEMO_SIGNAL_TERMS)
 
 
-def select_for_eval(store, cfg, today, limit, retry_failed="no", only_new=False):
+def select_for_eval(store, cfg, today, limit, retry_failed="no", only_new=False, stats=None):
     sc = cfg["scoring"]["screening"]
     rows = []
 
@@ -951,18 +951,28 @@ def select_for_eval(store, cfg, today, limit, retry_failed="no", only_new=False)
             if not force_retry and c["retry_count"] >= sc["max_retries"]:
                 continue
 
-        # 保留・評価済み(final)候補は、再評価間隔が経過するまで選ばない。
-        # ただし材料が前回評価より後に更新された候補(治験の結果公表など)は、
-        # 間隔を待たずに優先して再評価する(結果待ちの解消を拾うため)。
+        # 保留・評価済み(final)候補の自動再評価は、材料が前回評価より後に
+        # 更新された場合に限る (TH-1 案D)。時間経過だけでは適格にならない:
+        # 判定が変わりうるのは根拠の材料が変わったときだけで、同一材料への
+        # 再判定は観測としての情報を持たないため。材料更新の判定は従来の
+        # バイパス条件 (material_updated_at が前回評価より後) をそのまま使う。
+        # 監査レビューの再評価予約 (人間の処分) がある候補は対象外で、
+        # 従来どおり予約の作成日時 (処分日) を起点とする間隔ゲートで扱う
+        # (TA-2。予約自体は run_pipeline 側で選定の先頭にも差し込まれる)。
         if c["status"] in ("hold", "evaluated"):
             last = parse_date((c["last_eval_at"] or "")[:10])
-            # ゲートの起点: 通常は最後の評価日時。未消化の再評価予約が
-            # ある候補は予約の作成日時 (処分日) から数える (TA-2)
-            gate_base = reeval_since.get(c["id"], last)
-            if gate_base and (today - gate_base).days < sc["reeval_after_days"]:
-                upd = parse_date((c.get("material_updated_at") or "")[:10])
-                if not (upd and upd > last):
-                    continue
+            upd = parse_date((c.get("material_updated_at") or "")[:10])
+            if c["id"] in reeval_since:
+                if (today - reeval_since[c["id"]]).days < sc["reeval_after_days"]:
+                    if not (upd and last and upd > last):
+                        continue
+            elif last is not None and not (upd and upd > last):
+                # 旧ルールでは間隔を越えれば適格だった候補が、材料更新が
+                # 無く見送られた件数は観測用に数える (滞留の検知)
+                if stats is not None and (today - last).days >= sc["reeval_after_days"]:
+                    stats["reeval_skipped_no_material_update"] = \
+                        stats.get("reeval_skipped_no_material_update", 0) + 1
+                continue
 
         rows.append(c)
 
@@ -1152,8 +1162,11 @@ def run_pipeline(store, cfg, llm, *, as_of, sources=("pubmed", "arxiv"), kinds=(
         counts["rejected" if reason else "screened"] += 1
     limit = max_eval if max_eval is not None else cfg["scoring"]["screening"]["max_eval_per_run"]
     selected = select_for_eval(
-    store, cfg, today, limit, retry_failed=retry_failed, only_new=only_new
+    store, cfg, today, limit, retry_failed=retry_failed, only_new=only_new, stats=counts
 )
+    if counts.get("reeval_skipped_no_material_update"):
+        log(f"[eval] 材料更新が無いため再評価を見送った候補 "
+            f"{counts['reeval_skipped_no_material_update']} 件 (TH-1 案D)")
     # 引き継ぎ: 前回の実行が異常終了 (interrupted/partial/error) か、評価フェーズが
     # 打ち切られて (counts の llm_degraded) 選定が記録されていたら、その未完分を
     # 今回の選定の先頭に置く。前回の実行で評価が保存された候補は完了扱いで除く
@@ -1336,7 +1349,7 @@ def run_pipeline(store, cfg, llm, *, as_of, sources=("pubmed", "arxiv"), kinds=(
                         store.resolve_queue(c["id"], kind)
                     else:
                         store.upsert_queue(c["id"], kind, _queue_reason(res), res["missing"] or res["errors"],
-                                           res["next_sources"], res["reeval_conditions"] or ["追加情報の取得後、または再評価間隔の経過後"],
+                                           res["next_sources"], res["reeval_conditions"] or ["追加情報の取得後"],
                                            datetime.now(timezone.utc).isoformat(timespec="seconds"), res["prompt_versions"])
                     log(f"[eval] {c['id']} {kind}: {res['status']} total={res['total']} errors={res['errors']} "
                         f"missing={res['missing']} critical_missing={res['critical_missing']}")

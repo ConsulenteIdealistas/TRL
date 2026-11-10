@@ -138,3 +138,39 @@ class ExportTests(StoreFixture):
         self.assertIn("border-color:transparent", on)
         # --accent は style.css 側でも定義し、両テーマで解決できるようにする
         self.assertIn("--accent:#4a6cf7", css)
+    def test_state_chips_paint_state_color_only_when_on(self):
+        # 状態色チップ (評価状態 #fsc / 方向性 #fdc / TRL「判定済み」 #ftc) は
+        # 普段は他のチップと同じ見た目 (未選択の色文字指定は持たない) にし、
+        # 選択時にだけ一般チップの accent 塗りと同じ形 (ソリッド塗り+白文字+
+        # 枠透明) で、塗り色を統計・バッジと同じ状態色に置き換える。
+        # テーマ別の上書きも持たず、両テーマで同じ塗りに統一する。
+        import re
+        css = (T.ROOT / "web" / "style.css").read_text(encoding="utf-8")
+        # この3グループの button セレクタは全て .on のものだけが残る
+        # (未選択の色文字ルールや :not(.on) ルールが無いことの担保)
+        sels = re.findall(r"#(?:fsc|fdc|ftc) button[^{]*\{", css)
+        self.assertTrue(sels)
+        for sel in sels:
+            self.assertIn(".on", sel)
+        self.assertNotIn(":not(.on)", css)
+        # 各状態の .on は状態色のソリッド塗り+白文字+枠透明 (全マッチ共通)
+        fills = {"final": "#087b5a", "positive": "#087b5a",
+                 "review": "#087eaf", "hold": "#a96500", "mixed": "#a96500",
+                 "pending": "#c87a00", "error": "#b52f49",
+                 "negative": "#b52f49", "rejected": "#607080",
+                 "none": "#607080"}
+        for v, color in fills.items():
+            bodies = re.findall(
+                r'button\[data-v="%s"\]\.on[^{]*\{([^}]*)\}' % v, css)
+            self.assertTrue(bodies, v)
+            for body in bodies:
+                self.assertIn("background:" + color, body)
+                self.assertIn("color:#fff", body)
+                self.assertIn("border-color:transparent", body)
+        # 「判定済み」は :root の --pk 実値 (#db2777) で塗る。ダーク側の
+        # 文字色用 --pk (#f472b6) は白文字が沈むため塗りに使わない
+        bodies = re.findall(r'#ftc button\[data-l="all"\]\.on\{([^}]*)\}', css)
+        self.assertEqual(len(bodies), 1)
+        self.assertIn("background:#db2777", bodies[0])
+        self.assertIn("color:#fff", bodies[0])
+        self.assertIn("border-color:transparent", bodies[0])

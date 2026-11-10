@@ -26,7 +26,8 @@
         "pubmed": "UCB[Affiliation]",
         "sponsor": "UCB Pharma"
       },
-      "stage": "commercial"
+      "stage": "commercial",
+      "lei": "2138008J191VLSGY5A09"
     },
     {
       "aliases": [
@@ -52,7 +53,8 @@
         "pubmed": "argenx[Affiliation]",
         "sponsor": "argenx"
       },
-      "stage": "commercial"
+      "stage": "commercial",
+      "lei": "7245009C5FZE6G9ODQ71"
     },
     {
       "aliases": [
@@ -75,7 +77,8 @@
         "news_name": "Hyloris Pharmaceuticals",
         "sponsor": "Hyloris Pharmaceuticals"
       },
-      "stage": "production"
+      "stage": "production",
+      "lei": "875500LZIWS7QEQE0I73"
     },
     {
       "id": "onward_medical",
@@ -101,7 +104,8 @@
         ],
         "sponsor": "Onward Medical"
       },
-      "stage": "production"
+      "stage": "production",
+      "lei": "9845007A2CC4C8BFSB80"
     },
     {
       "id": "melexis",
@@ -127,7 +131,8 @@
         ],
         "pubmed": "Melexis[Affiliation]"
       },
-      "stage": "commercial"
+      "stage": "commercial",
+      "lei": "549300QRPSGOJRPUFO80"
     }
   ]
 }

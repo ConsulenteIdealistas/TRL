@@ -63,6 +63,10 @@ def validate_entities(data):
         stage = entity.get("stage")
         if stage is not None and stage not in STAGES:
             raise ConfigError(f"entities[{i}].stage must be one of {STAGES}")
+        lei = entity.get("lei")
+        if lei is not None and (not isinstance(lei, str) or not re.fullmatch(r"[0-9A-Z]{18}[0-9]{2}", lei)):
+            # ESEF 収集器の照合キー (ISO 17442: 20桁、末尾2桁は検査数字)
+            raise ConfigError(f"entities[{i}].lei must be a 20-character LEI")
         tags = entity.get("tags")
         if tags is not None and (not isinstance(tags, list)
                                  or any(not isinstance(t, str) or not re.fullmatch(r"[a-z0-9_]+", t) for t in tags)):

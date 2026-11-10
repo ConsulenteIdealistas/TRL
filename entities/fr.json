@@ -23,7 +23,8 @@
         ],
         "news_name": "Soitec"
       },
-      "stage": "commercial"
+      "stage": "commercial",
+      "lei": "969500ZR92SQCU9TST26"
     },
     {
       "aliases": [
@@ -47,7 +48,8 @@
         "pubmed": "Ipsen[Affiliation]",
         "sponsor": "Ipsen"
       },
-      "stage": "commercial"
+      "stage": "commercial",
+      "lei": "549300M6SGDPB4Z94P11"
     },
     {
       "aliases": [
@@ -75,7 +77,8 @@
         "pubmed": "Innate Pharma[Affiliation]",
         "sponsor": "Innate Pharma"
       },
-      "stage": "demo"
+      "stage": "demo",
+      "lei": "9695002Y8420ZB8HJE29"
     },
     {
       "aliases": [
@@ -102,7 +105,8 @@
         "pubmed": "Valneva[Affiliation]",
         "sponsor": "Valneva"
       },
-      "stage": "commercial"
+      "stage": "commercial",
+      "lei": "969500DIVIP5VKNW4948"
     },
     {
       "aliases": [
@@ -127,7 +131,8 @@
         ],
         "news_name": "Eutelsat"
       },
-      "stage": "commercial"
+      "stage": "commercial",
+      "lei": "549300EFWH9UR17YSK05"
     },
     {
       "aliases": [
@@ -150,7 +155,8 @@
         "pubmed": "Abivax[Affiliation]",
         "sponsor": "Abivax"
       },
-      "stage": "demo"
+      "stage": "demo",
+      "lei": "969500D8TMNB184OJU95"
     },
     {
       "aliases": [
@@ -174,7 +180,8 @@
         "pubmed": "Genfit[Affiliation]",
         "sponsor": "Genfit"
       },
-      "stage": "production"
+      "stage": "production",
+      "lei": "969500XPWN2DMZQA5X73"
     },
     {
       "aliases": [
@@ -197,7 +204,8 @@
         "pubmed": "Inventiva[Affiliation]",
         "sponsor": "Inventiva Pharma"
       },
-      "stage": "demo"
+      "stage": "demo",
+      "lei": "969500I9Y690B3FZW590"
     },
     {
       "aliases": [
@@ -221,7 +229,8 @@
         "pubmed": "Nanobiotix[Affiliation]",
         "sponsor": "Nanobiotix"
       },
-      "stage": "demo"
+      "stage": "demo",
+      "lei": "969500667RSYIH8YL895"
     },
     {
       "aliases": [
@@ -247,7 +256,8 @@
         "pubmed": "OSE Immunotherapeutics[Affiliation]",
         "sponsor": "OSE Immunotherapeutics"
       },
-      "stage": "demo"
+      "stage": "demo",
+      "lei": "969500HIUWVGY6NZSM05"
     },
     {
       "aliases": [
@@ -270,7 +280,8 @@
         "pubmed": "MedinCell[Affiliation]",
         "sponsor": "MedinCell"
       },
-      "stage": "production"
+      "stage": "production",
+      "lei": "969500R79U6PXCL2FF46"
     },
     {
       "aliases": [
@@ -292,7 +303,8 @@
         "news_name": "LightOn",
         "pubmed": "LightOn[Affiliation]"
       },
-      "stage": "production"
+      "stage": "production",
+      "lei": "9695002GVC14VHLFIH85"
     },
     {
       "id": "lumibird",
@@ -318,7 +330,8 @@
         ],
         "sponsor": "Lumibird"
       },
-      "stage": "commercial"
+      "stage": "commercial",
+      "lei": "969500MLJC3ZSZP4L019"
     },
     {
       "id": "cellectis",
@@ -344,7 +357,8 @@
         ],
         "sponsor": "Cellectis"
       },
-      "stage": "demo"
+      "stage": "demo",
+      "lei": "5493000KKX5VQ37Q2W83"
     },
     {
       "id": "sensorion",
@@ -370,7 +384,8 @@
         ],
         "sponsor": "Sensorion"
       },
-      "stage": "demo"
+      "stage": "demo",
+      "lei": "969500P0W8XJ9CGZDP97"
     },
     {
       "id": "crossject",
@@ -396,7 +411,8 @@
         ],
         "sponsor": "Crossject"
       },
-      "stage": "demo"
+      "stage": "demo",
+      "lei": "969500W1VTFNL2D85A65"
     },
     {
       "id": "planisware",
@@ -418,7 +434,8 @@
           "AI"
         ]
       },
-      "stage": "commercial"
+      "stage": "commercial",
+      "lei": "969500356FAUM2X41Q59"
     },
     {
       "id": "xfab",
@@ -443,7 +460,8 @@
           "SiC"
         ]
       },
-      "stage": "commercial"
+      "stage": "commercial",
+      "lei": "5493003UDPENPUQBJH65"
     },
     {
       "id": "exail",

@@ -24,6 +24,7 @@ from .sources.alphavantage import (DAILY_REQUEST_LIMIT as AV_DAILY_REQUEST_LIMIT
                                    RateLimitError as AvRateLimitError,
                                    alphavantage_enabled, alphavantage_symbol,
                                    fetch_alphavantage)
+from .sources.esef import esef_enabled, fetch_esef
 from .translate import crossed_thresholds, translate_display_set, translate_watch_queue, usage_totals
 from .config import ROOT
 from .review import INBOX_NAME, import_inbox_file
@@ -111,6 +112,15 @@ SIMFIN_LOOKBACK_DAYS = 400
 # 枠から導出して持ち、ここでは持たない (二重管理でずらさない)
 ALPHAVANTAGE_SKIP_DAYS = 30
 ALPHAVANTAGE_LOOKBACK_DAYS = 400
+# ESEF (filings.xbrl.org) 収集 (LEI を持つコア企業が対象。詳細は _collect_esef)。
+# 休止・上限・取得窓の考え方は ROIC と同じ (年次データは年1回しか変わらない)
+ESEF_SKIP_DAYS = 30
+ESEF_MAX_PER_RUN = 10
+ESEF_LOOKBACK_DAYS = 400
+# ESEF の制度圏 (EU + 英国)。スイスは ESEF 対象外。辞書に lei が無い
+# コア企業を「未登録」として数えるための市場集合
+ESEF_MARKETS = frozenset({"GB", "DE", "FR", "SE", "FI", "DK", "NL", "NO", "ES", "BE",
+                          "IT", "IE", "PT", "CZ", "GR", "AT", "PL"})
 # 1回の実行で対象にする社数に上限は置かない: コストは社数ではなく市場数
 # (最大3市場×3ファイル) で決まり、対象社を増やしても追加ダウンロードは
 # 発生しないため、上限で切ると「バルクを落としたのに一部しか使わない」
@@ -201,7 +211,8 @@ def _apply_shallow_windows(cfg):
 
 
 def collect(store, cfg, run_id, as_of, sources, fetchers, counts, log, budget_cap=None,
-            roic_fetcher=None, simfin_fetcher=None, alphavantage_fetcher=None):
+            roic_fetcher=None, simfin_fetcher=None, alphavantage_fetcher=None,
+            esef_fetcher=None):
     d = cfg["sources"]["defaults"]
     now = datetime.now(timezone.utc).isoformat(timespec="seconds")
     jobs = [(sname, q) for q in cfg["sources"]["queries"] for sname in sources if q.get(sname)]
@@ -378,6 +389,10 @@ def collect(store, cfg, run_id, as_of, sources, fetchers, counts, log, budget_ca
     if alphavantage_enabled():
         _collect_alphavantage(store, cfg, run_id, as_of, counts, log, budget, collect_t0,
                               alphavantage_fetcher or fetch_alphavantage)
+    # ESEF (欧州公式開示の年次財務): 補完群の後段で回す (ゲートは esef_enabled)
+    if esef_enabled():
+        _collect_esef(store, cfg, run_id, as_of, counts, log, budget, collect_t0,
+                      esef_fetcher or fetch_esef)
 
 
 def _collect_roic(store, cfg, run_id, as_of, counts, log, budget, collect_t0, fetcher):
@@ -678,6 +693,89 @@ def _collect_alphavantage(store, cfg, run_id, as_of, counts, log, budget, collec
                 counts["alphavantage_deferred"] = rest
                 log(f"[collect] alphavantage: 枠超過のため残り {rest} 社を次回へ回します")
             break
+
+
+def _collect_esef(store, cfg, run_id, as_of, counts, log, budget, collect_t0, fetcher):
+    """ESEF (filings.xbrl.org) による欧州年次財務の収集。
+
+    対象は辞書に LEI を持つコア企業 (LEI は 2026-11-03 のスイープで確定し
+    辞書に登録済み)。公式開示の裏取り源のため ROIC のような「財務ゼロ /
+    Yahoo のみ」への限定はせず、全対象を回すが、優先順位は穴埋めを先に
+    する (財務ゼロ → Yahoo のみ → その他)。記録の流儀は _collect_roic に
+    揃える: 休止は「成功して1件以上取れた」ときだけ (fxo 未収録の企業を
+    「成功・0件」で休止に閉じ込めない)、0件は run_sources に残して静かな
+    0件の検知に乗せる。企業リンクは生成元そのものを strong で付ける。
+    """
+    coverage = store.financial_sources_by_entity()
+    successes = store.last_source_successes_with_fetch("esef")
+    targets, n_rest, n_no_lei = [], 0, 0
+    for e in cfg.get("entities", {}).get("entities", []):
+        if e.get("tier") != "core":
+            continue
+        lei = str(e.get("lei") or "").strip()
+        if not lei:
+            if e.get("market") in ESEF_MARKETS:
+                n_no_lei += 1  # 制度圏なのに LEI 未登録 (スイープ後の昇格企業など)
+            continue
+        att = successes.get(("esef", f"{e['id']}-esef"))
+        if att is not None and (att[1] or 0) > 0:
+            last = parse_date((att[0] or "")[:10])
+            if last is not None and (as_of - last).days < ESEF_SKIP_DAYS:
+                n_rest += 1
+                continue
+        have = coverage.get(e["id"]) or set()
+        prio = 0 if not have else 1 if have == {"yahoo"} else 2
+        targets.append((prio, e, lei))
+    targets.sort(key=lambda t: t[0])  # 安定ソート: 同群は辞書順
+    counts["esef_targets"] = len(targets)
+    counts["esef_skipped_rest"] = n_rest
+    counts["esef_skipped_no_lei"] = n_no_lei
+    if n_no_lei:
+        log(f"[collect] esef: ESEF 圏のコア企業 {n_no_lei} 社に LEI が未登録のため対象外です")
+    now = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    chash = cfg.get("config_hash")
+    done = 0
+    for _prio, e, lei in targets:
+        if done >= ESEF_MAX_PER_RUN or (budget and time.monotonic() - collect_t0 > budget):
+            counts["esef_deferred"] = len(targets) - done
+            log(f"[collect] esef: 上限/予算のため {len(targets) - done} 社を次回へ回します")
+            break
+        done += 1
+        qname = f"{e['id']}-esef"
+        t0 = time.monotonic()
+        err, raws = None, []
+        try:
+            raws = fetcher(lei, 5, ESEF_LOOKBACK_DAYS, as_of) or []
+        except Exception as ex:
+            err = redact(f"{type(ex).__name__}: {ex}")[:300]
+            log(f"::warning::source esef / {qname} failed: {err}")
+        fetched = len(raws) if err is None else 0
+        new = dups = invalid = 0
+        if err is None:
+            for raw in raws:
+                try:
+                    rec, _problems = normalize(raw, now)
+                    if rec is None:
+                        invalid += 1
+                        continue
+                    cid, is_new = store.upsert_candidate(rec, run_id)
+                    store.set_entities(cid, [{"entity_id": e["id"], "strength": "strong",
+                                              "matched_by": "esef", "matched_alias": lei}])
+                    store.set_links_hash(cid, chash)
+                    new += is_new
+                    dups += (not is_new)
+                except Exception as ex:
+                    invalid += 1
+                    log(f"::warning::source esef / {qname}: record skipped: "
+                        f"{redact(f'{type(ex).__name__}: {ex}')[:200]}")
+        elapsed = round(time.monotonic() - t0, 3)
+        store.add_run_source(run_id, "esef", qname, fetched, new, dups, invalid,
+                             err is None, err, elapsed)
+        for k, v in (("fetched", fetched), ("new", new), ("duplicates", dups), ("invalid", invalid)):
+            counts[k] += v
+        counts["sources_ok" if err is None else "sources_failed"] += 1
+        log(f"[collect] esef/{qname}: fetched={fetched} new={new} dup={dups} invalid={invalid}"
+            + (f" ERROR={err}" if err else ""))
 
 
 # 実証・実装の段階を示す語。理論のみの資料には少なく、TRLを決めやすい候補の目印になる

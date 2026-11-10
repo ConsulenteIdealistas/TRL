@@ -24,7 +24,8 @@
     ],
     "openalex": "I4210155862"
    },
-   "stage": "commercial"
+   "stage": "commercial",
+   "lei": "391200Y9EA2FRAPKRQ70"
   },
   {
    "id": "evotec",
@@ -46,7 +47,8 @@
     ],
     "openalex": "I4210130816"
    },
-   "stage": "commercial"
+   "stage": "commercial",
+   "lei": "529900F9KI6OYITO9B12"
   },
   {
    "id": "aixtron",
@@ -74,7 +76,8 @@
     ],
     "openalex": "I2801287017"
    },
-   "stage": "commercial"
+   "stage": "commercial",
+   "lei": "5299004UJ4D51M25LD67"
   },
   {
    "id": "siltronic",
@@ -99,7 +102,8 @@
      "300 mm"
     ]
    },
-   "stage": "commercial"
+   "stage": "commercial",
+   "lei": "5299003NKV26NNGHHR90"
   },
   {
    "id": "formycon",
@@ -125,7 +129,8 @@
      "Ranibizumab"
     ]
    },
-   "stage": "production"
+   "stage": "production",
+   "lei": "39120005TZ76GQOY8Z19"
   },
   {
    "id": "biontech",
@@ -152,7 +157,8 @@
     ],
     "pubmed": "BioNTech[Affiliation]"
    },
-   "stage": "commercial"
+   "stage": "commercial",
+   "lei": "894500UZJ5LG1F8J1U58"
   },
   {
    "id": "sartorius",
@@ -175,7 +181,8 @@
     ],
     "openalex": "I4210117289"
    },
-   "stage": "commercial"
+   "stage": "commercial",
+   "lei": "529900EQV2DY4FOAMU38"
   },
   {
    "id": "suss_microtec",
@@ -202,7 +209,8 @@
     ],
     "openalex": "I4210165638"
    },
-   "stage": "commercial"
+   "stage": "commercial",
+   "lei": "529900C3KRUTSYDK7N87"
   },
   {
    "id": "heidelberg_pharma",
@@ -228,7 +236,8 @@
     ],
     "pubmed": "Heidelberg Pharma[Affiliation]"
    },
-   "stage": "demo"
+   "stage": "demo",
+   "lei": "391200E09XYBYITR1W32"
   },
   {
    "id": "gft",
@@ -250,7 +259,8 @@
     ],
     "pubmed": "GFT Technologies[Affiliation]"
    },
-   "stage": "commercial"
+   "stage": "commercial",
+   "lei": "5299002FNBSGW23ULF72"
   },
   {
    "id": "basler",
@@ -276,7 +286,8 @@
     ],
     "pubmed": "Basler[Affiliation]"
    },
-   "stage": "commercial"
+   "stage": "commercial",
+   "lei": "5299006OKY4JQTOWH448"
   },
   {
    "id": "lpkf",
@@ -302,7 +313,8 @@
     ],
     "pubmed": "LPKF Laser & Electronics[Affiliation]"
    },
-   "stage": "commercial"
+   "stage": "commercial",
+   "lei": "529900BCQXUJL7J96G45"
   },
   {
    "id": "durr",
@@ -327,7 +339,8 @@
      "automation"
     ]
    },
-   "stage": "commercial"
+   "stage": "commercial",
+   "lei": "5299003APZ54EDTSRO20"
   },
   {
    "id": "kion",
@@ -352,7 +365,8 @@
      "Linde"
     ]
    },
-   "stage": "commercial"
+   "stage": "commercial",
+   "lei": "5299005KY91C4C6U9H17"
   },
   {
    "id": "teamviewer",
@@ -374,7 +388,8 @@
      "Dex"
     ]
    },
-   "stage": "commercial"
+   "stage": "commercial",
+   "lei": "3912000FZ0R0KEK9JS42"
   },
   {
    "id": "jenoptik",
@@ -399,7 +414,8 @@
      "semiconductor optics"
     ]
    },
-   "stage": "commercial"
+   "stage": "commercial",
+   "lei": "529900P34GDHGXK6VB37"
   },
   {
    "id": "pva_tepla",
@@ -425,7 +441,8 @@
      "SiC"
     ]
    },
-   "stage": "commercial"
+   "stage": "commercial",
+   "lei": "5299002Y7DARXV2Y4R82"
   },
   {
    "id": "two_g_energy",
@@ -450,7 +467,8 @@
      "hydrogen"
     ]
    },
-   "stage": "commercial"
+   "stage": "commercial",
+   "lei": "529900GC2NUJ6F0TSK26"
   },
   {
    "id": "brain_biotech",
@@ -473,7 +491,8 @@
     ],
     "pubmed": "BRAIN Biotech[Affiliation]"
    },
-   "stage": "production"
+   "stage": "production",
+   "lei": "391200JKPVHLD6JLZ107"
   },
   {
    "id": "eckert_ziegler",
@@ -499,7 +518,8 @@
     ],
     "pubmed": "Eckert & Ziegler[Affiliation]"
    },
-   "stage": "commercial"
+   "stage": "commercial",
+   "lei": "391200EUDABLUKXCKG48"
   },
   {
    "id": "hensoldt",

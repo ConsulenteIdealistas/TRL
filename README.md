@@ -80,6 +80,7 @@ Python 標準ライブラリのみで動作し、運用はスマホのブラウ�
 | `edinet` | EDINET 開示・財務数値（JP のみ） | **プール専用** |
 | `edgar` | SEC EDGAR の財務数値（XBRL、US＋20-F 提出企業） | **プール専用** |
 | `roic` | ROIC.ai の財務数値（年次、キー登録時のみ・財務の穴埋めと裏取り） | **プール専用** |
+| `esef` | filings.xbrl.org の ESEF 年次報告の財務数値（XBRL、LEI を持つコア企業・収集後段のバッチ） | **プール専用** |
 
 ソース別の取得期間（lookback）: trials 180日 / yahoo・edgar 400日 / prtimes 90日 / pubmed・openalex 365日 / edinet 45日。その他は既定30日・最大20件。浅い日（後述）は発見系ソース（pubmed / trials / openalex / prtimes / edinet）の窓を4日に切り詰めます。
 
@@ -312,7 +313,7 @@ python3 trl.py export        # サイト書き出し (data.json + web/, --out �
 python3 trl.py queries       # 生成クエリの一覧
 python3 trl.py check-config  # 設定の検証とハッシュ表示
 python3 trl.py purge --evaluations  # 評価とキューを全削除し候補を未評価に戻す (候補・収集物・実行履歴は残る)
-python3 -m unittest test_trl test_entities test_site test_roic   # テスト
+python3 -m unittest test_trl test_entities test_site test_roic test_esef   # テスト
 ```
 
 ## ファイル構成
@@ -325,7 +326,7 @@ trlcore/                本体パッケージ
   pipeline.py           収集→選定→評価→書き出しの統括
   store.py              SQLite (候補・評価・識別子・実行記録)
   normalize.py          正規化と重複排除キー
-  sources/              各ソースのフェッチャ (pubmed/arxiv/gnews/prtimes/trials/yahoo/openalex/edinet/edgar/roic)
+  sources/              各ソースのフェッチャ (pubmed/arxiv/gnews/prtimes/trials/yahoo/openalex/edinet/edgar/roic/simfin/alphavantage/esef)
   evaluate.py           LLM 応答の検証・評価の実行
   scoring.py            スコア計算 (二軸化・バンド)
   llm.py                LLM プロバイダ (gemini のみ, 代替モデル)
@@ -363,6 +364,7 @@ test_*.py / testutil.py   テスト (共通フィクスチャは testutil.py、�
 | tier 導出 (tiers.py) | test_tiers.py |
 | 企業辞書 (entities.py / entities/) | test_entities.py |
 | ROIC (sources/roic.py) | test_roic.py (+ test_sources.py) |
+| ESEF (sources/esef.py) | test_esef.py |
 | パイプライン・ストア・基盤 (pipeline.py / store.py / normalize.py / http.py 等) | test_trl.py (+ 収集段に触る場合は test_sources.py) |
 
 ## 既知の制約・設計判断

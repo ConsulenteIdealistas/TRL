@@ -24,7 +24,8 @@
       "tags": [
         "medtech"
       ],
-      "stage": "commercial"
+      "stage": "commercial",
+      "lei": "213800IRWQ2Q6M2CDW55"
     },
     {
       "id": "oxford_instruments",
@@ -50,7 +51,8 @@
         ],
         "pubmed": "Oxford Instruments[Affiliation]"
       },
-      "stage": "commercial"
+      "stage": "commercial",
+      "lei": "213800J364EZD6UCE231"
     },
     {
       "id": "genus",
@@ -76,7 +78,8 @@
         ],
         "pubmed": "Genus plc[Affiliation]"
       },
-      "stage": "commercial"
+      "stage": "commercial",
+      "lei": "54930022EOITNKSIGH56"
     },
     {
       "id": "filtronic",
@@ -98,7 +101,8 @@
           "E-band"
         ]
       },
-      "stage": "commercial"
+      "stage": "commercial",
+      "lei": "213800PDQ9V2ZNCDO264"
     },
     {
       "id": "qinetiq",
@@ -122,7 +126,8 @@
         "sponsor": "QinetiQ",
         "pubmed": "QinetiQ[Affiliation]"
       },
-      "stage": "commercial"
+      "stage": "commercial",
+      "lei": "213800S8OBDOZMCMUW34"
     },
     {
       "id": "oxford_biomedica",
@@ -147,7 +152,8 @@
           "cell and gene therapy"
         ]
       },
-      "stage": "commercial"
+      "stage": "commercial",
+      "lei": "213800S1GVQNXQ15K851"
     },
     {
       "id": "iqe",
@@ -173,7 +179,8 @@
       "tags": [
         "photonics"
       ],
-      "stage": "commercial"
+      "stage": "commercial",
+      "lei": "213800Y33WHD3ESJJP16"
     },
     {
       "id": "puretech",
@@ -197,7 +204,8 @@
         ],
         "pubmed": "PureTech Health[Affiliation]"
       },
-      "stage": "production"
+      "stage": "production",
+      "lei": "213800LVPDNO2Z9T9I39"
     },
     {
       "id": "hutchmed",
@@ -222,7 +230,8 @@
         ],
         "pubmed": "Hutchison MediPharma[Affiliation]"
       },
-      "stage": "commercial"
+      "stage": "commercial",
+      "lei": "2138006X34YDQ6OBYE79"
     },
     {
       "id": "avacta",
@@ -245,7 +254,8 @@
           "peptide drug conjugate"
         ]
       },
-      "stage": "demo"
+      "stage": "demo",
+      "lei": "2138009U3EG31OPMGH36"
     },
     {
       "id": "scancell",
@@ -270,7 +280,8 @@
           "Modi-1"
         ]
       },
-      "stage": "demo"
+      "stage": "demo",
+      "lei": "2138008RXEG856SNP666"
     },
     {
       "id": "kainos",
@@ -292,7 +303,8 @@
         ],
         "pubmed": "Kainos[Affiliation]"
       },
-      "stage": "commercial"
+      "stage": "commercial",
+      "lei": "213800H2PQMIF3OVZY47"
     },
     {
       "id": "seeing_machines",
@@ -314,7 +326,8 @@
         ],
         "pubmed": "Seeing Machines[Affiliation]"
       },
-      "stage": "production"
+      "stage": "production",
+      "lei": "549300LNJJPZ2SU7A197"
     },
     {
       "id": "renishaw",
@@ -338,7 +351,8 @@
         "sponsor": "Renishaw",
         "pubmed": "Renishaw[Affiliation]"
       },
-      "stage": "commercial"
+      "stage": "commercial",
+      "lei": "21380048ADXM6Z67CT18"
     },
     {
       "id": "ilika",
@@ -364,7 +378,8 @@
       "tags": [
         "solid_state_battery"
       ],
-      "stage": "demo"
+      "stage": "demo",
+      "lei": "213800TMDNIE3Z8XXD26"
     },
     {
       "id": "invinity",
@@ -388,7 +403,8 @@
           "Endurium"
         ]
       },
-      "stage": "production"
+      "stage": "production",
+      "lei": "213800N2NKOTYUNRCU14"
     },
     {
       "id": "creo_medical",
@@ -414,7 +430,8 @@
         ],
         "sponsor": "Creo Medical"
       },
-      "stage": "production"
+      "stage": "production",
+      "lei": "213800H188ZDCWWXFA21"
     },
     {
       "id": "ocado",
@@ -440,7 +457,8 @@
         ],
         "pubmed": "Ocado[Affiliation]"
       },
-      "stage": "commercial"
+      "stage": "commercial",
+      "lei": "213800LO8F61YB8MBC74"
     },
     {
       "id": "ceres_power",
@@ -466,7 +484,8 @@
         ],
         "pubmed": "Ceres Power[Affiliation]"
       },
-      "stage": "production"
+      "stage": "production",
+      "lei": "213800N7AAHSXQUOA733"
     },
     {
       "id": "netcall",
@@ -488,7 +507,8 @@
           "contact centre"
         ]
       },
-      "stage": "commercial"
+      "stage": "commercial",
+      "lei": "213800GZHEAA98QBJY98"
     },
     {
       "id": "allergy_therapeutics",
@@ -514,7 +534,8 @@
         ],
         "sponsor": "Allergy Therapeutics"
       },
-      "stage": "commercial"
+      "stage": "commercial",
+      "lei": "213800PQ7AHK7KGVOE23"
     },
     {
       "id": "poolbeg",
@@ -538,7 +559,8 @@
         "sponsor": "Poolbeg Pharma PLC",
         "pubmed": "Poolbeg Pharma[Affiliation]"
       },
-      "stage": "rd"
+      "stage": "rd",
+      "lei": "213800UZ8WJLWYHBFL52"
     },
     {
       "id": "craneware",

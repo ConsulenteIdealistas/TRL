@@ -23,7 +23,8 @@
         "pubmed": "PharmaMar[Affiliation]",
         "sponsor": "PharmaMar"
       },
-      "stage": "commercial"
+      "stage": "commercial",
+      "lei": "959800QWKZ45ZQC2AV58"
     },
     {
       "aliases": [
@@ -47,7 +48,8 @@
         "pubmed": "Almirall[Affiliation]",
         "sponsor": "Almirall"
       },
-      "stage": "commercial"
+      "stage": "commercial",
+      "lei": "95980020140005007996"
     },
     {
       "aliases": [
@@ -72,7 +74,8 @@
         "pubmed": "Oryzon[Affiliation]",
         "sponsor": "Oryzon Genomics"
       },
-      "stage": "demo"
+      "stage": "demo",
+      "lei": "95980063R15RDF29DK13"
     },
     {
       "aliases": [
@@ -96,7 +99,8 @@
         "news_name": "Indra",
         "pubmed": "Indra Sistemas[Affiliation]"
       },
-      "stage": "commercial"
+      "stage": "commercial",
+      "lei": "95980020140005308793"
     },
     {
       "aliases": [
@@ -119,7 +123,8 @@
         "news_name": "Grifols",
         "sponsor": "Grifols"
       },
-      "stage": "commercial"
+      "stage": "commercial",
+      "lei": "959800HSSNXWRKBK4N60"
     },
     {
       "id": "atrys",
@@ -146,7 +151,8 @@
         ],
         "pubmed": "Atrys Health[Affiliation]"
       },
-      "stage": "commercial"
+      "stage": "commercial",
+      "lei": "959800HHEE9W4TZA8627"
     },
     {
       "id": "audax",

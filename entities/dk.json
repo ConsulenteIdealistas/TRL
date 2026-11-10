@@ -25,7 +25,8 @@
     ],
     "pubmed": "Genmab[Affiliation]"
    },
-   "stage": "commercial"
+   "stage": "commercial",
+   "lei": "529900MTJPDPE4MHJ122"
   },
   {
    "id": "bavarian_nordic",
@@ -52,7 +53,8 @@
     ],
     "openalex": "I4210101414"
    },
-   "stage": "commercial"
+   "stage": "commercial",
+   "lei": "2138006JCDVYIN6INP51"
   },
   {
    "id": "zealand_pharma",
@@ -76,7 +78,8 @@
     ],
     "openalex": "I4210096064"
    },
-   "stage": "commercial"
+   "stage": "commercial",
+   "lei": "549300ITBB1ULBL4CZ12"
   },
   {
    "id": "gubra",
@@ -99,7 +102,8 @@
     ],
     "pubmed": "Gubra[Affiliation]"
    },
-   "stage": "production"
+   "stage": "production",
+   "lei": "254900T17RRFZONO6W53"
   },
   {
    "id": "alk_abello",
@@ -122,7 +126,8 @@
     ],
     "pubmed": "ALK-Abelló[Affiliation]"
    },
-   "stage": "commercial"
+   "stage": "commercial",
+   "lei": "529900SGCREUZCZ7P020"
   },
   {
    "id": "bioporto",
@@ -147,7 +152,8 @@
      "The NGAL Test"
     ]
    },
-   "stage": "production"
+   "stage": "production",
+   "lei": "5299004SWFL5JAN4W830"
   },
   {
    "id": "chemometec",

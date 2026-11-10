@@ -4,8 +4,15 @@
 には拾われない。元は test_trl.py 冒頭と test_site.py にあったものを
 切り出した。
 """
+import os
+
 import trl as T
 from trl import *  # noqa
+
+# 実辞書 (LEI 登録済み) を使うパイプライン系テストが、収集の後段バッチ
+# (ESEF) 経由で実ネットワークへ出ないようにする。ESEF 自体のテスト
+# (test_esef) は対象範囲だけ明示的に有効化する
+os.environ.setdefault("TRL_ESEF_DISABLE", "1")
 from types import SimpleNamespace as NS
 
 scoring = NS(compute=T.compute, validate_items=T.validate_items, band_for=T.band_for, item_keys=T.item_keys)

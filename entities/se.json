@@ -24,7 +24,8 @@
      "Alzheimer"
     ]
    },
-   "stage": "commercial"
+   "stage": "commercial",
+   "lei": "549300Y0OI2WVUNHLC33"
   },
   {
    "id": "aac_clyde",
@@ -47,7 +48,8 @@
     ],
     "openalex": "I4210165278"
    },
-   "stage": "production"
+   "stage": "production",
+   "lei": "549300XQ7MZYAEFJLX90"
   },
   {
    "id": "camurus",
@@ -70,7 +72,8 @@
      "CAM2029"
     ]
    },
-   "stage": "commercial"
+   "stage": "commercial",
+   "lei": "5493003S6Z6VI7WYFQ06"
   },
   {
    "id": "hansa",
@@ -94,7 +97,8 @@
     ],
     "pubmed": "Hansa Biopharma[Affiliation]"
    },
-   "stage": "production"
+   "stage": "production",
+   "lei": "549300LLEO25ZJJ3NT91"
   },
   {
    "id": "vicore",
@@ -117,7 +121,8 @@
      "angiotensin II type 2 receptor"
     ]
    },
-   "stage": "demo"
+   "stage": "demo",
+   "lei": "549300KTNBPTZLF01130"
   },
   {
    "id": "sivers",
@@ -142,7 +147,8 @@
      "beamforming"
     ]
    },
-   "stage": "production"
+   "stage": "production",
+   "lei": "254900UBKNY2EJ588J53"
   },
   {
    "id": "surgical_science",
@@ -166,7 +172,8 @@
      "training"
     ]
    },
-   "stage": "commercial"
+   "stage": "commercial",
+   "lei": "549300YROAI18G6JL885"
   },
   {
    "id": "ependion",
@@ -192,7 +199,8 @@
      "industrial automation"
     ]
    },
-   "stage": "commercial"
+   "stage": "commercial",
+   "lei": "549300HBZGNQOTYZPJ54"
   },
   {
    "id": "powercell",
@@ -217,7 +225,8 @@
      "marine"
     ]
    },
-   "stage": "production"
+   "stage": "production",
+   "lei": "54930075IJ7TGOK3VC02"
   },
   {
    "id": "sectra",
@@ -242,7 +251,8 @@
      "digital pathology"
     ]
    },
-   "stage": "commercial"
+   "stage": "commercial",
+   "lei": "549300R9ZBT8YSFFK266"
   },
   {
    "id": "xbrane",
@@ -268,7 +278,8 @@
     ],
     "sponsor": "Xbrane Biopharma"
    },
-   "stage": "production"
+   "stage": "production",
+   "lei": "5493008DKD05APTKQO39"
   },
   {
    "id": "saniona",
@@ -291,7 +302,8 @@
     ],
     "sponsor": "Saniona"
    },
-   "stage": "demo"
+   "stage": "demo",
+   "lei": "549300XO4L9XNOCFCZ84"
   },
   {
    "id": "bioinvent",
@@ -317,7 +329,8 @@
     ],
     "sponsor": "BioInvent"
    },
-   "stage": "demo"
+   "stage": "demo",
+   "lei": "549300E7QRHEF2IJUY10"
   },
   {
    "id": "egetis",
@@ -340,7 +353,8 @@
     ],
     "sponsor": "Egetis Therapeutics"
    },
-   "stage": "production"
+   "stage": "production",
+   "lei": "549300RZCKGWRUBPMY22"
   },
   {
    "id": "gomspace",
@@ -621,7 +635,8 @@
     ],
     "sponsor": "Curasight"
    },
-   "stage": "demo"
+   "stage": "demo",
+   "lei": "984500C9E3ADR98F1070"
   }
  ]
 }

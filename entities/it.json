@@ -24,7 +24,8 @@
         ],
         "pubmed": "Avio[Affiliation]"
       },
-      "stage": "commercial"
+      "stage": "commercial",
+      "lei": "8156008F25C4B0E7C860"
     },
     {
       "id": "diasorin",
@@ -51,7 +52,8 @@
           "molecular diagnostics"
         ]
       },
-      "stage": "commercial"
+      "stage": "commercial",
+      "lei": "8156002878BDF0EE4348"
     },
     {
       "id": "technoprobe",
@@ -76,7 +78,8 @@
         ],
         "pubmed": "Technoprobe[Affiliation]"
       },
-      "stage": "commercial"
+      "stage": "commercial",
+      "lei": "8156007154CD8334D053"
     },
     {
       "id": "philogen",
@@ -102,7 +105,8 @@
         ],
         "pubmed": "Philogen[Affiliation]"
       },
-      "stage": "demo"
+      "stage": "demo",
+      "lei": "81560009EA1577917768"
     },
     {
       "id": "fincantieri",

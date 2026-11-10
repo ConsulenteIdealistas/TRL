@@ -23,7 +23,8 @@
         "pubmed": "Orion Pharma[Affiliation]",
         "sponsor": "Orion Corporation"
       },
-      "stage": "commercial"
+      "stage": "commercial",
+      "lei": "74370029VAHCXDR7B745"
     },
     {
       "aliases": [
@@ -47,7 +48,8 @@
         "pubmed": "Herantis Pharma[Affiliation]",
         "sponsor": "Herantis Pharma"
       },
-      "stage": "demo"
+      "stage": "demo",
+      "lei": "743700W4CQVYAT3WKK38"
     },
     {
       "aliases": [
@@ -74,7 +76,8 @@
         "pubmed": "Faron[Affiliation]",
         "sponsor": "Faron Pharmaceuticals"
       },
-      "stage": "demo"
+      "stage": "demo",
+      "lei": "7437009H31TO1DC0EB42"
     },
     {
       "aliases": [
@@ -97,7 +100,8 @@
         "sponsor": "Nanoform Finland",
         "pubmed": "Nanoform Finland[Affiliation]"
       },
-      "stage": "demo"
+      "stage": "demo",
+      "lei": "743700JJO2NU8LBS1592"
     },
     {
       "id": "kalmar",
@@ -119,7 +123,8 @@
           "Kalmar One"
         ]
       },
-      "stage": "commercial"
+      "stage": "commercial",
+      "lei": "636700Z25ZQXLMZ3CY73"
     },
     {
       "id": "hiab",
@@ -141,7 +146,8 @@
           "electrification"
         ]
       },
-      "stage": "commercial"
+      "stage": "commercial",
+      "lei": "5493002B0GOVF42KWX33"
     },
     {
       "id": "detection_technology",
@@ -167,7 +173,8 @@
           "CT"
         ]
       },
-      "stage": "commercial"
+      "stage": "commercial",
+      "lei": "743700IXKYKNXJ6BFL39"
     },
     {
       "id": "revenio",
@@ -194,7 +201,8 @@
         ],
         "sponsor": "Revenio"
       },
-      "stage": "commercial"
+      "stage": "commercial",
+      "lei": "743700I27E0FWSXLKK04"
     },
     {
       "id": "nexstim",
@@ -220,7 +228,8 @@
         ],
         "sponsor": "Nexstim"
       },
-      "stage": "production"
+      "stage": "production",
+      "lei": "743700S7ZI0LNMHZ6Y27"
     },
     {
       "id": "canatu",

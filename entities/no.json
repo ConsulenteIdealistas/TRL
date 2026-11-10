@@ -23,7 +23,8 @@
         ],
         "news_name": "Nordic Semiconductor"
       },
-      "stage": "commercial"
+      "stage": "commercial",
+      "lei": "5967007LIEEXZXJGFK95"
     },
     {
       "aliases": [
@@ -46,7 +47,8 @@
         ],
         "news_name": "Kongsberg"
       },
-      "stage": "commercial"
+      "stage": "commercial",
+      "lei": "5967007LIEEXZXJ9HK73"
     },
     {
       "aliases": [
@@ -72,7 +74,8 @@
         "news_name": "Photocure",
         "sponsor": "Photocure"
       },
-      "stage": "production"
+      "stage": "production",
+      "lei": "5967007LIEEXZXG8OW35"
     },
     {
       "aliases": [
@@ -98,7 +101,8 @@
         "news_name": "Nykode Therapeutics",
         "sponsor": "Nykode Therapeutics"
       },
-      "stage": "demo"
+      "stage": "demo",
+      "lei": "254900UKQHWYZJD22017"
     },
     {
       "id": "autostore",
@@ -123,7 +127,8 @@
           "goods-to-person"
         ]
       },
-      "stage": "commercial"
+      "stage": "commercial",
+      "lei": "549300KYN3M0LSM5A413"
     },
     {
       "id": "tomra",
@@ -145,7 +150,8 @@
           "sensor-based"
         ]
       },
-      "stage": "commercial"
+      "stage": "commercial",
+      "lei": "549300J726JCFJU3VT89"
     },
     {
       "id": "zaptec",
@@ -169,7 +175,8 @@
           "Zaptec Pro"
         ]
       },
-      "stage": "commercial"
+      "stage": "commercial",
+      "lei": "549300Y5EDWTJNTS8P96"
     },
     {
       "id": "arcticzymes",

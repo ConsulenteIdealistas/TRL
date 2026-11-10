@@ -25,7 +25,8 @@
         "news_name": "ASM International",
         "pubmed": "\"ASM International\"[Affiliation]"
       },
-      "stage": "commercial"
+      "stage": "commercial",
+      "lei": "7245001I22ND6ZFHX623"
     },
     {
       "aliases": [
@@ -50,7 +51,8 @@
         ],
         "news_name": "BE Semiconductor"
       },
-      "stage": "commercial"
+      "stage": "commercial",
+      "lei": "7245007A1YFLI2GNYX06"
     },
     {
       "aliases": [
@@ -73,7 +75,8 @@
         "news_name": "Pharming Group",
         "sponsor": "Pharming"
       },
-      "stage": "commercial"
+      "stage": "commercial",
+      "lei": "724500DCJ9MPG74JEH91"
     },
     {
       "aliases": [
@@ -101,7 +104,8 @@
         "pubmed": "Galapagos NV[Affiliation]",
         "sponsor": "Galapagos NV"
       },
-      "stage": "demo"
+      "stage": "demo",
+      "lei": "549300QKJ78IY0IOV655"
     },
     {
       "aliases": [
@@ -124,7 +128,8 @@
         "news_name": "Vivoryon Therapeutics",
         "sponsor": "Vivoryon Therapeutics"
       },
-      "stage": "demo"
+      "stage": "demo",
+      "lei": "3912004AMB0KGZXZYJ15"
     },
     {
       "id": "alfen",
@@ -150,7 +155,8 @@
           "smart grid"
         ]
       },
-      "stage": "commercial"
+      "stage": "commercial",
+      "lei": "724500HDW6IWR9J5YT90"
     },
     {
       "id": "fastned",
@@ -174,7 +180,8 @@
           "stations"
         ]
       },
-      "stage": "commercial"
+      "stage": "commercial",
+      "lei": "7245000V8JJ8CE1L8G60"
     }
   ]
 }

@@ -194,7 +194,8 @@ class NewSourceParseTests(unittest.TestCase):
         tmp.cleanup()
 
     def test_translate_watch_queue(self):
-        # ウォッチ・参考の一次情報だけを訳す (ニュースは対象外、DeepL は使わない)
+        # ウォッチ・参考の一次情報 (論文・治験・開示) だけを訳す
+        # (ニュースは対象外、DeepL は使わない)
         import os
         from unittest import mock as um
         tmp = tempfile.TemporaryDirectory()
@@ -209,6 +210,8 @@ class NewSourceParseTests(unittest.TestCase):
                 ("w1", "pubmed", "W1", "Watch Paper Alpha", "watch_co"),
                 ("w2", "openalex", "W2", "Watch Paper Beta", "watch_co"),
                 ("r1", "arxiv", "R1", "Reference Paper Gamma", "ref_co"),
+                ("y1", "yahoo", "Y1", "Watch Filing Epsilon", "watch_co"),
+                ("e1", "edgar", "E1", "Watch Filing Zeta", "watch_co"),
                 ("g1", "gnews", "G1", "Watch News Delta", "watch_co")):
             rec, _ = T.normalize(raw(source=src, sid=sid, title=title), T.now_iso())
             cid, _ = store.upsert_candidate(rec, "rX")
@@ -223,8 +226,8 @@ class NewSourceParseTests(unittest.TestCase):
         env = {"GOOGLE_TRANSLATE_API_KEY": "gk", "DEEPL_API_KEY": "dk:fx"}
         with um.patch.dict(os.environ, env, clear=False):
             n, stats = T.translate_watch_queue(store, cfg, AS_OF, log=lambda *_: None, http=g_http)
-            self.assertEqual(n, 3)  # 論文3件のみ (ニュースは訳さない)
-            want = sum(len(made[k][1]["title"]) + len(made[k][1]["abstract"]) for k in ("w1", "w2", "r1"))
+            self.assertEqual(n, 5)  # 論文3件 + 開示2件 (ニュースは訳さない)
+            want = sum(len(made[k][1]["title"]) + len(made[k][1]["abstract"]) for k in ("w1", "w2", "r1", "y1", "e1"))
             self.assertEqual(stats, {"google": want})  # DeepL 温存枠は使わない
             self.assertTrue(all("translation.googleapis.com" in u for u in urls))
             self.assertIsNone(store.get_candidate(made["g1"][0]).get("title_ja"))
@@ -280,6 +283,43 @@ class NewSourceParseTests(unittest.TestCase):
         self.assertEqual(TT.watch_run_budget(store, AS_OF), 2_000_000 // 8)
         self.assertEqual(TT.watch_run_budget(store, AS_OF, spent_before=400_000),
                          (2_000_000 - 400_000) // 8)
+        store.close()
+        tmp.cleanup()
+
+    def test_watch_queue_disclosure_sources(self):
+        # yahoo / edgar (開示) もキューの対象で、表示窓 (企業ごとの一次
+        # 情報 15件) を論文と一緒に消費する。gnews は窓の内側でも入らない
+        from trlcore import translate as TT
+        tmp = tempfile.TemporaryDirectory()
+        store = T.Store(Path(tmp.name) / "d.sqlite")
+        cfg = dict(CFG)
+        cfg["entities"] = {"entities": [
+            {"id": "watch_co", "name": "Watch Co", "tier": "watch", "market": "US", "sector": "bio"}]}
+        ids = {}
+        # 一次情報を新しい順に 14件 (論文) + yahoo + edgar = 16件並べる
+        for i in range(14):
+            rec, _ = T.normalize(raw(source="pubmed", sid=f"P{i:02d}",
+                                     title=f"Watch Paper Number {i:02d}",
+                                     published=f"2026-10-{19 - i:02d}"), T.now_iso())
+            cid, _ = store.upsert_candidate(rec, "rX")
+            store.set_entities(cid, [{"entity_id": "watch_co", "strength": "strong"}])
+            ids[f"P{i:02d}"] = cid
+        for key, src, pub in (("yahoo", "yahoo", "2026-10-05"), ("edgar", "edgar", "2026-10-04")):
+            rec, _ = T.normalize(raw(source=src, sid=key.upper(),
+                                     title=f"Watch Filing {key}", published=pub), T.now_iso())
+            cid, _ = store.upsert_candidate(rec, "rX")
+            store.set_entities(cid, [{"entity_id": "watch_co", "strength": "strong"}])
+            ids[key] = cid
+        rec, _ = T.normalize(raw(source="gnews", sid="GN", title="Watch News Fresh",
+                                 published="2026-10-19"), T.now_iso())
+        cid_news, _ = store.upsert_candidate(rec, "rX")
+        store.set_entities(cid_news, [{"entity_id": "watch_co", "strength": "strong"}])
+        todo = TT._watch_todo(store, cfg, AS_OF)
+        got = {item[0] for item in todo}
+        self.assertEqual(len(todo), 15)          # 表示窓いっぱいまで
+        self.assertIn(ids["yahoo"], got)         # 15件目 (窓の内側)
+        self.assertNotIn(ids["edgar"], got)      # 16件目 (窓の外)
+        self.assertNotIn(cid_news, got)          # ニュースは対象外
         store.close()
         tmp.cleanup()
 

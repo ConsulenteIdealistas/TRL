@@ -250,8 +250,11 @@ def translate_display_set(store, cfg, today, log=print, http=http_fetch):
 
 # --- ウォッチ・参考の一次情報の翻訳キュー ------------------------------------
 
-# 対象は一次情報のみ (論文と治験)。ニュースは訳さない (ノイズが多く、
-# 読む価値は一次情報側にあるという判断。2026-11-06 泰崇)。
+# 対象は一次情報のみ (論文・治験・開示)。ニュースは訳さない (ノイズが多く、
+# 読む価値は一次情報側にあるという判断。2026-11-06 泰崇、2026-11-11 に
+# 再確認)。開示の yahoo / edgar は 2026-11-11 に追加した (どちらも一次
+# 情報で、未訳プールも合計約14.5万字と小さい)。
+# prtimes と edinet は原文が日本語なので対象外。
 # 経路は Azure 主・Google 予備で、DeepL の一回限り枠は温存して使わない。
 #
 # 1実行の予算 (2026-11-11 泰崇の承認で、件数上限 50件/回から文字数予算へ
@@ -261,7 +264,7 @@ def translate_display_set(store, cfg, today, log=print, http=http_fetch):
 # 月内の過不足は残り回数への割り直しで自動的に均される。件数の上限は
 # 置かない (律速は文字数だけ)。
 AZURE_MONTHLY_QUOTA = 2_000_000
-WATCH_SOURCES = ("pubmed", "openalex", "arxiv", "trials")
+WATCH_SOURCES = ("pubmed", "openalex", "arxiv", "trials", "yahoo", "edgar")
 # ウォッチページの表示窓 (site._watch_companies と同じ定義・同じ並び)。
 # site → pipeline → translate の import 方向の都合で import できないため
 # 値を写し、site.py の WATCH_PRIMARY_CAP / WATCH_NEWS_SOURCES と揃える。
@@ -294,7 +297,8 @@ def _watch_todo(store, cfg, today):
         links.setdefault(cid, []).append(eid)
     # 表示窓の順位: watch/reference 企業ごとに、一次情報 (ニュース以外) を
     # site._watch_companies と同じ並び (published 新しい順・NULL は最後、
-    # 同点は id 順) で数えた順位
+    # 同点は id 順) で数えた順位。yahoo / edgar は site 側でも一次情報に
+    # 数えられるため、この順位にそのまま含まれる
     rank = {}
     seen = Counter()
     for eid, cid, source in store.conn.execute(

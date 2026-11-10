@@ -312,7 +312,7 @@ def main(argv=None):
     depth=a.depth,
 )
 
-    text = build_report(store, res["run_id"])
+    text = build_report(store, res["run_id"], cfg)
 
     rep = Path(a.data_dir) / "reports"
     rep.mkdir(parents=True, exist_ok=True)

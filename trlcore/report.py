@@ -51,7 +51,29 @@ DISCLAIMER = ("※ スコアは評価尺度であり、株価上昇確率・成�
               "売買の自動判定にも使えません。")
 
 
-def build_report(store, run_id):
+def _tier_section(store, cfg):
+    """tier 導出レイヤーの分布と警告 (CRITERIA.md §6 D-1〜D-3)。
+
+    警告は出すだけで自動調整はしない (D-3)。cfg が無い呼び出し
+    (旧シグネチャ) では節自体を出さない。
+    """
+    from .tiers import DERIVED_LABELS, DERIVED_TIERS, compute_derived_tiers, tier_distribution
+    dist = tier_distribution(compute_derived_tiers(store, cfg.get("entities")))
+    L = ["", f"## tier 分布 (導出レイヤー {dist['version']}、全{dist['total']}社)"]
+    for t in DERIVED_TIERS:
+        L.append(f"- {DERIVED_LABELS[t]}: {dist['counts'][t]}社 "
+                 f"({dist['shares'][t]}%、目標 {dist['targets']['shares'][t]}%)")
+    if dist["warnings"]:
+        for w in dist["warnings"]:
+            L.append(f"- ⚠ 警告: {DERIVED_LABELS[w['tier']]} のシェア {w['share']}% が"
+                     f"目標 {w['target_share']}% から {w['diff_pt']:+}pt "
+                     f"(許容 ±{dist['tolerance_pt']}pt を超過)")
+    else:
+        L.append(f"- 警告なし (全層が目標シェア ±{dist['tolerance_pt']}pt の範囲内)")
+    return L
+
+
+def build_report(store, run_id, cfg=None):
     run = store.get_run(run_id)
     counts = json.loads(run["counts_json"] or "{}")
     L = [
@@ -135,6 +157,8 @@ def build_report(store, run_id):
                 L.append(f"  最終評価日時: {r['last_eval_at'] or '不明'}")
             L.append("  関連情報の検索:")
             L.extend(format_research_links(r["title"]))
+    if cfg is not None:
+        L += _tier_section(store, cfg)
     L += [
         "",
         "## 制約",

@@ -10,7 +10,8 @@
     "summary"
   ],
   "summary": [
-    "rejected"
+    "rejected",
+    "tiers"
   ],
   "config": [
     "version",
@@ -115,6 +116,7 @@
     "strength",
     "product_name",
     "tier",
+    "derived_tier",
     "market",
     "sector",
     "tags",

@@ -10,6 +10,7 @@ from .http import redact
 from .pipeline import select_for_eval
 from .review import adjusted_view
 from .summarize import PAPER_SOURCES, extract_summary
+from .tiers import TIER_RULES_VERSION, compute_derived_tiers, tier_distribution
 
 
 SITE_SCHEMA_VERSION = 3
@@ -238,12 +239,13 @@ WATCH_NEWS_CAP = 5
 WATCH_NEWS_SOURCES = ("gnews", "prtimes")
 
 
-def _watch_companies(store, cfg):
+def _watch_companies(store, cfg, ent_derived=None):
     """tier が watch / reference の企業と、そのプール材料を返す (表示専用)。
 
     評価対象ではないため本体の candidates には載らない材料を、企業単位で
     一次情報優先に並べて watch.html から読めるようにする。材料は新しい順、
-    一次情報 (論文・治験・開示) を前段、ニュース系を後段に置く。"""
+    一次情報 (論文・治験・開示) を前段、ニュース系を後段に置く。
+    derived_tier は導出レイヤー (tiers) の層で、基礎 tier から決定的に付く。"""
     ents = [e for e in (cfg.get("entities") or {}).get("entities", [])
             if (e.get("tier") or "core") in ("watch", "reference")]
     by_id = {}
@@ -254,6 +256,7 @@ def _watch_companies(store, cfg):
                           "tags": ([t for t in e["tags"] if isinstance(t, str)]
                                    if isinstance(e.get("tags"), list) else []),
                           "stage": e.get("stage"), "tier": e.get("tier") or "core",
+                          "derived_tier": (ent_derived or {}).get(e["id"]),
                           "ticker": e.get("ticker"),
                           "counts": {"primary": 0, "news": 0},
                           "latest": None, "_primary": [], "_news": []}
@@ -322,6 +325,10 @@ def build_site_data(store, cfg, now=None):
         ev_kinds.setdefault(cid, set()).add(kind)
     eval_counts = store.eval_counts_long()
     audits = _audits_by_eval(store)
+    # tier 導出レイヤー (tiers/v1): 辞書は不変のまま、企業ごとの導出 tier と
+    # 4層の分布・警告を data.json に同梱する (追加フィールド方式)
+    derived = compute_derived_tiers(store, cfg.get("entities"))
+    ent_derived = {eid: r["derived_tier"] for eid, r in derived.items()}
     cands = []
     rows = store.conn.execute("SELECT id, info_type, status FROM candidates ORDER BY published DESC, id").fetchall()
     for cid, info_type, cand_status in rows:
@@ -359,6 +366,7 @@ def build_site_data(store, cfg, now=None):
                 ents.append({"entity_id": e["entity_id"], "name": ent_names.get(e["entity_id"], e["entity_id"]),
                              "strength": e["strength"], "product_name": e["product_name"] or None,
                              "tier": ent_tiers.get(e["entity_id"], "core"),
+                             "derived_tier": ent_derived.get(e["entity_id"]),
                              "market": ent_markets.get(e["entity_id"], "JP"),
                              "sector": ent_sectors.get(e["entity_id"]),
                              "tags": ent_tags.get(e["entity_id"], []),
@@ -404,7 +412,10 @@ def build_site_data(store, cfg, now=None):
     # 除外 (screening で落ちた候補) の総数。一覧にも理由つきで含めるが、
     # DB 側の総数を参照用に残す
     summary = {"rejected": store.conn.execute(
-        "SELECT COUNT(*) FROM candidates WHERE status = 'rejected'").fetchone()[0]}
+        "SELECT COUNT(*) FROM candidates WHERE status = 'rejected'").fetchone()[0],
+        # 導出 tier の分布 (社数・シェア・目標との差・±5pt 枠外の警告)。
+        # 警告は D-3 により出すだけで、層の自動調整はしない
+        "tiers": tier_distribution(derived)}
     return {
         "schema_version": SITE_SCHEMA_VERSION,
         "generated_at": (now or datetime.now(timezone.utc)).isoformat(timespec="seconds"),
@@ -415,7 +426,7 @@ def build_site_data(store, cfg, now=None):
                    "item_groups": {"technology": [k for k in long_w if k in TECH_ITEMS],
                                    "business": [k for k in long_w if k not in TECH_ITEMS]}},
         "candidates": cands,
-        "watch_companies": _watch_companies(store, cfg)}
+        "watch_companies": _watch_companies(store, cfg, ent_derived)}
 
 
 def export_site(store, cfg, out_dir, web_dir=None, now=None):
@@ -433,6 +444,18 @@ def export_site(store, cfg, out_dir, web_dir=None, now=None):
     if base and len(data["candidates"]) < base:
         raise RuntimeError(
             f"export integrity: evaluated/rejected candidates={base} but output={len(data['candidates'])}")
+    # tier 導出の記録 (append-only)。記録先は「公開物を作る行為」である
+    # export に寄せる: build_site_data はテストやプレビューでも多用される
+    # 純粋な読み取りなので、そこでは書かない。export を呼ぶ経路 (CLI の
+    # export / run の後段) はいずれも DB を読み書きで開いており、main の
+    # ワークフローでは export 後に DB が data ブランチへ保存されるため、
+    # ここで書いたスナップショットがそのまま永続化される。読み取り専用の
+    # site 書き出し (site.yaml) では記録は残らないが、その場合は次の
+    # パイプライン実行の export でその時点の層が記録される (欠落ではなく
+    # 記録間隔の話であり、過去の層の再現可能性は保たれる)。
+    store.record_tier_snapshot(
+        compute_derived_tiers(store, cfg.get("entities")),
+        data["generated_at"], TIER_RULES_VERSION)
     (out / "data.json").write_text(json.dumps(data, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     web = Path(web_dir) if web_dir else ROOT / "web"
     if web.is_dir():

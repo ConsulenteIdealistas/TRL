@@ -12,6 +12,10 @@ const SRC_LABEL = {arxiv: "arXiv", pubmed: "PubMed", gnews: "News", trials: "Cli
 const NEWS_SOURCES = new Set(["gnews", "prtimes"]);
 const tagLabel = t => TL[t] || CL[t] || t;
 const srcName = s => SRC_LABEL[s] || s;
+// 導出 tier (tiers/v1): 基礎 watch → Look、基礎 reference → See。
+// export に derived_tier が無い古い data.json では基礎 tier から読み替える
+const DT = {look: "Look", see: "See"};
+const dtier = c => c.derived_tier || (c.tier === "reference" ? "see" : "look");
 
 let companies = [];
 const state = {q: "", tier: "", markets: new Set(), sectors: new Set(), tags: new Set(), sort: "latest"};
@@ -69,7 +73,7 @@ function cardHtml(c) {
   const tags = (c.tags || []).length ? `<div class="wmeta">${c.tags.map(t => `<span class="chip">${esc(tagLabel(t))}</span>`).join(" ")}</div>` : "";
   const cnt = `一次情報 ${c.counts.primary}件・ニュース ${c.counts.news}件${c.latest ? `・最新 ${esc(c.latest)}` : ""}・未評価`;
   return `<section class="card wcard" data-id="${esc(c.id)}">
-    <div class="whead"><span class="wname">${esc(c.name)}</span><span class="tbadge ${esc(c.tier)}">${c.tier === "reference" ? "参考" : "ウォッチ"}</span></div>
+    <div class="whead"><span class="wname">${esc(c.name)}</span><span class="tbadge ${esc(c.tier)}">${esc(DT[dtier(c)] || dtier(c))}</span></div>
     <div class="wmeta">${esc(meta)}</div>${tags}
     <div class="wmeta">${esc(cnt)}</div>
     <div class="mops"><button type="button" class="btn" data-toggle="${esc(c.id)}" aria-expanded="false">材料を見る</button></div>
@@ -104,7 +108,7 @@ function renderMats(el, c) {
 function filtered() {
   const q = state.q.trim().toLowerCase();
   let rows = companies.filter(c =>
-    (!state.tier || c.tier === state.tier) &&
+    (!state.tier || dtier(c) === state.tier) &&
     (!state.markets.size || state.markets.has(c.market)) &&
     (!state.sectors.size || state.sectors.has(c.sector)) &&
     (!state.tags.size || (c.tags || []).some(t => state.tags.has(t))) &&
@@ -118,8 +122,8 @@ function filtered() {
 
 function render() {
   const rows = filtered();
-  const w = rows.filter(c => c.tier === "watch").length, r = rows.length - w;
-  $("#cnt").textContent = `${rows.length}社を表示（ウォッチ ${w} / 参考 ${r}）`;
+  const w = rows.filter(c => dtier(c) === "look").length, r = rows.length - w;
+  $("#cnt").textContent = `${rows.length}社を表示（Look ${w} / See ${r}）`;
   $("#list").innerHTML = rows.length ? rows.map(cardHtml).join("") : `<p class="wmeta">条件に合う企業がありません。</p>`;
   $("#list").querySelectorAll("[data-toggle]").forEach(b => b.addEventListener("click", () => {
     const card = b.closest(".wcard"), c = companies.find(x => x.id === b.dataset.toggle);
@@ -142,7 +146,7 @@ async function init() {
   catch (e) { $("#cnt").textContent = "データを読み込めませんでした。"; return; }
   companies = data.watch_companies || [];
   companies.forEach(c => { c._hay = haystack(c); });
-  chips($("#tiers"), [["", "すべて"], ["watch", "ウォッチ"], ["reference", "参考"]],
+  chips($("#tiers"), [["", "すべて"], ["look", "Look"], ["see", "See"]],
     v => state.tier === v,
     v => { state.tier = v; initChipsOnly(); render(); });
   const mkts = [...new Set(companies.map(c => c.market).filter(Boolean))]

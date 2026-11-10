@@ -2241,7 +2241,7 @@ class IntegrationTests(unittest.TestCase):
                     um.patch.object(cli, "configure_llm", lambda p, cfg: None), \
                     um.patch.object(cli, "run_pipeline",
                                     lambda *a, **k: {"run_id": "x", "counts": {}, "failed": False}), \
-                    um.patch.object(cli, "build_report", lambda s, r: ""):
+                    um.patch.object(cli, "build_report", lambda s, r, *a, **k: ""):
                 if "TRL_LLM_PROVIDER" not in env:
                     os.environ.pop("TRL_LLM_PROVIDER", None)
                 rc = cli.main(["run", "--data-dir", td, "--skip-collect"] + argv)

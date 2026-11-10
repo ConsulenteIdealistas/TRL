@@ -47,6 +47,7 @@ from trlcore.compare import select_compare_candidates, run_compare, build_compar
 from trlcore.audit import AUDIT_CHECKS, RULES_CHECKS, build_audit_input, select_unaudited, load_rules, audit_evaluation_rules, run_audit_rules, build_audit_report  # noqa: F401,E402
 from trlcore.audit_api import API_CHECKS, run_audit_api, select_stale_api  # noqa: F401,E402
 from trlcore.site import SITE_SCHEMA_VERSION, TECH_ITEMS, LEGACY_INFRA_QUEUE_PREFIX, _ev_for_site, display_status, build_site_data, export_site  # noqa: F401,E402
+from trlcore.tiers import TIER_RULES_VERSION, DERIVED_TIERS, DERIVED_LABELS, TARGET_COUNTS, TARGET_SHARES, TOLERANCE_PT, derive_tier, load_tier_inputs, compute_derived_tiers, tier_distribution  # noqa: F401,E402
 from trlcore.report import build_research_links, format_research_links, DISCLAIMER, build_report  # noqa: F401,E402
 from trlcore.vault import export_vault  # noqa: F401,E402
 from trlcore.cli import _prune, main  # noqa: F401,E402

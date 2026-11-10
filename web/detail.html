@@ -56,6 +56,10 @@ const ML = {JP: "日本", US: "米国", GB: "英国", CH: "スイス", DE: "ド�
 const CL = {space: "宇宙", bio: "バイオ", semiconductor: "半導体", ai: "AI", robotics: "ロボティクス", energy: "エネルギー・蓄電池", quantum: "量子技術", defense: "防衛"};
 const TL = {photonics: "フォトニクス", medtech: "医療機器", earth_observation: "地球観測", constellation: "衛星コンステレーション", space_transport: "宇宙輸送", lunar: "月面開発", debris_removal: "デブリ除去", mrna: "mRNA", cell_therapy: "細胞治療", gene_therapy: "遺伝子治療・ゲノム編集", antibody: "抗体医薬", radiopharm: "放射性医薬品", vaccine: "ワクチン", regenerative_medicine: "再生医療", diagnostics: "診断", drug_ai: "創薬AI", surgical_robot: "手術ロボット", power_semi: "パワー半導体", advanced_packaging: "先端パッケージング", memory: "メモリ", semi_equipment: "半導体製造装置", ai_infra: "AIインフラ・データセンター", voice_ai: "音声AI", industrial_robotics: "産業用ロボット・自動化", warehouse_automation: "倉庫・物流自動化", autonomous_mobility: "自律移動・ドローン", humanoid: "ヒューマノイド", hydrogen: "水素・燃料電池", ess: "蓄電・ESS", ev_charging: "EV充電", solid_state_battery: "全固体電池", battery_materials: "電池材料", perovskite: "ペロブスカイト太陽電池", fusion: "核融合", smr: "SMR", quantum_computing: "量子コンピュータ", quantum_comm: "量子通信・暗号", quantum_sensing: "量子センシング"};
 const STG = {rd: "研究開発型", demo: "実証型", production: "量産型", commercial: "商業化型"};
+// 導出 tier (tiers/v1) の表示名。Core は従来どおり無印。export に無い古い
+// data.json では基礎 tier から読み替える (watch → Look、reference → See)
+const DTL = {look: "Look", see: "See", conditional: "Conditional"};
+const dtLabel = e => DTL[e.derived_tier] || (e.tier === "watch" ? "Look" : e.tier === "reference" ? "See" : "");
 const tagLabel = t => CL[t] || TL[t] || t;
 const label = k => IL[k] || k;
 const DL = {positive: "ポジティブ", negative: "ネガティブ", mixed: "混在"};
@@ -148,6 +152,7 @@ function peerRegistry(d) {
       c = {entity_id: id, name: info.name || id, market: info.market || "JP",
         sector: info.sector || null, tags: Array.isArray(info.tags) ? info.tags : [],
         stage: info.stage || null, tier: info.tier || "core",
+        derived_tier: info.derived_tier || null,
         long: null, status: null, cand: null, repCand: null, repKey: ""};
       byId.set(id, c);
     }
@@ -178,7 +183,8 @@ function peerRow(c, selfIds) {
   const fin = c.long && c.long.status === "final";
   return {
     entity_id: c.entity_id, name: c.name, market: c.market, sector: c.sector,
-    stage: c.stage, tier: c.tier || "core", self: selfIds.has(c.entity_id),
+    stage: c.stage, tier: c.tier || "core", derived_tier: c.derived_tier || null,
+    self: selfIds.has(c.entity_id),
     trl: fin && c.long.trl_level ? c.long.trl_level.level : null,
     total: fin && typeof c.long.total === "number" ? c.long.total : null,
     band: fin ? (c.long.band || null) : null,
@@ -208,9 +214,10 @@ function peerTableHtml(rows) {
   const body = rows.map(r => {
     const name = r.cand ? `<a href="detail.html?id=${encodeURIComponent(r.cand)}">${esc(r.name)}</a>` : esc(r.name);
     const self = r.self ? `<span class="pself">この企業</span>` : "";
-    // ウォッチ・参考は評価対象外 (単独材料は評価されない)。無いことを不足と同一視しない
+    const cond = r.derived_tier === "conditional" ? `<span class="hint">（Conditional）</span>` : "";
+    // Look・See は評価対象外 (単独材料は評価されない)。無いことを不足と同一視しない
     const off = r.tier !== "core" && r.total == null
-      ? (r.tier === "reference" ? "評価対象外（参考）" : "評価対象外（ウォッチ）") : null;
+      ? (r.tier === "reference" ? "評価対象外（See）" : "評価対象外（Look）") : null;
     const trlCell = off ? `<span class="hint">${off}</span>`
       : (r.total != null ? (r.trl != null ? String(r.trl) : "未確定") : "—");
     const totCell = off ? `<span class="hint">${off}</span>`
@@ -218,7 +225,7 @@ function peerTableHtml(rows) {
     const stCell = r.status
       ? `<span class="st ${r.status === "final" ? "st-final" : "st-" + r.status}">${esc(SL[r.status] || r.status)}</span>`
       : `<span class="hint">${off || "未評価"}</span>`;
-    return `<tr${r.self ? ' class="self"' : ""}><td>${name}${self}</td>`
+    return `<tr${r.self ? ' class="self"' : ""}><td>${name}${self}${cond}</td>`
       + `<td>${esc(ML[r.market] || r.market)}・${esc(r.sector ? (CL[r.sector] || r.sector) : "—")}</td>`
       + `<td>${trlCell}</td><td>${totCell}</td><td>${esc(r.band || "—")}</td>`
       + `<td>${esc(r.stage ? (STG[r.stage] || r.stage) : "—")}</td>`
@@ -234,7 +241,7 @@ function renderPeers(d, p) {
   const strong = (p.entities || []).filter(e => e.strength === "strong");
   const selfIds = new Set(strong.map(e => e.entity_id));
   const vis = rows => rows.filter(r => peerShowWatch || r.tier === "core" || r.self);
-  const parts = [`<div class="pctl"><label><input type="checkbox" id="peerWatch"${peerShowWatch ? " checked" : ""}> ウォッチ・参考を含める</label>`
+  const parts = [`<div class="pctl"><label><input type="checkbox" id="peerWatch"${peerShowWatch ? " checked" : ""}> Look・See を含める</label>`
     + `<label>並び順 <select id="peerSort">${[["total", "総合点"], ["trl", "TRL"], ["date", "最終評価日"], ["name", "企業名"]].map(([v, l]) => `<option value="${v}"${peerSortKey === v ? " selected" : ""}>${l}</option>`).join("")}</select></label></div>`
     + `<p class="hint">同じタグの企業を横並びにした表示専用の比較です（採点には使っていません）。総合点・TRL は final の評価だけに出し、空欄は「評価なし」であって 0点ではありません。</p>`];
   const seenTags = new Set();
@@ -258,7 +265,7 @@ function renderPeers(d, p) {
       }
       const rows = sortPeerRows(vis(all), peerSortKey);
       if (!rows.some(r => !r.self)) {
-        parts.push(`<div class="peerBox"><p style="margin:0"><b>${esc(tagLabel(t))}</b></p><p class="hint">このタグの他の企業は全てウォッチ・参考です。「ウォッチ・参考を含める」を有効にすると表示されます。</p></div>`);
+        parts.push(`<div class="peerBox"><p style="margin:0"><b>${esc(tagLabel(t))}</b></p><p class="hint">このタグの他の企業は全て Look・See です。「Look・See を含める」を有効にすると表示されます。</p></div>`);
         continue;
       }
       parts.push(`<details class="peerBox"${first ? " open" : ""}><summary>${esc(tagLabel(t))}<span class="tn">${rows.length}社</span></summary>${peerTableHtml(rows)}</details>`);
@@ -326,7 +333,7 @@ ${p.display_status === "error" && p.long && p.long.errors.length ? `<section cla
 ${p.display_status === "rejected" ? `<section class="ds"><h4>除外理由</h4><p>${esc(p.screen_reason ? (SR[p.screen_reason] || p.screen_reason) : "理由は記録されていません")}</p><p class="hint">除外は関連性スクリーニングの機械的な判定で、評価 (採点) は行われていません。</p></section>` : ""}
 <section class="ds"><h4>関連事業ニュース（評価に同梱した根拠プール）</h4>${news ? `<ul class="news">${news}</ul>` : `<p class="hint">同梱されたニュースはありません。</p>`}${(p.related_news || []).some(n => n.via_google_news) ? `<p class="hint">Google News 経由の記事リンクは直接開けないため、タイトルをクリックするとタイトル検索で元記事を開きます。媒体名は媒体のサイトへのリンクです。</p>` : ""}</section>
 <section class="ds"><h4>関連財務根拠（開示資料の財務数値）</h4>${fins ? `<ul class="news">${fins}</ul>` : `<p class="hint">同梱された財務根拠はありません。</p>`}</section>
-<section class="ds"><h4>関連企業</h4>${p.entities.map(e => `<span class="chip">${esc(e.name)}${e.product_name ? "（" + esc(e.product_name) + "）" : ""}${e.market ? "・" + esc(ML[e.market] || e.market) : ""}${e.sector ? "・" + esc(CL[e.sector] || e.sector) : ""}${(e.tags || []).length ? "・" + e.tags.map(t => esc(tagLabel(t))).join("・") : ""}${e.stage ? "・" + esc(STG[e.stage] || e.stage) : ""} ${e.strength === "strong" ? "" : "・弱"}${e.tier === "watch" ? "・ウォッチ" : e.tier === "reference" ? "・参考" : ""}</span>`).join("") || '<span class="hint">関連企業は未特定です。</span>'}</section>
+<section class="ds"><h4>関連企業</h4>${p.entities.map(e => `<span class="chip">${esc(e.name)}${e.product_name ? "（" + esc(e.product_name) + "）" : ""}${e.market ? "・" + esc(ML[e.market] || e.market) : ""}${e.sector ? "・" + esc(CL[e.sector] || e.sector) : ""}${(e.tags || []).length ? "・" + e.tags.map(t => esc(tagLabel(t))).join("・") : ""}${e.stage ? "・" + esc(STG[e.stage] || e.stage) : ""} ${e.strength === "strong" ? "" : "・弱"}${dtLabel(e) ? "・" + dtLabel(e) : ""}</span>`).join("") || '<span class="hint">関連企業は未特定です。</span>'}</section>
 ${p.entities.some(e => e.strength === "strong" && (e.tags || []).length) ? `<section class="ds"><h4>同じタグの企業</h4><div id="peers"></div></section>` : ""}
 <section class="ds"><h4>調査メモ</h4><textarea id="note" aria-label="調査メモ" placeholder="仮説、確認したい点、次の調査などを記録...">${esc(noteDraft !== null ? noteDraft : getNote(p.id))}</textarea><div class="acts"><button class="btn sec" type="button" id="save">メモを保存</button><button class="btn sec" type="button" id="cpys">出典をコピー</button><a class="btn src" href="${esc(safeUrl(p.url))}" target="_blank" rel="noopener noreferrer">原文サイトを開く ↗</a></div><p id="msg" class="hint" aria-live="polite">メモはこの端末のブラウザにだけ保存されます。</p></section></div>`;
   const evalText = () => {

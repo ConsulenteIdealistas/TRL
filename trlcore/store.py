@@ -119,6 +119,11 @@ CREATE TABLE IF NOT EXISTS candidate_entities (
 -- related_news / related_financials の企業経由ジョイン用。主キーは candidate_id
 -- 先頭のため entity_id 単独の探索が全走査になり、候補の増加に比例して重かった
 CREATE INDEX IF NOT EXISTS idx_candidate_entities_entity ON candidate_entities(entity_id, candidate_id);
+CREATE TABLE IF NOT EXISTS tier_snapshots(
+  id INTEGER PRIMARY KEY AUTOINCREMENT, derived_at TEXT, rule_version TEXT,
+  entity_id TEXT, derived_tier TEXT, reasons_json TEXT);
+CREATE INDEX IF NOT EXISTS idx_tier_snapshots_entity ON tier_snapshots(entity_id, id);
+CREATE INDEX IF NOT EXISTS idx_tier_snapshots_at ON tier_snapshots(derived_at, id);
 """
 
 
@@ -1017,6 +1022,38 @@ class Store:
         self.conn.execute("INSERT INTO run_sources VALUES(?,?,?,?,?,?,?,?,?,?)",
                           (run_id, source, query, fetched, new, dups, invalid, 1 if ok else 0, error, round(seconds, 2)))
         self.conn.commit()
+
+    # --- tier 導出レイヤー (CRITERIA.md §4/§6。記録は append-only) ---
+    def record_tier_snapshot(self, derived, derived_at, rule_version):
+        """導出結果 (trlcore.tiers.compute_derived_tiers の戻り値) を
+        1スナップショット分まとめて記録する。過去の層を後から再現できる
+        よう、更新も削除もせず追記のみ。記録先は export のタイミングに
+        寄せる (site.export_site が呼ぶ)。"""
+        rows = [(derived_at, rule_version, eid, r["derived_tier"],
+                 _j(r.get("reasons") or []))
+                for eid, r in sorted(derived.items())]
+        self.conn.executemany(
+            "INSERT INTO tier_snapshots(derived_at,rule_version,entity_id,"
+            "derived_tier,reasons_json) VALUES(?,?,?,?,?)", rows)
+        self.conn.commit()
+        return len(rows)
+
+    def tier_snapshot_history(self, entity_id=None):
+        """記録済みスナップショットを導出時刻の昇順で返す (再現・監査用)。"""
+        q = "SELECT * FROM tier_snapshots"
+        args = ()
+        if entity_id is not None:
+            q += " WHERE entity_id=?"
+            args = (entity_id,)
+        out = []
+        for r in self.conn.execute(q + " ORDER BY id", args):
+            d = dict(r)
+            try:
+                d["reasons"] = json.loads(d.pop("reasons_json") or "[]")
+            except ValueError:
+                d["reasons"] = []
+            out.append(d)
+        return out
 
     # --- モデル比較 (検証専用。本体の evaluations には一切触れない) ---
     def add_compare_result(self, row):

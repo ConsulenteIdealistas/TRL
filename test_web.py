@@ -76,12 +76,12 @@ class ExportTests(StoreFixture):
         # のみ (ヘッダーは両ページともリンクなしで揃える)
         index = (web / "index.html").read_text(encoding="utf-8")
         self.assertIn('<nav class="pagelinks"><a href="criteria.html">採点基準</a>'
-                      '<a href="audit.html">監査</a><a href="watch.html">ウォッチ・参考</a></nav>', index)
+                      '<a href="audit.html">監査</a><a href="watch.html">Look・See</a></nav>', index)
         self.assertIn('<a href="audit.html">監査（要確認の処分）</a>', index)
-        # ウォッチ・参考ページも同格に存在し、一覧から辿れる
+        # Look・See ページも同格に存在し、一覧から辿れる
         wpage = (web / "watch.html").read_text(encoding="utf-8")
         self.assertIn("watch.js", wpage)
-        self.assertIn('<a href="watch.html">ウォッチ・参考（未評価の監視企業）</a>', index)
+        self.assertIn('<a href="watch.html">Look・See（未評価の監視企業）</a>', index)
         detail = (web / "detail.html").read_text(encoding="utf-8")
         self.assertIn('<a href="audit.html">監査（要確認の処分）</a>', detail)
         self.assertNotIn('<a href="audit.html">監査</a>', detail)
@@ -196,3 +196,30 @@ class ExportTests(StoreFixture):
         self.assertIn(
             "根拠不足＝対象企業は特定できていますが、必須項目の根拠が"
             "資料にありませんでした", title)
+    def test_tier_display_differentiation(self):
+        # tier 差別化 (WEB.md W-1〜W-9 確定): Core も対称に併記し、
+        # Conditional には導出の理由 (derived_reasons) を平文で併記する。
+        # 分布・警告の帯と「企業の層」フィルタは主ページ、状態色は使わない
+        web = T.ROOT / "web"
+        html = (web / "index.html").read_text(encoding="utf-8")
+        app = (web / "app.js").read_text(encoding="utf-8")
+        det = (web / "detail.html").read_text(encoding="utf-8")
+        self.assertIn('id="tierband"', html)
+        self.assertIn('id="ftierc"', html)
+        self.assertIn("summary", app)
+        self.assertIn("tierBand", app)
+        self.assertIn("tierSel", app)
+        self.assertIn('core: "Core"', app)
+        self.assertIn("dtText", app)
+        self.assertIn("derived_reasons", app)
+        self.assertIn('core: "Core"', det)
+        self.assertIn("dtText", det)
+        self.assertIn("derived_reasons", det)
+        # ウォッチページは Look・See に改名し、バッジは無色に統一 (W-5/W-6)
+        watch = (web / "watch.html").read_text(encoding="utf-8")
+        self.assertIn("<title>Look・See — TRL Explorer</title>", watch)
+        self.assertNotIn(".tbadge.watch", watch)
+        self.assertNotIn(".tbadge.reference", watch)
+        # 監査カードに導出 tier を併記する (W-9)
+        audit = (web / "audit.js").read_text(encoding="utf-8")
+        self.assertIn("dtLabelA", audit)

@@ -59,10 +59,19 @@ const CL = {space: "宇宙", bio: "バイオ", semiconductor: "半導体", ai: "
 const CO = ["space", "bio", "semiconductor", "ai", "robotics", "energy", "quantum"];  // 分野別の並び
 const TL = {photonics: "フォトニクス", medtech: "医療機器", earth_observation: "地球観測", constellation: "衛星コンステレーション", space_transport: "宇宙輸送", lunar: "月面開発", debris_removal: "デブリ除去", mrna: "mRNA", cell_therapy: "細胞治療", gene_therapy: "遺伝子治療・ゲノム編集", antibody: "抗体医薬", radiopharm: "放射性医薬品", vaccine: "ワクチン", regenerative_medicine: "再生医療", diagnostics: "診断", drug_ai: "創薬AI", surgical_robot: "手術ロボット", power_semi: "パワー半導体", advanced_packaging: "先端パッケージング", memory: "メモリ", semi_equipment: "半導体製造装置", ai_infra: "AIインフラ・データセンター", voice_ai: "音声AI", industrial_robotics: "産業用ロボット・自動化", warehouse_automation: "倉庫・物流自動化", autonomous_mobility: "自律移動・ドローン", humanoid: "ヒューマノイド", hydrogen: "水素・燃料電池", ess: "蓄電・ESS", ev_charging: "EV充電", solid_state_battery: "全固体電池", battery_materials: "電池材料", perovskite: "ペロブスカイト太陽電池", fusion: "核融合", smr: "SMR", quantum_computing: "量子コンピュータ", quantum_comm: "量子通信・暗号", quantum_sensing: "量子センシング"};  // タグ (分野と違い複数付けられる第二の分類)
 const STG = {rd: "研究開発型", demo: "実証型", production: "量産型", commercial: "商業化型"};  // 企業の段階 (表示・分析専用)
-// 導出 tier (tiers/v1) の表示名。Core は従来どおり無印。export に無い古い
-// data.json では基礎 tier から読み替える (watch → Look、reference → See)
-const DTL = {look: "Look", see: "See", conditional: "Conditional"};
-const dtLabel = e => DTL[e.derived_tier] || (e.tier === "watch" ? "Look" : e.tier === "reference" ? "See" : "");
+// 導出 tier (tiers/v1) の表示名。W-1 で Core も含め全層を対称に併記する。
+// export に無い古い data.json では基礎 tier から読み替える
+// (watch → Look、reference → See、それ以外は Core)
+const DTL = {core: "Core", conditional: "Conditional", look: "Look", see: "See"};
+const dtierOf = e => e.derived_tier || (e.tier === "watch" ? "look" : e.tier === "reference" ? "see" : "core");
+const dtLabel = e => DTL[dtierOf(e)] || "";
+// Conditional は層名に未充足の理由 (導出の detail 文そのまま) を併記する (W-2)
+const dtText = e => {
+  const l = dtLabel(e);
+  if (!l || dtierOf(e) !== "conditional") return l;
+  const rs = (e.derived_reasons || []).filter(Boolean);
+  return rs.length ? `Conditional（${rs.join("／")}）` : l;
+};
 const STGO = ["rd", "demo", "production", "commercial"];
 const TAGO = [...CO, "photonics", "medtech", "earth_observation", "constellation", "space_transport", "lunar", "debris_removal", "mrna", "cell_therapy", "gene_therapy", "antibody", "radiopharm", "vaccine", "regenerative_medicine", "diagnostics", "drug_ai", "surgical_robot", "power_semi", "advanced_packaging", "memory", "semi_equipment", "ai_infra", "voice_ai", "industrial_robotics", "warehouse_automation", "autonomous_mobility", "humanoid", "hydrogen", "ess", "ev_charging", "solid_state_battery", "battery_materials", "perovskite", "fusion", "smr", "quantum_computing", "quantum_comm", "quantum_sensing"];  // タグの表示順 (分野の後に固有タグ)
 const tagLabel = t => CL[t] || TL[t] || t;
@@ -81,7 +90,7 @@ function trl(t, d) {
     Array.from({length: 9}, (_, i) => `<span class="seg ${k && i < t ? "f" : ""}"></span>`).join("")}</div></div>`;
 }
 const trlSel = new Set();  // TRL絞り込みの選択状態: レベル1〜9と "u"(未確定) の集合。空なら絞らない
-const stSel = new Set(), dirSel = new Set(), mkSel = new Set(), scSel = new Set(), tagSel = new Set(), stgSel = new Set();  // 状態・方向性・国・分野・タグ・段階の選択状態 (空なら絞らない)
+const stSel = new Set(), dirSel = new Set(), mkSel = new Set(), scSel = new Set(), tagSel = new Set(), stgSel = new Set(), tierSel = new Set();  // 状態・方向性・国・分野・タグ・段階・企業の層の選択状態 (空なら絞らない)
 const ownSel = new Set();  // 自分の表示 (新着・注目) の選択状態。グループ内は OR で効く
 function inR(t) {
   if (!trlSel.size) return true;
@@ -102,6 +111,7 @@ function filtered() {
     && (!scSel.size || p.entities.some(e => scSel.has(e.sector)))
     && (!tagSel.size || p.entities.some(e => (e.tags || []).some(t => tagSel.has(t))))
     && (!stgSel.size || p.entities.some(e => stgSel.has(e.stage)))
+    && (!tierSel.size || p.entities.some(e => tierSel.has(dtierOf(e))))
     && (!ownSel.size || (ownSel.has("new") && isNewEval(p)) || (ownSel.has("pin") && pins.has(p.id))));
   const byStatus = (a, b) => (SO[a.display_status] - SO[b.display_status])
     || ((ok(lvl(b)) ? lvl(b) : -1) - (ok(lvl(a)) ? lvl(a) : -1))
@@ -134,6 +144,7 @@ function facetChips() {
   fill("fcc", scSel, new Set(base.flatMap(p => p.entities.map(e => e.sector).filter(Boolean))), CO, CL);
   fill("fgc", tagSel, new Set(base.flatMap(p => p.entities.flatMap(e => e.tags || []))), TAGO, {...CL, ...TL});
   fill("fstc", stgSel, new Set(base.flatMap(p => p.entities.map(e => e.stage).filter(Boolean))), STGO, STG);
+  fill("ftierc", tierSel, new Set(base.flatMap(p => p.entities.map(dtierOf))), ["core", "conditional", "look", "see"], DTL);
   syncTagN();
 }
 function sc(p, k) { const it = p.long && p.long.items[k]; return it ? it.score : null; }
@@ -368,7 +379,7 @@ ${L && L.prev ? `<section class="ds"><h4>前回評価との比較</h4>${prevCmp(
 <section class="ds"><h4>不足している観点</h4>${L && L.critical_missing.length ? `<p class="m" style="color:#a96500;font-weight:700">必須項目の不足: ${L.critical_missing.map(k => esc(label(k))).join("、")}</p>` : ""}${pts(missAll, 1)}${waitAll.length ? `<p class="hint">結果待ち（不足ではなく、治験の結果公表など時間の経過でしか解けないもの）:</p><ul class="pts">${waitAll.map(x => `<li><b>◷</b><span>${esc(x)}</span></li>`).join("")}</ul>` : ""}${q && q.next_sources.length ? `<p class="hint">次に確認する情報源: ${q.next_sources.map(esc).join(" / ")}</p>` : ""}${q && q.reeval_conditions.length ? `<p class="hint">再評価の条件: ${q.reeval_conditions.map(esc).join(" / ")}</p>` : ""}</section>
 ${p.display_status === "error" && LL && LL.errors.length ? `<section class="ds"><h4>処理上の注意</h4>${pts(LL.errors, 1)}</section>` : ""}
 ${p.display_status === "rejected" ? `<section class="ds"><h4>除外理由</h4><p>${esc(p.screen_reason ? (SR[p.screen_reason] || p.screen_reason) : "理由は記録されていません")}</p><p class="hint">除外は関連性スクリーニングの機械的な判定で、評価 (採点) は行われていません。</p></section>` : ""}
-<section class="ds"><h4>関連企業</h4>${p.entities.map(e => `<span class="chip">${esc(e.name)}${e.product_name ? "（" + esc(e.product_name) + "）" : ""}${e.market ? "・" + esc(ML[e.market] || e.market) : ""}${e.sector ? "・" + esc(CL[e.sector] || e.sector) : ""}${(e.tags || []).length ? "・" + e.tags.map(t => esc(tagLabel(t))).join("・") : ""}${e.stage ? "・" + esc(STG[e.stage] || e.stage) : ""} ${e.strength === "strong" ? "" : "・弱"}${dtLabel(e) ? "・" + dtLabel(e) : ""}</span>`).join("") || '<span class="hint">関連企業は未特定です。</span>'}</section>
+<section class="ds"><h4>関連企業</h4>${p.entities.map(e => `<span class="chip">${esc(e.name)}${e.product_name ? "（" + esc(e.product_name) + "）" : ""}${e.market ? "・" + esc(ML[e.market] || e.market) : ""}${e.sector ? "・" + esc(CL[e.sector] || e.sector) : ""}${(e.tags || []).length ? "・" + e.tags.map(t => esc(tagLabel(t))).join("・") : ""}${e.stage ? "・" + esc(STG[e.stage] || e.stage) : ""} ${e.strength === "strong" ? "" : "・弱"}${dtText(e) ? "・" + esc(dtText(e)) : ""}</span>`).join("") || '<span class="hint">関連企業は未特定です。</span>'}</section>
 <section class="ds"><h4>調査メモ</h4><textarea id="note" aria-label="調査メモ" placeholder="仮説、確認したい点、次の調査などを記録...">${esc(p.id in noteDrafts ? noteDrafts[p.id] : getNote(p.id))}</textarea><div class="acts"><button class="btn sec" type="button" id="save">メモを保存</button><button class="btn sec" type="button" id="cpys">出典をコピー</button><a class="btn src" href="${esc(safeUrl(p.url))}" target="_blank" rel="noopener noreferrer">原文サイトを開く ↗</a></div><p id="msg" class="hint" aria-live="polite">メモはこの端末のブラウザにだけ保存されます。</p></section></div>`;
 }
 function render() {
@@ -399,6 +410,21 @@ function stats() {
   set("#c5", n(["error"]));
   set("#c6", P.filter(p => lvl(p) != null).length);
   set("#c7", n(["rejected"]));
+}
+function tierBand() {
+  // 企業の層 (導出 tier) の分布と警告 (W-3)。数字は export (summary.tiers)
+  // の直読みで、表示側で閾値や丸めは作らない。警告は D-3 どおり出すだけ
+  const el = $("#tierband");
+  if (!el) return;
+  const t = META && META.summary && META.summary.tiers;
+  if (!t || !t.counts) { el.hidden = true; return; }
+  const order = ["core", "conditional", "look", "see"];
+  const dist = order.map(k => `${DTL[k]} ${t.counts[k] || 0}社（${t.shares[k] ?? 0}%）`).join(" / ");
+  const warns = (t.warnings || []).map(w =>
+    `${DTL[w.tier] || w.tier} は目標 ${w.target_share}% から ${w.diff_pt > 0 ? "+" : "−"}${Math.abs(w.diff_pt)}pt（許容 ±${t.tolerance_pt}pt の範囲外）`);
+  el.innerHTML = `<span>企業の層: ${esc(dist)}</span>`
+    + (warns.length ? `<span class="twarn">警告: ${esc(warns.join("、"))}</span>` : "");
+  el.hidden = false;
 }
 function showError(msg) {
   $("#list").innerHTML = "";
@@ -460,7 +486,7 @@ async function load() {
   importPinsFromUrl();
   $("#gen").textContent = "更新 " + jst(d.generated_at);
   $("#fl").value = LANG;
-  facetChips(); warn(d); stats(); render();
+  facetChips(); warn(d); stats(); tierBand(); render();
 }
 $("#sf").addEventListener("submit", e => { e.preventDefault(); render(); });
 document.addEventListener("keydown", e => {
@@ -548,7 +574,7 @@ function bindChips(id, set, after) {
   });
 }
 const syncTagN = () => { $("#fgn").textContent = tagSel.size ? `（${tagSel.size}件選択中）` : ""; };
-const CHIPG = [["fsc", stSel], ["fdc", dirSel], ["fmc", mkSel], ["fcc", scSel], ["fstc", stgSel], ["fown", ownSel]];
+const CHIPG = [["fsc", stSel], ["fdc", dirSel], ["fmc", mkSel], ["fcc", scSel], ["fstc", stgSel], ["ftierc", tierSel], ["fown", ownSel]];
 CHIPG.forEach(([id, set]) => bindChips(id, set));
 bindChips("fgc", tagSel, syncTagN);
 const syncTrlUI = () => document.querySelectorAll("#ftc button").forEach(b => {

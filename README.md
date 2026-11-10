@@ -234,6 +234,7 @@ long 評価では、点数・TRL とは独立に「その資料が示す出来�
 - 辞書の tier（core / watch / reference）は不変で、その上に企業ごとの**導出 tier**（`derived_tier`: `core` = Core / `conditional` = Conditional / `look` = Look / `see` = See）を併記します。導出は辞書・評価・監査・処分から決定的に計算する別層で、元の値には触りません（ルール版は `tiers/v1`）。
 - 基礎 watch → Look、基礎 reference → See。基礎 core は「最新の帰属可能な long 評価がある」「その評価の企業リンクが strong かつ一意」「その評価の最新の監査結果に未処分の要確認が無い（誤検知と処分された flag は数えない）」の全てを満たせば Core、1つでも欠ければ Conditional です。判定に使うのは最新の long 評価のみで、event 評価だけの企業は Conditional になります。
 - `summary.tiers` には4層の分布（社数・シェア）、目標（Core 100 / Conditional 150 / Look 200 / See 50社 = 20/30/40/10%。比率は目安）との差、シェアが目標から ±5pt を超えた層の**警告**が入ります。警告は出すだけで、層の自動調整はしません。実行レポートにも同じ分布と警告が出ます。
+- 各企業には `derived_reasons`（未充足の条件の理由文。導出側の文面そのまま）も併記され、サイトでは Conditional の企業に理由を平文で表示します。主ページには分布と警告の帯と「企業の層」の絞り込みがあり、監査ページのカードにも層を併記します（表示の差は検証状態とその理由だけに対応させ、状態色は使いません）。
 - 導出結果は export のたびに DB の `tier_snapshots` へ追記のみで記録され、過去の層を後から再現できます。
 - 評価の選定対象は従来どおり基礎 core（= Core + Conditional）で、導出 tier は選定に影響しません。
 

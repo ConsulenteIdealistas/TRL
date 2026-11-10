@@ -1,5 +1,5 @@
 "use strict";
-// ウォッチ・参考ページ: 評価対象外の監視企業 (tier = watch / reference) の
+// Look・See ページ: 評価対象外の企業 (基礎 tier = watch / reference) の
 // プール材料を、企業単位・一次情報優先で読むための表示専用ページ。
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
@@ -73,7 +73,7 @@ function cardHtml(c) {
   const tags = (c.tags || []).length ? `<div class="wmeta">${c.tags.map(t => `<span class="chip">${esc(tagLabel(t))}</span>`).join(" ")}</div>` : "";
   const cnt = `一次情報 ${c.counts.primary}件・ニュース ${c.counts.news}件${c.latest ? `・最新 ${esc(c.latest)}` : ""}・未評価`;
   return `<section class="card wcard" data-id="${esc(c.id)}">
-    <div class="whead"><span class="wname">${esc(c.name)}</span><span class="tbadge ${esc(c.tier)}">${esc(DT[dtier(c)] || dtier(c))}</span></div>
+    <div class="whead"><span class="wname">${esc(c.name)}</span><span class="tbadge">${esc(DT[dtier(c)] || dtier(c))}</span></div>
     <div class="wmeta">${esc(meta)}</div>${tags}
     <div class="wmeta">${esc(cnt)}</div>
     <div class="mops"><button type="button" class="btn" data-toggle="${esc(c.id)}" aria-expanded="false">材料を見る</button></div>

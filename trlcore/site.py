@@ -239,7 +239,19 @@ WATCH_NEWS_CAP = 5
 WATCH_NEWS_SOURCES = ("gnews", "prtimes")
 
 
-def _watch_companies(store, cfg, ent_derived=None):
+def _unmet_reasons(result):
+    """導出結果から「未充足の理由」の detail 文だけを取り出す (表示用)。
+
+    文面は導出 (tiers.py) の定義をそのまま使う。評価が無いために
+    「判定対象外」になっている条件は、理由として重複するので除く。
+    """
+    if not result:
+        return []
+    return [r["detail"] for r in result.get("reasons") or []
+            if not r.get("ok") and "判定対象外" not in (r.get("detail") or "")]
+
+
+def _watch_companies(store, cfg, ent_derived=None, ent_reasons=None):
     """tier が watch / reference の企業と、そのプール材料を返す (表示専用)。
 
     評価対象ではないため本体の candidates には載らない材料を、企業単位で
@@ -257,6 +269,7 @@ def _watch_companies(store, cfg, ent_derived=None):
                                    if isinstance(e.get("tags"), list) else []),
                           "stage": e.get("stage"), "tier": e.get("tier") or "core",
                           "derived_tier": (ent_derived or {}).get(e["id"]),
+                          "derived_reasons": (ent_reasons or {}).get(e["id"], []),
                           "ticker": e.get("ticker"),
                           "counts": {"primary": 0, "news": 0},
                           "latest": None, "_primary": [], "_news": []}
@@ -329,6 +342,7 @@ def build_site_data(store, cfg, now=None):
     # 4層の分布・警告を data.json に同梱する (追加フィールド方式)
     derived = compute_derived_tiers(store, cfg.get("entities"))
     ent_derived = {eid: r["derived_tier"] for eid, r in derived.items()}
+    ent_reasons = {eid: _unmet_reasons(r) for eid, r in derived.items()}
     cands = []
     rows = store.conn.execute("SELECT id, info_type, status FROM candidates ORDER BY published DESC, id").fetchall()
     for cid, info_type, cand_status in rows:
@@ -367,6 +381,7 @@ def build_site_data(store, cfg, now=None):
                              "strength": e["strength"], "product_name": e["product_name"] or None,
                              "tier": ent_tiers.get(e["entity_id"], "core"),
                              "derived_tier": ent_derived.get(e["entity_id"]),
+                             "derived_reasons": ent_reasons.get(e["entity_id"], []),
                              "market": ent_markets.get(e["entity_id"], "JP"),
                              "sector": ent_sectors.get(e["entity_id"]),
                              "tags": ent_tags.get(e["entity_id"], []),
@@ -426,7 +441,7 @@ def build_site_data(store, cfg, now=None):
                    "item_groups": {"technology": [k for k in long_w if k in TECH_ITEMS],
                                    "business": [k for k in long_w if k not in TECH_ITEMS]}},
         "candidates": cands,
-        "watch_companies": _watch_companies(store, cfg, ent_derived)}
+        "watch_companies": _watch_companies(store, cfg, ent_derived, ent_reasons)}
 
 
 def export_site(store, cfg, out_dir, web_dir=None, now=None):

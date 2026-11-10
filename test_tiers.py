@@ -310,5 +310,49 @@ class SnapshotTests(TierFixture):
                          {"look", "see"})
 
 
+class ExportTierReasonsTests(TierFixture):
+    """export に未充足の理由 (derived_reasons) が同梱されること (WEB.md §4-1)。"""
+
+    def _data(self):
+        cfg = cfg_with()
+        cfg["entities"] = ENTS
+        return T.build_site_data(self.store, cfg,
+                                 datetime(2026, 11, 10, tzinfo=timezone.utc))
+
+    def _ent(self, data, cid, eid):
+        cand = next(c for c in data["candidates"] if c["id"] == cid)
+        return next(e for e in cand["entities"] if e["entity_id"] == eid)
+
+    def test_reasons_exported_for_conditional_only(self):
+        # acme: 評価はあるが未処分の要確認 → 理由は監査の detail 1件
+        cid = self._candidate([("acme", "strong")])
+        ev_id = self._evaluation(cid)
+        self._audit(cid, ev_id, [{"check": "A8", "item": "monetization",
+                                  "verdict": "flag"}])
+        # beta: event 評価のみ (long が無い) → 理由は「long 評価が無い」の
+        # 1件だけ (「判定対象外」の重複分は export に出さない)
+        cid2 = self._candidate([("beta", "strong")], title="イベントのみの論文")
+        self._evaluation(cid2, kind="event")
+        data = self._data()
+        acme = self._ent(data, cid, "acme")
+        self.assertEqual(acme["derived_tier"], "conditional")
+        self.assertEqual(len(acme["derived_reasons"]), 1)
+        self.assertIn("未処分の要確認がある: A8", acme["derived_reasons"][0])
+        beta = self._ent(data, cid2, "beta")
+        self.assertEqual(beta["derived_tier"], "conditional")
+        self.assertEqual(beta["derived_reasons"],
+                         ["帰属可能な long 評価が無い (未評価または event のみ)"])
+        # watch_companies 側にも derived_reasons が付く (Look/See は空)
+        self.assertTrue(all(w["derived_reasons"] == []
+                            for w in data["watch_companies"]))
+
+    def test_core_company_has_no_unmet_reasons(self):
+        cid = self._candidate([("acme", "strong")])
+        self._evaluation(cid)
+        acme = self._ent(self._data(), cid, "acme")
+        self.assertEqual(acme["derived_tier"], "core")
+        self.assertEqual(acme["derived_reasons"], [])
+
+
 if __name__ == "__main__":
     unittest.main()

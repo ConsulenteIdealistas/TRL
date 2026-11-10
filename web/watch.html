@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>ウォッチ・参考 — TRL Explorer</title>
+<title>Look・See — TRL Explorer</title>
 <link rel="stylesheet" href="style.css">
 <script>try{var tt=localStorage.getItem("trl-theme");document.documentElement.dataset.theme=(tt==="light"||tt==="dark")?tt:"dark";}catch(e){document.documentElement.dataset.theme="dark";}</script>
 <style>
@@ -27,9 +27,7 @@ select.tsel{padding:8px 10px;border:1px solid var(--line);border-radius:10px;bac
 .whead{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}
 .wname{font-size:16px;font-weight:800;line-height:1.5}
 .wmeta{color:var(--sub);font-size:12px;line-height:1.9;margin-top:4px}
-.tbadge{padding:2px 8px;border-radius:999px;font-size:11px;font-weight:800}
-.tbadge.watch{color:var(--yc);background:color-mix(in srgb,var(--yc) 16%,transparent)}
-.tbadge.reference{color:var(--vc);background:color-mix(in srgb,var(--vc) 16%,transparent)}
+.tbadge{padding:2px 8px;border-radius:999px;font-size:11px;font-weight:800;color:var(--sub);background:color-mix(in srgb,var(--sub) 14%,transparent)}
 .wmat{display:none;margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
 .wcard.open .wmat{display:block}
 .mat{margin:0 0 12px;padding:11px 12px;border:1px solid var(--line);border-radius:12px;background:var(--field)}
@@ -48,10 +46,10 @@ select.tsel{padding:8px 10px;border:1px solid var(--line);border-radius:10px;bac
 <main class="ws">
 <nav class="pagelinks"><a href="index.html">一覧</a><a href="criteria.html">採点基準</a><a href="audit.html">監査</a></nav>
 <div class="wwrap">
-<h1 class="ptitle">ウォッチ・参考</h1>
-<p class="pdesc">評価対象ではない監視企業（ウォッチ）と、取引不可などの理由で収集だけを行う参考企業の材料置き場です。論文・治験・開示などの一次情報を前段に、ニュースを後段に並べています。各社は<strong>未評価</strong>で、一覧の評価済み企業とは別枠です。</p>
+<h1 class="ptitle">Look・See</h1>
+<p class="pdesc">評価対象ではない監視企業（Look）と、取引不可などの理由で収集だけを行う企業（See）の材料置き場です。論文・治験・開示などの一次情報を前段に、ニュースを後段に並べています。各社は<strong>未評価</strong>で、一覧の評価済み企業とは別枠です。</p>
 <div class="wctl">
-  <div class="wrow"><input id="q" class="tin" type="search" placeholder="企業名・タグ・材料のタイトルで検索" aria-label="ウォッチ企業を検索"></div>
+  <div class="wrow"><input id="q" class="tin" type="search" placeholder="企業名・タグ・材料のタイトルで検索" aria-label="Look・See の企業を検索"></div>
   <div class="wrow"><span class="wlbl">層</span><span id="tiers"></span></div>
   <div class="wrow"><span class="wlbl">国・市場</span><span id="markets"></span></div>
   <div class="wrow"><span class="wlbl">分野</span><span id="sectors"></span></div>

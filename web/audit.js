@@ -26,6 +26,9 @@ const CHK = {A1: "原則1: 商用展開とTRLの混同", A2: "原則2: TRL 9 の
   P4: "未採点なのに根拠あり", P5: "企業項目の未採点", P6: "反応がないのに織り込み済み",
   CR1: "DOI の実在確認", CT1: "治験ステータス（中止系）の反証", CT2: "治験スポンサーの帰属"};
 const DISP = [["confirmed", "問題あり"], ["false_positive", "誤検知"], ["watch", "様子見"]];
+// 導出 tier (tiers/v1) の表示名 (W-9: 監査カードの企業名に併記するだけ)
+const DTL = {core: "Core", conditional: "Conditional", look: "Look", see: "See"};
+const dtLabelA = e => DTL[e.derived_tier || (e.tier === "watch" ? "look" : e.tier === "reference" ? "see" : "core")] || "";
 
 const RKEY = "trl-review";
 let review = loadReview();
@@ -255,6 +258,8 @@ function cardHtml(c) {
   const sectors = [...new Set((p.entities || []).map(e => CL[e.sector] || e.sector).filter(Boolean))].join("・");
   const bits = [];
   if (entNames) bits.push(esc(entNames));
+  const tierLbls = [...new Set((p.entities || []).map(dtLabelA).filter(Boolean))];
+  if (tierLbls.length) bits.push(esc(tierLbls.join(" / ")));
   if (sectors) bits.push(esc(sectors));
   if (p.title_ja && p.title && p.title !== p.title_ja) bits.push(esc(p.title));
   const ev = [];

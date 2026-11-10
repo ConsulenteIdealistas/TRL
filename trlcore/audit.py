@@ -832,3 +832,12 @@ _CHECK_FUNCS.update(POSITIVE_CHECK_FUNCS)
 RULES_CHECKS = RULES_CHECKS + POSITIVE_RULES_CHECKS
 EVENT_CHECKS = EVENT_CHECKS + POSITIVE_EVENT_CHECKS
 AUDIT_CHECKS = AUDIT_CHECKS + POSITIVE_CHECKS
+
+# ---------------------------------------------------------------------------
+# API 照合層 (audit_api) のチェック名を監査レポートの集計対象に加える。
+# audit_api は build_audit_input を関数内で遅延 import する設計のため、
+# ここで取り込んでも循環しない。実行自体は cli の audit コマンドが
+# 規則監査の後に run_audit_api を呼ぶ (失敗しても規則側は残る)。
+# ---------------------------------------------------------------------------
+from .audit_api import API_CHECKS as _API_CHECKS, run_audit_api  # noqa: F401,E402
+AUDIT_CHECKS = AUDIT_CHECKS + _API_CHECKS

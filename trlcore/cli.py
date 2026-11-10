@@ -14,6 +14,7 @@ from .pipeline import run_pipeline
 from .site import export_site
 from .report import build_report
 from .audit import build_audit_report, run_audit_rules
+from .audit_api import run_audit_api
 from .compare import build_compare_report, run_compare
 
 
@@ -241,13 +242,24 @@ def main(argv=None):
             print(f"::error::database not found: {db}")
             return 2
         store = Store(db)
-        # 規則エンジンのみ (audit_rules.json の照合だけで、API を呼ばず
-        # LLM クライアントも構築しない)。LLM 監査は 2026-11-06 に廃止。
+        # 規則監査 (audit_rules.json の照合だけ。LLM クライアントは
+        # 構築しない。LLM 監査は 2026-11-06 に廃止) の後に、API 照合層
+        # (外部レジストリ照合) を続けて実行する。
         res = run_audit_rules(store, cfg, limit=a.limit)
         text = build_audit_report(store, res["batch"])
         rep = Path(a.data_dir) / "audit-reports"
         rep.mkdir(parents=True, exist_ok=True)
         (rep / f"{res['batch']}.md").write_text(text, encoding="utf-8")
+        # API 照合層は外部 API に依存するため、失敗しても規則監査の
+        # 結果とレポートは残す (例外はここで隔離する)。
+        try:
+            api_res = run_audit_api(store, cfg, limit=a.limit)
+            api_text = build_audit_report(store, api_res["batch"])
+            (rep / f"{api_res['batch']}.md").write_text(api_text, encoding="utf-8")
+            text += "\n" + api_text
+        except Exception as e:
+            print(f"::warning::API 照合層を実行できませんでした"
+                  f" (規則監査の結果は保存済み): {type(e).__name__}: {e}")
         store.close()
         print(text)
         if os.environ.get("GITHUB_STEP_SUMMARY"):

@@ -34,6 +34,20 @@ def _retry_after_seconds(headers, cap=60.0):
     return min(max(v, 0.0), cap) if v == v else None
 
 
+def _error_body_snippet(e, limit=200):
+    """HTTP エラー応答の本文冒頭 (サーバが返す失敗理由)。読めなければ空文字。
+    SimFin の bulk-download のように理由を 400 の本文 (JSON の error 等) で
+    返す API では、ステータスだけでは切り分けられないため警告に残す。
+    空白を潰して1行化し、秘密情報は redact で落としてから limit 文字で切る
+    (警告側でも全体がさらに切り詰められる)。"""
+    try:
+        raw = e.read(4096) or b""
+    except Exception:
+        return ""
+    text = raw if isinstance(raw, str) else raw.decode("utf-8", "replace")
+    return redact(" ".join(text.split()))[:limit]
+
+
 def backoff_delay(attempt, retry_after=None, rand=random.random):
     """attempt は 1 から。Retry-After があれば優先。無ければ 15→30→30秒
     (最大20%のジッターつき)、4回目以降は60秒。503/429 のような一時的な
@@ -76,6 +90,9 @@ def http_fetch(url, params=None, headers=None, data=None, timeout=30, retries=2,
             status = e.code
             retryable = e.code in (500, 502, 503, 504) or (retry_429 and e.code == 429)
             msg = f"HTTP {e.code}"
+            snippet = _error_body_snippet(e)
+            if snippet:
+                msg += f" body: {snippet}"
             retry_after = _retry_after_seconds(getattr(e, "headers", None))
         except (urllib.error.URLError, TimeoutError, ConnectionError) as e:
             status, retryable = None, True

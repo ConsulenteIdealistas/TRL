@@ -618,6 +618,37 @@ class HttpTests(unittest.TestCase):
         self.assertNotIn("SECRETSECRET", str(cm.exception))
         self.assertEqual(cm.exception.status, 401)
 
+    def test_error_body_included_in_message(self):
+        # 理由を本文で返す API (SimFin の 400 等) の切り分け用:
+        # 本文冒頭が例外メッセージに残ること
+        body = io.BytesIO(b'{"error": "dataset not available for your plan"}')
+        def opener(req, timeout):
+            raise urllib.error.HTTPError(req.full_url, 400, "x", {}, body)
+        with self.assertRaises(http.HttpError) as cm:
+            http.fetch("http://x/api", opener=opener, sleep=lambda s: None)
+        self.assertEqual(cm.exception.status, 400)
+        self.assertIn("dataset not available for your plan", str(cm.exception))
+
+    def test_error_body_redacted_and_truncated(self):
+        os.environ["SIMFIN_API_KEY"] = "simfin-secret-999"
+        try:
+            body = io.BytesIO(("key simfin-secret-999 rejected " + "x" * 500).encode())
+            def opener(req, timeout):
+                raise urllib.error.HTTPError(req.full_url, 400, "x", {}, body)
+            with self.assertRaises(http.HttpError) as cm:
+                http.fetch("http://x/api", opener=opener, sleep=lambda s: None)
+            self.assertNotIn("simfin-secret-999", str(cm.exception))
+            self.assertLessEqual(len(str(cm.exception)), len("HTTP 400 for http://x/api body: ") + 200)
+        finally:
+            del os.environ["SIMFIN_API_KEY"]
+
+    def test_error_without_body_message_unchanged(self):
+        def opener(req, timeout):
+            raise urllib.error.HTTPError(req.full_url, 400, "x", {}, None)
+        with self.assertRaises(http.HttpError) as cm:
+            http.fetch("http://x/api", opener=opener, sleep=lambda s: None)
+        self.assertEqual(str(cm.exception), "HTTP 400 for http://x/api")
+
     def test_gives_up_after_retries(self):
         n = []
 

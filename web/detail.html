@@ -68,7 +68,7 @@ const dtLabel = e => DTL[dtierOf(e)] || "";
 const dtText = e => {
   const l = dtLabel(e);
   if (!l || dtierOf(e) !== "conditional") return l;
-  const rs = (e.derived_reasons || []).filter(Boolean);
+  const rs = (Array.isArray(e.derived_reasons) ? e.derived_reasons : []).filter(Boolean);
   return rs.length ? `Conditional（${rs.join("／")}）` : l;
 };
 // 関門 (barriers/v1) の表示名・定義。trlcore/barriers.py の定義が正本で、
@@ -288,7 +288,7 @@ function peerTableHtml(rows, sortKey) {
   const rowHtml = r => {
     const name = r.cand ? `<a href="detail.html?id=${encodeURIComponent(r.cand)}">${esc(r.name)}</a>` : esc(r.name);
     const self = r.self ? `<span class="pself">この企業</span>` : "";
-    const crs = (r.derived_reasons || []).filter(Boolean);
+    const crs = (Array.isArray(r.derived_reasons) ? r.derived_reasons : []).filter(Boolean);
     const cond = r.derived_tier === "conditional"
       ? `<span class="hint">（Conditional${crs.length ? ": " + esc(crs.join("／")) : ""}）</span>` : "";
     // Look・See は評価対象外 (単独材料は評価されない)。無いことを不足と同一視しない

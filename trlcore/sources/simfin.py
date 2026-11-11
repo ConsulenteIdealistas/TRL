@@ -19,6 +19,9 @@ bulk-download のエンドポイント一覧で 2026-11-10 に確認):
 - GET https://prod.simfin.com/api/bulk-download/s3
   ?dataset={income|balance|cashflow}&variant={ttm|quarterly}&market={us|de|ca}
 - 認証は Authorization: api-key <key> ヘッダ。キーを URL に載せない
+- 応答は署名付き S3 URL へのリダイレクトで返る。認証ヘッダをリダイレクト
+  先へ持ち越すと S3 が二重認証として 400 を返すため、ホストが変わる
+  リダイレクトでは Authorization を落とす (_NoAuthRedirectHandler)
 - 応答は ';' 区切り CSV (ZIP で返る場合は先頭の CSV メンバを読む)
 - CSV の列は Ticker / SimFinId / Currency / Fiscal Year / Fiscal Period /
   Report Date / Publish Date / Restated Date のメタ列 + 指標列 (英語名)
@@ -35,6 +38,7 @@ import io
 import os
 import threading
 import time
+import urllib.request
 import zipfile
 from datetime import date, timedelta
 
@@ -64,6 +68,29 @@ def _throttle(sleep=time.sleep, now=time.monotonic):
         if wait > 0:
             sleep(wait)
         _last_call[0] = now()
+
+
+class _NoAuthRedirectHandler(urllib.request.HTTPRedirectHandler):
+    """ホストが変わるリダイレクトで Authorization を持ち越さない。
+
+    bulk-download/s3 は署名付き S3 URL へリダイレクトする。urllib の既定の
+    リダイレクト処理は元のヘッダを新しいリクエストへ複写するため、S3 が
+    クエリ署名と Authorization ヘッダの二重認証を受け取り、400
+    (Only one auth mechanism allowed) を返す (2026-11-11 の実測)。
+    署名付き URL は署名だけで認証されるので、ホスト変更時のみ落とす。
+    """
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        new = super().redirect_request(req, fp, code, msg, headers, newurl)
+        if new is not None and new.host != req.host:
+            new.remove_header("Authorization")
+        return new
+
+
+def _opener():
+    """SimFin 専用の opener (http_fetch の opener 引数に渡す)。
+    他ソースの取得には影響させないため、共通の http 層には入れない。"""
+    return urllib.request.build_opener(_NoAuthRedirectHandler()).open
 
 
 def simfin_enabled():
@@ -99,11 +126,14 @@ def _get(dataset, variant, market, http):
     # 再試行は http_fetch に任せない (retries=0): バルクは数 MB〜数十 MB の
     # 一括取得で、再試行は帯域と時間を倍食いするだけ。失敗は収集側で記録
     # され、休止に入らないため次回実行で再試行される (ROIC と同じ判断)
+    # opener は実取得 (http_fetch) のときだけ渡す。注入された http は
+    # テスト用のモックで、リダイレクト自体が起きないため不要
+    extra = {"opener": _opener()} if http is None else {}
     return fetch(API_BASE + "/s3",
                  params={"dataset": dataset, "variant": variant, "market": market},
                  headers={"Authorization": f"api-key {key}",
                           "Accept": "text/csv, application/zip"},
-                 retries=0)
+                 retries=0, **extra)
 
 
 def parse_bulk_csv(payload):

@@ -4,6 +4,7 @@ import io
 import os
 import tempfile
 import unittest
+import urllib.request
 import zipfile
 from datetime import date
 from pathlib import Path
@@ -168,6 +169,50 @@ class SimFinFetcherTests(unittest.TestCase):
     def test_throttle_interval_matches_web_api_limit(self):
         # Web-API の上限 2回/秒を超えない間隔であること
         self.assertGreaterEqual(simfin.MIN_INTERVAL_SEC, 0.5)
+
+    def test_redirect_drops_authorization_to_other_host(self):
+        # S3 (別ホスト) へのリダイレクトでは Authorization を持ち越さない。
+        # 持ち越すと署名との二重認証になり S3 が 400 を返す (実測)
+        handler = simfin._NoAuthRedirectHandler()
+        req = urllib.request.Request(
+            "https://prod.simfin.com/api/bulk-download/s3",
+            headers={"Authorization": "api-key test-key", "Accept": "text/csv"})
+        new = handler.redirect_request(
+            req, None, 302, "Found", {},
+            "https://simfin-bulk.s3.amazonaws.com/income.csv?X-Amz-Signature=abc")
+        self.assertIsNotNone(new)
+        self.assertIsNone(new.get_header("Authorization"))
+        self.assertEqual(new.get_header("Accept"), "text/csv")
+
+    def test_redirect_keeps_authorization_same_host(self):
+        # 同一ホストへのリダイレクトでは認証を落とさない
+        handler = simfin._NoAuthRedirectHandler()
+        req = urllib.request.Request(
+            "https://prod.simfin.com/api/bulk-download/s3",
+            headers={"Authorization": "api-key test-key"})
+        new = handler.redirect_request(
+            req, None, 302, "Found", {},
+            "https://prod.simfin.com/api/bulk-download/s3b")
+        self.assertIsNotNone(new)
+        self.assertEqual(new.get_header("Authorization"), "api-key test-key")
+
+    def test_get_passes_opener_only_for_real_fetch(self):
+        # 実取得 (http_fetch) のときだけ SimFin 専用 opener が渡り、
+        # 注入モックには渡らない (モックの署名を壊さない)
+        seen = {}
+
+        def fake_fetch(url, params=None, headers=None, retries=None, opener=None):
+            seen["opener"] = opener
+            return csv_bytes(INC_HEAD, INC_ROWS)
+
+        with mock.patch.object(simfin, "http_fetch", fake_fetch):
+            simfin._get("income", "ttm", "us", None)
+        self.assertTrue(callable(seen["opener"]))
+
+        def strict_http(url, params=None, headers=None, retries=None):
+            return csv_bytes(INC_HEAD, INC_ROWS)
+
+        simfin._get("income", "ttm", "us", strict_http)  # opener が渡れば TypeError
 
 
 def fin_raw(source, sid, marker_label, published="2026-03-31"):

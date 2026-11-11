@@ -965,10 +965,10 @@ def _selection_rank(c):
     return (link, 0 if has_demo_signal(c) else 1)
 
 
-def _is_current_generation(gen, cfg):
-    """候補の最新 long 評価の世代印 (store.latest_long_eval_generations の
-    値) が現行世代か。世代の同一性は config_version とプロンプト版
-    (extract / long) の両方で判定する (FREEZE-PLAN C 節: 世代は
+def _is_current_generation(gen, cfg, kind="long"):
+    """候補の最新評価の世代印 (store.latest_*_eval_generations の値) が
+    現行世代か。世代の同一性は config_version とプロンプト版
+    (extract / 評価系統) の両方で判定する (FREEZE-PLAN C 節: 世代は
     config_version だけで呼ばない)。印が欠けている評価は現行とは
     みなさない (安全側 = 旧世代として寄せの対象にする)。"""
     if not gen or gen.get("config") != cfg["config_version"]:
@@ -976,7 +976,7 @@ def _is_current_generation(gen, cfg):
     prompts = (cfg["scoring"].get("prompts") or {})
     got = gen.get("prompts") or {}
     return got.get("extract") == prompts.get("extract") \
-        and got.get("long") == prompts.get("long")
+        and got.get(kind) == prompts.get(kind)
 
 
 def select_for_eval(store, cfg, today, limit, retry_failed="no", only_new=False, stats=None):
@@ -1010,6 +1010,14 @@ def select_for_eval(store, cfg, today, limit, retry_failed="no", only_new=False,
             if d is not None:
                 reeval_since[q["candidate_id"]] = d
 
+    # 世代の寄せ (G-5) と TH-1 ゲートの世代緩和の判定材料: 候補ごとの
+    # 最新 long 評価の世代印。旧世代の候補集合はゲート判定 (ループ内) と
+    # 前面化 (ループ後) の両方で使うため、ここで一度だけ求める
+    gen_map = store.latest_long_eval_generations() \
+        if hasattr(store, "latest_long_eval_generations") else {}
+    oldgen_ids = {cid for cid, g in gen_map.items()
+                  if not _is_current_generation(g, cfg)}
+
     for c in store.list_by_status(statuses):
         if c.get("info_type") in ("news", "disclosure"):
             continue  # ニュースと開示(財務スナップショット)は単体評価せず、プールとして同梱する
@@ -1034,6 +1042,13 @@ def select_for_eval(store, cfg, today, limit, retry_failed="no", only_new=False,
         # 監査レビューの再評価予約 (人間の処分) がある候補は対象外で、
         # 従来どおり予約の作成日時 (処分日) を起点とする間隔ゲートで扱う
         # (TA-2。予約自体は run_pipeline 側で選定の先頭にも差し込まれる)。
+        # 例外は最新 long 評価が旧世代の候補 (世代の移行): 物差し自体が
+        # 変わっているため、同一材料への再判定でも「現行の物差しで測り
+        # 直す」という観測上の情報を持つ。TH-1 の前提 (判定が変わりうる
+        # のは材料が変わったときだけ) が成り立たない場合に当たるため、
+        # 旧世代に限って材料更新ゲートを外す。現行世代の評価には従来
+        # どおりゲートを維持し、無駄な再評価は増やさない。移行が済めば
+        # 候補は現行世代になり、この例外からは自然に外れる。
         if c["status"] in ("hold", "evaluated"):
             last = parse_date((c["last_eval_at"] or "")[:10])
             upd = parse_date((c.get("material_updated_at") or "")[:10])
@@ -1041,6 +1056,8 @@ def select_for_eval(store, cfg, today, limit, retry_failed="no", only_new=False,
                 if (today - reeval_since[c["id"]]).days < sc["reeval_after_days"]:
                     if not (upd and last and upd > last):
                         continue
+            elif c["id"] in oldgen_ids:
+                pass  # 世代の移行: 材料更新が無くても再評価の対象にする
             elif last is not None and not (upd and upd > last):
                 # 旧ルールでは間隔を越えれば適格だった候補が、材料更新が
                 # 無く見送られた件数は観測用に数える (滞留の検知)
@@ -1053,20 +1070,17 @@ def select_for_eval(store, cfg, today, limit, retry_failed="no", only_new=False,
 
     rows.sort(key=lambda c: c["published"] or "", reverse=True)
     rows.sort(key=_selection_rank)
-    # 世代の寄せ (G-5): 再評価適格 (TH-1 の材料更新ゲートを通った) 候補の
-    # うち、最新 long 評価が旧世代のものを選定の前面に出し、世代混在の
-    # 解消を偶発でなく選定の規則にする。前面に出せるのは上限の半分
-    # (切り上げ) まで: 残り半分は通常選定 (未評価候補の初回評価を含む)
-    # のために残し、週予算を旧世代の消化だけで食い潰さない。半分という
-    # 値は「再評価は初回評価に従属する」という滞留対策の従来原則
-    # (予約も上限の内数・別枠なし) を、世代寄せにも同じ強さで適用した
-    # もの。前面分を超えた旧世代候補は通常選定の後ろに回り、材料が
-    # 無くなれば (rest が尽きれば) そちらからも選ばれる。
+    # 世代の寄せ (G-5): 再評価適格な候補のうち、最新 long 評価が旧世代の
+    # ものを選定の前面に出し、世代混在の解消を偶発でなく選定の規則に
+    # する。旧世代の適格は TH-1 ゲートの世代緩和で材料更新に依らない
+    # ため、適格数そのものが移行の残量を表す。前面に出せるのは上限の
+    # 半分 (切り上げ) まで: 残り半分は通常選定 (未評価候補の初回評価を
+    # 含む) のために残し、週予算を旧世代の消化だけで食い潰さない。
+    # 半分という値は「再評価は初回評価に従属する」という滞留対策の
+    # 従来原則 (予約も上限の内数・別枠なし) を、世代寄せにも同じ強さで
+    # 適用したもの。前面分を超えた旧世代候補は通常選定の後ろに回り、
+    # 他の適格候補が尽きれば (rest が尽きれば) そちらからも選ばれる。
     # 移行の進捗は stats で観測可能にする (旧世代の残数・適格数・選定数)。
-    gen_map = store.latest_long_eval_generations() \
-        if hasattr(store, "latest_long_eval_generations") else {}
-    oldgen_ids = {cid for cid, g in gen_map.items()
-                  if not _is_current_generation(g, cfg)}
     if stats is not None:
         stats["oldgen_long_remaining"] = len(oldgen_ids)
     oldgen_rows = [c for c in rows if c["id"] in oldgen_ids]
@@ -1130,6 +1144,8 @@ def select_event_fill(store, cfg, as_of, limit, exclude_ids, log=print):
     コア企業リンクの候補を、通常選定と同じ順位 (リンク段位 → 実証
     シグナル → 新しい順) で最大 limit 件返す。event 評価済みの判定は
     「材料の最終更新以降に final/hold の event 評価がある」こと。
+    ただし最新の event 評価が旧世代の候補は評価済みとみなさない
+    (世代の移行: long の TH-1 緩和と同じ扱い)。
     反応データの有無は build_market_reaction (系列は DB にキャッシュ
     され、古い場合だけ取得する) で候補ごとに確認し、limit 件が
     埋まった時点で打ち切る (全プールを走査しない)。
@@ -1138,6 +1154,13 @@ def select_event_fill(store, cfg, as_of, limit, exclude_ids, log=print):
         return []
     core_ids = {e["id"] for e in (cfg.get("entities") or {}).get("entities", [])
                 if (e.get("tier") or "core") == "core"}
+    # 世代の移行 (long の TH-1 緩和と同じ): 最新 event 評価が旧世代の
+    # 候補は、材料が変わっていなくても現行世代での測り直しに情報が
+    # あるため「評価済み」とはみなさない
+    ev_gen_map = store.latest_event_eval_generations() \
+        if hasattr(store, "latest_event_eval_generations") else {}
+    ev_oldgen_ids = {cid for cid, g in ev_gen_map.items()
+                     if not _is_current_generation(g, cfg, "event")}
     pool = []
     for c in store.list_by_status(["screened", "hold", "evaluated"]):
         if c["id"] in exclude_ids:
@@ -1148,7 +1171,8 @@ def select_event_fill(store, cfg, as_of, limit, exclude_ids, log=print):
         if not linked or not (linked & core_ids):
             continue
         ev = store.latest_evaluation(c["id"], "event")
-        if ev and ev.get("status") in ("final", "hold"):
+        if ev and ev.get("status") in ("final", "hold") \
+                and c["id"] not in ev_oldgen_ids:
             upd = parse_date((c.get("material_updated_at") or "")[:10])
             evd = parse_date((ev.get("evaluated_at") or "")[:10]) \
                 or parse_date((ev.get("as_of") or "")[:10])

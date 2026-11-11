@@ -142,6 +142,60 @@ class GenerationSelectionTests(StoreFixtureBase):
         self.assertEqual([c["id"] for c in sel], [b, a])
         self.assertEqual(stats["oldgen_long_remaining"], 0)
 
+    def _stale(self, published, gen):
+        # 材料更新が無い再評価候補 (TH-1 ゲートに通常は止まる形)
+        cid = self._candidate(published=published, status="evaluated",
+                              eval_at="2026-09-20T00:00:00+00:00")
+        if gen == "old":
+            self._long_eval(cid, config="2026.11.1",
+                            prompts={"extract": {"version": "v2"},
+                                     "long": {"version": "v2"}})
+        else:
+            self._long_eval(cid)
+        return cid
+
+    def test_oldgen_exempt_from_material_gate(self):
+        # 世代の移行: 旧世代は材料更新が無くても適格になる。現行世代は
+        # 従来どおりゲートで見送られ、見送り件数にも数えられる
+        old = self._stale("2026-10-15", "old")
+        new = self._stale("2026-10-16", "new")
+        stats = {}
+        sel = select_for_eval(self.store, CFG, AS_OF, 10, stats=stats)
+        ids = [c["id"] for c in sel]
+        self.assertIn(old, ids)
+        self.assertNotIn(new, ids)
+        self.assertEqual(stats["oldgen_long_remaining"], 1)
+        self.assertEqual(stats["oldgen_reeval_eligible"], 1)
+        self.assertEqual(stats["oldgen_selected"], 1)
+        self.assertEqual(stats.get("reeval_skipped_no_material_update"), 1)
+
+    def test_oldgen_fills_slots_beyond_front_half(self):
+        # 前半枠 (上限の半分) を超えた旧世代も、他の適格候補が尽きれば
+        # 残り枠で選ばれる (移行ペースは週予算の範囲で最大化される)
+        olds = [self._stale(f"2026-10-{d:02d}", "old") for d in (15, 14, 13, 12)]
+        fresh = self._candidate(published="2026-10-16", status="screened")
+        stats = {}
+        sel = select_for_eval(self.store, CFG, AS_OF, 5, stats=stats)
+        self.assertEqual({c["id"] for c in sel}, set(olds) | {fresh})
+        self.assertEqual(stats["oldgen_reeval_eligible"], 4)
+        self.assertEqual(stats["oldgen_selected"], 4)
+
+    def test_oldgen_reservation_gate_unchanged(self):
+        # 予約 (TA-2) の起点ゲートは世代緩和の対象外: 処分直後の旧世代
+        # 候補も、予約の間隔が経つまでは通常選定に戻らない
+        cid = self._candidate(published="2026-10-15", status="hold",
+                              eval_at="2026-09-01T00:00:00+00:00")
+        self._long_eval(cid, config="2026.11.1",
+                        prompts={"extract": {"version": "v2"},
+                                 "long": {"version": "v2"}}, status="hold")
+        self.store.enqueue_reeval("uuid-genmix-1", cid, "監査レビューでの予約")
+        self.store.conn.execute(
+            "UPDATE reeval_queue SET created_at='2026-10-17T00:00:00+00:00' "
+            "WHERE candidate_id=?", (cid,))
+        self.store.conn.commit()
+        sel = select_for_eval(self.store, CFG, AS_OF, 10)
+        self.assertNotIn(cid, [c["id"] for c in sel])
+
 
 class ReferenceItemTests(unittest.TestCase):
     """N-1: 参考項目の欠落は理由コードで記録し、状態を判定できる。"""
@@ -323,6 +377,22 @@ class EventFillTests(StoreFixtureBase):
         self.store.set_status(cid, status)
         return cid
 
+    def _event_eval(self, cid, config=None, prompts=None, as_of="2026-09-20"):
+        ev = {"kind": "event", "as_of": as_of, "status": "final",
+              "total": 50.0, "band": {}, "items": {}, "extraction": {},
+              "event": {},
+              "prompt_versions": prompts if prompts is not None else {
+                  "extract": {"version": CFG["scoring"]["prompts"]["extract"]},
+                  "event": {"version": CFG["scoring"]["prompts"]["event"]}},
+              "config_version": config or CFG["config_version"],
+              "config_hash": "h", "llm_provider": "g", "llm_model": "m",
+              "input_hash": f"h-ev-{cid}-{self._seq}-{config}",
+              "errors": [],
+              "extra": {"as_evaluated": {
+                  "total": 50.0, "band": "x",
+                  "config_version": config or CFG["config_version"]}}}
+        return self.store.add_evaluation("r0", cid, ev)
+
     def test_select_event_fill(self):
         from trlcore.pipeline import select_event_fill
         cfg = self._cfg()
@@ -331,17 +401,29 @@ class EventFillTests(StoreFixtureBase):
         as_of = days[-1]
         target = self._cand("acme", days[100].isoformat())
         done = self._cand("acme", days[100].isoformat())
-        ev = {"kind": "event", "as_of": days[110].isoformat(), "status": "final",
-              "total": 50.0, "band": {}, "items": {}, "extraction": {},
-              "event": {}, "prompt_versions": {}, "config_version": "x",
-              "config_hash": "h", "llm_provider": "g", "llm_model": "m",
-              "input_hash": f"h-ev-{done}", "errors": [], "extra": {}}
-        self.store.add_evaluation("r0", done, ev)
+        self._event_eval(done, as_of=days[110].isoformat())  # 現行世代で評価済み
         no_symbol = self._cand("notick", days[100].isoformat())
         got = select_event_fill(self.store, cfg, as_of, 5, set(),
                                 log=lambda *_: None)
         self.assertEqual([c["id"] for c in got], [target])
         self.assertNotIn(no_symbol, [c["id"] for c in got])
+
+    def test_select_event_fill_includes_oldgen(self):
+        # 世代の移行: 最新 event 評価が旧世代の候補は、材料更新が無くても
+        # 「評価済み」とみなさず充当の対象に残す (long の TH-1 緩和と同じ)
+        from trlcore.pipeline import select_event_fill
+        cfg = self._cfg()
+        bars, days = _bars()
+        self.store.save_price_series("ACME", bars)
+        as_of = days[-1]
+        old = self._cand("acme", days[100].isoformat())
+        self._event_eval(old, config="2026.11.0",
+                         prompts={"extract": {"version": "v2"},
+                                  "event": {"version": "v2"}},
+                         as_of=days[110].isoformat())
+        got = select_event_fill(self.store, cfg, as_of, 5, set(),
+                                log=lambda *_: None)
+        self.assertEqual([c["id"] for c in got], [old])
 
     def test_pipeline_event_fill(self):
         cfg = self._cfg()

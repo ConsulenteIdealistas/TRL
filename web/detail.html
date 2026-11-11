@@ -77,10 +77,11 @@ const BRL = {devil_river: "Devil River", valley_of_death: "Valley of Death", dar
 const BRO = ["devil_river", "valley_of_death", "darwinian_sea"];  // 関門の並び
 const BRD = {devil_river: "「魔の川」と呼ばれる研究開発段階の不確実性（NEDO）。研究から開発へ進めるかどうかの関門", valley_of_death: "「死の谷」と呼ばれる、研究開発後の事業化に要する調達、生産、流通の体制構築や資金調達の困難（NEDO）。導出で機械的に観測するのは資金調達の困難の側のみ", darwinian_sea: "「ダーウィンの海」と呼ばれる市場獲得における生存競争の困難（NEDO）"};
 const GEN_NOTE = "世代は、その評価に使われた規程・プロンプトの版です。世代の異なる評価どうしの点数差には、技術の変化ではなく物差し自体の変化が含まれます。";
-// 世代表示は既定 OFF。一覧ページと localStorage で共有する。
+// 世代表示は既定 ON。一覧ページと localStorage で共有し、保存済みの
+// 設定があればそちらを尊重する。
 // 関門は常時表示 (該当した関門だけを出すため、スイッチは置かない)
-let showGen = false;
-try { showGen = localStorage.getItem("trl-showgen") === "1"; } catch (e) { /* 保存不可なら既定のまま */ }
+let showGen = true;
+try { showGen = localStorage.getItem("trl-showgen") !== "0"; } catch (e) { /* 保存不可なら既定のまま */ }
 const barrierHits = ev => (ev && ev.barriers) ? BRO.filter(k => ev.barriers[k] && ev.barriers[k].status === "hit") : [];
 function genBadge(ev) {
   // 世代バッジ。世代に優劣はないため色は付けず、現行かどうかも文字列だけで区別する

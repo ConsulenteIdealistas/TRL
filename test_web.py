@@ -308,7 +308,9 @@ class ExportTests(StoreFixture):
             self.assertIn("<h4>参考項目</h4>", text)
             self.assertIn("総合点・必須判定には含めません", text)
     def test_generation_and_barrier_display(self):
-        # 世代表示 (スイッチ式・既定 OFF) と関門 (barriers/v1、常時表示) の配線。
+        # 世代表示 (スイッチ式・既定 ON、保存済み設定を尊重) と関門
+        # (barriers/v1、常時表示) の配線。一覧には世代フィルタ
+        # (現行世代のみ) も置く。
         # 世代は色で序列を作らず文字列のみ、前回比の世代差注記は常時 (P-5)。
         # 関門のラベル・定義は trlcore/barriers.py の転記で、定義は
         # criteria.html に出典つきで載せる。phases/v1 の現在地表示
@@ -324,8 +326,15 @@ class ExportTests(StoreFixture):
             self.assertIn('id="swgen"', text)
             self.assertNotIn('id="swphase"', text)
             self.assertNotIn("現在地を表示", text)
+        # 世代フィルタ: 既定は全表示、チップで現行世代のみに絞れる
+        self.assertIn('id="fgenc"', html)
+        self.assertIn("現行世代のみ", html)
+        self.assertIn("genSel", app)
+        self.assertIn("isCurGen", app)
         for text in (app, det):
             self.assertIn("trl-showgen", text)
+            # 既定 ON: 保存値が "0" のときだけ OFF (保存済み設定を尊重)
+            self.assertIn('getItem("trl-showgen") !== "0"', text)
             self.assertNotIn("trl-showphase", text)
             self.assertIn("genBadge", text)
             self.assertIn("現行世代", text)

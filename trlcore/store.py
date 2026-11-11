@@ -1033,12 +1033,23 @@ class Store:
         評価行の config_version だけでは判定しない (site の _gen_config と
         同じ規則)。error は採点結果ではないため対象にしない
         (prev_evaluation と同じ扱い)。"""
+        return self._latest_eval_generations("long")
+
+    def latest_event_eval_generations(self):
+        """候補ごとの最新の event 評価 (final/hold) の世代印を返す。
+
+        long 版と同じ規則・同じ形。event 充当 (O-2) で、旧世代の event
+        評価を現行世代へ寄せる判定に使う。"""
+        return self._latest_eval_generations("event")
+
+    def _latest_eval_generations(self, kind):
         rows = self.conn.execute(
             "SELECT e.candidate_id, e.config_version, e.prompt_versions_json,"
-            " e.extra_json FROM evaluations e WHERE e.kind='long'"
+            " e.extra_json FROM evaluations e WHERE e.kind=?"
             " AND e.status IN ('final','hold') AND e.id IN"
-            " (SELECT MAX(id) FROM evaluations WHERE kind='long'"
-            "  AND status IN ('final','hold') GROUP BY candidate_id)").fetchall()
+            " (SELECT MAX(id) FROM evaluations WHERE kind=?"
+            "  AND status IN ('final','hold') GROUP BY candidate_id)",
+            (kind, kind)).fetchall()
         def _loads(s):
             if isinstance(s, dict):
                 return s

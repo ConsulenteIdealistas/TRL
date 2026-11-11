@@ -119,10 +119,12 @@ const BRL = {devil_river: "Devil River", valley_of_death: "Valley of Death", dar
 const BRO = ["devil_river", "valley_of_death", "darwinian_sea"];  // 関門の並び
 const BRD = {devil_river: "「魔の川」と呼ばれる研究開発段階の不確実性（NEDO）。研究から開発へ進めるかどうかの関門", valley_of_death: "「死の谷」と呼ばれる、研究開発後の事業化に要する調達、生産、流通の体制構築や資金調達の困難（NEDO）。導出で機械的に観測するのは資金調達の困難の側のみ", darwinian_sea: "「ダーウィンの海」と呼ばれる市場獲得における生存競争の困難（NEDO）"};
 const GEN_NOTE = "世代は、その評価に使われた規程・プロンプトの版です。世代の異なる評価どうしの点数差には、技術の変化ではなく物差し自体の変化が含まれます。";
-// 世代表示は既定 OFF (監査的な情報で、常時表示は通常の読みのノイズになる)。
+// 世代表示は既定 ON (旧世代と現行世代が混在する間は、どの物差しで
+// 測った評価かが見えることが通常の読みの前提になるため)。端末に保存
+// 済みの設定があればそちらを尊重する。
 // 関門チップは常時表示 (該当が疎らで、あるときだけ目立つ方が情報として正しい)
-let showGen = false;
-try { showGen = localStorage.getItem("trl-showgen") === "1"; } catch (e) { /* 保存不可なら既定のまま */ }
+let showGen = true;
+try { showGen = localStorage.getItem("trl-showgen") !== "0"; } catch (e) { /* 保存不可なら既定のまま */ }
 const barrierHits = ev => (ev && ev.barriers) ? BRO.filter(k => ev.barriers[k] && ev.barriers[k].status === "hit") : [];
 function genBadge(ev) {
   // 世代バッジ。世代に優劣はないため色は付けず、現行かどうかも文字列だけで区別する
@@ -168,6 +170,11 @@ function trl(t, d) {
 const trlSel = new Set();  // TRL絞り込みの選択状態: レベル1〜9と "u"(未確定) の集合。空なら絞らない
 const stSel = new Set(), dirSel = new Set(), mkSel = new Set(), scSel = new Set(), tagSel = new Set(), stgSel = new Set(), tierSel = new Set();  // 状態・方向性・国・分野・タグ・段階・企業の層の選択状態 (空なら絞らない)
 const ownSel = new Set();  // 自分の表示 (新着・注目) の選択状態。グループ内は OR で効く
+const genSel = new Set();  // 評価の世代の選択状態 ("cur" = 現行世代のみ。空なら絞らない)
+// 候補の世代は長期評価を主に見て、長期が無ければ短期 (event) 評価の
+// 世代で見る。世代の印が無い候補 (未評価など) は現行世代とはみなさない
+const genOf = p => (p.long && p.long.gen) || (p.event && p.event.gen) || null;
+const isCurGen = p => { const g = genOf(p); return !!(g && g.current); };
 function inR(t) {
   if (!trlSel.size) return true;
   return ok(t) ? trlSel.has(t) : trlSel.has("u");
@@ -188,6 +195,7 @@ function filtered() {
     && (!tagSel.size || p.entities.some(e => (e.tags || []).some(t => tagSel.has(t))))
     && (!stgSel.size || p.entities.some(e => stgSel.has(e.stage)))
     && (!tierSel.size || p.entities.some(e => tierSel.has(dtierOf(e))))
+    && (!genSel.size || isCurGen(p))
     && (!ownSel.size || (ownSel.has("new") && isNewEval(p)) || (ownSel.has("pin") && pins.has(p.id))));
   const byStatus = (a, b) => (SO[a.display_status] - SO[b.display_status])
     || ((ok(lvl(b)) ? lvl(b) : -1) - (ok(lvl(a)) ? lvl(a) : -1))
@@ -662,7 +670,7 @@ function bindChips(id, set, after) {
   });
 }
 const syncTagN = () => { $("#fgn").textContent = tagSel.size ? `（${tagSel.size}件選択中）` : ""; };
-const CHIPG = [["fsc", stSel], ["fdc", dirSel], ["fmc", mkSel], ["fcc", scSel], ["fstc", stgSel], ["ftierc", tierSel], ["fown", ownSel]];
+const CHIPG = [["fsc", stSel], ["fdc", dirSel], ["fmc", mkSel], ["fcc", scSel], ["fstc", stgSel], ["ftierc", tierSel], ["fgenc", genSel], ["fown", ownSel]];
 CHIPG.forEach(([id, set]) => bindChips(id, set));
 bindChips("fgc", tagSel, syncTagN);
 const syncTrlUI = () => document.querySelectorAll("#ftc button").forEach(b => {

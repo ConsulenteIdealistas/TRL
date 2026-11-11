@@ -278,11 +278,13 @@ class NewSourceParseTests(unittest.TestCase):
         self.assertNotIn(ids["W15"], got)  # 16件目 (表示窓の外)
         self.assertNotIn(ids["W16"], got)  # 17件目 (表示窓の外)
         self.assertNotIn(cid_old, got)     # paper 窓の外
-        # 予算の導出: 使用量ゼロなら (月枠 200万字) ÷ (当月の残り実行回数)。
-        # AS_OF = 2026-10-20 (火) で、残りは今日 + 水木金 + 翌週の火〜金 = 8回
-        self.assertEqual(TT.watch_run_budget(store, AS_OF), 2_000_000 // 8)
+        # 予算の導出: 使用量ゼロなら (月枠 200万字) ÷ (当月の残り実行回数)
+        # × 安全率 0.8。AS_OF = 2026-10-20 (火) で、残りは今日 + 水木金 +
+        # 翌週の火〜金 = 8回
+        self.assertEqual(TT.watch_run_budget(store, AS_OF),
+                         int(2_000_000 // 8 * TT.WATCH_BUDGET_SAFETY_FACTOR))
         self.assertEqual(TT.watch_run_budget(store, AS_OF, spent_before=400_000),
-                         (2_000_000 - 400_000) // 8)
+                         int((2_000_000 - 400_000) // 8 * TT.WATCH_BUDGET_SAFETY_FACTOR))
         store.close()
         tmp.cleanup()
 

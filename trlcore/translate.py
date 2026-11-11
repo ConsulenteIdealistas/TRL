@@ -264,6 +264,10 @@ def translate_display_set(store, cfg, today, log=print, http=http_fetch):
 # 月内の過不足は残り回数への割り直しで自動的に均される。件数の上限は
 # 置かない (律速は文字数だけ)。
 AZURE_MONTHLY_QUOTA = 2_000_000
+# 予算の安全率 (2026-11-11 の決定で 0.8): Core・Conditional の評価材料の
+# 翻訳はこの予算の外で同じ Azure 枠を使う (そちらが本命)。月内のその
+# 消費は事前に読めないため、watch 側の予算に2割の余白を確保する。
+WATCH_BUDGET_SAFETY_FACTOR = 0.8
 WATCH_SOURCES = ("pubmed", "openalex", "arxiv", "trials", "yahoo", "edgar")
 # ウォッチページの表示窓 (site._watch_companies と同じ定義・同じ並び)。
 # site → pipeline → translate の import 方向の都合で import できないため
@@ -387,7 +391,8 @@ def watch_run_budget(store, today, spent_before=0):
 
     Azure F0 の月枠 (AZURE_MONTHLY_QUOTA) から、当月の使用済み
     (azure+google の月次累計に、この実行で表示セットが既に使った分
-    spent_before を加えたもの) を引き、当月の残り実行回数で割る。
+    spent_before を加えたもの) を引き、当月の残り実行回数で割り、
+    安全率 (WATCH_BUDGET_SAFETY_FACTOR) を掛ける。
     割り当ては残り枠の内側でしか行わないため月枠を超えることは無く、
     月内の過不足は残り回数への割り直しで自動的に均される。"""
     used = usage_totals(store, today)
@@ -395,14 +400,14 @@ def watch_run_budget(store, today, spent_before=0):
     rest = AZURE_MONTHLY_QUOTA - month_used
     if rest <= 0:
         return 0
-    return rest // _remaining_runs(today)
+    return int(rest // _remaining_runs(today) * WATCH_BUDGET_SAFETY_FACTOR)
 
 
 def translate_watch_queue(store, cfg, today, log=print, http=http_fetch, spent_before=0):
     """ウォッチ・参考 (と残りの core) の一次情報の未訳分を予算内で訳す。
 
     -> (訳した件数, 段ごとの翻訳文字数)。予算は watch_run_budget の導出
-    (Azure の月枠 − 当月の使用済み) ÷ 当月の残り実行回数。表示セットの
+    (Azure の月枠 − 当月の使用済み) ÷ 当月の残り実行回数 × 安全率。表示セットの
     枠を食い潰さないよう、spent_before にこの実行の表示セット分を
     受け取る。"""
     chain = _backends(http, exclude={"deepl"})

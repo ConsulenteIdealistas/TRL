@@ -605,6 +605,18 @@ class ExportTests(StoreFixture):
         got = sorted(c["display_status"] for c in data["candidates"])
         self.assertEqual(got, ["final", "hold", "review"])
 
+    def test_audit_catalog_exported(self):
+        # 監査カタログは export に同梱され、全28チェックが正本どおりに届く
+        # (criteria.html の一覧と audit.js のチェック名の表示元)
+        data = T.build_site_data(self.store, cfg_with(),
+                                 datetime(2026, 10, 26, tzinfo=timezone.utc))
+        cat = data["audit_catalog"]
+        self.assertEqual(len(cat["checks"]), 28)
+        by_id = {c["id"]: c for c in cat["checks"]}
+        self.assertEqual(by_id["A1"]["name"], "原則2: 件数・期間の推測")
+        self.assertIn("79", by_id["A15"]["threshold"])
+        self.assertFalse(by_id["A5"]["implemented"])
+
     def test_prev_evaluation_diff_exported(self):
         # 前回比 (Issue 1): 再評価された候補には直前の比較可能な評価の要約が付く
         data = self.build(Mock(make_llm_fn(long_scores={k: 65 for k in LONG_KEYS})), n=1)

@@ -843,3 +843,55 @@ class AuditRulesTests(unittest.TestCase):
         # 新世代前提の監査を旧世代へ機械適用しない (FREEZE-PLAN C 節)
         _, eid = self._mk_eval("A17旧世代", items={"monetization": self._item(score=95)})
         self.assertEqual(self._only(self._audit_one(eid), "A17"), [])
+
+
+class AuditCatalogTests(unittest.TestCase):
+    """監査カタログ (表示用メタデータの正本) のテスト。
+
+    カタログは criteria.html の一覧と audit.js のチェック名の表示元で、
+    転記に戻さないことが要点: 全チェックが AUDIT_CHECKS と一致し、閾値の
+    数値が audit_rules.json の実パラメータと一致することを固定する。
+    """
+
+    def setUp(self):
+        self.cat = T.build_audit_catalog()
+        self.by_id = {c["id"]: c for c in self.cat["checks"]}
+
+    def test_all_28_checks_present_in_audit_order(self):
+        self.assertEqual(len(self.cat["checks"]), 28)
+        self.assertEqual([c["id"] for c in self.cat["checks"]],
+                         list(T.AUDIT_CHECKS))
+
+    def test_versions_come_from_rules_and_api(self):
+        self.assertEqual(self.cat["rules_version"], T.load_rules()["version"])
+        self.assertEqual(self.cat["api_version"], "v1")
+
+    def test_a1_name_matches_implementation(self):
+        # A1 は原則2 (件数・期間の推測)。以前 audit.js の転記が原則1に
+        # なっていた齟齬の再発防止
+        self.assertEqual(self.by_id["A1"]["name"], "原則2: 件数・期間の推測")
+        self.assertTrue(self.by_id["A4"]["name"].startswith("原則1"))
+
+    def test_a5_is_marked_unimplemented_only(self):
+        # A5 は名前だけで規則監査では未実装。それ以外は実装レジストリに実在する
+        self.assertFalse(self.by_id["A5"]["implemented"])
+        others = [c for c in self.cat["checks"] if c["id"] != "A5"]
+        self.assertTrue(all(c["implemented"] for c in others))
+
+    def test_thresholds_come_from_rules_params(self):
+        rules = T.load_rules()["rules"]["checks"]
+        self.assertIn(str(rules["A8"]["total_threshold"]),
+                      self.by_id["A8"]["threshold"])
+        self.assertIn(str(rules["A15"]["cap_total"]),
+                      self.by_id["A15"]["threshold"])
+        self.assertIn(str(rules["A17"]["cap"]),
+                      self.by_id["A17"]["threshold"])
+        self.assertIn(str(rules["E1"]["z_threshold"]),
+                      self.by_id["E1"]["threshold"])
+        self.assertIn(str(rules["P6"]["z_abs_max"]),
+                      self.by_id["P6"]["threshold"])
+
+    def test_every_entry_has_display_fields(self):
+        for c in self.cat["checks"]:
+            for key in ("name", "desc", "threshold", "source", "group"):
+                self.assertTrue(c[key], f"{c['id']} の {key} が空")

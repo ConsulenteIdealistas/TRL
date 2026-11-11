@@ -326,3 +326,39 @@ class ExportTests(StoreFixture):
         self.assertEqual(schema["barriers"],
                          ["v", "trl", "devil_river", "valley_of_death", "darwinian_sea"])
         self.assertEqual(schema["barrier"], ["status", "evidence"])
+
+    def test_criteria_display_of_rules(self):
+        # 「表示できる基準」の掲載: 監査カタログは export 連動 (転記しない)、
+        # tier の決め方・stage の定義は criteria.html に静的掲載、数値表に
+        # 参考項目の行。監査ページのチェック名はカタログ (正本) を優先する
+        web = T.ROOT / "web"
+        crit = (web / "criteria.html").read_text(encoding="utf-8")
+        audit = (web / "audit.js").read_text(encoding="utf-8")
+        schema = json.loads((web / "schema.json").read_text(encoding="utf-8"))
+        # 監査カタログ: placeholder と data.json 読み込みの配線がある
+        self.assertIn('id="auditCatalog"', crit)
+        self.assertIn("audit_catalog", crit)
+        self.assertIn("監査チェック一覧", crit)
+        self.assertIn("GAO-20-48G", crit)
+        # カタログ本文は転記しない (チェック名を criteria.html に直書きしない)
+        self.assertNotIn("原則2: 件数・期間の推測", crit)
+        # tier の決め方 (tiers/v1): 3条件・比率は目安・±5pt は警告のみ
+        self.assertIn("企業の層（tier）の決め方（tiers/v1）", crit)
+        self.assertIn("±5pt", crit)
+        self.assertIn("自動調整はしません", crit)
+        # stage の4段階の定義 (境界は外部実証の有無と売上の確立度)
+        self.assertIn("企業の段階（stage）の定義", crit)
+        self.assertIn("外部実証がまだ無い段階", crit)
+        self.assertIn("継続的な売上が中核", crit)
+        self.assertIn("下の段階に倒します", crit)
+        # 参考項目の行が現行の数値表にある
+        self.assertIn("長期評価の参考項目", crit)
+        self.assertIn("必須判定・不足判定には含めない", crit)
+        # 監査ページ: A1 の静的予備も実装 (原則2) に是正し、カタログ優先で読む
+        self.assertIn('A1: "原則2: 件数・期間の推測"', audit)
+        self.assertNotIn("原則1: 商用展開とTRLの混同", audit)
+        self.assertIn("audit_catalog", audit)
+        # 契約: top_level に audit_catalog
+        self.assertIn("audit_catalog", schema["top_level"])
+        self.assertEqual(schema["audit_catalog"],
+                         ["rules_version", "api_version", "checks"])

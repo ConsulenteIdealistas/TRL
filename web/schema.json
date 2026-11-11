@@ -7,7 +7,22 @@
     "run",
     "config",
     "candidates",
-    "summary"
+    "summary",
+    "audit_catalog"
+  ],
+  "audit_catalog": [
+    "rules_version",
+    "api_version",
+    "checks"
+  ],
+  "audit_check": [
+    "id",
+    "name",
+    "desc",
+    "threshold",
+    "source",
+    "group",
+    "implemented"
   ],
   "summary": [
     "rejected",

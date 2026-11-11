@@ -927,5 +927,213 @@ AUDIT_CHECKS = AUDIT_CHECKS + POSITIVE_CHECKS
 # ここで取り込んでも循環しない。実行自体は cli の audit コマンドが
 # 規則監査の後に run_audit_api を呼ぶ (失敗しても規則側は残る)。
 # ---------------------------------------------------------------------------
-from .audit_api import API_CHECKS as _API_CHECKS, run_audit_api  # noqa: F401,E402
+from .audit_api import (API_CHECKS as _API_CHECKS, API_VERSION as _API_VERSION,
+                        run_audit_api)  # noqa: F401,E402
 AUDIT_CHECKS = AUDIT_CHECKS + _API_CHECKS
+
+
+# ---------------------------------------------------------------------------
+# 監査チェックのカタログ (表示用メタデータの正本)。
+#
+# チェックの名前・「何を見ているか」・出典はここを唯一の正本とし、export
+# (site.build_site_data) が data.json の audit_catalog として同梱する。
+# 表示側 (criteria.html のカタログ、audit.js のチェック名) はこの同梱分を
+# 読む。以前は audit.js の CHK に転記があり、A1 の名前が実装 (原則2) と
+# 食い違う齟齬が出たため、転記をやめて正本をここへ一本化した。
+# 閾値の数値は転記せず、build_audit_catalog が audit_rules.json の実
+# パラメータから生成する (規則ファイルが変われば表示も連動する)。
+# implemented は実装レジストリ (_CHECK_FUNCS と API 照合層) から導く:
+# A5 は意味判断が必要なため規則監査では未実装で、名前だけが存在する。
+# ---------------------------------------------------------------------------
+_CHECK_CATALOG = {
+    "A1": {"name": "原則2: 件数・期間の推測",
+           "desc": "評価理由にある「複数・継続・繰り返し」の主張を、根拠側に"
+                   "回数・期間・日付の明記があるかで照合する。明記が無い主張は、"
+                   "件数・期間は資料明記分のみとする原則2への抵触の疑いとして記録する。",
+           "source": "評価規程 第2条（原則2）", "group": "規則監査"},
+    "A2": {"name": "原則2: TRL 9 の継続証拠",
+           "desc": "TRL 9 と判定された評価について、セクター別の確認事項"
+                   "（宇宙=複数ミッション成功、AI=複数環境での継続利用、バイオ=市販後の"
+                   "観察期間と実臨床データ、半導体=量産継続期間と信頼性データ）への"
+                   "言及が根拠側にあるかを見る。",
+           "source": "評価規程 第2条（原則2）・第11条", "group": "規則監査"},
+    "A3": {"name": "原則3: TRLからの推論",
+           "desc": "TRL の高低から収益化・市場成長・競争優位性・成長余地を推論する"
+                   "構文（原則3への抵触）を観測する。現行は観測のみで確定にしない。",
+           "source": "評価規程 第2条（原則3）", "group": "規則監査"},
+    "A4": {"name": "原則1: TRL 9 の根拠が商用展開のみ",
+           "desc": "TRL 9 の根拠が商用展開のマーカー（承認・販売・売上・契約等）のみで、"
+                   "技術側のマーカー（実証・試験・性能・臨床等）が皆無の場合を拾う。"
+                   "現行はグレーで観測する。",
+           "source": "評価規程 第2条（原則1）", "group": "規則監査"},
+    "A5": {"name": "点と理由の整合",
+           "desc": "項目点と理由文の意味的な整合を見る想定のチェック。意味判断が"
+                   "必要なため規則監査では未実装で、発火しない。",
+           "source": "評価規程（点と理由の整合）", "group": "規則監査"},
+    "A6": {"name": "欠落判定（材料プール外）",
+           "desc": "不足情報が、材料プールに原理的に入らない情報（株価・出来高・"
+                   "時価総額・アナリスト予想・コンセンサス・目標株価）を欠落として"
+                   "挙げていないかを見る。挙げている場合は構造的に解消しない不足として記録する。",
+           "source": "評価規程 第7条 / 監査要項 ⑥", "group": "規則監査"},
+    "A7": {"name": "減点理由の具体性",
+           "desc": "低得点の理由が「証拠が弱い」等の漠然とした表現だけで、具体的な"
+                   "不足証拠への名指しが無い場合を拾う。保守的な減点自体は許容するが、"
+                   "理由は具体的な不足証拠に紐付けることが条件。",
+           "source": "評価規程 第15条4項", "group": "規則監査"},
+    "A8": {"name": "反証の欠落",
+           "desc": "確定評価で反証（counter_evidence）が一切記録されていない場合を拾う。",
+           "source": "監査要項 ⑦（反証）", "group": "規則監査"},
+    "A9": {"name": "根拠のない高得点",
+           "desc": "高得点の項目で根拠（evidence）がゼロの場合を拾う。",
+           "source": "監査要項 ⑥（証拠充足）", "group": "規則監査"},
+    "A10": {"name": "時点の不整合（公開日が基準日より後）",
+            "desc": "候補の公開日が評価の基準日（as_of）より後という、時点の不整合を拾う。",
+            "source": "監査要項 ②（時点）", "group": "規則監査"},
+    "A11": {"name": "数値の原文照合",
+            "desc": "理由文中の数値が根拠側に存在しない場合をグレーで観測する。"
+                    "丸め・単位換算・関連財務の引用など正当な不一致がありうるため確定にしない。",
+            "source": "監査要項 ⑤（数値）", "group": "規則監査"},
+    "A12": {"name": "出典リンクの形式",
+            "desc": "根拠の参照（ref）が http(s) 形式でないものを拾う（出典監査の"
+                    "オフライン分。参照先の実在確認はリンク検証の担当）。",
+            "source": "監査要項 ①（出典）/ ISA 500", "group": "規則監査"},
+    "A13": {"name": "総合点の再導出照合",
+            "desc": "項目点から現行設定で総合点・帯域を再導出し、保存された値と"
+                    "一致するかを見る。",
+            "source": "監査要項 ⑧（スコア）", "group": "規則監査"},
+    "A14": {"name": "企業帰属（弱いリンクのみ）",
+            "desc": "企業リンクが全て weak のまま確定した評価をグレーで観測する。",
+            "source": "監査要項 ③（企業帰属）/ ISA 500", "group": "規則監査"},
+    "A15": {"name": "上限の観測",
+            "desc": "A2 が確定した評価（TRL 9 の継続証拠なし）が、証拠の示す水準を"
+                    "超えて最高帯域に置かれていないかをグレーで観測する。点数の"
+                    "上書きはせず、適用は非破壊の調整レイヤーが担う。",
+            "source": "監査要項 ⑧ / GAO-20-48G", "group": "規則監査"},
+    "A16": {"name": "TRLレベルと点数帯域の乖離",
+            "desc": "TRL レベルと technology_readiness の点数帯域の対応（規程 第12条の"
+                    "対応表）が外れた評価をグレーで観測する。新世代（long.v3）が TRL "
+                    "レベルを返す評価だけが対象。",
+            "source": "監査要項 ⑧ / 評価規程 第12条", "group": "規則監査"},
+    "A17": {"name": "単一出所の高得点",
+            "desc": "単一出所（新世代の constraint_codes に single_source）の項目点が"
+                    "目安を超えた場合をグレーで観測する。コードを持たない旧世代の項目は対象外。",
+            "source": "監査要項 ⑧ / 評価規程 第12条3", "group": "規則監査"},
+    "E1": {"name": "価格反応と未織り込みの矛盾",
+           "desc": "独立に実測した価格反応が強く出ているのに、未織り込み度"
+                   "（not_priced_in）が高得点（織り込まれていない側）になっている"
+                   "矛盾の疑いを要確認にする。",
+           "source": "ISA 520（分析的手続き）", "group": "規則監査（イベント評価）"},
+    "E2": {"name": "反応データ未使用の保留",
+           "desc": "価格反応データが取得できたのに not_priced_in が未判定のまま"
+                   "保持された event 評価をグレーで記録する。",
+           "source": "監査要項（event 監査）", "group": "規則監査（イベント評価）"},
+    "P1": {"name": "TRL 9 到達の可能性",
+           "desc": "TRL 7–8 の評価で、根拠側に繰り返し・継続の確認語彙と回数・期間の"
+                   "明記がそろっている場合に、TRL 9 の条件を満たしている可能性"
+                   "（過小評価の疑い）として拾う。計画・予定の文は数えない。",
+           "source": "評価規程 第10条・第11条", "group": "ポジティブ監査（過小評価の疑い）"},
+    "P2": {"name": "保留のままの豊富な事実",
+           "desc": "保留のまま残っているが、抽出された事実が多く出典も複数ある評価を、"
+                   "材料の拾い漏れか保留の長期化として観測する。グレー固定"
+                   "（保留の可否は人間が判断する）。",
+           "source": "監査要項 ⑥ の鏡像", "group": "ポジティブ監査（過小評価の疑い）"},
+    "P3": {"name": "根拠が厚いのに低得点",
+           "desc": "不足情報も反証も記録されておらず、数値を含む事実の根拠が複数ある"
+                   "項目が低得点になっている場合を拾う。理由に「結果待ち」がある場合は対象外。",
+           "source": "監査要項 ⑥ の鏡像", "group": "ポジティブ監査（過小評価の疑い）"},
+    "P4": {"name": "未採点なのに根拠あり",
+           "desc": "必須項目が未採点（critical_missing）なのに、その項目に根拠が"
+                   "記録され、不足情報は空の場合を要確認にする。採点漏れか、根拠の"
+                   "評価への未反映の疑い。",
+           "source": "監査要項 ⑧ の鏡像", "group": "ポジティブ監査（過小評価の疑い）"},
+    "P5": {"name": "企業項目の未採点",
+           "desc": "strong かつ一意の帰属条件（規程 第5条2）を満たすのに、企業固有の"
+                   "必須項目が不足情報も根拠も無いまま未採点の評価をグレーで観測する。",
+           "source": "評価規程 第5条2 / 監査要項 ③ の鏡像",
+           "group": "ポジティブ監査（過小評価の疑い）"},
+    "P6": {"name": "反応がないのに織り込み済み",
+           "desc": "価格反応が出ていないのに未織り込み度が低得点（織り込み済み側）に"
+                   "なっている event 評価を要確認にする。",
+           "source": "ISA 520（分析的手続き）", "group": "ポジティブ監査（過小評価の疑い）"},
+    "CR1": {"name": "DOI の実在確認",
+            "desc": "根拠が参照する DOI が実在するかを、Crossref と DOI ハンドルの"
+                    "2段で確認する。どちらでも確認できない場合のみ所見にする"
+                    "（通信失敗は未実施として記録しない）。",
+            "source": "ISA 500（出典の検証）/ Crossref・DOI",
+            "group": "API照合（外部レジストリ）"},
+    "CT1": {"name": "治験ステータス（中止系）の反証",
+            "desc": "根拠が参照する治験の登録ステータスが中止系"
+                    "（TERMINATED / WITHDRAWN / SUSPENDED）になっていないかを"
+                    "ClinicalTrials.gov で確認し、なっていれば反証として記録する。",
+            "source": "ClinicalTrials.gov（登録事実との照合）",
+            "group": "API照合（外部レジストリ）"},
+    "CT2": {"name": "治験スポンサーの帰属",
+            "desc": "治験のスポンサー（主催者）が評価対象の企業と一致するかを"
+                    "ClinicalTrials.gov の登録情報で確認する（帰属の照合）。",
+            "source": "ISA 500（帰属）/ ClinicalTrials.gov",
+            "group": "API照合（外部レジストリ）"},
+}
+
+
+def _catalog_threshold(cid, chk):
+    """カタログの「閾値・条件」欄を、audit_rules.json の実パラメータから
+    生成する。数値をここへ転記すると規則ファイルと乖離するため、パラメータ
+    を持つチェックは必ず chk (checks[cid]) から読む。"""
+    chk = chk or {}
+    if cid == "A2":
+        return "TRL 9 と判定された評価が対象"
+    if cid == "A3":
+        return "—（観測のみ）"
+    if cid in ("A4", "A11", "A14", "P5"):
+        return "—（グレーで観測）"
+    if cid == "A5":
+        return "—（未実装）"
+    if cid == "A7":
+        return f"項目点 {chk.get('score_threshold', 40)} 未満の項目の理由が対象"
+    if cid == "A8":
+        return f"確定評価のうち総合点 {chk.get('total_threshold', 60)} 以上が対象"
+    if cid == "A9":
+        return f"項目点 {chk.get('score_threshold', 80)} 以上が対象"
+    if cid == "A15":
+        return f"上限は {chk.get('cap_total', 79)}（最高帯域の下限の直下）"
+    if cid == "A16":
+        return "対応帯域は帯域定義（scoring）に連動し、固定値は持たない"
+    if cid == "A17":
+        return f"項目点が {chk.get('cap', 59)} を超えた場合"
+    if cid == "E1":
+        return (f"z ≥ {chk.get('z_threshold', 2.0)} かつ not_priced_in "
+                f"{chk.get('score_threshold', 60)} 以上")
+    if cid == "P1":
+        levels = chk.get("levels") or [7, 8]
+        return "TRL " + "・".join(str(x) for x in levels) + " の評価が対象"
+    if cid == "P2":
+        return (f"抽出事実 {chk.get('min_facts', 5)} 件以上 かつ 出典 "
+                f"{chk.get('min_sources', 2)} 種以上（グレー固定）")
+    if cid == "P3":
+        return f"項目点 {chk.get('score_max', 39)} 以下が対象"
+    if cid == "P6":
+        return (f"|z| < {chk.get('z_abs_max', 0.5)} かつ not_priced_in "
+                f"{chk.get('score_max', 39)} 以下")
+    if cid in ("CT1", "CT2", "CR1"):
+        return "照合は最終照合から30日以上経過した評価が対象（鮮度モデル）"
+    return "—"
+
+
+def build_audit_catalog(rules=None):
+    """監査チェックのカタログ (表示用) を正本から組み立てる。
+
+    戻り値: {"rules_version", "api_version", "checks": [{id, name, desc,
+    threshold, source, group, implemented}, ...]}。並びは AUDIT_CHECKS
+    (全28件) の順。rules は load_rules()["rules"] (省略時は読み直す)。"""
+    if rules is None:
+        rules = load_rules()["rules"]
+    checks_cfg = (rules or {}).get("checks") or {}
+    out = []
+    for cid in AUDIT_CHECKS:
+        meta = _CHECK_CATALOG[cid]
+        out.append({"id": cid, "name": meta["name"], "desc": meta["desc"],
+                    "threshold": _catalog_threshold(cid, checks_cfg.get(cid)),
+                    "source": meta["source"], "group": meta["group"],
+                    "implemented": cid in _CHECK_FUNCS or cid in _API_CHECKS})
+    return {"rules_version": (rules or {}).get("rules_version"),
+            "api_version": _API_VERSION, "checks": out}

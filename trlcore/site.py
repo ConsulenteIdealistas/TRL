@@ -4,6 +4,7 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import quote_plus
+from .audit import build_audit_catalog
 from .config import ROOT
 from .dates import parse_date
 from .http import redact
@@ -507,6 +508,10 @@ def build_site_data(store, cfg, now=None):
                    # 表示側が「参考」として分離し、不足の集計からも外すために使う
                    "reference_items": list(cfg["scoring"]["long"].get("reference") or [])},
         "candidates": cands,
+        # 監査チェックのカタログ (名前・何を見ているか・閾値・出典)。正本は
+        # 監査側 (audit.build_audit_catalog) で、criteria.html の一覧と
+        # audit.js のチェック名がこの同梱分を読む (転記の乖離を防ぐ)
+        "audit_catalog": build_audit_catalog(),
         "watch_companies": _watch_companies(store, cfg, ent_derived, ent_reasons)}
 
 

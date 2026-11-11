@@ -19,8 +19,13 @@ const IL = {technology_readiness: "技術成熟度", technological_advantage: "�
   market_growth: "市場成長性", financial_sustainability: "財務的持続可能性", moat_durability: "競争優位性の持続性",
   management_execution: "経営陣・実行力",
   trl_level: "TRL判定", counter_points: "反証", candidate: "候補の時点", total: "総合点", companies: "企業帰属"};
-const CHK = {A1: "原則1: 商用展開とTRLの混同", A2: "原則2: TRL 9 の継続証拠", A3: "原則3: TRLからの推論",
-  A4: "TRL 9 の根拠が商用展開のみ", A5: "点と理由の整合", A6: "欠落判定（材料プール外）", A7: "減点理由の具体性",
+/* チェック名の正本は export の監査カタログ (data.json の audit_catalog、
+   監査側 trlcore/audit.py の CHECK_CATALOG)。起動時にカタログがあれば
+   そちらで上書きする。ここの静的定義はカタログが無い古い data.json 用の
+   予備で、以前 A1 が実装 (原則2) と食い違う転記ミスがあったため、
+   カタログ側を正とする */
+const CHK = {A1: "原則2: 件数・期間の推測", A2: "原則2: TRL 9 の継続証拠", A3: "原則3: TRLからの推論",
+  A4: "原則1: TRL 9 の根拠が商用展開のみ", A5: "点と理由の整合", A6: "欠落判定（材料プール外）", A7: "減点理由の具体性",
   A8: "反証の欠落", A9: "根拠のない高得点", A10: "時点の不整合（公開日が基準日より後）", A11: "数値の原文照合",
   A12: "出典リンクの形式", A13: "総合点の再導出照合", A14: "企業帰属（弱いリンクのみ）",
   A15: "上限の観測", A16: "TRLレベルと点数帯域の乖離", A17: "単一出所の高得点",
@@ -440,6 +445,13 @@ $("#copyBtn").addEventListener("click", async () => {
     return;
   }
   DATA = d;
+  // チェック名はカタログ (正本) で上書きする。カタログが無い古い
+  // data.json では上の CHK の静的定義のまま表示する
+  if (d.audit_catalog && Array.isArray(d.audit_catalog.checks)) {
+    for (const c of d.audit_catalog.checks) {
+      if (c && c.id && c.name) CHK[c.id] = c.name;
+    }
+  }
   // 詳細ページからの遷移: ?k=event でイベント側、?k=all で両方を開く。
   // ?c= の候補が現在の種別に無ければ、監査がある側へ切り替える
   const q = new URLSearchParams(location.search);

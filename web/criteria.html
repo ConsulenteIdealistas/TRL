@@ -35,6 +35,7 @@ table.ntbl small,.doc small{color:var(--muted)}
 <h2 class="doch">現行の数値（別表 scoring.json、config_version 2026.11.2）</h2>
 <p class="hint">重みは試行中です。導出の考え方は下の規程 第17条にあります。</p>
 <h3 class="doch3">長期評価の重み</h3><table class="ntbl"><thead><tr><th>項目</th><th>重み</th><th>必須</th></tr></thead><tbody><tr><td>技術成熟度<br><small>technology_readiness</small></td><td>30</td><td>必須</td></tr><tr><td>技術的優位性<br><small>technological_advantage</small></td><td>15</td><td></td></tr><tr><td>収益化能力<br><small>monetization</small></td><td>20</td><td>必須</td></tr><tr><td>市場成長性<br><small>market_growth</small></td><td>15</td><td></td></tr><tr><td>財務的持続可能性<br><small>financial_sustainability</small></td><td>10</td><td></td></tr><tr><td>競争優位性の持続性<br><small>moat_durability</small></td><td>10</td><td></td></tr></tbody></table>
+<h3 class="doch3">長期評価の参考項目</h3><table class="ntbl"><thead><tr><th>項目</th><th>扱い</th></tr></thead><tbody><tr><td>経営陣・実行力<br><small>management_execution</small></td><td>参考項目（規程 第13条）: 採点し表示するが、総合点・軸別点・必須判定・不足判定には含めない。証拠が無ければ null とし、それを理由に hold しない</td></tr></tbody></table>
 <h3 class="doch3">イベント評価の重み</h3><table class="ntbl"><thead><tr><th>項目</th><th>重み</th><th>必須</th></tr></thead><tbody><tr><td>触媒の質<br><small>catalyst_quality</small></td><td>25</td><td>必須</td></tr><tr><td>期待ギャップ<br><small>expectation_gap</small></td><td>25</td><td>必須</td></tr><tr><td>未織り込み度<br><small>not_priced_in</small></td><td>20</td><td>必須</td></tr><tr><td>タイミングの実現性<br><small>timing_feasibility</small></td><td>10</td><td></td></tr><tr><td>需給<br><small>supply_demand</small></td><td>10</td><td></td></tr><tr><td>下値耐性<br><small>downside_resilience</small></td><td>10</td><td></td></tr></tbody></table>
 <h3 class="doch3">総合点の帯域</h3><table class="ntbl"><thead><tr><th>総合点</th><th>帯域</th><th></th></tr></thead><tbody><tr><td>0–19</td><td>極めて弱い</td><td><small>extremely_weak</small></td></tr><tr><td>20–39</td><td>弱い</td><td><small>weak</small></td></tr><tr><td>40–59</td><td>中程度・不確実</td><td><small>moderate_uncertain</small></td></tr><tr><td>60–79</td><td>強い</td><td><small>strong</small></td></tr><tr><td>80–100</td><td>非常に強い</td><td><small>very_strong</small></td></tr></tbody></table>
 <h2 class="doch">関門の定義（表示専用、barriers/v1）</h2>
@@ -45,6 +46,26 @@ table.ntbl small,.doc small{color:var(--muted)}
 <tr><td>Darwinian Sea</td><td>TRL ≥7、かつ、通期売上が前年度より減少</td><td>「ダーウィンの海」と呼ばれる市場獲得における生存競争の困難（NEDO）。コスト面・流通の事情で TRL 7〜8 でも起こりうるため、ゲートは TRL ≥7 に置き、判別は通期売上の前年比が担います。比較できる2年度分の通期売上が無い場合は判定しません（年度データが蓄積すれば自動で判定が始まります）。</td></tr>
 </tbody></table>
 <p class="hint">関門に色は付けません。関門は「困難の所在」であって、評価の良し悪しではないためです。企業の段階（stage）は人間が付けた分類であり一次情報ではないため、関門の条件には使いません。</p>
+<h2 class="doch">企業の層（tier）の決め方（tiers/v1）</h2>
+<p class="hint">企業の層は、辞書の基礎 tier（core / watch / reference）の上に導出する分類で、辞書・評価・監査の記録そのものは変更しません。導出は export のたびに決定的に計算し、層は評価の選定には使いません（選定の対象は基礎 core のままです）。企業ごとの導出理由は詳細ページに表示します。</p>
+<table class="ntbl"><thead><tr><th>層</th><th>条件</th></tr></thead><tbody>
+<tr><td>Core</td><td>基礎 core のうち、次の3条件を全て満たす企業。(1) 最新の帰属可能な long 評価がある（その企業が strong リンクを持つ候補の評価。未評価・event 評価のみの企業は満たさない）。(2) 帰属: その候補への strong リンクが自社のみで一意。(3) 監査: その評価に監査結果があり、未処分の要確認（flag）が無い。未監査の評価は (3) を満たさない。処分のうち誤検知（false_positive）になった flag だけは数えず（問題あり・様子見の flag は数える）、グレーは条件に影響しない。監査の版は条件にせず、理由への記録にとどめる</td></tr>
+<tr><td>Conditional</td><td>基礎 core のうち、Core の条件を1つでも欠く企業</td></tr>
+<tr><td>Look</td><td>基礎 tier が watch の企業</td></tr>
+<tr><td>See</td><td>基礎 tier が reference の企業（市場属性のみで決める）</td></tr>
+</tbody></table>
+<p class="hint">分布の目標（Core 20% / Conditional 30% / Look 40% / See 10%、比率 2:3:4:1）は目安です。シェアが目標から ±5pt を超えた層は警告として出すだけで、層の自動調整はしません。判定に使うのは最新の long 評価のみで、回数条件はありません。企業の段階（stage）は判定に使いません。</p>
+<h2 class="doch">企業の段階（stage）の定義</h2>
+<p class="hint">stage は企業辞書のメタデータで、サイトの表示と分析専用です。評価・選定・tier・関門の判定には使いません。段階は印象で付けず確認できる事実に寄せて人間が付け、迷った場合は下の段階に倒します（段階を盛らない）。境界は「外部実証の有無」と「売上の確立度」で判定し、金額の絶対水準では判定しません。</p>
+<table class="ntbl"><thead><tr><th>段階</th><th>定義</th></tr></thead><tbody>
+<tr><td>研究開発型<br><small>rd</small></td><td>製品・サービスの外部実証がまだ無い段階。研究開発が活動の中心で、売上は無いか、あっても研究受託・助成金が主体</td></tr>
+<tr><td>実証型<br><small>demo</small></td><td>顧客・提携先との実証、パイロット、初期の治験後期など「外部で試されている」段階。製品売上はまだ無いか立ち上がり始め</td></tr>
+<tr><td>量産型<br><small>production</small></td><td>製品・サービスとして供給が始まり、生産・提供体制の拡大期にある段階。売上は計上されているが、規模・継続性はまだ拡大途上</td></tr>
+<tr><td>商業化型<br><small>commercial</small></td><td>製品・サービスの販売が事業として確立し、継続的な売上が中核になっている段階</td></tr>
+</tbody></table>
+<h2 class="doch">監査チェック一覧</h2>
+<p class="hint">監査は、確定した評価を後から決定的に点検する層で、評価本体（点・状態・TRL）には触れません。枠組みは GAO Technology Readiness Assessment Guide（GAO-20-48G）の証拠ベースの考え方と、ISA（国際監査基準）の出典・帰属（ISA 500）・分析的手続き（ISA 520）・全体の枠組み（ISA 200）に拠ります。A 系は過大評価の疑い、P 系はその鏡像で過小評価の疑いを見るポジティブ監査、CT/CR 系は外部レジストリを実際に引く API 照合です。この一覧は監査規則の正本から export のたびに生成しており、このページへの転記ではありません<span id="auditCatalogVer"></span>。</p>
+<div id="auditCatalog"><p class="hint">読み込み中…</p></div>
 <article class="doc">
 <p>本規程は、TRL 投資分析システム（以下「本システム」）の評価規則の正本である。
 パイプラインが実際に使う規則と、読者が読む規則を同一にする（ホワイト
@@ -524,5 +545,36 @@ EPO）、公的採択（NEDO / AMED）。追加は実取得による裏取りと
 </section>
 <footer class="ft"><span>TRL Explorer</span><span>技術成熟度と事業化評価は独立した評価軸です。スコアは評価尺度であり、株価上昇確率・成功確率・投資利益率ではありません。</span></footer>
 </main>
+<script>
+/* 監査チェック一覧は data.json の audit_catalog (監査側の正本から export が
+   生成) を描く。このページに転記しないのは、転記が規則と乖離した前例
+   (監査ページの A1 短縮名) があるため。 */
+(async () => {
+  const box = document.getElementById("auditCatalog");
+  if (!box) return;
+  const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
+  try {
+    const r = await fetch("data.json", {cache: "no-cache"});
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    const d = await r.json();
+    const cat = d.audit_catalog;
+    if (!cat || !Array.isArray(cat.checks) || !cat.checks.length) throw new Error("audit_catalog がありません");
+    const ver = document.getElementById("auditCatalogVer");
+    if (ver) ver.textContent = `（規則 ${cat.rules_version || "?"} / API照合 ${cat.api_version || "?"}、全${cat.checks.length}チェック）`;
+    let html = '<table class="ntbl"><thead><tr><th>チェック</th><th>名前</th><th>何を見ているか</th><th>閾値・条件</th><th>出典</th></tr></thead><tbody>';
+    let lastGroup = null;
+    for (const c of cat.checks) {
+      if (c.group && c.group !== lastGroup) {
+        lastGroup = c.group;
+        html += `<tr><td colspan="5"><strong>${esc(c.group)}</strong></td></tr>`;
+      }
+      html += `<tr><td>${esc(c.id)}</td><td>${esc(c.name)}${c.implemented === false ? "<br><small>未実装（意味判断が必要なため発火しない）</small>" : ""}</td><td>${esc(c.desc)}</td><td>${esc(c.threshold)}</td><td>${esc(c.source)}</td></tr>`;
+    }
+    box.innerHTML = html + "</tbody></table>";
+  } catch (e) {
+    box.innerHTML = '<p class="hint">監査チェック一覧を読み込めませんでした。</p>';
+  }
+})();
+</script>
 </body>
 </html>

@@ -7,7 +7,7 @@ from urllib.parse import quote_plus
 from .config import ROOT
 from .dates import parse_date
 from .http import redact
-from .phases import phase_for_trl
+from .barriers import barriers_for_store_evaluation, load_barrier_inputs
 from .pipeline import select_for_eval
 from .review import adjusted_view
 from .summarize import PAPER_SOURCES, extract_summary
@@ -147,11 +147,6 @@ def _ev_for_site(ev, cfg):
         # 取り方は _gen_for_site を参照。世代が取れない評価は None
         "gen": _gen_for_site(ev, extra, cfg),
     }
-    # 現在地 (フェーズ): 最新 long 評価の代表 TRL からの決定的な導出で、
-    # 表示専用 (phases/v1)。event 評価と、TRL が無い評価には付かない
-    if ev["kind"] == "long":
-        lv = trl.get("level") if isinstance(trl, dict) else None
-        out["phase"] = phase_for_trl(lv)
     return out
 
 
@@ -400,6 +395,9 @@ def build_site_data(store, cfg, now=None):
     # tier 導出レイヤー (tiers/v1): 辞書は不変のまま、企業ごとの導出 tier と
     # 4層の分布・警告を data.json に同梱する (追加フィールド方式)
     derived = compute_derived_tiers(store, cfg.get("entities"))
+    # 関門導出レイヤー (barriers/v1): 一次情報 (治験・財務) からの決定的な
+    # 導出で表示専用。入力は export 時に DB から一括で読む
+    barrier_inputs = load_barrier_inputs(store)
     ent_derived = {eid: r["derived_tier"] for eid, r in derived.items()}
     ent_reasons = {eid: _unmet_reasons(r) for eid, r in derived.items()}
     cands = []
@@ -423,6 +421,12 @@ def build_site_data(store, cfg, now=None):
             event_ev["prev"] = _prev_for_site(store.prev_evaluation(cid, "event", event_row["id"]))
         if long_ev is not None and long_row["status"] == "hold":
             long_ev["hold_cause"] = _hold_cause(long_ev)
+        # 関門 (barriers/v1): 付くのは long final の評価だけ (DESIGN-V2
+        # §2-3)。hold は代表 TRL の評価として確定していないため対象外で、
+        # event 評価にも付かない
+        if long_ev is not None and long_row["status"] == "final":
+            long_ev["barriers"] = barriers_for_store_evaluation(
+                store, barrier_inputs, cid, long_row)
         # TRL 調整 (監査レビュー経路B・段階B): 有効な調整があれば、読み替え後の
         # TRL で機械的に再導出した値を併記用に同梱する。元の値 (total・band・
         # trl_level) は書き換えず、表示側が「調整後の値 (元: ○)」の形で出す。

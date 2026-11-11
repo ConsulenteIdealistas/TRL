@@ -1031,8 +1031,8 @@ class ZeroRiskBatchTests(unittest.TestCase):
                    "critical_missing", "errors", "trl_level", "trl_levels", "direction", "axes",
                    "business_stage", "total_scope", "llm_provider", "llm_model",
                    "prev", "hold_cause", "total_orig", "band_orig",
-                   # 世代 (gen) と現在地 (phase) は表示専用の意図的な追加
-                   "gen", "phase"}
+                   # 世代 (gen) と関門 (barriers) は表示専用の意図的な追加
+                   "gen", "barriers"}
         for c in data["candidates"]:
             self.assertLessEqual(set(c), cand_keys)
             if c["long"]:
@@ -1399,12 +1399,12 @@ class SummaryExtractTests(unittest.TestCase):
         self.assertIn("68%", got)
 
 
-class GenPhaseExportTests(StoreFixture):
-    """世代 (gen) と現在地 (phase) の export (ISSUES-2 の G-2、phases/v1)。
+class GenBarrierExportTests(StoreFixture):
+    """世代 (gen) と関門 (barriers) の export (ISSUES-2 の G-2、barriers/v1)。
 
     世代の正本は as_evaluated の config_version で、評価行の版は recalc で
-    付け替わりうるため次善のフォールバックに留める。phase は long 評価の
-    代表 TRL からの導出で、event には付かない。"""
+    付け替わりうるため次善のフォールバックに留める。barriers は long
+    final 評価にだけ build 側で付与する一次情報からの導出 (DESIGN-V2)。"""
 
     def _row(self, **kw):
         row = {"kind": "long", "status": "final", "total": 55.0,
@@ -1445,18 +1445,22 @@ class GenPhaseExportTests(StoreFixture):
         gen = site_mod._ev_for_site(ev, cfg_with())["gen"]
         self.assertEqual(gen["prompts"], {})
 
-    def test_phase_only_on_long_with_trl(self):
+    def test_barriers_only_on_long_final_in_build(self):
+        # _ev_for_site 単体では付けない (導出には DB の一次情報が要る)
         extra = {"trl_level": {"level": 6, "reason": "r"}}
         ev = self._row(extra_json=json.dumps(extra))
-        out = site_mod._ev_for_site(ev, cfg_with())
-        self.assertEqual(out["phase"]["zone"], "valley_of_death")
-        self.assertEqual(out["phase"]["barriers"]["devil_river"], "crossed")
-        # event 評価には phase キー自体が付かない
-        ev_event = self._row(kind="event", extra_json=json.dumps(extra))
-        self.assertNotIn("phase", site_mod._ev_for_site(ev_event, cfg_with()))
-        # TRL が無い long 評価では phase は None (表示しない)
-        out_none = site_mod._ev_for_site(self._row(), cfg_with())
-        self.assertIsNone(out_none["phase"])
+        self.assertNotIn("barriers", site_mod._ev_for_site(ev, cfg_with()))
+        self.assertNotIn("phase", site_mod._ev_for_site(ev, cfg_with()))
+        # build では long final に barriers が付く (ルール版つき)
+        data = self.build(Mock(make_llm_fn()))
+        longs = [c["long"] for c in data["candidates"] if c.get("long")]
+        self.assertTrue(longs)
+        for ev_out in longs:
+            self.assertEqual(ev_out["barriers"]["v"], "barriers/v1")
+            for k in ("devil_river", "valley_of_death", "darwinian_sea"):
+                self.assertIn(ev_out["barriers"][k]["status"],
+                              ("hit", "clear", "unknown", "na"))
+            self.assertNotIn("phase", ev_out)
 
     def test_prev_gen_config_uses_same_source(self):
         extra = {"trl_level": {"level": 3},
@@ -1476,4 +1480,4 @@ class GenPhaseExportTests(StoreFixture):
             self.assertTrue(ev["gen"]["current"])
             self.assertEqual(ev["gen"]["prompts"],
                              {"extract": "v3", "long": "v3"})
-            self.assertIn("phase", ev)
+            self.assertIn("barriers", ev)

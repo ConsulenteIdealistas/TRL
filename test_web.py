@@ -270,11 +270,12 @@ class ExportTests(StoreFixture):
             self.assertIn("reference_items", text)
             self.assertIn("<h4>参考項目</h4>", text)
             self.assertIn("総合点・必須判定には含めません", text)
-    def test_generation_and_phase_display(self):
-        # 世代表示 (スイッチ式・既定 OFF) と現在地 (フェーズ、既定 ON) の配線。
+    def test_generation_and_barrier_display(self):
+        # 世代表示 (スイッチ式・既定 OFF) と関門 (barriers/v1、常時表示) の配線。
         # 世代は色で序列を作らず文字列のみ、前回比の世代差注記は常時 (P-5)。
-        # フェーズのラベル・定義は trlcore/phases.py の転記で、定義は
-        # criteria.html に出典つきで載せる (P-7)
+        # 関門のラベル・定義は trlcore/barriers.py の転記で、定義は
+        # criteria.html に出典つきで載せる。phases/v1 の現在地表示
+        # (スイッチ・フィルタ・進捗トラック・状態語彙) は全撤去する
         web = T.ROOT / "web"
         html = (web / "index.html").read_text(encoding="utf-8")
         app = (web / "app.js").read_text(encoding="utf-8")
@@ -284,33 +285,44 @@ class ExportTests(StoreFixture):
         schema = json.loads((web / "schema.json").read_text(encoding="utf-8"))
         for text in (html, det):
             self.assertIn('id="swgen"', text)
-            self.assertIn('id="swphase"', text)
+            self.assertNotIn('id="swphase"', text)
+            self.assertNotIn("現在地を表示", text)
         for text in (app, det):
             self.assertIn("trl-showgen", text)
-            self.assertIn("trl-showphase", text)
+            self.assertNotIn("trl-showphase", text)
             self.assertIn("genBadge", text)
             self.assertIn("現行世代", text)
             self.assertIn("物差し自体の変化が含まれます", text)
             self.assertIn("（世代が異なる）", text)
-            self.assertIn("phaseBlockHtml", text)
-            self.assertIn('before: "前駆期", in: "移行期", crossed: "定着期"', text)
-            self.assertIn('darwinian_sea: "ダーウィンの海"', text)
+            self.assertIn("barrierBlockHtml", text)
+            self.assertIn('devil_river: "Devil River"', text)
+            self.assertIn('valley_of_death: "Valley of Death"', text)
+            self.assertIn('darwinian_sea: "Darwinian Sea"', text)
+            self.assertNotIn("phaseBlockHtml", text)
+            self.assertNotIn("前駆期", text)
             # Markdown コピーの評価基準は評価自身の世代を正とする (G-3)
             self.assertIn("gen && L.gen.config", text.replace("LL.gen", "L.gen"))
-        # 主ページ: 現在地フィルタとカードの現在地チップ、進捗トラック
-        self.assertIn('id="fphc"', html)
-        self.assertIn("phaseSel", app)
-        self.assertIn("phaseOf(p).trl", app)
-        # トラックの幅は TRL レベル数に比例 (2:1:2:1:2:1)
-        self.assertIn("grid-template-columns:2fr 1fr 2fr 1fr 2fr 1fr", css)
+        # 主ページ: 関門フィルタは置かず (V2-5)、カードのチップは
+        # 折り返す行 (.brs) に出す
+        self.assertNotIn('id="fphc"', html)
+        self.assertNotIn("phaseSel", app)
+        self.assertIn("barrierChipsHtml", app)
+        self.assertIn(".brs{", css)
+        self.assertIn(".brz{", css)
+        self.assertNotIn(".ptrack{", css)
+        self.assertNotIn(".phz{", css)
         self.assertIn(".genb{", css)
-        # 定義の掲載 (出典 NEDO と、海に定着期を置かない理由)
-        self.assertIn("現在地（フェーズ）の定義（表示専用、phases/v1）", crit)
+        # 定義の掲載 (出典 NEDO、ランウェイの定義と閾値の根拠、Sea のゲート ≥7)
+        self.assertIn("関門の定義（表示専用、barriers/v1）", crit)
         self.assertIn("NEDO", crit)
-        self.assertIn("ダーウィンの海に定着期は定義しません", crit)
-        self.assertIn("前駆期", crit)
-        # export との契約に gen / phase を追加する
+        self.assertIn("ランウェイ", crit)
+        self.assertIn("TRL ≥7", crit)
+        self.assertNotIn("現在地（フェーズ）の定義（表示専用、phases/v1）", crit)
+        # export との契約は gen / barriers (phase は撤去)
         self.assertIn("gen", schema["evaluation_optional"])
-        self.assertIn("phase", schema["evaluation_optional"])
+        self.assertIn("barriers", schema["evaluation_optional"])
+        self.assertNotIn("phase", schema["evaluation_optional"])
         self.assertEqual(schema["gen"], ["config", "prompts", "current"])
-        self.assertEqual(schema["phase"], ["v", "trl", "zone", "barriers"])
+        self.assertEqual(schema["barriers"],
+                         ["v", "trl", "devil_river", "valley_of_death", "darwinian_sea"])
+        self.assertEqual(schema["barrier"], ["status", "evidence"])

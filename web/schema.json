@@ -82,18 +82,23 @@
   "evaluation_optional": [
     "adjustment",
     "gen",
-    "phase"
+    "barriers"
   ],
   "gen": [
     "config",
     "prompts",
     "current"
   ],
-  "phase": [
+  "barriers": [
     "v",
     "trl",
-    "zone",
-    "barriers"
+    "devil_river",
+    "valley_of_death",
+    "darwinian_sea"
+  ],
+  "barrier": [
+    "status",
+    "evidence"
   ],
   "adjustment": [
     "field",

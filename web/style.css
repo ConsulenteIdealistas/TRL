@@ -162,15 +162,13 @@ a.tg{display:inline-flex;align-items:center;text-decoration:none}
 :root[data-theme="dark"] .st-final,:root[data-theme="dark"] .dir-positive,:root[data-theme="dark"] .org-p{color:#2fdba4}
 :root[data-theme="dark"] .st-review{color:#4cc3e6}
 
-/* 世代バッジと現在地 (フェーズ) 表示。どちらも表示専用で、世代に優劣は
-   無いため色の序列は付けず、現在地にも状態色 (緑=良好・琥珀=注意) は
-   使わない。現在の区間だけを一般の accent で示す */
+/* 世代バッジと関門チップ。どちらも表示専用で、世代に優劣は無いため
+   色の序列は付けず、関門にも状態色 (緑=良好・琥珀=注意) は使わない
+   (関門は困難の所在であって、評価の良し悪しではないため)。
+   関門チップはカード本文側の折り返す行 (.brs) に置く: 右端の .side は
+   狭幅で1行固定レイアウトになるため、そこに置くとカードからはみ出す */
 .genb{display:inline-flex;padding:4px 8px;border:1px solid var(--line);border-radius:7px;color:var(--sub);background:var(--field);font-size:10px;font-weight:700}
-.phz{justify-self:end;padding:4px 8px;border:1px solid var(--line);border-radius:7px;color:var(--sub);background:var(--field);font-size:10px;font-weight:700;white-space:nowrap}
-.ptrack{display:grid;grid-template-columns:2fr 1fr 2fr 1fr 2fr 1fr;gap:3px;margin:10px 0 6px}
-.pseg{height:9px;border-radius:3px;background:var(--line)}
-.pseg.cur{background:var(--accent)}
-.plegend{display:flex;flex-wrap:wrap;gap:4px 10px;margin:0 0 8px;color:var(--muted);font-size:11px}
-.plegend b{color:var(--ink)}
+.brs{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.brz{padding:4px 8px;border:1px solid var(--line);border-radius:7px;color:var(--sub);background:var(--field);font-size:10px;font-weight:700;white-space:nowrap}
 .sw{display:inline-flex;align-items:center;gap:7px;min-height:42px;color:var(--sub);font-size:12px;font-weight:600;cursor:pointer}
 .sw input{width:18px;height:18px;accent-color:var(--accent)}

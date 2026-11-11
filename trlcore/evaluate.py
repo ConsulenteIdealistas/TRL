@@ -13,6 +13,25 @@ from .market import format_reaction
 
 EVIDENCE_KINDS = {"fact", "inference", "forecast", "hypothesis"}
 
+# 参考項目が応答から丸ごと省略された場合に、不足コードとして記録する値
+# (N-1)。LLM の出す missing_codes の語彙ではなく、検証側が「項目欠落」
+# という記録の状態を表すために付けるコード。サイト表示の不足理由
+# (missing_info) には混ぜない
+ITEM_OMITTED_CODE = "item_omitted"
+
+
+def reference_item_state(detail):
+    """参考項目1件の充足状態 (N-1 の観測用): scored (得点あり) /
+    explicit_null (項目は出たが score=null で不足理由つき) /
+    omitted (項目自体が省略された)。"""
+    if not isinstance(detail, dict):
+        return "omitted"
+    if detail.get("score") is not None:
+        return "scored"
+    if ITEM_OMITTED_CODE in (detail.get("missing_codes") or []):
+        return "omitted"
+    return "explicit_null"
+
 
 EXTRACT_LISTS = ("facts", "inferences", "forecasts", "hypotheses", "counter_points", "missing_info")
 
@@ -159,6 +178,56 @@ def normalize_extraction(obj):
     return out
 
 
+def _span_norm(s):
+    """原文スパン照合用の正規化。空白の畳み込みと casefold のみで、
+    言い換えや表記ゆれ (全角・半角等) は同一視しない。"""
+    return " ".join(str(s or "").split()).casefold()
+
+
+def validate_subject_spans(extraction, cand):
+    """claim の subject (技術帰属) が候補本文の原文スパンか照合する (N-2)。
+
+    subject は「原文スパン」が設計 (extract の規約) だが、従来は文字列型
+    しか検証しておらず、原文に存在しない名称 (言い換え・幻覚) もそのまま
+    貯まっていた。ここでは抽出器に渡した候補本文 (タイトル・要旨・
+    fields — _candidate_block と同じ材料) を正本として照合し、原文に
+    無い subject は claim から落とす (claim 自体は残す)。照合は空白の
+    畳み込みと casefold の上での部分文字列一致。
+    -> (extraction, {"claims": 総数, "with_subject": 照合前の付与数,
+                     "dropped": 落とした数})。落とす対象が無ければ元の
+    オブジェクトをそのまま返す (コピーしない)。"""
+    stats = {"claims": 0, "with_subject": 0, "dropped": 0}
+    if not isinstance(extraction, dict):
+        return extraction, stats
+    fields = cand.get("fields") if isinstance(cand, dict) else None
+    body = _span_norm(" ".join([
+        str(cand.get("title") or ""), str(cand.get("abstract") or ""),
+        " ".join(str(f) for f in fields if f) if isinstance(fields, list) else ""]))
+    plan = {}  # list名 -> [(index, subject)]
+    for key in CLAIM_LISTS:
+        for i, c in enumerate(extraction.get(key) or []):
+            if not isinstance(c, dict):
+                continue
+            stats["claims"] += 1
+            subj = c.get("subject")
+            if isinstance(subj, str) and subj.strip():
+                stats["with_subject"] += 1
+                if _span_norm(subj) not in body:
+                    plan.setdefault(key, []).append(i)
+                    stats["dropped"] += 1
+    if not plan:
+        return extraction, stats
+    out = dict(extraction)
+    for key, idxs in plan.items():
+        lst = list(out.get(key) or [])
+        for i in idxs:
+            c = dict(lst[i])
+            c.pop("subject", None)
+            lst[i] = c
+        out[key] = lst
+    return out, stats
+
+
 def _nonempty_list(v):
     return isinstance(v, list) and any(str(x).strip() for x in v)
 
@@ -215,7 +284,9 @@ def validate_assessment(obj, kind, cfg):
         _validate_one_item(key, it, scores, details, errors)
     # 参考項目 (規程第13条): 出力があれば採点項目と同じ規律で検証して取り込む。
     # 欠落していてもエラーにはせず null として記録する (参考項目の不足で
-    # 評価自体を失敗・保留にしない)
+    # 評価自体を失敗・保留にしない)。ただし項目自体が省略された場合は
+    # 「理由のない null」で記録せず、欠落した旨を不足コード
+    # (ITEM_OMITTED_CODE) で記録する (N-1: 明示 null との区別と充足の観測)
     for key in reference_items(kind, cfg):
         it = items.get(key)
         if isinstance(it, dict):
@@ -223,7 +294,8 @@ def validate_assessment(obj, kind, cfg):
         else:
             scores[key] = None
             details[key] = {"score": None, "reason": "", "evidence": [],
-                            "counter_evidence": [], "missing_info": []}
+                            "counter_evidence": [], "missing_info": [],
+                            "missing_codes": [ITEM_OMITTED_CODE]}
     for f in ("next_sources", "reeval_conditions"):
         if obj.get(f) is not None and not isinstance(obj.get(f), list):
             errors.append(f"{f}:must_be_list")
@@ -364,6 +436,13 @@ def evaluate_one(cand, kind, cfg, llm, as_of, extraction=None, extract_meta=None
             extraction, meta = run_extraction(cand, cfg, llm, as_of, prompt_dir)
             result["extraction"], extract_meta = extraction, meta
             result["extraction_model"] = _used_model(llm)  # 抽出キャッシュのキーに使う実モデル
+        # 技術帰属 subject の原文スパン照合 (N-2): 新規抽出・キャッシュ・
+        # 系統間の引き継ぎのどの経路でも、採点に使う前に一度ここを通す。
+        # 照合済みの抽出は冪等 (落とした subject は戻らない) ため、系統を
+        # 跨いで再照合しても結果は変わらない
+        extraction, subj_stats = validate_subject_spans(extraction, cand)
+        result["extraction"] = extraction
+        result["extra"]["subject_stats"] = subj_stats
         versions["extract"] = extract_meta
         p = load_prompt(kind, cfg["scoring"]["prompts"][kind], prompt_dir)
         versions[kind] = {"name": kind, "version": p["version"], "sha": p["sha"]}

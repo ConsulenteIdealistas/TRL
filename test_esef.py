@@ -279,5 +279,79 @@ class EsefCollectTests(unittest.TestCase):
         self.assertEqual(self.counts["esef_deferred"], 2)
 
 
+class CompletenessTests(unittest.TestCase):
+    """S-4: 完全性の明示と、期間終了日を混ぜないセット組み。"""
+
+    def test_full_doc_has_no_missing(self):
+        text, period, info = esef.parse_xbrl_json_full(doc_2025())
+        self.assertEqual(info["missing"], [])
+        self.assertEqual(len(info["found"]), 7)
+        self.assertEqual(info["currencies"], ["EUR"])
+        self.assertEqual(info["instant_period"], "2025-12-31")
+        self.assertNotIn("欠落項目", text)
+
+    def test_other_period_items_are_not_merged(self):
+        # 営業利益は 2024 年分 (999) しか無い。2025 年のセットへ期の違う
+        # 項目を混ぜず、欠落として明示する
+        doc = doc_2025()
+        doc["facts"]["f6"] = fact("ProfitLossFromOperatingActivities",
+                                  999_000_000,
+                                  "2024-01-01T00:00:00/2025-01-01T00:00:00")
+        text, period, info = esef.parse_xbrl_json_full(doc)
+        self.assertEqual(period.isoformat(), "2025-12-31")
+        self.assertNotIn("999", text)
+        self.assertIn("営業利益", info["missing"])
+        self.assertIn("欠落項目: 営業利益", text)
+
+    def test_ratio_requires_same_date_pair(self):
+        # 純資産は 2025 年末、総資産は 2024 年末のみ → 2025 年末のセットに
+        # 総資産は入らず、同日ペアが無いので比率も計算しない
+        doc = doc_2025()
+        doc["facts"]["f11"] = fact("Assets", 800_000_000, "2025-01-01T00:00:00")
+        text, _period, info = esef.parse_xbrl_json_full(doc)
+        self.assertNotIn("自己資本比率", text)
+        self.assertIn("総資産", info["missing"])
+        # instant が全て 2024 年末に揃えば、その日付のセットで比率が出る
+        doc2 = doc_2025()
+        doc2["facts"]["f10"] = fact("CashAndCashEquivalents", 100_000_000,
+                                    "2025-01-01T00:00:00")
+        doc2["facts"]["f11"] = fact("Assets", 800_000_000, "2025-01-01T00:00:00")
+        doc2["facts"]["f12"] = fact("Equity", 400_000_000, "2025-01-01T00:00:00")
+        text2, _p2, info2 = esef.parse_xbrl_json_full(doc2)
+        self.assertIn("自己資本比率 50.0%", text2)
+        self.assertEqual(info2["instant_period"], "2024-12-31")
+
+    def test_currency_mix_is_noted(self):
+        doc = doc_2025()
+        doc["facts"]["f11"] = fact("Assets", 900_000_000, "2026-01-01T00:00:00",
+                                   unit="iso4217:USD")
+        text, _period, info = esef.parse_xbrl_json_full(doc)
+        self.assertEqual(info["currencies"], ["EUR", "USD"])
+        self.assertIn("通貨混在: EUR・USD", text)
+        self.assertIn("総資産 900百万米ドル", text)
+        # 通貨が違うペアからは自己資本比率を計算しない
+        self.assertNotIn("自己資本比率", text)
+
+    def test_fetch_record_carries_completeness(self):
+        partial = {"facts": {"p1": fact(
+            "Revenue", 500_000_000, "2025-01-01T00:00:00/2026-01-01T00:00:00")}}
+
+        def fake_http(url, params=None, headers=None, retries=None):
+            if "/api/entities/" in url:
+                return json.dumps(FILINGS).encode()
+            if "2025-12-31" in url:
+                return json.dumps(partial).encode()
+            if "2024-12-31" in url:
+                return json.dumps(doc_2024()).encode()
+            raise AssertionError(f"unexpected url: {url}")
+
+        recs = esef.fetch_esef(LEI, 5, 400, AS_OF, http=fake_http)
+        self.assertEqual(len(recs), 2)
+        comp = recs[0]["completeness"]
+        self.assertEqual(comp["found"], ["売上高"])
+        self.assertIn("純資産", comp["missing"])
+        self.assertIn("欠落項目", recs[0]["abstract"])
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -32,7 +32,8 @@ from .review import INBOX_NAME, import_inbox_file
 from .entities import entity_screen, link_entities
 from .prompts import load_prompt
 from .llm import llm_settings
-from .evaluate import evaluate_one, input_hash
+from .evaluate import evaluate_one, input_hash, reference_item_state
+from .scoring import reference_items
 from .market import build_market_reaction
 from .tiers import TIER_RULES_VERSION, compute_derived_tiers
 
@@ -802,6 +803,12 @@ def _collect_esef(store, cfg, run_id, as_of, counts, log, budget, collect_t0, fe
         fetched = len(raws) if err is None else 0
         new = dups = invalid = 0
         if err is None:
+            # 部分抽出の観測 (S-4): 欠落項目つきで成立したレコードの数。
+            # レコード自体にも欠落が明記されるが、実行単位でも数える
+            n_partial = sum(1 for r in raws
+                            if (r.get("completeness") or {}).get("missing"))
+            if n_partial:
+                counts["esef_partial"] = counts.get("esef_partial", 0) + n_partial
             for raw in raws:
                 try:
                     rec, _problems = normalize(raw, now)
@@ -936,6 +943,30 @@ def has_demo_signal(c):
     return any(t in text for t in DEMO_SIGNAL_TERMS)
 
 
+def _selection_rank(c):
+    # 対象企業に紐付く候補を優先する (TRL・事業項目の根拠が揃いやすい)。
+    # strong(所属・スポンサー等で特定) > weak(言及のみ) > 紐付けなし。
+    # 同じ段では「実証シグナル」のある候補を優先する (TRLを根拠付きで決めやすい)。
+    # それも同じなら新しい順 (呼び出し側の安定ソートで実現)。
+    strengths = {e["strength"] for e in c.get("entities", [])}
+    link = 0 if "strong" in strengths else (1 if strengths else 2)
+    return (link, 0 if has_demo_signal(c) else 1)
+
+
+def _is_current_generation(gen, cfg):
+    """候補の最新 long 評価の世代印 (store.latest_long_eval_generations の
+    値) が現行世代か。世代の同一性は config_version とプロンプト版
+    (extract / long) の両方で判定する (FREEZE-PLAN C 節: 世代は
+    config_version だけで呼ばない)。印が欠けている評価は現行とは
+    みなさない (安全側 = 旧世代として寄せの対象にする)。"""
+    if not gen or gen.get("config") != cfg["config_version"]:
+        return False
+    prompts = (cfg["scoring"].get("prompts") or {})
+    got = gen.get("prompts") or {}
+    return got.get("extract") == prompts.get("extract") \
+        and got.get("long") == prompts.get("long")
+
+
 def select_for_eval(store, cfg, today, limit, retry_failed="no", only_new=False, stats=None):
     sc = cfg["scoring"]["screening"]
     rows = []
@@ -1008,17 +1039,31 @@ def select_for_eval(store, cfg, today, limit, retry_failed="no", only_new=False,
 
         rows.append(c)
 
-    def rank(c):
-        # 対象企業に紐付く候補を優先する (TRL・事業項目の根拠が揃いやすい)。
-        # strong(所属・スポンサー等で特定) > weak(言及のみ) > 紐付けなし。
-        # 同じ段では「実証シグナル」のある候補を優先する (TRLを根拠付きで決めやすい)。
-        # それも同じなら新しい順 (呼び出し側の安定ソートで実現)。
-        strengths = {e["strength"] for e in c.get("entities", [])}
-        link = 0 if "strong" in strengths else (1 if strengths else 2)
-        return (link, 0 if has_demo_signal(c) else 1)
-
     rows.sort(key=lambda c: c["published"] or "", reverse=True)
-    rows.sort(key=rank)
+    rows.sort(key=_selection_rank)
+    # 世代の寄せ (G-5): 再評価適格 (TH-1 の材料更新ゲートを通った) 候補の
+    # うち、最新 long 評価が旧世代のものを選定の前面に出し、世代混在の
+    # 解消を偶発でなく選定の規則にする。前面に出せるのは上限の半分
+    # (切り上げ) まで: 残り半分は通常選定 (未評価候補の初回評価を含む)
+    # のために残し、週予算を旧世代の消化だけで食い潰さない。半分という
+    # 値は「再評価は初回評価に従属する」という滞留対策の従来原則
+    # (予約も上限の内数・別枠なし) を、世代寄せにも同じ強さで適用した
+    # もの。前面分を超えた旧世代候補は通常選定の後ろに回り、材料が
+    # 無くなれば (rest が尽きれば) そちらからも選ばれる。
+    # 移行の進捗は stats で観測可能にする (旧世代の残数・適格数・選定数)。
+    gen_map = store.latest_long_eval_generations() \
+        if hasattr(store, "latest_long_eval_generations") else {}
+    oldgen_ids = {cid for cid, g in gen_map.items()
+                  if not _is_current_generation(g, cfg)}
+    if stats is not None:
+        stats["oldgen_long_remaining"] = len(oldgen_ids)
+    oldgen_rows = [c for c in rows if c["id"] in oldgen_ids]
+    if oldgen_rows:
+        if stats is not None:
+            stats["oldgen_reeval_eligible"] = len(oldgen_rows)
+        cap_old = -(-limit // 2)
+        head, tail = oldgen_rows[:cap_old], oldgen_rows[cap_old:]
+        rows = head + [c for c in rows if c["id"] not in oldgen_ids] + tail
     # 企業あたりの保持上限: 材料の多い大手がキューを抱え込まないようにする。
     # 上限を超えた分は今回の選定から外れる (新しい材料が来れば順位で入れ替わる)。
     cap = sc.get("eval_queue_per_entity", 10)
@@ -1057,8 +1102,57 @@ def select_for_eval(store, cfg, today, limit, retry_failed="no", only_new=False,
             if c["id"] not in picked_ids:
                 picked.append(c)
                 picked_ids.add(c["id"])
+        if stats is not None:
+            stats["oldgen_selected"] = sum(1 for c in picked if c["id"] in oldgen_ids)
         return picked
-    return capped[:limit]
+    picked = capped[:limit]
+    if stats is not None:
+        stats["oldgen_selected"] = sum(1 for c in picked if c["id"] in oldgen_ids)
+    return picked
+
+
+def select_event_fill(store, cfg, as_of, limit, exclude_ids, log=print):
+    """event 充当の候補選定 (O-2)。
+
+    価格反応データがあり、現在の材料について event 評価がまだ無い
+    コア企業リンクの候補を、通常選定と同じ順位 (リンク段位 → 実証
+    シグナル → 新しい順) で最大 limit 件返す。event 評価済みの判定は
+    「材料の最終更新以降に final/hold の event 評価がある」こと。
+    反応データの有無は build_market_reaction (系列は DB にキャッシュ
+    され、古い場合だけ取得する) で候補ごとに確認し、limit 件が
+    埋まった時点で打ち切る (全プールを走査しない)。
+    """
+    if limit <= 0:
+        return []
+    core_ids = {e["id"] for e in (cfg.get("entities") or {}).get("entities", [])
+                if (e.get("tier") or "core") == "core"}
+    pool = []
+    for c in store.list_by_status(["screened", "hold", "evaluated"]):
+        if c["id"] in exclude_ids:
+            continue
+        if c.get("info_type") in ("news", "disclosure"):
+            continue  # 単体評価の対象は通常選定と同じ範囲 (プール専用は除く)
+        linked = {e["entity_id"] for e in c.get("entities", [])}
+        if not linked or not (linked & core_ids):
+            continue
+        ev = store.latest_evaluation(c["id"], "event")
+        if ev and ev.get("status") in ("final", "hold"):
+            upd = parse_date((c.get("material_updated_at") or "")[:10])
+            evd = parse_date((ev.get("evaluated_at") or "")[:10]) \
+                or parse_date((ev.get("as_of") or "")[:10])
+            if upd is None or (evd is not None and evd >= upd):
+                continue  # 現在の材料については event 評価済み
+        pool.append(c)
+    pool.sort(key=lambda c: c["published"] or "", reverse=True)
+    pool.sort(key=_selection_rank)
+    out = []
+    for c in pool:
+        if len(out) >= limit:
+            break
+        reaction, _name, _symbol = build_market_reaction(store, cfg, c, as_of, log=log)
+        if reaction and reaction.get("available"):
+            out.append(c)
+    return out
 
 
 def _queue_reason(res):
@@ -1079,14 +1173,15 @@ TAIL_RESERVE_SEC = 120
 
 def run_pipeline(store, cfg, llm, *, as_of, sources=("pubmed", "arxiv"), kinds=("long",), max_eval=None,
                  retry_failed=False, do_collect=True, fetchers=None, today=None, log=print, prompt_dir=None,
-                 only_new=False, depth="deep"):
+                 only_new=False, depth="deep", event_fill=False):
     t0 = time.monotonic()
     today = today or datetime.now(timezone.utc).date()
     run_id = new_run_id()
     store.start_run(run_id, cfg["config_version"], cfg["config_hash"], as_of.isoformat(),
                 {"sources": list(sources), "kinds": list(kinds), "max_eval": max_eval,
                  "retry_failed": retry_failed, "collect": do_collect, "only_new": only_new,
-                 "depth": depth, "llm": getattr(llm, "name", "none")})
+                 "depth": depth, "event_fill": event_fill,
+                 "llm": getattr(llm, "name", "none")})
     counts = {k: 0 for k in ("fetched", "new", "duplicates", "invalid", "sources_ok", "sources_failed", "screened",
                              "rejected", "selected", "final", "hold", "error", "skipped_no_llm", "llm_infra_failed",
                              "financial_skipped")}
@@ -1199,6 +1294,10 @@ def run_pipeline(store, cfg, llm, *, as_of, sources=("pubmed", "arxiv"), kinds=(
     if counts.get("reeval_skipped_no_material_update"):
         log(f"[eval] 材料更新が無いため再評価を見送った候補 "
             f"{counts['reeval_skipped_no_material_update']} 件 (TH-1 案D)")
+    if counts.get("oldgen_selected"):
+        log(f"[eval] 世代の寄せ (G-5): 旧世代の再評価 {counts['oldgen_selected']} 件を選定 "
+            f"(適格 {counts.get('oldgen_reeval_eligible', 0)} 件 / "
+            f"旧世代の残り {counts.get('oldgen_long_remaining', 0)} 件)")
     # 引き継ぎ: 前回の実行が異常終了 (interrupted/partial/error) か、評価フェーズが
     # 打ち切られて (counts の llm_degraded) 選定が記録されていたら、その未完分を
     # 今回の選定の先頭に置く。前回の実行で評価が保存された候補は完了扱いで除く
@@ -1250,15 +1349,31 @@ def run_pipeline(store, cfg, llm, *, as_of, sources=("pubmed", "arxiv"), kinds=(
         selected = (queue_front + [c for c in selected if c["id"] not in front_ids])[:limit]
         counts["reeval_queue"] = len([c for c in selected if c["id"] in front_ids])
         log(f"[eval] 再評価キューの予約 {counts['reeval_queue']} 件を選定の先頭に入れました")
+    # event 充当 (O-2): スケジュール実行の政策として、通常選定で余った
+    # 上限の内数で、価格反応データのある未評価の event 材料を long の
+    # 後に評価する。定期実行では event が手動実行でしか生まれず、反応
+    # 整合の監査 (E1/P6) の母数が空のままだったための措置。kinds を
+    # 明示した実行 (手動) では発動しない (cli 側で event_fill を
+    # 立てるのは kinds 未指定のときだけ)
+    fill = []
+    if event_fill and "event" not in kinds and limit > len(selected):
+        fill = select_event_fill(store, cfg, as_of, limit - len(selected),
+                                 {c["id"] for c in selected}, log=log)
+        if fill:
+            counts["event_fill"] = len(fill)
+            log(f"[eval] event 充当 (O-2): 未評価の event 材料 {len(fill)} 件を"
+                f"上限の内数で評価します")
     counts["selected"] = len(selected)
     # 選定は実行の途中で死んでも残るよう、この時点で run レコードへ記録する。
     # 上限で外れた引き継ぎ分も連鎖が切れないよう一緒に入れる
     store.update_run_params(run_id, selected=list(dict.fromkeys(
-        [c["id"] for c in handover] + [c["id"] for c in selected])))
-    if selected and llm is None:
-        counts["skipped_no_llm"] = len(selected)
+        [c["id"] for c in handover] + [c["id"] for c in selected]
+        + [c["id"] for c in fill])))
+    if (selected or fill) and llm is None:
+        counts["skipped_no_llm"] = len(selected) + len(fill)
         log("[eval] LLMプロバイダが none のため評価をスキップ(収集のみ)。")
         selected = []
+        fill = []
     st = llm_settings(cfg)
     phase_t0, consecutive, degraded = time.monotonic(), 0, None
     model = getattr(llm, "model", None) or ""
@@ -1268,9 +1383,13 @@ def run_pipeline(store, cfg, llm, *, as_of, sources=("pubmed", "arxiv"), kinds=(
         extract_sha = None  # 評価側でエラーになる。キャッシュは使わない
     workers = max(1, st.get("eval_workers", 1))
 
-    def eval_candidate(c, extraction, meta, related, financials, was_cached, reaction=None):
+    def eval_candidate(c, extraction, meta, related, financials, was_cached, reaction=None,
+                       cand_kinds=None):
         # ワーカースレッドで動く。Store には触らず LLM 評価だけを行い、結果を返す。
         # 系統(long/event)は抽出を共有するため候補内では従来どおり直列に処理する
+        # cand_kinds は候補ごとの系統 (event 充当の候補は ("event",) のみ)
+        if cand_kinds is None:
+            cand_kinds = tuple(kinds)
         # 候補1件の総時間予算 (llm.candidate_budget_sec): 失敗の連鎖で1件が
         # フェーズ予算を食い潰さないようにする (Mock 等の予算非対応は素通り)
         set_budget = getattr(llm, "set_candidate_budget", None)
@@ -1280,7 +1399,7 @@ def run_pipeline(store, cfg, llm, *, as_of, sources=("pubmed", "arxiv"), kinds=(
             per_kind = []
             entry_cached = was_cached
             extraction_model = None
-            for kind in kinds:
+            for kind in cand_kinds:
                 eval_t0 = time.monotonic()
                 res = evaluate_one(c, kind, cfg, llm, as_of, extraction, meta, prompt_dir,
                                    related=related, financials=financials,
@@ -1304,8 +1423,11 @@ def run_pipeline(store, cfg, llm, *, as_of, sources=("pubmed", "arxiv"), kinds=(
     # 残す。候補ごとの内訳と最小限の要約 (件数・平均・最大) を counts に
     # 記録し、遅い候補・系統の偏りを後から観測できるようにする
     eval_elapsed = []
+    # 作業リストは (候補, その候補で評価する系統) の列。通常選定の候補は
+    # 実行の系統すべて、event 充当 (O-2) の候補は event のみ
+    work = [(c, tuple(kinds)) for c in selected] + [(c, ("event",)) for c in fill]
     idx = 0
-    while idx < len(selected) and not degraded:
+    while idx < len(work) and not degraded:
         if st["phase_budget_sec"] and time.monotonic() - phase_t0 > st["phase_budget_sec"]:
             degraded = "phase_budget_exceeded"
             log(f"::warning::[eval] 評価フェーズの時間予算({st['phase_budget_sec']}秒)を超えたため打ち切ります")
@@ -1314,18 +1436,18 @@ def run_pipeline(store, cfg, llm, *, as_of, sources=("pubmed", "arxiv"), kinds=(
             degraded = "run_budget_exceeded"
             log(f"::warning::[eval] 実行全体の時間予算({run_budget}秒)の締め切りのため評価を打ち切ります")
             break
-        batch = selected[idx:idx + workers]
+        batch = work[idx:idx + workers]
         idx += len(batch)
         # Store の読み取り(抽出キャッシュ・関連ニュース)はメインスレッドで事前に済ませる
         prepared = []
-        for c in batch:
+        for c, cand_kinds in batch:
             extraction, meta = None, None
             if extract_sha:
                 extraction, meta = store.get_extraction(input_hash(c, as_of), extract_sha, model)
             related = store.related_news(c["id"], as_of) if c.get("info_type") != "news" else None
             financials = store.related_financials(c["id"], as_of) if c.get("info_type") != "news" else None
             reaction = None
-            if "event" in kinds:
+            if "event" in cand_kinds:
                 reaction = build_market_reaction(store, cfg, c, as_of, log=log)
                 if reaction and reaction[0] and reaction[0].get("available"):
                     counts["eval_pool_market_reaction"] = counts.get("eval_pool_market_reaction", 0) + 1
@@ -1337,16 +1459,19 @@ def run_pipeline(store, cfg, llm, *, as_of, sources=("pubmed", "arxiv"), kinds=(
                 counts["eval_pool_financial"] = counts.get("eval_pool_financial", 0) + 1
             if related:
                 counts["eval_pool_related"] = counts.get("eval_pool_related", 0) + 1
-            for kind in kinds:
+            for kind in cand_kinds:
                 log(f"[eval:start] {c['id']} {kind}")
         if workers > 1:
             with ThreadPoolExecutor(max_workers=workers) as ex:
-                batch_results = list(ex.map(lambda bc: eval_candidate(bc[0], *bc[1]), zip(batch, prepared)))
+                batch_results = list(ex.map(
+                    lambda bc: eval_candidate(bc[0][0], *bc[1], cand_kinds=bc[0][1]),
+                    zip(batch, prepared)))
         else:
-            batch_results = [eval_candidate(c, *p) for c, p in zip(batch, prepared)]
+            batch_results = [eval_candidate(c, *p, cand_kinds=ck)
+                             for (c, ck), p in zip(batch, prepared)]
         # 保存と連続失敗の判定は候補順に行う。打ち切りが決まったらバッチ内の残りは破棄する
         # (並列化で無駄になる呼び出しは最大でバッチの残り分に限る)
-        for c, p, per_kind in zip(batch, prepared, batch_results):
+        for (c, cand_kinds), p, per_kind in zip(batch, prepared, batch_results):
             if degraded:
                 break
             eval_elapsed.append({
@@ -1385,6 +1510,27 @@ def run_pipeline(store, cfg, llm, *, as_of, sources=("pubmed", "arxiv"), kinds=(
                                            datetime.now(timezone.utc).isoformat(timespec="seconds"), res["prompt_versions"])
                     log(f"[eval] {c['id']} {kind}: {res['status']} total={res['total']} errors={res['errors']} "
                         f"missing={res['missing']} critical_missing={res['critical_missing']}")
+                # 参考項目の充足 (N-1) と subject 付与 (N-2) の観測集計。
+                # 参考項目は系統ごとに数える。subject は抽出が候補内で
+                # 共有されるため、候補の最初の系統の分だけを数える
+                # (系統ごとに数えると付与率の母数が水増しされる)
+                for _i, (_kind, res, _sec, _cached) in enumerate(per_kind):
+                    if res.get("items"):
+                        for rk in reference_items(_kind, cfg):
+                            bucket = counts.setdefault(
+                                "reference_item_states",
+                                {"scored": 0, "explicit_null": 0, "omitted": 0})
+                            bucket[reference_item_state(res["items"].get(rk))] += 1
+                    if _i == 0:
+                        ss = (res.get("extra") or {}).get("subject_stats")
+                        if ss:
+                            counts["subject_claims"] = \
+                                counts.get("subject_claims", 0) + ss["claims"]
+                            counts["subject_attached"] = \
+                                counts.get("subject_attached", 0) \
+                                + ss["with_subject"] - ss["dropped"]
+                            counts["subject_dropped"] = \
+                                counts.get("subject_dropped", 0) + ss["dropped"]
                 if outcomes:
                     status = "hold" if "hold" in outcomes else ("error" if "error" in outcomes else "evaluated")
                     store.set_status(c["id"], status, eval_at=datetime.now(timezone.utc).isoformat(timespec="seconds"),

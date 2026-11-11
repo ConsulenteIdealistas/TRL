@@ -54,7 +54,10 @@ def main(argv=None):
     r.add_argument("--data-dir", default="data")
     r.add_argument("--as-of")
     r.add_argument("--sources", default="pubmed,arxiv")
-    r.add_argument("--kinds", default="long")
+    r.add_argument("--kinds", default=None,
+                   help="評価の種類 (カンマ区切り): long, event。"
+                        "未指定のときは long + event 充当 (O-2 の政策: "
+                        "上限の内数で未評価の event 材料も評価する)")
     r.add_argument("--max-eval", type=int)
     r.add_argument("--depth", choices=["deep", "shallow"], default="deep",
                    help="収集の深さ。shallow は発見系ソースの取得窓を数日に切り詰める (定期実行の浅い日用)")
@@ -276,7 +279,11 @@ def main(argv=None):
     if as_of is None:
         print("invalid --as-of (YYYY-MM-DD)")
         return 2
-    kinds = [k for k in a.kinds.split(",") if k]
+    # event 充当 (O-2): kinds を明示した実行では発動せず、未指定 (空も
+    # 含む) の実行 — スケジュール実行 — でだけコード側の政策として
+    # 立てる。ワークフローの既定に依存しない (2026-11-06 の教訓)
+    event_fill = not (a.kinds or "").strip()
+    kinds = [k for k in (a.kinds or "").split(",") if k] or ["long"]
     sources = [s for s in a.sources.split(",") if s]
     if not kinds or not set(kinds) <= {"long", "event"} or not sources or not set(sources) <= set(SOURCE_NAMES):
         print("invalid --kinds or --sources")
@@ -301,6 +308,7 @@ def main(argv=None):
     do_collect=not a.skip_collect,
     only_new=a.only_new,
     depth=a.depth,
+    event_fill=event_fill,
 )
 
     text = build_report(store, res["run_id"], cfg)

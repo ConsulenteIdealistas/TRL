@@ -142,44 +142,86 @@ def _core_facts(doc):
     return out
 
 
-def _pick(facts, concepts, kind):
-    """概念候補の順に、最新の値 (flow は年次 = 300〜400 日の期間のみ) を選ぶ。"""
+def _pick_at(facts, concepts, kind, end):
+    """終了日 end に揃えた項目の選択。概念候補の順に、その日付の行を採る
+    (flow は年次 = 300〜400 日の期間のみ。重複は facts の並び順の先勝ち)。"""
     for c in concepts:
-        rows = [r for r in facts if r[0] == c and r[1] == kind
-                and (kind == "instant" or 300 <= r[3] <= 400)]
-        if rows:
-            return max(rows, key=lambda r: r[2])
+        for r in facts:
+            if r[0] == c and r[1] == kind and r[2] == end \
+                    and (kind == "instant" or 300 <= r[3] <= 400):
+                return r
     return None
 
 
-def parse_xbrl_json(doc):
-    """xBRL-JSON → (財務テキスト, 対象期間末日)。年次 flow が無ければ ("", None)。"""
+def parse_xbrl_json_full(doc):
+    """xBRL-JSON → (財務テキスト, 対象期間末日, 完全性情報)。年次 flow が
+    無ければ ("", None, info)。
+
+    完全性情報 (S-4) は {"found": [項目名], "missing": [項目名],
+    "currencies": [通貨], "instant_period": iso|None}。項目は期間終了日
+    ごとに混在させず (従来は概念ごとに独立に最新を拾い、期の違う項目が
+    1つの財務セットに混ざり得た)、flow は年次 flow のある最新の通期
+    終了日の行だけで、instant は flow と同じ終了日 (無ければ最新の
+    instant の日付) の行だけでセットを組む。自己資本比率は同一日付・
+    同一通貨の純資産と総資産のペアからのみ計算する。欠落項目と通貨の
+    混在はテキスト末尾に明記し、部分抽出が「完全な財務」に見えない
+    ようにする。"""
     facts = _core_facts(doc)
+    info = {"found": [], "missing": [], "currencies": [], "instant_period": None}
+    labels = [label for label, _ in _FLOW_ITEMS + _INSTANT_ITEMS]
+    flow_ends = [r[2] for r in facts if r[1] == "flow" and 300 <= r[3] <= 400]
+    if not flow_ends:
+        info["missing"] = labels
+        return "", None, info
+    period = max(flow_ends)
     flows = {}
     for label, concepts in _FLOW_ITEMS:
-        got = _pick(facts, concepts, "flow")
+        got = _pick_at(facts, concepts, "flow", period)
         if got:
             flows[label] = got
-    if not flows:
-        return "", None
-    currency = flows[next(iter(flows))][4]
-    unit = _CURRENCY_UNITS.get(currency, f"百万{currency}")
-    period = max(r[2] for r in flows.values())
-    parts = [f"{label} {_fmt_money(flows[label][5], unit)}" for label, _ in _FLOW_ITEMS if label in flows]
-    text = f"直近通期({period.isoformat()}まで) " + "、".join(parts)
     instants = {}
-    for label, concepts in _INSTANT_ITEMS:
-        got = _pick(facts, concepts, "instant")
-        if got:
-            instants[label] = got
+    instant_rows = [r for r in facts if r[1] == "instant"]
+    iend = None
+    if any(r[2] == period for r in instant_rows):
+        iend = period
+    elif instant_rows:
+        iend = max(r[2] for r in instant_rows)
+    if iend is not None:
+        info["instant_period"] = iend.isoformat()
+        for label, concepts in _INSTANT_ITEMS:
+            got = _pick_at(facts, concepts, "instant", iend)
+            if got:
+                instants[label] = got
+    currencies = sorted({r[4] for r in list(flows.values()) + list(instants.values())})
+    info["currencies"] = currencies
+    for label in labels:
+        info["found" if (label in flows or label in instants) else "missing"].append(label)
+
+    def money(row):
+        # 通貨は項目ごとに自分のものを引く (混在時は混在と分かる形になる)
+        return _fmt_money(row[5], _CURRENCY_UNITS.get(row[4], f"百万{row[4]}"))
+
+    text = f"直近通期({period.isoformat()}まで) " + "、".join(
+        f"{label} {money(flows[label])}" for label, _ in _FLOW_ITEMS if label in flows)
     if instants:
-        seg = [f"{label} {_fmt_money(instants[label][5], unit)}" for label, _ in _INSTANT_ITEMS if label in instants]
+        seg = [f"{label} {money(instants[label])}"
+               for label, _ in _INSTANT_ITEMS if label in instants]
         eq, ta = instants.get("純資産"), instants.get("総資産")
-        if eq and ta and ta[5]:
+        if eq and ta and ta[5] and eq[4] == ta[4]:
             seg.append(f"自己資本比率 {eq[5] / ta[5] * 100:.1f}%")
-        iend = max(r[2] for r in instants.values())
         text += f"。貸借対照表({iend.isoformat()}時点) " + "、".join(seg)
-    return text + "。", period
+    text += "。"
+    if info["missing"]:
+        text += f"欠落項目: {'・'.join(info['missing'])}。"
+    if len(currencies) > 1:
+        text += f"通貨混在: {'・'.join(currencies)}。"
+    return text, period, info
+
+
+def parse_xbrl_json(doc):
+    """互換用の薄いラッパ: (財務テキスト, 対象期間末日)。"""
+    text, period, _info = parse_xbrl_json_full(doc)
+    return text, period
 
 
 def _filing_pref(attrs):
@@ -220,7 +262,7 @@ def fetch_esef(query, max_results, lookback_days, as_of, http=None):
         if period_date < as_of - timedelta(days=lookback_days) or period_date > as_of + timedelta(days=92):
             continue
         doc = _get(API_BASE + by_period[pe]["json_url"], http)
-        text, _end = parse_xbrl_json(doc)
+        text, _end, info = parse_xbrl_json_full(doc)
         if not text:
             continue
         out.append({
@@ -232,5 +274,11 @@ def fetch_esef(query, max_results, lookback_days, as_of, http=None):
             "fields": ["ESEF", "財務"],
             "affiliations": [],
             "info_type": "disclosure",
+            # 完全性情報 (S-4): どの項目が取れて何が欠けたか。normalize は
+            # 固定フィールドだけを通すので、観測 (収集側の counts) 用に
+            # raw のまま載せる
+            "completeness": {"found": info["found"], "missing": info["missing"],
+                             "currencies": info["currencies"],
+                             "instant_period": info["instant_period"]},
         })
     return out

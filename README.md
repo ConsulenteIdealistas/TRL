@@ -260,6 +260,7 @@ long 評価では、点数・TRL とは独立に「その資料が示す出来�
 ### ワークフロー（.github/workflows/main.yaml）
 
 - 定期実行: **火〜金曜 06:30 JST**（cron `30 21 * * 1-4` UTC）。火曜は「深い日」として全期間の窓で収集し、他の曜日は「浅い日」として発見系ソースの窓を4日に切り詰めます。定期実行の評価上限は5件/回（週20件）。手動実行も可（深さは入力で選択）。同時実行は1本のみ、タイムアウト30分。
+- 定期実行（kinds 未指定）では、評価上限の内数で、価格反応データのある未評価の event 材料も long の後に充当評価します（O-2 のコード側政策。kinds を明示した手動実行では発動しません）。
 - 補助ワークフロー: `site.yaml`（サイトだけを最新 DB から書き出してデプロイする。UI の変更を数分で反映するため）、`compare.yaml`（モデル比較専用。評価本体には触れない）。
 - 処理の流れ: テスト → data ブランチから DB 復元（`--depth 1` で取得）→（任意で purge）→ パイプライン実行 → サイト書き出し → DB を data ブランチへ保存 → GitHub Pages へデプロイ。
 - DB は `data` ブランチの `trl.sqlite`（ルート直下）に保存され、実行ごとに通常のコミットで履歴が残ります。レポートは `data` ブランチの `reports/latest.md` と Actions の Summary でも読めます。
@@ -369,6 +370,7 @@ test_*.py / testutil.py   テスト (共通フィクスチャは testutil.py、�
 | ESEF (sources/esef.py) | test_esef.py |
 | スイス収集 (sources/swiss.py) | test_swiss.py |
 | パイプライン・ストア・基盤 (pipeline.py / store.py / normalize.py / http.py 等) | test_trl.py (+ 収集段に触る場合は test_sources.py) |
+| ISSUES-2 残件 (G-5 世代寄せ / N-1 参考項目 / N-2 subject 検証 / O-2 event 充当) | test_issues2_rest.py (+ ESEF の S-4 は test_esef.py) |
 
 ## 既知の制約・設計判断
 

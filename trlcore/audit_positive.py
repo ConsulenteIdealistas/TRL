@@ -21,7 +21,7 @@ audit.py の末尾 (ヘルパー定義より後) に次の4行を足す:
 """
 import re
 
-from .audit import TECH_ITEMS, _evidence_text, _find, _norm_text, _quote
+from .audit import TECH_ITEMS, _evidence_text, _find, _norm_text, _quote, _scored_items
 
 
 def _is_num(x):
@@ -165,7 +165,7 @@ def _check_p3(inp, chk, ext_text, out):
     smax = chk.get("score_max", 39)
     n_gray = chk.get("min_fact_evidence_gray", 2)
     n_flag = chk.get("min_fact_evidence_flag", 3)
-    for key, it in (inp.get("items") or {}).items():
+    for key, it in _scored_items(inp).items():
         if not isinstance(it, dict):
             continue
         score = it.get("score")

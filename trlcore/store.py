@@ -1024,6 +1024,49 @@ class Store:
             (cid, kind)).fetchone()
         return dict(row) if row else None
 
+    def latest_long_eval_generations(self):
+        """候補ごとの最新の long 評価 (final/hold) の世代印を返す (G-5)。
+
+        -> {candidate_id: {"config": 世代の config_version, "prompts": {系統: 版}}}
+        世代の正本は評価当時の記録 (extra の as_evaluated、無ければ評価行の
+        config_version) と prompt_versions であり、recalc で付け替わる
+        評価行の config_version だけでは判定しない (site の _gen_config と
+        同じ規則)。error は採点結果ではないため対象にしない
+        (prev_evaluation と同じ扱い)。"""
+        rows = self.conn.execute(
+            "SELECT e.candidate_id, e.config_version, e.prompt_versions_json,"
+            " e.extra_json FROM evaluations e WHERE e.kind='long'"
+            " AND e.status IN ('final','hold') AND e.id IN"
+            " (SELECT MAX(id) FROM evaluations WHERE kind='long'"
+            "  AND status IN ('final','hold') GROUP BY candidate_id)").fetchall()
+        def _loads(s):
+            if isinstance(s, dict):
+                return s
+            try:
+                v = json.loads(s or "{}")
+            except (TypeError, ValueError):
+                return {}
+            return v if isinstance(v, dict) else {}
+
+        out = {}
+        for cid, config_version, pv_json, extra_json in rows:
+            extra = _loads(extra_json)
+            ae = extra.get("as_evaluated")
+            config = None
+            if isinstance(ae, dict) and ae.get("config_version"):
+                config = str(ae["config_version"])
+            elif config_version:
+                config = str(config_version)
+            raw = _loads(pv_json)
+            prompts = {}
+            if isinstance(raw, dict):
+                for k, v in raw.items():
+                    ver = v.get("version") if isinstance(v, dict) else v
+                    if isinstance(ver, str) and ver:
+                        prompts[str(k)] = ver
+            out[cid] = {"config": config, "prompts": prompts}
+        return out
+
     def prev_evaluation(self, cid, kind, latest_id):
         """表示中の最新評価より前にある、直近の比較可能な (final/hold) 評価。
 

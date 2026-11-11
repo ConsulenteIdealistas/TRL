@@ -86,6 +86,18 @@ def build_report(store, run_id, cfg=None):
         f"- 評価: 確定 {counts.get('final', 0)} / 保留 {counts.get('hold', 0)} / エラー {counts.get('error', 0)}"
         f" / LLM未設定でスキップ {counts.get('skipped_no_llm', 0)}",
     ]
+    if counts.get("reference_item_states"):
+        # 参考項目の充足 (N-1): 系統的な未出力 (項目欠落の蓄積) を
+        # 検知できるよう、実行単位で状態を出す
+        ris = counts["reference_item_states"]
+        L.append(f"- 参考項目の充足: 採点あり {ris.get('scored', 0)} / "
+                 f"明示null {ris.get('explicit_null', 0)} / "
+                 f"項目欠落 {ris.get('omitted', 0)}")
+    if counts.get("subject_claims"):
+        # 技術帰属 subject の付与率と原文スパン照合の結果 (N-2)
+        L.append(f"- 技術帰属 (subject): claim {counts['subject_claims']} 件中 "
+                 f"{counts.get('subject_attached', 0)} 件に付与"
+                 f" / 原文に無い subject {counts.get('subject_dropped', 0)} 件を除去")
     if counts.get("llm_infra_failed") or counts.get("llm_degraded"):
         L += [
             f"- ⚠ LLM API失敗 {counts.get('llm_infra_failed', 0)}件(評価結果として保存せず未評価のまま残しています)"

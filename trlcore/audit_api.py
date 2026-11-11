@@ -188,12 +188,17 @@ def extract_identifiers(inp, cand):
 
 def _counter_text(inp):
     """反証側のテキスト (抽出の counter_points + 各項目の
-    counter_evidence) を正規化して小文字で返す (CT1 の記録判定用)。"""
+    counter_evidence) を正規化して小文字で返す (CT1 の記録判定用)。
+    項目側の母数は A8 と揃え、参考項目 (規程第13条) の counter_evidence
+    は数えない (N-1)。"""
+    refs = set(inp.get("reference_items") or [])
     parts = []
     ext = inp.get("extraction")
     if isinstance(ext, dict):
         parts.append(_walk_text(ext.get("counter_points")))
-    for it in (inp.get("items") or {}).values():
+    for key, it in (inp.get("items") or {}).items():
+        if key in refs:
+            continue
         if isinstance(it, dict):
             parts.append(_walk_text(it.get("counter_evidence")))
     return _norm(" ".join(parts)).lower()

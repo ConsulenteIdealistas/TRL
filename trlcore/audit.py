@@ -26,7 +26,7 @@ from pathlib import Path
 
 from .config import ROOT
 from .dates import parse_date
-from .scoring import TECH_ITEMS, compute as scoring_compute
+from .scoring import TECH_ITEMS, compute as scoring_compute, reference_items
 
 AUDIT_CHECKS = ("A1", "A2", "A3", "A4", "A5", "A6", "A7",
                 "A8", "A9", "A10", "A11", "A12", "A13", "A14", "A15",
@@ -191,6 +191,10 @@ def build_audit_input(store, ev_row, cfg=None):
         "band": ev.get("band"),
         "critical_missing": critical_missing,
         "items": items,
+        # 参考項目 (規程第13条) のキー。項目走査系のチェックは、これを
+        # 母数から外して採点項目だけを見る (N-1: 採点側で総合点・必須
+        # 判定の対象外なのに監査だけが走査する非対称の解消)
+        "reference_items": reference_items(ev.get("kind"), cfg) if cfg else [],
         "trl_level": trl if isinstance(trl, dict) else None,
         "extraction": extraction,
         "pool_sources": pool_sources,
@@ -380,11 +384,20 @@ def _check_a2(inp, chk, ext_text, out):
                       f" {scope} の継続・繰り返しの確認語彙が見当たらない。"})
 
 
+def _scored_items(inp):
+    """項目走査の母数: 参考項目 (規程第13条) を除いた採点項目だけを返す
+    (N-1)。参考項目は採点側で総合点・必須判定・不足判定の対象外であり、
+    監査の項目走査も同じ母数に揃える (対象は A3/A6/A7/A9/A11/A12/A17
+    と A8 の反証有無の判定)。"""
+    refs = set(inp.get("reference_items") or [])
+    return {k: v for k, v in (inp.get("items") or {}).items() if k not in refs}
+
+
 def _check_a3(inp, chk, ext_text, out):
     """A3 成長推論の禁止 (原則3)。初版はブラックリストが空で、推論構文に
     当たってもグレー (判定保留) として記録だけする。将来 black にパターン
     が入れば、その時点で初めて要確認になる。"""
-    items = inp.get("items") or {}
+    items = _scored_items(inp)
     targets = [(k, (it or {}).get("reason") or "")
                for k, it in items.items() if isinstance(it, dict)]
     trl = inp.get("trl_level") or {}
@@ -438,7 +451,7 @@ def _check_a4(inp, chk, ext_text, out):
 def _check_a6(inp, chk, ext_text, out):
     """A6 欠落判定の妥当性。missing_info / critical_missing に、材料プールへ
     原理的に入らない語彙 (株価・出来高等) が混ざっていたら要確認。"""
-    items = inp.get("items") or {}
+    items = _scored_items(inp)
     targets = []
     for key, it in items.items():
         if isinstance(it, dict):
@@ -463,7 +476,7 @@ def _check_a7(inp, chk, ext_text, out):
     missing_info が空 かつ理由本文に具体的な名指しが無い。広い漠然
     フレーズだけなら、確定条件を満たさない低得点はグレーに記録する。"""
     threshold = chk.get("score_threshold", 40)
-    items = inp.get("items") or {}
+    items = _scored_items(inp)
     for key, it in items.items():
         if not isinstance(it, dict):
             continue
@@ -510,7 +523,7 @@ def _check_a8(inp, chk, ext_text, out):
         return
     if ext.get("counter_points"):
         return
-    items = inp.get("items") or {}
+    items = _scored_items(inp)
     if any(isinstance(it, dict) and it.get("counter_evidence")
            for it in items.values()):
         return
@@ -528,7 +541,7 @@ def _check_a9(inp, chk, ext_text, out):
     (score_threshold、既定80) 以上なのに evidence が空 = 根拠の無い
     高得点の場合に要確認。"""
     threshold = chk.get("score_threshold", 80)
-    items = inp.get("items") or {}
+    items = _scored_items(inp)
     for key, it in items.items():
         if not isinstance(it, dict):
             continue
@@ -567,7 +580,7 @@ def _check_a11(inp, chk, ext_text, out):
     現れない場合にグレーで記録する。丸め・単位換算・関連財務からの引用
     など正当な不一致がありうるため、初版は確定にせず観測に置く
     (A3/A4 の初版と同じ扱い)。"""
-    items = inp.get("items") or {}
+    items = _scored_items(inp)
     for key, it in items.items():
         if not isinstance(it, dict):
             continue
@@ -595,7 +608,7 @@ def _check_a12(inp, chk, ext_text, out):
     """A12 出典形式 (監査要項①のオフライン分)。evidence の ref が無い、
     または http(s) URL でない場合に要確認。実在確認 (HTTP 照会) は
     監査の外のリンク検証スイープが担う。"""
-    items = inp.get("items") or {}
+    items = _scored_items(inp)
     for key, it in items.items():
         if not isinstance(it, dict):
             continue
@@ -716,7 +729,7 @@ def _check_a17(inp, chk, ext_text, out):
     (上書きも hold もしない)。コードを持たない旧世代の項目は対象外
     (新世代前提の監査を旧世代へ機械適用しない。FREEZE-PLAN C 節)。"""
     cap = chk.get("cap", 59)
-    for key, item in (inp.get("items") or {}).items():
+    for key, item in _scored_items(inp).items():
         if not isinstance(item, dict):
             continue
         codes = item.get("constraint_codes")

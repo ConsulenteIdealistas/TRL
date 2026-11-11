@@ -177,24 +177,23 @@ function renderControls() {
 
 function renderCov() {
   // 枠の数字は絞り込みチップと必ず一致させる: すべて「評価 (カード) の数」
-  // で数える (エントリ数で数えると同じラベルで数字が食い違うため)。
-  // 処分済み = 全エントリを処分した評価、問題あり等 = その処分を含む評価。
-  // 両方表示でも単位はカード (候補×種別) のまま数える
-  let flagN = 0, grayN = 0, done = 0;
+  // で、チップと同じ cardState の数え方で数える。要確認/グレーは未処分が
+  // 残っているカードだけ (処分済みのエントリは数えない。ISSUES-2 の O-3:
+  // 以前は処分済みも含めて数え、チップと食い違っていた)。処分済み =
+  // 全エントリを処分した評価、問題あり等 = その処分を含む評価。再評価の
+  // 予約/調整済みも localStorage 全体でなく表示カード単位で数え、チップと
+  // 母数を揃える。両方表示でも単位はカード (候補×種別) のまま数える
+  let flagN = 0, grayN = 0, done = 0, reev = 0, adj = 0;
   const byDisp = {confirmed: 0, false_positive: 0, watch: 0};
   for (const c of cards()) {
     const st = cardState(c);
-    let hasFlag = false, hasGray = false;
-    for (const a of blocksOf(c.p, c.kind)) for (const e of a.entries) {
-      if (e.verdict === "gray") hasGray = true; else hasFlag = true;
-    }
-    if (hasFlag) flagN++;
-    if (hasGray) grayN++;
+    if (st.flagOpen) flagN++;
+    if (st.grayOpen) grayN++;
     if (st.done) done++;
+    if (st.reserved) reev++;
+    if (st.adjusted) adj++;
     for (const k of Object.keys(byDisp)) if (st.disp[k]) byDisp[k]++;
   }
-  const reev = Object.values(review.reeval).filter(r => r && r.on).length;
-  const adj = Object.values(review.adjustments).filter(a => a && a.to_value !== a.from_value).length;
   $("#cov").innerHTML =
     `<div class="stat y"><small>要確認のある評価</small><strong>${flagN}</strong><em>件</em></div>` +
     `<div class="stat x"><small>グレーのある評価</small><strong>${grayN}</strong><em>件</em></div>` +

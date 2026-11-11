@@ -13,9 +13,11 @@ SimFin のカバー圏外 (US / DE / CA 以外) の企業について、四半�
   3リクエストを使う
 - 非米国シンボルは取引所接尾辞つき (例: .LON / .TYO。提供元ドキュメント
   と利用実例で確認)。ただし非米国の小・中型株で実際に諸表が返るかは
-  未検証 (report の Could-not-verify)。接尾辞が間違っている市場は
-  取得 0件・エラーとして run_sources に記録される (静かに失敗しない)
-  ため、live の初回結果を見て直せる (ROIC の LON→LSE と同じ運用)
+  未検証 (report の Could-not-verify)。接尾辞が間違っていてシンボルが
+  提供元に無い場合は Error Message が返り、例外として上げて run_sources
+  に失敗 (ok=0) として記録する (成功・0件で握りつぶすと、休止判定と
+  静かな0件の検知の両方から消えてしまう。ISSUES-2 の S-3)。live の
+  結果を見て接尾辞を直せる (ROIC の LON→LSE と同じ運用)
 
 枠の使い方 (恣意性を置かないための導出):
 - 1日25回 ÷ 1社3リクエスト = 8社/日が上限。9社目 (25〜27回目) は
@@ -76,7 +78,9 @@ class RateLimitError(Exception):
 
 
 class _SymbolError(Exception):
-    """シンボルが提供元に無い (Error Message)。材料なしとして扱う。"""
+    """シンボルが提供元に無い (Error Message)。損益表で起きた場合は
+    握りつぶさず例外のまま上げ、呼び出し側で失敗 (ok=0) として記録する
+    (S-3)。損益以外の表だけが無い場合は、ある表だけで材料にする。"""
 
 
 def alphavantage_enabled():
@@ -253,11 +257,11 @@ def fetch_alphavantage(symbol, max_results, lookback_days, as_of, http=None):
     """symbol は alphavantage_symbol の返すシンボル (例: ONT.LON)。
     四半期の直近2期分を期間ごとのレコードにして返す (ROIC と同形)。
 
-    シンボルが提供元に無い場合は [] (材料なし。EDGAR の登録なしと同じ
-    扱い)。枠超過 (RateLimitError) と通信失敗は例外のまま上げる:
-    空で握りつぶすと「成功・0件」になり、休止判定と静かな0件の検知の
-    両方が壊れる。損益以外の表だけが無い場合は、ある表だけで材料にする
-    (ROIC と同じ)。
+    シンボルが提供元に無い場合 (損益表の Error Message) は例外のまま
+    上げる (S-3: 成功・0件で握りつぶすと休止判定と静かな0件の検知の
+    両方から消えるため、呼び出し側で失敗として記録させる)。枠超過
+    (RateLimitError) と通信失敗も同じく例外のまま上げる。損益以外の表
+    だけが無い場合は、ある表だけで材料にする (ROIC と同じ)。
     """
     q = str(symbol or "").strip()
     if not q:
@@ -268,7 +272,7 @@ def fetch_alphavantage(symbol, max_results, lookback_days, as_of, http=None):
             tables[fn] = _rows_by_period(_get(fn, q, http))
         except _SymbolError:
             if fn == "INCOME_STATEMENT":
-                return []  # シンボル自体が無い = 材料なし
+                raise  # シンボル自体が無い = 失敗として記録させる (S-3)
             tables[fn] = {}  # 損益以外の表が無いだけなら、ある表で材料にする
         except HttpError as e:
             if e.status == 404 and fn != "INCOME_STATEMENT":

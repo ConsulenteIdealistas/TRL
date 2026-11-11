@@ -1247,6 +1247,73 @@ class FinancialSkipTests(unittest.TestCase):
         self.assertEqual(counts.get("financial_skipped"), 1)
         store.close()
 
+    def test_zero_fetch_success_rests_only_briefly(self):
+        # S-1: 成功したが0件 (空振り) のクエリは20日でなく短い休止 (3日)。
+        # 取得できたクエリは従来どおり20日休む
+        tmp = tempfile.TemporaryDirectory()
+        store = T.Store(Path(tmp.name) / "d.sqlite")
+        store.conn.execute("INSERT INTO runs(run_id, started_at) VALUES('d1-run', '2026-10-19T00:00:00+00:00')")
+        store.conn.execute("INSERT INTO runs(run_id, started_at) VALUES('d5-run', '2026-10-15T00:00:00+00:00')")
+        # e: 1日前の空振り → 短い休止の内側 (休む)。f: 5日前の空振り → 休止を
+        # 過ぎたので再試行。g: 5日前に取得あり → 20日休止の内側 (休む)
+        for rid, qname, fetched in (("d1-run", "e-edinet", 0), ("d5-run", "f-edinet", 0),
+                                    ("d5-run", "g-edinet", 3)):
+            store.conn.execute("INSERT INTO run_sources VALUES(?, 'edinet', ?, ?, 0, 0, 0, 1, NULL, 0.1)",
+                               (rid, qname, fetched))
+        store.conn.commit()
+        cfg = {"sources": {"defaults": {"max_results": 5, "lookback_days": 400}, "queries": [
+                   {"name": "e-edinet", "edinet": "EEE"}, {"name": "f-edinet", "edinet": "FFF"},
+                   {"name": "g-edinet", "edinet": "GGG"}]},
+               "entities": {"entities": []}}
+        calls = []
+
+        def fake_fetcher(qstr, max_results, lookback, as_of):
+            calls.append(qstr)
+            return []
+        counts = {k: 0 for k in ("fetched", "new", "duplicates", "invalid", "sources_ok", "sources_failed")}
+        T.collect(store, cfg, "new-run", AS_OF, ("edinet",),
+                  {"edinet": fake_fetcher}, counts, lambda *a: None)
+        self.assertNotIn("EEE", calls)
+        self.assertIn("FFF", calls)
+        self.assertNotIn("GGG", calls)
+        self.assertEqual(counts.get("financial_skipped"), 2)
+        store.close()
+
+    def test_zero_fetch_streaks_measured_by_period(self):
+        # S-2: 0件の継続は回数でなく期間 (四半期周期90日) で測る
+        tmp = tempfile.TemporaryDirectory()
+        store = T.Store(Path(tmp.name) / "d.sqlite")
+
+        def attempt(rid, day, source, qname, fetched, ok=1):
+            store.conn.execute("INSERT INTO runs(run_id, started_at) VALUES(?, ?)",
+                               (rid, f"{day}T00:00:00+00:00"))
+            store.conn.execute("INSERT INTO run_sources VALUES(?, ?, ?, ?, 0, 0, 0, ?, NULL, 0.1)",
+                               (rid, source, qname, fetched, ok))
+
+        # z: 110日前に取得あり、その後0件が直近まで継続 → 警告対象
+        attempt("r1", "2026-07-02", "edinet", "z-edinet", 2)
+        attempt("r2", "2026-10-19", "edinet", "z-edinet", 0)
+        # y: 0件だが継続19日 → 対象外
+        attempt("r3", "2026-10-01", "edinet", "y-edinet", 0)
+        attempt("r4", "2026-10-19", "edinet", "y-edinet", 0)
+        # w: 継続は長いが最終試行が80日前 (対象から外れた残骸) → 対象外
+        attempt("r5", "2026-06-01", "edinet", "w-edinet", 1)
+        attempt("r6", "2026-08-01", "edinet", "w-edinet", 0)
+        # v (simfin): バルク不在で最初から0件、直近まで継続 → 警告対象
+        attempt("r7", "2026-07-05", "simfin", "v-simfin", 0)
+        attempt("r8", "2026-10-18", "simfin", "v-simfin", 0)
+        # u: 直近で取得が戻った → 継続は切れている
+        attempt("r9", "2026-07-02", "edgar", "u-edgar", 0)
+        attempt("r10", "2026-10-19", "edgar", "u-edgar", 5)
+        store.conn.commit()
+        streaks = store.zero_fetch_streaks(("edgar", "edinet", "simfin"), AS_OF, 90, 31)
+        got = {(s["source"], s["query"]) for s in streaks}
+        self.assertEqual(got, {("edinet", "z-edinet"), ("simfin", "v-simfin")})
+        days = {s["query"]: s["days"] for s in streaks}
+        self.assertEqual(days["z-edinet"], 110)  # 最終取得 (7/2) から AS_OF (10/20)
+        self.assertEqual(days["v-simfin"], 107)  # 取得が無いので最初の試行から
+        store.close()
+
     def test_llm_call_recording_roundtrip(self):
         # llm_calls への記録と読み戻し (run 単位の内訳集計の土台)
         tmp = tempfile.TemporaryDirectory()

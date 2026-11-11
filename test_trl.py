@@ -1502,6 +1502,32 @@ class IntegrationTests(unittest.TestCase):
         self.assertEqual(again["changed"], 0)  # 冪等
         store.close()
 
+    def test_recalc_does_not_restamp_version_only(self):
+        # G-1: 総合点・帯域が現行の物差しと一致していれば、config_version が
+        # 旧版でも書き換えない (旧世代行に現行世代のラベルを被せない)
+        from trlcore.recalc import recalculate_evaluations
+        store = Store(self.path)
+        rec, _ = normalize(raw(sid="2401.0003", title="Version only paper"),
+                           "2026-10-20T00:00:00+00:00")
+        cid, _ = store.upsert_candidate(rec, "r0")
+        items = {"technology_readiness": {"score": 100},
+                 **{k: {"score": 0} for k in
+                    ("technological_advantage", "monetization", "market_growth",
+                     "financial_sustainability", "moat_durability")}}
+        ev = {"kind": "long", "as_of": "2026-10-20", "status": "final", "total": 30.0,
+              "band": {"label": "weak"}, "items": items, "extraction": None, "event": None,
+              "prompt_versions": {}, "config_version": "2026.10.0", "config_hash": "old",
+              "llm_provider": "gemini", "llm_model": "gemini-3.6-flash",
+              "input_hash": "vh", "errors": [],
+              "extra": {"trl_level": {"level": 7, "reason": "r", "evidence": "e"}}}
+        store.add_evaluation("r0", cid, ev)
+        res = recalculate_evaluations(store, CFG, apply=True)
+        self.assertEqual(res["changed"], 0)
+        row = store.final_evaluations()[0]
+        self.assertEqual(row["config_version"], "2026.10.0")  # 付け替えなし
+        self.assertNotIn("recalculated", json.loads(row["extra_json"]))
+        store.close()
+
     def test_recalc_preserves_as_evaluated_total(self):
         # 非破壊: 評価当時の総合点は保存時に固定され、重み改訂の再計算を
         # 何度受けても残る (2回目の改訂で来歴ごと消える事故の防止)
@@ -1858,11 +1884,17 @@ class ReportWarningTests(unittest.TestCase):
             store = Store(path)
             store.start_run("run-x", "2026.11.0", "hash", "2026-11-04", {})
             store.finish_run("run-x", {"fetched": 0, "sources_failed": 3,
-                                       "quiet_zero_sources": ["arxiv", "openalex"]},
+                                       "quiet_zero_sources": ["arxiv", "openalex"],
+                                       "zero_fetch_streaks": [
+                                           {"source": "edinet", "query": "z-edinet",
+                                            "days": 110}]},
                              "partial", 12.3)
             text = build_report(store, "run-x")
             self.assertIn("収集に失敗したクエリ 3 件", text)
             self.assertIn("取得0件のまま成功したソース: arxiv, openalex", text)
+            # 社別の静かな0件 (S-2) もレポートの頭に出る
+            self.assertIn("取得0件が四半期周期を超えて続くクエリ 1 件", text)
+            self.assertIn("edinet/z-edinet (110日)", text)
             store.start_run("run-y", "2026.11.0", "hash", "2026-11-04", {})
             store.finish_run("run-y", {"fetched": 10}, "ok", 9.0)
             text2 = build_report(store, "run-y")

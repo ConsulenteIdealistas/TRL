@@ -2,9 +2,15 @@
 
 重みや帯域のような「集計だけの変更」は、項目点を作り直さずに保存済みの
 項目点から総合点を計算し直すことで反映できる。項目点・TRL・方向性には
-触れない。再計算した評価は config_version / config_hash を現行世代へ
-揃え、extra_json に recalculated (変更前バージョン・旧総合点・旧帯域・
-日時) の来歴を残す。再計算で final にならない評価 (項目点の欠け等、
+触れない。書き換えの対象は「総合点か帯域が実際に変わる」評価だけに限る
+(ISSUES-2 の G-1): 版 (config_version) の差だけでは書き込まない。版の差
+だけの評価を毎回書き換えると、旧世代の評価行が現行世代のラベルを被り、
+行内の prompt_versions と矛盾する (世代の正本は as_evaluated と
+prompt_versions であって、評価行の config_version ではない)。
+実際に点が変わって書き換える評価は config_version / config_hash を
+現行世代へ揃え、extra_json に recalculated (変更前バージョン・旧総合点・
+旧帯域・日時) の来歴を残す (再計算の事実の記録はこの extra 側に寄せ、
+専用の列は足さない)。再計算で final にならない評価 (項目点の欠け等、
 通常は起こらない) は異常として数え、書き換えない。
 """
 
@@ -34,8 +40,8 @@ def recalculate_evaluations(store, cfg, apply=False):
             anomalies += 1
             continue
         new_band = (out["band"] or {}).get("label")
-        differs = (out["total"] != row["total"] or new_band != row["band"]
-                   or row["config_version"] != cur_version)
+        # G-1: 変更の判定は総合点・帯域の変化だけ。版の差は含めない
+        differs = (out["total"] != row["total"] or new_band != row["band"])
         if not differs:
             continue
         changed += 1

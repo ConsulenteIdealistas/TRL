@@ -21,6 +21,7 @@
 .ptbl th{color:var(--muted);font-weight:700}
 .ptbl td a{color:var(--gd);font-weight:700;text-decoration:none}
 .ptbl tr.self td{background:var(--sel)}
+.ptbl tr.pgen td{background:var(--field);color:var(--muted);font-weight:700;font-size:11px;padding-top:8px}
 .pself{margin-left:6px;padding:2px 6px;border-radius:6px;font-size:10px;font-weight:800;color:var(--gd);background:var(--gs);white-space:nowrap}
 </style>
 </head>
@@ -230,6 +231,7 @@ function peerRow(c, selfIds) {
     entity_id: c.entity_id, name: c.name, market: c.market, sector: c.sector,
     stage: c.stage, tier: c.tier || "core", derived_tier: c.derived_tier || null,
     derived_reasons: c.derived_reasons || [],
+    gen: c.long && c.long.gen ? c.long.gen : null,
     self: selfIds.has(c.entity_id),
     trl: fin && c.long.trl_level ? c.long.trl_level.level : null,
     total: fin && typeof c.long.total === "number" ? c.long.total : null,
@@ -255,9 +257,38 @@ function sortPeerRows(rows, key) {
   return out;
 }
 
-function peerTableHtml(rows) {
+/* 世代 (G-4): 世代の違う点は同じ物差しの順位として読めないため、比較表は
+   世代でグループ化し、並び替え (順位付け) はグループの中でだけ行う。
+   世代の識別は FREEZE-PLAN の規則どおり config_version + prompt_versions
+   (export の gen) で、版数の大小で序列は作らない (並びは現行→旧版→不明) */
+function peerGenKey(r) {
+  if (!r.gen || !r.gen.config) return "";
+  const pr = r.gen.prompts || {};
+  return r.gen.config + "|" + Object.keys(pr).sort().map(k => k + "=" + pr[k]).join(",");
+}
+function peerGenLabel(r) {
+  if (!r.gen || !r.gen.config) return "世代不明（評価なし・旧データ）";
+  const pr = r.gen.prompts || {};
+  const pv = Object.keys(pr).sort().map(k => k + " " + pr[k]).join("・");
+  return "世代 " + r.gen.config + (pv ? "（" + pv + "）" : "") + (r.gen.current ? "・現行の物差し" : "");
+}
+function peerGroups(rows) {
+  const byKey = new Map();
+  for (const r of rows) {
+    const k = peerGenKey(r);
+    if (!byKey.has(k)) byKey.set(k, {key: k, label: peerGenLabel(r), rows: [],
+                                     current: !!(r.gen && r.gen.current), config: (r.gen || {}).config || ""});
+    byKey.get(k).rows.push(r);
+  }
+  return [...byKey.values()].sort((a, b) =>
+    (b.current ? 1 : 0) - (a.current ? 1 : 0) ||
+    (a.key === "" ? 1 : 0) - (b.key === "" ? 1 : 0) ||
+    b.config.localeCompare(a.config));
+}
+
+function peerTableHtml(rows, sortKey) {
   const head = `<tr><th>企業名</th><th>市場・セクター</th><th>TRL</th><th>総合点</th><th>バンド</th><th>段階</th><th>最終評価日</th><th>状態</th></tr>`;
-  const body = rows.map(r => {
+  const rowHtml = r => {
     const name = r.cand ? `<a href="detail.html?id=${encodeURIComponent(r.cand)}">${esc(r.name)}</a>` : esc(r.name);
     const self = r.self ? `<span class="pself">この企業</span>` : "";
     const crs = (r.derived_reasons || []).filter(Boolean);
@@ -278,7 +309,10 @@ function peerTableHtml(rows) {
       + `<td>${trlCell}</td><td>${totCell}</td><td>${esc(r.band || "—")}</td>`
       + `<td>${esc(r.stage ? (STG[r.stage] || r.stage) : "—")}</td>`
       + `<td>${esc(r.date ? String(r.date).slice(0, 10) : "—")}</td><td>${stCell}</td></tr>`;
-  }).join("");
+  };
+  const body = peerGroups(rows).map(g =>
+    `<tr class="pgen"><td colspan="8">${esc(g.label)}</td></tr>` +
+    sortPeerRows(g.rows, sortKey).map(rowHtml).join("")).join("");
   return `<div class="ptblwrap"><table class="ptbl"><thead>${head}</thead><tbody>${body}</tbody></table></div>`;
 }
 
@@ -291,7 +325,7 @@ function renderPeers(d, p) {
   const vis = rows => rows.filter(r => peerShowWatch || r.tier === "core" || r.self);
   const parts = [`<div class="pctl"><label><input type="checkbox" id="peerWatch"${peerShowWatch ? " checked" : ""}> Look・See を含める</label>`
     + `<label>並び順 <select id="peerSort">${[["total", "総合点"], ["trl", "TRL"], ["date", "最終評価日"], ["name", "企業名"]].map(([v, l]) => `<option value="${v}"${peerSortKey === v ? " selected" : ""}>${l}</option>`).join("")}</select></label></div>`
-    + `<p class="hint">同じタグの企業を横並びにした表示専用の比較です（採点には使っていません）。総合点・TRL は final の評価だけに出し、空欄は「評価なし」であって 0点ではありません。</p>`];
+    + `<p class="hint">同じタグの企業を横並びにした表示専用の比較です（採点には使っていません）。総合点・TRL は final の評価だけに出し、空欄は「評価なし」であって 0点ではありません。並び順は評価の世代（規程・プロンプトの版）ごとに付けています。世代の違う点どうしは同じ物差しの順位にはなりません。</p>`];
   const seenTags = new Set();
   let first = true;
   for (const e of strong) {
@@ -305,18 +339,18 @@ function renderPeers(d, p) {
         // 1社だけのタグ: 比較相手がいないことを明示し、代替として sector 単位の集合を出す
         let fb = "";
         if (selfEnt && selfEnt.sector) {
-          const srows = sortPeerRows(vis([...reg.values()].filter(c => c.sector === selfEnt.sector).map(c => peerRow(c, selfIds))), peerSortKey);
-          fb = `<details class="peerIn"><summary>同じセクター（${esc(CL[selfEnt.sector] || selfEnt.sector)}）の企業を見る</summary>${peerTableHtml(srows)}</details>`;
+          const srows = vis([...reg.values()].filter(c => c.sector === selfEnt.sector).map(c => peerRow(c, selfIds)));
+          fb = `<details class="peerIn"><summary>同じセクター（${esc(CL[selfEnt.sector] || selfEnt.sector)}）の企業を見る</summary>${peerTableHtml(srows, peerSortKey)}</details>`;
         }
         parts.push(`<div class="peerBox"><p style="margin:0"><b>${esc(tagLabel(t))}</b></p><p class="hint">このタグを持つ企業は他にいません（比較相手がいません）。</p>${fb}</div>`);
         continue;
       }
-      const rows = sortPeerRows(vis(all), peerSortKey);
+      const rows = vis(all);
       if (!rows.some(r => !r.self)) {
         parts.push(`<div class="peerBox"><p style="margin:0"><b>${esc(tagLabel(t))}</b></p><p class="hint">このタグの他の企業は全て Look・See です。「Look・See を含める」を有効にすると表示されます。</p></div>`);
         continue;
       }
-      parts.push(`<details class="peerBox"${first ? " open" : ""}><summary>${esc(tagLabel(t))}<span class="tn">${rows.length}社</span></summary>${peerTableHtml(rows)}</details>`);
+      parts.push(`<details class="peerBox"${first ? " open" : ""}><summary>${esc(tagLabel(t))}<span class="tn">${rows.length}社</span></summary>${peerTableHtml(rows, peerSortKey)}</details>`);
       first = false;
     }
   }

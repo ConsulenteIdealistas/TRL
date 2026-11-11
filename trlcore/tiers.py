@@ -14,11 +14,16 @@
   (b) 帰属: その評価の候補について、strong な企業リンクの集合が自社のみ
       (一意) である (D-4 案a)。判定の置き方は監査 P5 (第5条2: strong な
       企業名の集合がちょうど1つ) と同じで、集合は entity_id で数える。
-  (c) 監査: その評価の最新監査結果 (auditor ごとに最新行。対象は現行の
-      監査系である rules と api のみ) に、未処分の要確認 (verdict=flag)
-      が無い (D-4 案b)。処分 (review_decisions) の最新状態が「誤検知
-      (false_positive)」の flag は数えない (D-6)。「問題あり (confirmed)」
-      「様子見 (watch)」の flag は数える。グレー (gray) は落とさない。
+  (c) 監査: その評価に監査結果が存在し、最新監査結果 (auditor ごとに
+      最新行。対象は現行の監査系である rules と api のみ) に、未処分の
+      要確認 (verdict=flag) が無い (D-4 案b)。監査結果が1行も無い評価は
+      「監査なし」として条件を満たさない (ISSUES-2 の T-1: 未監査の評価が
+      open_flags の空をもって Core に入る穴を塞ぐ)。監査の版は必須条件に
+      せず、reasons に監査系ごとの版を記録して観測可能にする (T-2。版が
+      上がるたびに監査の回し直しまで全社が落ちる崖を作らないため)。
+      処分 (review_decisions) の最新状態が「誤検知 (false_positive)」の
+      flag は数えない (D-6)。「問題あり (confirmed)」「様子見 (watch)」
+      の flag は数える。グレー (gray) は落とさない。
 - 判定に使うのは最新 long 評価のみで、回数条件は無い (D-7)。
 - 分布の目標 100/150/200/50 (20/30/40/10%) は目安 (D-1)。シェアが目標から
   ±5pt (D-2) を超えた層は警告として出すだけで、自動調整はしない (D-3)。
@@ -51,7 +56,9 @@ def derive_tier(entity_id, base_tier, eval_info):
     eval_info は基礎 core のときだけ意味を持ち、次の形 (無ければ None):
       {"evaluation_id": int, "candidate_id": int,
        "strong_entity_ids": その候補に strong リンクする企業 id の集合,
-       "open_flags": [(check, item), ...] 処分で消えない要確認}
+       "open_flags": [(check, item), ...] 処分で消えない要確認,
+       "audited": 監査結果 (rules / api) が1行でもあるか,
+       "audit_versions": {provider: 最新行の auditor_model} 監査の版の記録}
     戻り値: {"derived_tier", "evaluation_id", "reasons": [...]}。
     reasons は引用した条件が分かる形 (rule / ok / detail) で全条件分を返す。
     """
@@ -89,14 +96,23 @@ def derive_tier(entity_id, base_tier, eval_info):
                                   + "、".join(others) + " が strong)"})
         attr_ok = False
     open_flags = sorted({c for c, _ in (eval_info.get("open_flags") or [])})
-    if open_flags:
+    versions = eval_info.get("audit_versions") or {}
+    ver_note = "・".join(versions[p] for p in sorted(versions) if versions.get(p))
+    if not eval_info.get("audited"):
+        # T-1: 監査行が無い評価は「要確認が無い」のではなく「未監査」。
+        # 文面でも両者を区別する (監査済みを装わない)
+        reasons.append({"rule": "audit", "ok": False,
+                        "detail": f"監査なし (未監査): 評価 #{eid} には監査結果が"
+                                  "まだ無いため Conditional"})
+        audit_ok = False
+    elif open_flags:
         reasons.append({"rule": "audit", "ok": False,
                         "detail": "未処分の要確認がある: " + "、".join(open_flags)
-                                  + f" (評価 #{eid})"})
+                                  + f" (評価 #{eid}、監査 {ver_note})"})
         audit_ok = False
     else:
         reasons.append({"rule": "audit", "ok": True,
-                        "detail": "最新の監査結果に未処分の要確認が無い (D-4 案b)"})
+                        "detail": f"監査 ({ver_note}) に未処分の要確認が無い (D-4 案b)"})
         audit_ok = True
     return {"derived_tier": "core" if (attr_ok and audit_ok) else "conditional",
             "evaluation_id": eid, "reasons": reasons}
@@ -166,15 +182,18 @@ def load_tier_inputs(store):
             f"AND candidate_id IN ({','.join('?' * len(cand_ids))})", cand_ids):
         strong_by_cand.setdefault(cid, set()).add(eid)
     # 評価ごとの最新監査フラグ (auditor 別に id 最大の行)。id 昇順に読んで
-    # 上書きすれば最後に残るのが最新行になる。
+    # 上書きすれば最後に残るのが最新行になる。あわせて監査の有無 (T-1) と
+    # 監査系ごとの最新行の版 (auditor_model。T-2 の観測用) も集める。
     marks = ",".join("?" * len(eval_ids))
     audits = {}
-    for _row_id, eval_id, provider, flags_json in conn.execute(
-            "SELECT id, evaluation_id, auditor_provider, flags_json "
+    audit_versions = {}
+    for _row_id, eval_id, provider, model, flags_json in conn.execute(
+            "SELECT id, evaluation_id, auditor_provider, auditor_model, flags_json "
             "FROM audit_results WHERE evaluation_id IN (" + marks + ") "
             f"AND auditor_provider IN ({','.join('?' * len(AUDIT_PROVIDERS))}) "
             "ORDER BY id", [*eval_ids, *AUDIT_PROVIDERS]):
         audits[(eval_id, provider)] = _flag_entries(flags_json)
+        audit_versions.setdefault(eval_id, {})[provider] = model
     # 処分の最新状態: (評価, チェック, 項目) ごとに id 最大の行が有効
     # (段階B の取り込みと同じ「最新の行が有効」の規則)。
     dispositions = {}
@@ -203,7 +222,9 @@ def load_tier_inputs(store):
         inputs[entity_id] = {
             "evaluation_id": evaluation_id, "candidate_id": candidate_id,
             "strong_entity_ids": strong_by_cand.get(candidate_id, set()),
-            "open_flags": open_flags}
+            "open_flags": open_flags,
+            "audited": evaluation_id in audit_versions,
+            "audit_versions": audit_versions.get(evaluation_id, {})}
     return inputs
 
 

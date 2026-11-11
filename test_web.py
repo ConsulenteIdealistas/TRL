@@ -225,6 +225,25 @@ class ExportTests(StoreFixture):
         # 監査カードに導出 tier を併記する (W-9)
         audit = (web / "audit.js").read_text(encoding="utf-8")
         self.assertIn("dtLabelA", audit)
+    def test_peer_comparison_groups_by_generation(self):
+        # G-4: 競合比較は世代でグループ化し、並び替えは世代の中でだけ行う。
+        # 世代の識別子は export の gen (config + prompts) を使う
+        web = T.ROOT / "web"
+        det = (web / "detail.html").read_text(encoding="utf-8")
+        self.assertIn("peerGenKey", det)
+        self.assertIn("peerGroups", det)
+        self.assertIn("gen: c.long && c.long.gen ? c.long.gen : null", det)
+        self.assertIn("peerTableHtml(rows, peerSortKey)", det)
+
+    def test_audit_stats_match_chips(self):
+        # O-3: 監査ページの統計枠はチップと同じ cardState の未処分カウントで
+        # 数える (処分済みエントリを「要確認のある評価」に含めない)
+        web = T.ROOT / "web"
+        audit = (web / "audit.js").read_text(encoding="utf-8")
+        self.assertIn("if (st.flagOpen) flagN++", audit)
+        self.assertIn("if (st.grayOpen) grayN++", audit)
+        self.assertNotIn("hasFlag", audit)
+
     def test_watch_page_language_toggle(self):
         # ウォッチページにも原文/日本語の切替を置く。主ページ・詳細と
         # 同じ localStorage キー (trl-lang) を共有し、既定は日本語訳。

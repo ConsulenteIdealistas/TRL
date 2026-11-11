@@ -34,13 +34,15 @@ from .prompts import load_prompt
 from .llm import llm_settings
 from .evaluate import evaluate_one, input_hash
 from .market import build_market_reaction
+from .tiers import TIER_RULES_VERSION, compute_derived_tiers
 
 
 # DB 掃除の段階投入 (trl-db-cleanup/DESIGN.md §4): N-1 (invalid_items の
 # 世代掃除) とブレーキ B-1/B-2 (履歴系180日) は常時有効。N-2 (paper の
-# 保持期限) は N-1 の効きを 1 実行観察してから有効化する — 有効化は
-# この値を 180 (読みの実効窓 90日 ×2) に変えるだけ。
-PRUNE_PAPER_DAYS = None
+# 保持期限) は N-1 の効きを 1 実行観察したうえで 2026-11-11 に有効化した
+# (段階投入の第2段)。180 は読みの実効窓 (90日) の2倍で、他の保持期間と
+# 同じ導出 (利用側の窓の2倍) に揃える。
+PRUNE_PAPER_DAYS = 180
 
 DEFAULT_FETCHERS = {"pubmed": pubmed_fetch, "arxiv": arxiv_fetch, "gnews": gnews_fetch,
                     "prtimes": prtimes_fetch, "trials": trials_fetch, "edinet": edinet_fetch,
@@ -74,11 +76,31 @@ def screen(cand, as_of, cfg):
     return None
 
 
-# 財務系は決算 (四半期) 単位でしか変化しないため、毎回取りに行かず、前回の取得成功から
-# 一定期間はその企業のクエリを休む。失敗したクエリは成功として記録されないため、
-# 間隔の対象にならず次回も試行される (障害中の財務ソースは毎週リトライされる)。
+# 財務系は決算 (四半期) 単位でしか変化しないため、毎回取りに行かず、前回の
+# 試行から一定期間はその企業のクエリを休む。休止の長さは最終試行の結果で
+# 変える (ISSUES-2 の S-1。補完系が採っている「1件以上取れたときだけ長い
+# 休止」の型にメイン財務も揃える):
+# - 取得できた (fetched>0): 四半期単位でしか変わらないため FINANCIAL_SKIP_DAYS
+# - 成功したが0件 (空振り): FINANCIAL_ZERO_SKIP_DAYS の短い休止
+# - 失敗: 休止の対象にせず次回も試行する (障害中の財務ソースは毎回リトライ)
 FINANCIAL_SOURCES = frozenset({"edgar", "edinet"})
 FINANCIAL_SKIP_DAYS = 20
+# 空振り時の短い休止の長さ。実行サイクル (週4回: 平日の間隔は1日、週末明け
+# は最大4日) から導く: 3日は約2回分の実行を飛ばす長さで、空振りの再試行
+# コストを抑えつつ、対象の静かな消滅の検出遅れを週単位に収める。0件を
+# 従来どおり20日休ませると、消滅が20日単位で見えなくなる (S-1 の問題)
+FINANCIAL_ZERO_SKIP_DAYS = 3
+# 社別の静かな0件の警告 (S-2)。ソース単位の全滅しか拾えない quiet_zero の
+# 補完で、継続を「回数」でなく「期間」で測る: 四半期開示の周期は約90日で、
+# それを超えて0件が続くのは「窓内に申告が無い」では説明しにくい。最終試行
+# の鮮度の上限 (31日) は、最長休止 (補完系の30日) を過ぎた試行が無い
+# クエリを「対象から外れた残骸」として除くためのもの
+ZERO_FETCH_STREAK_DAYS = 90
+ZERO_FETCH_ACTIVE_DAYS = 31
+# 0件継続の測定対象: 社単位のクエリを持つ財務系 (メイン財務と、バルク
+# 不在社が恒常0件になる SimFin)。Alpha Vantage のシンボル不一致は失敗
+# (ok=0) として記録されるため (S-3)、こちらの0件継続には現れない
+ZERO_FETCH_STREAK_SOURCES = ("edgar", "edinet", "simfin")
 # 公表後は内容が変わらないソース (論文・ニュース・治験登録)。既知の同一アイテムは
 # published が不変なら再照合・再統合を省略できる。開示 (yahoo/edgar/edinet) は
 # 訂正があり得るため含めない。治験は published=最終更新日なので、更新されれば
@@ -229,7 +251,10 @@ def collect(store, cfg, run_id, as_of, sources, fetchers, counts, log, budget_ca
     d = cfg["sources"]["defaults"]
     now = datetime.now(timezone.utc).isoformat(timespec="seconds")
     jobs = [(sname, q) for q in cfg["sources"]["queries"] for sname in sources if q.get(sname)]
-    last_ok = store.last_source_successes()
+    # 財務系の休止判定は最終試行 (成否・取得件数つき) で行う (S-1)
+    fin_attempts = {}
+    for sname in FINANCIAL_SOURCES:
+        fin_attempts.update(store.last_source_attempts_with_fetch(sname))
     yahoo_attempts = store.last_source_attempts("yahoo")
     yahoo_periods = store.latest_financial_periods("yahoo")
     yahoo_retrievals = store.latest_financial_retrievals("yahoo")
@@ -238,8 +263,15 @@ def collect(store, cfg, run_id, as_of, sources, fetchers, counts, log, budget_ca
         if sname == "yahoo":
             resting = _yahoo_resting(q, as_of, yahoo_attempts, yahoo_periods, yahoo_retrievals)
         elif sname in FINANCIAL_SOURCES:
-            t = parse_date((last_ok.get((sname, q["name"])) or "")[:10])
-            resting = t is not None and (as_of - t).days < FINANCIAL_SKIP_DAYS
+            att = fin_attempts.get((sname, q["name"]))
+            resting = False
+            if att is not None:
+                started, ok, fetched = att
+                t = parse_date((started or "")[:10])
+                if ok and t is not None:
+                    limit = (FINANCIAL_SKIP_DAYS if (fetched or 0) > 0
+                             else FINANCIAL_ZERO_SKIP_DAYS)
+                    resting = (as_of - t).days < limit
         else:
             resting = False
         if resting:
@@ -1419,6 +1451,20 @@ def run_pipeline(store, cfg, llm, *, as_of, sources=("pubmed", "arxiv"), kinds=(
     if stale_links:
         counts["stale_links_pruned"] = stale_links
         log(f"[prune] 陳腐化リンクを削除しました: {stale_links} 件")
+    # tier 導出のスナップショット記録 (append-only、T-3): 記録はパイプライン
+    # 実行の末尾だけが担う。export 経由 (site 専用ジョブ等) では書かない —
+    # あちらは DB を保存しないため書いても蒸発し、記録間隔が経路依存になる。
+    # 導出はこの時点の DB 状態 (評価・処分取り込み・監査の反映後) から
+    # 決定的に計算する。記録の失敗で実行自体は倒さず、警告に残す
+    try:
+        n_snap = store.record_tier_snapshot(
+            compute_derived_tiers(store, cfg.get("entities")),
+            datetime.now(timezone.utc).isoformat(timespec="seconds"),
+            TIER_RULES_VERSION)
+        counts["tier_snapshot_rows"] = n_snap
+    except Exception as e:
+        log(f"::warning::tier スナップショットの記録に失敗しました: "
+            f"{type(e).__name__}: {redact(str(e))[:200]}")
     if warnings:
         counts["warnings"] = warnings
     all_failed = do_collect and counts["sources_ok"] == 0 and counts["sources_failed"] > 0
@@ -1438,6 +1484,20 @@ def run_pipeline(store, cfg, llm, *, as_of, sources=("pubmed", "arxiv"), kinds=(
         if quiet:
             counts["quiet_zero_sources"] = quiet
             log(f"::warning::[collect] 取得0件のまま成功したソースがあります: {', '.join(quiet)}")
+        # 社別の静かな0件 (S-2): ソース単位の全滅検知では拾えない「特定社
+        # だけ0件」を、継続期間 (四半期開示の周期) で測って警告する。
+        # 一覧は counts の肥大を避けて日数の長い順に20件まで (全体数は別キー)
+        streaks = store.zero_fetch_streaks(ZERO_FETCH_STREAK_SOURCES, as_of,
+                                           ZERO_FETCH_STREAK_DAYS,
+                                           ZERO_FETCH_ACTIVE_DAYS)
+        if streaks:
+            counts["zero_fetch_streaks"] = streaks[:20]
+            if len(streaks) > 20:
+                counts["zero_fetch_streaks_total"] = len(streaks)
+            names = ", ".join(f"{s['source']}/{s['query']} ({s['days']}日)"
+                              for s in streaks[:20])
+            log(f"::warning::[collect] 取得0件が{ZERO_FETCH_STREAK_DAYS}日を超えて"
+                f"続いているクエリがあります: {names}")
         if not all_failed:
             partial = any(rows and all(not r["ok"] for r in rows)
                           for rows in by_source.values())

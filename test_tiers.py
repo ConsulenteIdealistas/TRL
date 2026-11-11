@@ -2,8 +2,9 @@
 
 実行: python -m unittest test_tiers -v
 導出は辞書 (core/watch/reference) を変えない別層で、基礎 core の企業は
-(a) 最新の帰属可能な long 評価、(b) strong リンクの一意性、(c) 最新監査の
-未処分の要確認なし、の3条件を全て満たせば Core、欠ければ Conditional。
+(a) 最新の帰属可能な long 評価、(b) strong リンクの一意性、(c) 監査結果が
+存在し未処分の要確認なし (監査行が無ければ「監査なし」で不成立、T-1)、
+の3条件を全て満たせば Core、欠ければ Conditional。
 """
 import tempfile
 import unittest
@@ -25,7 +26,8 @@ ENTS = {"entities": [
 
 def ev_info(**kw):
     d = {"evaluation_id": 7, "candidate_id": "c1",
-         "strong_entity_ids": {"acme"}, "open_flags": []}
+         "strong_entity_ids": {"acme"}, "open_flags": [],
+         "audited": True, "audit_versions": {"rules": "rules/4.2"}}
     d.update(kw)
     return d
 
@@ -64,6 +66,27 @@ class DeriveTierPureTests(unittest.TestCase):
         by_rule = {x["rule"]: x for x in r["reasons"]}
         self.assertFalse(by_rule["audit"]["ok"])
         self.assertIn("A8", by_rule["audit"]["detail"])
+
+    def test_core_unaudited_is_conditional(self):
+        # T-1: 監査行が無い評価は open_flags が空でも Core に入らない。
+        # 理由文面は「要確認が無い」ではなく「監査なし」と正直に書く
+        r = T.derive_tier("acme", "core", ev_info(audited=False, audit_versions={}))
+        self.assertEqual(r["derived_tier"], "conditional")
+        by_rule = {x["rule"]: x for x in r["reasons"]}
+        self.assertTrue(by_rule["latest_long_eval"]["ok"])
+        self.assertTrue(by_rule["attribution"]["ok"])
+        self.assertFalse(by_rule["audit"]["ok"])
+        self.assertIn("監査なし", by_rule["audit"]["detail"])
+        self.assertNotIn("未処分の要確認が無い", by_rule["audit"]["detail"])
+
+    def test_audit_version_recorded_in_reason(self):
+        # T-2: 監査の版は必須条件にせず、reasons に記録して観測可能にする
+        r = T.derive_tier("acme", "core",
+                          ev_info(audit_versions={"rules": "rules/4.2", "api": "api/v1"}))
+        self.assertEqual(r["derived_tier"], "core")
+        by_rule = {x["rule"]: x for x in r["reasons"]}
+        self.assertIn("rules/4.2", by_rule["audit"]["detail"])
+        self.assertIn("api/v1", by_rule["audit"]["detail"])
 
 
 class TierFixture(unittest.TestCase):
@@ -124,12 +147,26 @@ class TierFixture(unittest.TestCase):
 class ComputeDerivedTiersTests(TierFixture):
     def test_clean_company_is_core(self):
         cid = self._candidate([("acme", "strong")])
-        self._evaluation(cid)
+        ev_id = self._evaluation(cid)
+        self._audit(cid, ev_id, [])  # 監査済み・要確認なし
         out = self.derive()
         self.assertEqual(out["acme"]["derived_tier"], "core")
         self.assertEqual(out["wco"]["derived_tier"], "look")
         self.assertEqual(out["rco"]["derived_tier"], "see")
         self.assertEqual(out["beta"]["derived_tier"], "conditional")  # 未評価
+
+    def test_unaudited_company_is_conditional(self):
+        # T-1: 評価はあるが監査行が1件も無い → Core に入れず Conditional。
+        # 理由は「監査なし」で、監査条件だけが不成立になる
+        cid = self._candidate([("acme", "strong")])
+        self._evaluation(cid)
+        r = self.derive()["acme"]
+        self.assertEqual(r["derived_tier"], "conditional")
+        by_rule = {x["rule"]: x for x in r["reasons"]}
+        self.assertTrue(by_rule["latest_long_eval"]["ok"])
+        self.assertTrue(by_rule["attribution"]["ok"])
+        self.assertFalse(by_rule["audit"]["ok"])
+        self.assertIn("監査なし", by_rule["audit"]["detail"])
 
     def test_open_flag_makes_conditional(self):
         cid = self._candidate([("acme", "strong")])
@@ -152,13 +189,17 @@ class ComputeDerivedTiersTests(TierFixture):
                     provider="api", model="api/v1", sha="sha-api")
         self.assertEqual(self.derive()["acme"]["derived_tier"], "conditional")
 
-    def test_llm_audit_is_ignored(self):
-        # LLM 監査は廃止済み。過去行が残っていても層を左右しない
+    def test_llm_audit_does_not_count_as_audited(self):
+        # LLM 監査は廃止済み。その行だけでは「監査あり」にならず (T-1 の
+        # 対象監査系は rules / api のみ)、flag の内容自体も層を左右しない
         cid = self._candidate([("acme", "strong")])
         ev_id = self._evaluation(cid)
         self._audit(cid, ev_id, [{"check": "X", "item": "", "verdict": "flag"}],
                     provider="gemini", model="gemini-3.6-flash", sha="sha-llm")
-        self.assertEqual(self.derive()["acme"]["derived_tier"], "core")
+        r = self.derive()["acme"]
+        self.assertEqual(r["derived_tier"], "conditional")
+        by_rule = {x["rule"]: x for x in r["reasons"]}
+        self.assertIn("監査なし", by_rule["audit"]["detail"])
 
     def test_false_positive_disposition_restores_core(self):
         cid = self._candidate([("acme", "strong")])
@@ -205,7 +246,8 @@ class ComputeDerivedTiersTests(TierFixture):
         old_id = self._evaluation(cid)
         self._audit(cid, old_id, [{"check": "A8", "item": "monetization",
                                    "verdict": "flag"}])
-        self._evaluation(cid)  # 新しい評価 (監査なし)
+        new_id = self._evaluation(cid)  # 新しい評価
+        self._audit(cid, new_id, [])     # 最新評価は監査済み・要確認なし
         self.assertEqual(self.derive()["acme"]["derived_tier"], "core")
         # 逆向き: 最新の評価に flag があれば落ちる
         cid2 = self._candidate([("beta", "strong")], title="Beta の論文")
@@ -232,14 +274,16 @@ class ComputeDerivedTiersTests(TierFixture):
 
     def test_weak_link_only_is_not_attributable(self):
         cid = self._candidate([("acme", "weak"), ("beta", "strong")])
-        self._evaluation(cid)
+        ev_id = self._evaluation(cid)
+        self._audit(cid, ev_id, [])
         out = self.derive()
         self.assertEqual(out["acme"]["derived_tier"], "conditional")
         self.assertEqual(out["beta"]["derived_tier"], "core")
 
     def test_hold_evaluation_counts_as_evaluation(self):
         cid = self._candidate([("acme", "strong")])
-        self._evaluation(cid, status="hold")
+        ev_id = self._evaluation(cid, status="hold")
+        self._audit(cid, ev_id, [])
         self.assertEqual(self.derive()["acme"]["derived_tier"], "core")
 
 
@@ -288,7 +332,9 @@ class SnapshotTests(TierFixture):
                                         T.TIER_RULES_VERSION)
         self.assertEqual(len(self.store.tier_snapshot_history("acme")), 2)
 
-    def test_export_records_snapshot_and_summary(self):
+    def test_export_includes_summary_but_records_no_snapshot(self):
+        # T-3: export は読み取り専用。スナップショットは書かない (記録は
+        # パイプライン実行の末尾だけ)。分布の summary は従来どおり同梱する
         cfg = cfg_with()
         out = Path(self.tmp.name) / "site"
         data = T.export_site(self.store, cfg, out,
@@ -301,13 +347,24 @@ class SnapshotTests(TierFixture):
                         if (e.get("tier") or "core") == "core")
         self.assertEqual(tiers["counts"]["core"], 0)
         self.assertEqual(tiers["counts"]["conditional"], base_core)
-        hist = self.store.tier_snapshot_history()
-        self.assertEqual(len(hist), total)
+        self.assertEqual(self.store.tier_snapshot_history(), [])
         # watch_companies と候補側の双方に derived_tier が付く
         self.assertTrue(all("derived_tier" in w
                             for w in data["watch_companies"]))
         self.assertEqual({w["derived_tier"] for w in data["watch_companies"]},
                          {"look", "see"})
+
+    def test_run_pipeline_records_snapshot(self):
+        # T-3: スナップショットの記録はパイプライン実行の末尾が行う
+        from datetime import date
+        cfg = cfg_with()
+        cfg["entities"] = ENTS
+        T.run_pipeline(self.store, cfg, None, as_of=date(2026, 10, 20),
+                       sources=(), do_collect=False, fetchers={},
+                       today=date(2026, 10, 20), log=lambda *a: None)
+        hist = self.store.tier_snapshot_history()
+        self.assertEqual(len(hist), len(ENTS["entities"]))
+        self.assertTrue(all(h["rule_version"] == "tiers/v1" for h in hist))
 
 
 class ExportTierReasonsTests(TierFixture):
@@ -348,7 +405,8 @@ class ExportTierReasonsTests(TierFixture):
 
     def test_core_company_has_no_unmet_reasons(self):
         cid = self._candidate([("acme", "strong")])
-        self._evaluation(cid)
+        ev_id = self._evaluation(cid)
+        self._audit(cid, ev_id, [])
         acme = self._ent(self._data(), cid, "acme")
         self.assertEqual(acme["derived_tier"], "core")
         self.assertEqual(acme["derived_reasons"], [])

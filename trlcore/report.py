@@ -98,6 +98,14 @@ def build_report(store, run_id, cfg=None):
         # レポートの頭にも出す (キー失効・対象消滅が正常に見える事故の防止)
         L += [f"- ⚠ 取得0件のまま成功したソース: {', '.join(counts['quiet_zero_sources'])}"
               "（キー失効や対象の消滅の可能性。要確認）"]
+    if counts.get("zero_fetch_streaks"):
+        # 社別の静かな0件 (S-2): ソース単位の全滅検知 (上の quiet_zero) では
+        # 拾えない「特定社だけ四半期周期を超えて0件」を期間で測って出す
+        items = ", ".join(f"{s['source']}/{s['query']} ({s['days']}日)"
+                          for s in counts["zero_fetch_streaks"])
+        total = counts.get("zero_fetch_streaks_total") or len(counts["zero_fetch_streaks"])
+        L += [f"- ⚠ 取得0件が四半期周期を超えて続くクエリ {total} 件: {items}"
+              "（接尾辞誤り・バルク不在・対象の消滅の可能性。要確認）"]
     L += [
         "", "## 情報源ごとの状況"
     ]

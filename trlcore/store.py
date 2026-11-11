@@ -1171,8 +1171,8 @@ class Store:
     def record_tier_snapshot(self, derived, derived_at, rule_version):
         """導出結果 (trlcore.tiers.compute_derived_tiers の戻り値) を
         1スナップショット分まとめて記録する。過去の層を後から再現できる
-        よう、更新も削除もせず追記のみ。記録先は export のタイミングに
-        寄せる (site.export_site が呼ぶ)。"""
+        よう、更新も削除もせず追記のみ。呼ぶのはパイプライン実行の末尾
+        (run_pipeline) だけ (T-3: export 経由では書かない)。"""
         rows = [(derived_at, rule_version, eid, r["derived_tier"],
                  _j(r.get("reasons") or []))
                 for eid, r in sorted(derived.items())]
@@ -1319,6 +1319,64 @@ class Store:
         out = {}
         for q, t, ok in rows:
             out.setdefault((source, q), (t, bool(ok)))
+        return out
+
+    def last_source_attempts_with_fetch(self, source):
+        """指定ソースについて (source, query) ごとの最終試行
+        (開始日時, ok, fetched) を返す。財務系の休止判定 (ISSUES-2 の
+        S-1) 専用: 最終試行が成功でも fetched=0 (空振り) なら長い休止に
+        入れないため、最終成功ではなく最終試行を、取得件数つきで返す。"""
+        rows = self.conn.execute(
+            "SELECT rs.query, r.started_at, rs.ok, rs.fetched FROM run_sources rs "
+            "JOIN runs r ON r.run_id = rs.run_id WHERE rs.source = ? "
+            "ORDER BY r.started_at DESC, rs.rowid DESC", (source,)).fetchall()
+        out = {}
+        for q, t, ok, f in rows:
+            out.setdefault((source, q), (t, bool(ok), f))
+        return out
+
+    def zero_fetch_streaks(self, sources, as_of, min_days=90, active_days=31):
+        """(source, query) ごとに「取得0件の継続」を期間で測る (S-2)。
+
+        最後に fetched>0 だった試行 (保持範囲内に無ければ最初の試行) から
+        as_of までの日数を、そのクエリの0件継続期間とする。対象は最新の
+        試行が成功・0件で、最終試行が active_days 以内 (まだ収集対象として
+        生きている) のものだけ。継続が min_days を超えたものを日数の降順
+        で返す。run_sources の保持は180日 (prune のブレーキ) のため、それ
+        より古い最終取得は最初の試行に丸められ、継続は実際より短く出る
+        (警告が遅れる側の保守的な近似)。
+        """
+        out = []
+        marks = ",".join("?" * len(sources))
+        rows = self.conn.execute(
+            "SELECT rs.source, rs.query, r.started_at, rs.ok, rs.fetched "
+            "FROM run_sources rs JOIN runs r ON r.run_id = rs.run_id "
+            f"WHERE rs.source IN ({marks}) "
+            "ORDER BY rs.source, rs.query, r.started_at, rs.rowid",
+            list(sources)).fetchall()
+        attempts = {}
+        for s, q, t, ok, f in rows:
+            attempts.setdefault((s, q), []).append((t, bool(ok), f))
+        for (s, q), atts in attempts.items():
+            last_t, last_ok, last_f = atts[-1]
+            if not last_ok or (last_f or 0) > 0:
+                continue  # 最新試行が失敗 or 取得ありなら0件継続は切れている
+            last_day = parse_date((last_t or "")[:10])
+            if last_day is None or (as_of - last_day).days > active_days:
+                continue  # 対象から外れたクエリの残骸は警告しない
+            start = None
+            for t, _ok, f in reversed(atts):
+                if (f or 0) > 0:
+                    start = parse_date((t or "")[:10])
+                    break
+            if start is None:
+                start = parse_date((atts[0][0] or "")[:10])
+            if start is None:
+                continue
+            days = (as_of - start).days
+            if days > min_days:
+                out.append({"source": s, "query": q, "days": days})
+        out.sort(key=lambda x: (-x["days"], x["source"], x["query"]))
         return out
 
     def last_source_successes_with_fetch(self, source):

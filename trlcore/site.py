@@ -11,7 +11,7 @@ from .phases import phase_for_trl
 from .pipeline import select_for_eval
 from .review import adjusted_view
 from .summarize import PAPER_SOURCES, extract_summary
-from .tiers import TIER_RULES_VERSION, compute_derived_tiers, tier_distribution
+from .tiers import compute_derived_tiers, tier_distribution
 
 
 SITE_SCHEMA_VERSION = 3
@@ -521,18 +521,12 @@ def export_site(store, cfg, out_dir, web_dir=None, now=None):
     if base and len(data["candidates"]) < base:
         raise RuntimeError(
             f"export integrity: evaluated/rejected candidates={base} but output={len(data['candidates'])}")
-    # tier 導出の記録 (append-only)。記録先は「公開物を作る行為」である
-    # export に寄せる: build_site_data はテストやプレビューでも多用される
-    # 純粋な読み取りなので、そこでは書かない。export を呼ぶ経路 (CLI の
-    # export / run の後段) はいずれも DB を読み書きで開いており、main の
-    # ワークフローでは export 後に DB が data ブランチへ保存されるため、
-    # ここで書いたスナップショットがそのまま永続化される。読み取り専用の
-    # site 書き出し (site.yaml) では記録は残らないが、その場合は次の
-    # パイプライン実行の export でその時点の層が記録される (欠落ではなく
-    # 記録間隔の話であり、過去の層の再現可能性は保たれる)。
-    store.record_tier_snapshot(
-        compute_derived_tiers(store, cfg.get("entities")),
-        data["generated_at"], TIER_RULES_VERSION)
+    # tier 導出のスナップショット記録は export では行わない (ISSUES-2 の
+    # T-3): 記録はパイプライン実行の末尾 (run_pipeline) だけが担う。
+    # site 専用ジョブ経由の export は DB を保存しないため、ここで書いても
+    # 蒸発するうえ、「公開された中間状態が履歴に残らない」穴の温床になる。
+    # export は経路によらず読み取り専用に保つ (表示用の導出計算自体は
+    # build_site_data が行う)。
     (out / "data.json").write_text(json.dumps(data, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     web = Path(web_dir) if web_dir else ROOT / "web"
     if web.is_dir():

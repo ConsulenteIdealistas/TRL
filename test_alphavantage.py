@@ -135,12 +135,16 @@ class AlphaVantageFetcherTests(unittest.TestCase):
         self.assertEqual(n1["keys"][0], "srcid:alphavantage:ONT.LON-2026-06-30")
         self.assertNotEqual(n1["keys"][0], n2["keys"][0])
 
-    def test_fetch_unknown_symbol_is_empty(self):
+    def test_fetch_unknown_symbol_raises(self):
+        # S-3: シンボルが提供元に無い (Error Message) 場合は握りつぶして
+        # 成功・0件にせず、例外として上げる (呼び出し側で ok=0 と記録する)
         http = make_http(is_data={"Error Message": "Invalid API call."},
                          bs_data={"Error Message": "Invalid API call."},
                          cf_data={"Error Message": "Invalid API call."})
-        self.assertEqual(av.fetch_alphavantage("NOSUCH.LON", 5, 400, AS_OF, http=http), [])
-        self.assertEqual(len(http.calls), 1)  # 損益で材料なしと確定し、残りは聞かない
+        with self.assertRaises(Exception) as cm:
+            av.fetch_alphavantage("NOSUCH.LON", 5, 400, AS_OF, http=http)
+        self.assertIn("Invalid API call", str(cm.exception))
+        self.assertEqual(len(http.calls), 1)  # 損益で失敗が確定し、残りは聞かない
 
     def test_fetch_missing_balance_sheet_still_uses_other_tables(self):
         http = make_http(bs_data={"Error Message": "Invalid API call."})
@@ -348,6 +352,20 @@ class AlphaVantageCollectTests(unittest.TestCase):
         self.assertEqual(len(rows), 1)
         # 全クエリ成功で0件 = quiet_zero_sources の導出条件を満たす形で残る
         self.assertEqual((rows[0]["ok"], rows[0]["fetched"]), (1, 0))
+
+    def test_symbol_error_recorded_as_failure(self):
+        # S-3: シンボル不一致 (Error Message) は fetcher が例外として上げ、
+        # run_sources には失敗 (ok=0) として残る (成功・0件にしない)
+        def bad_symbol(symbol, max_results, lookback, as_of):
+            self.calls.append(symbol)
+            raise Exception("Invalid API call. (symbol error)")
+
+        self.fetcher = bad_symbol
+        self.run_collect(entities=[ENTITIES[1]])  # g_zero のみ
+        rows = [r for r in self.store.run_sources("run1") if r["source"] == "alphavantage"]
+        self.assertEqual(len(rows), 1)
+        self.assertEqual((rows[0]["ok"], rows[0]["fetched"]), (0, 0))
+        self.assertEqual(self.counts["sources_failed"], 1)
 
     def test_rate_limit_stops_queue_and_defers_rest(self):
         def limited(symbol, max_results, lookback, as_of):

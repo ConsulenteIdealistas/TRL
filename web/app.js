@@ -25,16 +25,49 @@ const ACH = {A1: "商用展開とTRLの混同", A2: "TRL 9 の継続証拠", A3:
   CR1: "DOI の実在確認", CT1: "治験ステータス（中止系）の反証", CT2: "治験スポンサーの帰属"};
 const AIL = {counter_points: "反証", candidate: "候補の時点", total: "総合点", companies: "企業帰属",
   not_priced_in: "未織り込み度", trl_level: "TRL判定"};
+/* 詳細の監査節も監査ページと同じ畳み方にする: 既定で出すのは系統ごとに
+   最新の監査バッチの、未処分の指摘だけ。過去バッチと処分済みの指摘は
+   展開 (details) の中に入れる。処分の状態は監査ページと同じ localStorage
+   (trl-review) を読む (読み取り専用。ここでは変更しない) */
+function latestAuditBlocks(blocks) {
+  const best = new Map();
+  for (const a of blocks || []) {
+    const key = `${a.evaluation_id}:${a.provider || ""}`;
+    const cur = best.get(key);
+    if (!cur || String(a.created_at || "") >= String(cur.created_at || "")) best.set(key, a);
+  }
+  return [...best.values()];
+}
+let REVIEW_DEC = {};
+try {
+  const r = JSON.parse(localStorage.getItem("trl-review") || "null");
+  if (r && r.decisions) REVIEW_DEC = r.decisions;
+} catch (e) { /* 読めなければ処分なしとして扱う */ }
+const DISP_L = {confirmed: "問題あり", false_positive: "誤検知", watch: "様子見"};
+const decOf = (a, e) => REVIEW_DEC[`${a.evaluation_id}:${e.check || ""}:${e.item || ""}`] || null;
 function auditGroupHtml(blocks, heading, link) {
+  const latSet = new Set(latestAuditBlocks(blocks));
+  const rowOf = (e, tag) => `<li><b>${esc(e.check || "")}</b> ${e.verdict === "gray" ? "グレー" : "要確認"}: ${esc(ACH[e.check] || "")}${e.item ? `（${esc(AIL[e.item] || IL[e.item] || e.item)}）` : ""}${tag || ""}</li>`;
   let nf = 0, ng = 0;
-  const rows = [];
+  const rows = [], rest = [];
   for (const a of blocks) for (const e of a.entries || []) {
-    if (e.verdict === "gray") ng++; else nf++;
-    rows.push(`<li><b>${esc(e.check || "")}</b> ${e.verdict === "gray" ? "グレー" : "要確認"}: ${esc(ACH[e.check] || "")}${e.item ? `（${esc(AIL[e.item] || IL[e.item] || e.item)}）` : ""}</li>`);
+    const d = decOf(a, e);
+    if (latSet.has(a) && !(d && d.disposition)) {
+      if (e.verdict === "gray") ng++; else nf++;
+      rows.push(rowOf(e));
+    } else if (d && d.disposition) {
+      rest.push(rowOf(e, `（処分済み: ${esc(DISP_L[d.disposition] || d.disposition)}）`));
+    } else {
+      rest.push(rowOf(e, `（過去の監査: ${esc(a.auditor || a.provider || "")}）`));
+    }
   }
   const head = heading ? `<p><b>${esc(heading)}</b></p>` : "";
-  if (!rows.length) return `${head}<p class="hint">監査で指摘はありませんでした。</p>`;
-  return `${head}<p>要確認 ${nf} 件 / グレー ${ng} 件</p><ul class="pts">${rows.join("")}</ul><div class="acts"><a class="btn sec" href="${link}">監査ページでこの記事の指摘を見る →</a></div>`;
+  if (!rows.length && !rest.length) return `${head}<p class="hint">監査で指摘はありませんでした。</p>`;
+  let h = `${head}<p>要確認 ${nf} 件 / グレー ${ng} 件</p>`;
+  h += rows.length ? `<ul class="pts">${rows.join("")}</ul>`
+    : `<p class="hint">最新の監査に未処分の指摘はありません。</p>`;
+  if (rest.length) h += `<details class="apast"><summary>処分済み・過去の監査を見る（${rest.length}件）</summary><ul class="pts">${rest.join("")}</ul></details>`;
+  return `${h}<div class="acts"><a class="btn sec" href="${link}">監査ページでこの記事の指摘を見る →</a></div>`;
 }
 function auditSectionHtml(p) {
   const hasL = p.audit && p.audit.length, hasE = p.audit_event && p.audit_event.length;

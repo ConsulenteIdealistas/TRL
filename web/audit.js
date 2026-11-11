@@ -92,6 +92,71 @@ async function copyText(t) {
 let DATA = null;
 const blocksOf = (p, k) => ((k === "event" ? p.audit_event : p.audit) || []);
 const evOf = (p, k) => (k === "event" ? p.event : p.long);
+
+/* 表示の畳み方 (ユーザー決定): 既定で前面に出すのは「系統ごとに最新の
+   監査バッチ」×「未処分の項目」だけにする。過去バッチ (旧版の監査結果) と
+   処分済みの項目は、是正済みの誤りも含めて見やすい場所に置くとノイズに
+   なるため、スイッチを入れたときだけ展開する。data.json・DB の記録は
+   一切変えず、表示だけの切り替え。スイッチは localStorage で保持する */
+const PASTKEY = "trl-audit-past", DONEKEY = "trl-audit-done";
+let showPast = false, showDone = false;
+try {
+  showPast = localStorage.getItem(PASTKEY) === "1";
+  showDone = localStorage.getItem(DONEKEY) === "1";
+} catch (e) { /* 保存不可なら既定 (両方 OFF) のまま */ }
+function saveVis() {
+  try {
+    localStorage.setItem(PASTKEY, showPast ? "1" : "0");
+    localStorage.setItem(DONEKEY, showDone ? "1" : "0");
+  } catch (e) { /* 保存できなくても切替は効く */ }
+}
+/* 系統 (評価 × provider) ごとに最新の監査バッチだけを返す。新旧は
+   created_at で決め、同点は配列の後方 (= 後から積まれた方) を最新とする */
+function latestBlocks(blocks) {
+  const best = new Map();
+  for (const a of blocks || []) {
+    const key = `${a.evaluation_id}:${a.provider || ""}`;
+    const cur = best.get(key);
+    if (!cur || String(a.created_at || "") >= String(cur.created_at || "")) best.set(key, a);
+  }
+  return [...best.values()];
+}
+const entryShown = (a, e) => {
+  if (showDone) return true;
+  const d = decisionOf(a, e);
+  return !(d && d.disposition);
+};
+/* この候補 × 種別で「今の畳み方で見える」監査ブロックを決める。
+   バッチ軸: 過去スイッチ OFF なら系統ごとの最新バッチだけ。
+   項目軸: 項目が全部畳まれるブロックは出さない (何も挙がらなかった
+   ブロックは従来どおり出す)。latestSet は過去ブロックの判別用 */
+function shownBlocks(p, k) {
+  const all = blocksOf(p, k);
+  const lat = new Set(latestBlocks(all));
+  const batch = showPast ? all : all.filter(a => lat.has(a));
+  const blocks = batch.filter(a => !(a.entries || []).length || a.entries.some(e => entryShown(a, e)));
+  return {blocks, latestSet: lat};
+}
+/* 畳んでいる分の件数 (スイッチのラベルに別数で示す。表示中集合の統計・
+   チップには混ぜない)。過去はブロック数、処分済みは項目数で数える。
+   処分済みは「バッチ軸で見えている範囲」の中での件数 (過去バッチの中の
+   処分済みは過去側の件数にだけ現れ、二重に数えない) */
+function hiddenCounts() {
+  const ks = viewState.kind === "all" ? ["long", "event"] : [viewState.kind];
+  let past = 0, doneN = 0;
+  for (const p of DATA.candidates || []) for (const k of ks) {
+    const all = blocksOf(p, k);
+    if (!all.length) continue;
+    const lat = new Set(latestBlocks(all));
+    past += all.filter(a => !lat.has(a)).length;
+    const batch = showPast ? all : all.filter(a => lat.has(a));
+    for (const a of batch) for (const e of a.entries || []) {
+      const d = decisionOf(a, e);
+      if (d && d.disposition) doneN++;
+    }
+  }
+  return {past, doneN};
+}
 /* 表示単位は「候補 × 種別」のカード。種別が all (両方) のときは長期・
    イベントの両方のカードが並び、両方の監査がある候補は2枚になる。
    件数の単位は常にこのカードで、統計枠・チップ・一覧で揃える */
@@ -99,9 +164,18 @@ function cards() {
   const ks = viewState.kind === "all" ? ["long", "event"] : [viewState.kind];
   const out = [];
   for (const p of DATA.candidates || []) for (const k of ks) {
-    if (blocksOf(p, k).length) out.push({p, kind: k});
+    if (shownBlocks(p, k).blocks.length) out.push({p, kind: k});
   }
   return out;
+}
+/* 畳み方を無視したカード数 (空表示の文言の切り分け用) */
+function rawCardCount() {
+  const ks = viewState.kind === "all" ? ["long", "event"] : [viewState.kind];
+  let n = 0;
+  for (const p of DATA.candidates || []) for (const k of ks) {
+    if (blocksOf(p, k).length) n++;
+  }
+  return n;
 }
 
 /* カードの状態 (絞り込みとバッジ用)。要確認/グレーは「未処分が残っている」
@@ -111,16 +185,17 @@ const SFILTERS = [["all", "すべて"], ["flag", "要確認"], ["gray", "グレ�
   ["done", "処分済み"], ["dconfirmed", "問題あり"], ["dfalse", "誤検知"],
   ["dwatch", "様子見"], ["reserved", "再評価予約"], ["adjusted", "調整済み"]];
 function cardState(c) {
-  const blocks = blocksOf(c.p, c.kind);
+  const blocks = shownBlocks(c.p, c.kind).blocks;
   let flagOpen = 0, grayOpen = 0, total = 0, decided = 0;
   const disp = {confirmed: 0, false_positive: 0, watch: 0};
   for (const a of blocks) for (const e of a.entries) {
+    if (!entryShown(a, e)) continue;
     total++;
     const d = decisionOf(a, e);
     if (d && d.disposition) { decided++; if (d.disposition in disp) disp[d.disposition]++; }
     else if (e.verdict === "gray") grayOpen++; else flagOpen++;
   }
-  const evalId = blocks[0].evaluation_id;
+  const evalId = blocks.length ? blocks[0].evaluation_id : blocksOf(c.p, c.kind)[0].evaluation_id;
   return {flagOpen, grayOpen, done: total > 0 && decided === total, disp,
           // 予約は候補単位の記録だが、両方表示では長期カードにだけ付ける
           // (イベントカードへ重ねると同じ予約を二重に数えるため)。
@@ -167,10 +242,21 @@ function renderControls() {
     if (st.reserved) counts.reserved++;
     if (st.adjusted) counts.adjusted++;
   }
-  // 種別チップの件数もカード単位: 「両方」は長期カード+イベントカードの総数
-  const kindCounts = {long: (DATA.candidates || []).filter(p => (p.audit || []).length).length,
-                      event: (DATA.candidates || []).filter(p => (p.audit_event || []).length).length};
+  // 種別チップの件数もカード単位 (今の畳み方で見えるカードの数):
+  // 「両方」は長期カード+イベントカードの総数
+  const kindCounts = {long: 0, event: 0};
+  for (const p of DATA.candidates || []) for (const k of ["long", "event"]) {
+    if (shownBlocks(p, k).blocks.length) kindCounts[k]++;
+  }
   kindCounts.all = kindCounts.long + kindCounts.event;
+  // 畳み方スイッチの状態と、畳んでいる分の件数 (別数表示)
+  const hc = hiddenCounts();
+  const swp = $("#swPast"), swd = $("#swDone");
+  if (swp) swp.checked = showPast;
+  if (swd) swd.checked = showDone;
+  const pc = $("#pastCnt"), dc = $("#doneCnt");
+  if (pc) pc.textContent = `（${hc.past}件）`;
+  if (dc) dc.textContent = `（${hc.doneN}件）`;
   const kf = $("#kindFilters");
   if (kf) kf.innerHTML = [["long", "長期評価"], ["event", "イベント評価"], ["all", "両方"]].map(([k, label]) =>
     `<button type="button" class="fchip" data-kind="${k}" aria-pressed="${viewState.kind === k ? "true" : "false"}">${label} ${kindCounts[k]}</button>`).join("");
@@ -223,13 +309,14 @@ function entryHtml(a, e) {
   </div>`;
 }
 
-function auditBlockHtml(a) {
+function auditBlockHtml(a, past) {
   const who = PL[a.provider] || a.provider || "";
   const head = `${who} ${esc(a.auditor || "")}${a.version ? `（版 ${esc(a.version)}）` : ""}`;
-  const entries = a.entries.length ? a.entries.map(e => entryHtml(a, e)).join("")
+  const shown = (a.entries || []).filter(e => entryShown(a, e));
+  const entries = (a.entries || []).length ? shown.map(e => entryHtml(a, e)).join("")
     : `<p class="hint" style="margin-top:8px">この監査では何も挙がりませんでした。</p>`;
-  return `<div class="ablk">
-    <div class="ablkhead"><span>${head}</span><span class="hint">${a.created_at ? jst(a.created_at) : ""} ・ 評価 #${a.evaluation_id}</span></div>
+  return `<div class="ablk${past ? " past" : ""}">
+    <div class="ablkhead"><span>${head}</span>${past ? `<span class="sbadge pastb">過去の監査</span>` : ""}<span class="hint">${a.created_at ? jst(a.created_at) : ""} ・ 評価 #${a.evaluation_id}</span></div>
     ${a.summary ? `<p class="asum">${esc(a.summary)}</p>` : ""}
     ${entries}
   </div>`;
@@ -279,7 +366,8 @@ function cardHtml(c) {
     if (L.llm_model) ev.push(`評価: ${esc(L.llm_model)}`);
     if (L.evaluated_at) ev.push(jst(L.evaluated_at));
   }
-  const evalId = blocksOf(p, k)[0].evaluation_id;
+  const shown = shownBlocks(p, k);
+  const evalId = shown.blocks.length ? shown.blocks[0].evaluation_id : blocksOf(p, k)[0].evaluation_id;
   const stKey = k === "event" && L ? L.status : p.display_status;
   const resv = review.reeval[p.id];
   const resvOn = !!(resv && resv.on);
@@ -305,7 +393,7 @@ function cardHtml(c) {
       if (st.adjusted) b.push(`<span class="sbadge adj">調整済み</span>`);
       return b.length ? `<div class="srow">${b.join("")}</div>` : ""; })()}
     <div class="ameta"><a class="tg" href="detail.html?id=${encodeURIComponent(p.id)}">記事（詳細ページ）を見る →</a></div>
-    ${blocksOf(p, k).map(auditBlockHtml).join("")}
+    ${shown.blocks.map(a => auditBlockHtml(a, !shown.latestSet.has(a))).join("")}
     ${showResv || k === "long" ? `<div class="aops">
       ${showResv ? `<div class="adjrow">
         <button type="button" class="btn quiet resv" data-reeval="${esc(p.id)}" aria-pressed="${resvOn ? "true" : "false"}">${resvOn ? "再評価: 予約済み（タップで解除）" : "再評価を予約する"}</button>
@@ -322,7 +410,9 @@ function render() {
   const all = cards();
   const list = applyView(all);
   $("#list").innerHTML = list.length ? list.map(cardHtml).join("")
-    : `<div class="empty">${all.length ? "この状態のカードはありません。" : "監査が付いた評価はまだありません。"}</div>`;
+    : `<div class="empty">${all.length ? "この状態のカードはありません。"
+      : rawCardCount() ? "現在の表示では出るカードがありません（過去の監査・処分済みの項目は上のスイッチで表示できます）。"
+      : "監査が付いた評価はまだありません。"}</div>`;
 }
 
 function ensureDecision(key, meta) {
@@ -339,7 +429,15 @@ document.addEventListener("click", ev => {
   const kindBtn = ev.target.closest("[data-kind]");
   if (kindBtn) { viewState.kind = kindBtn.dataset.kind; viewState.filter = "all"; render(); return; }
   const sfBtn = ev.target.closest("[data-sfilter]");
-  if (sfBtn) { viewState.filter = sfBtn.dataset.sfilter; render(); return; }
+  if (sfBtn) {
+    viewState.filter = sfBtn.dataset.sfilter;
+    // 処分系の絞り込みは、処分済みの項目が畳まれたままでは常に空になる。
+    // チップを選んだ時点で「処分済みの項目を表示」も一緒に ON にする
+    if (["done", "dconfirmed", "dfalse", "dwatch"].includes(viewState.filter) && !showDone) {
+      showDone = true; saveVis();
+    }
+    render(); return;
+  }
   const dispBtn = ev.target.closest("[data-disp]");
   if (dispBtn) {
     const key = dispBtn.dataset.key;
@@ -412,6 +510,8 @@ document.addEventListener("input", ev => {
 });
 document.addEventListener("change", ev => {
   if (ev.target.id === "sortSel") { viewState.sort = ev.target.value; render(); return; }
+  if (ev.target.id === "swPast") { showPast = ev.target.checked; saveVis(); render(); return; }
+  if (ev.target.id === "swDone") { showDone = ev.target.checked; saveVis(); render(); return; }
   const sel = ev.target.closest("[data-adjsel]");
   if (sel) {
     const d = adjDraft[sel.dataset.adjsel] || (adjDraft[sel.dataset.adjsel] = {});
@@ -463,6 +563,14 @@ $("#copyBtn").addEventListener("click", async () => {
     const other = viewState.kind === "event" ? "long" : "event";
     const has = (DATA.candidates || []).some(p => p.id === target && blocksOf(p, other).length);
     if (has) { viewState.kind = other; render(); }
+  }
+  // 対象のカードが畳み方で隠れている場合は、遷移の意図 (この記事の指摘を
+  // 見る) を優先して両方のスイッチを入れてから探し直す
+  if (target && !hasCard(target)) {
+    const p = (DATA.candidates || []).find(x => x.id === target);
+    if (p && ((p.audit || []).length || (p.audit_event || []).length) && (!showPast || !showDone)) {
+      showPast = true; showDone = true; saveVis(); render();
+    }
   }
   if (target && hasCard(target)) {
     viewState.filter = "all";

@@ -15,6 +15,9 @@
 .atitle{font-size:16px;font-weight:800;line-height:1.5}
 .ameta{color:var(--sub);font-size:12px;line-height:1.8;margin-top:4px}
 .ablk{margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
+.ablk.past{opacity:.72}
+.sbadge.pastb{color:var(--muted);background:color-mix(in srgb,var(--muted) 16%,transparent)}
+.visrow{display:flex;flex-wrap:wrap;gap:8px 22px;align-items:center;margin:0 0 12px}
 .ablkhead{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:12.5px;font-weight:800}
 .asum{color:var(--sub);font-size:12px;line-height:1.7;margin-top:4px}
 .eentry{margin-top:10px;padding:11px 12px;border:1px solid var(--line);border-radius:12px;background:var(--field)}
@@ -63,10 +66,15 @@ select.tsel{padding:8px 10px;border:1px solid var(--line);border-radius:10px;bac
 <h1 class="ptitle">監査レビュー</h1>
 <p class="hint">監査は、確定した評価を規則で照合し直し、疑わしい箇所を「要確認」として挙げる仕組みです。要確認は誤りの確定ではなく、人間の確認待ちを意味します。グレーは、違反とまでは言えないが記録しておくもの（将来のルール育成の材料）です。</p>
 <p class="hint">ここでの処分・再評価の予約・TRL の読み替え（調整）は、すべてこの端末の中だけに記録され、元の評価や監査の記録は変更されません。調整はこのページ内だけの表示で、一覧・詳細の通常表示には影響しません。</p>
+<p class="hint">表示は、系統（規則監査・API照合）ごとに最新の監査バッチと、未処分の項目だけが既定です。過去の監査と処分済みの項目は、下のスイッチで表示できます（記録自体は残ります）。</p>
 <section class="stats" id="cov" aria-label="監査の進み具合"></section>
 <div class="copybar">
 <button class="btn pri" id="copyBtn" type="button">反映用 JSON をコピー</button>
 <span class="hint" id="copyMsg">記録した処分・予約・調整を review_inbox.json の形で書き出します（取り込みは段階B）。</span>
+</div>
+<div class="visrow" aria-label="表示の切り替え">
+<label class="sw"><input type="checkbox" id="swPast"> 過去の監査を表示 <span class="hint" id="pastCnt"></span></label>
+<label class="sw"><input type="checkbox" id="swDone"> 処分済みの項目を表示 <span class="hint" id="doneCnt"></span></label>
 </div>
 <div class="abar">
 <div class="fchips" id="kindFilters" aria-label="評価の種別" style="margin-bottom:8px"></div>

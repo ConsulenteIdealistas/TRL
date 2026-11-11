@@ -244,6 +244,27 @@ class ExportTests(StoreFixture):
         self.assertIn("if (st.grayOpen) grayN++", audit)
         self.assertNotIn("hasFlag", audit)
 
+    def test_audit_folds_past_and_disposed(self):
+        # 監査の畳み方 (ユーザー決定): 既定で前面に出すのは系統ごとの最新
+        # バッチ × 未処分の項目だけ。過去バッチと処分済み項目はスイッチ
+        # (既定 OFF・localStorage で保持) を入れたときだけ展開し、件数は
+        # 表示中集合と一致させ、畳んだ分はスイッチのラベルに別数で示す。
+        # 詳細の監査節 (app.js) も同じ畳み方で、過去・処分済みは details へ
+        web = T.ROOT / "web"
+        audit = (web / "audit.js").read_text(encoding="utf-8")
+        page = (web / "audit.html").read_text(encoding="utf-8")
+        app = (web / "app.js").read_text(encoding="utf-8")
+        self.assertIn("function latestBlocks", audit)
+        self.assertIn("function shownBlocks", audit)
+        self.assertIn("function hiddenCounts", audit)
+        self.assertIn("trl-audit-past", audit)
+        self.assertIn("trl-audit-done", audit)
+        self.assertIn('id="swPast"', page)
+        self.assertIn('id="swDone"', page)
+        self.assertIn("function latestAuditBlocks", app)
+        self.assertIn("処分済み・過去の監査を見る", app)
+        self.assertIn('localStorage.getItem("trl-review")', app)
+
     def test_watch_page_language_toggle(self):
         # ウォッチページにも原文/日本語の切替を置く。主ページ・詳細と
         # 同じ localStorage キー (trl-lang) を共有し、既定は日本語訳。

@@ -18,6 +18,13 @@ from .scoring import compute
 
 INBOX_NAME = "review_inbox.json"
 DISPOSITIONS = ("confirmed", "false_positive", "watch")
+# 処分の取り消しは「cleared」の墓標行で表す (調整の取り消しが
+# to_value = 元値の行で表されるのと同じ考え方: 追記専用の橋では行の
+# 不在は「未送信」と区別できないため、消さずに残して伝える)。
+# 墓標が最新の行になれば有効状態の計算 (store.effective_review_decisions
+# と tier 導出の「最新行が有効」) で未処分に戻り、export 経由で全端末の
+# 表示に伝わる
+CLEARED = "cleared"
 # 予約の理由はページ側の JSON に含まれない (候補 ID だけが届く) ため、
 # 取り込み側で出所が分かる文面を付ける
 REASON_PAGE_RESERVATION = "監査レビューでの予約"
@@ -75,7 +82,7 @@ def import_inbox(store, inbox):
         out["skipped"] += 1
         return out
     for d in inbox.get("decisions") or []:
-        if not isinstance(d, dict) or not d.get("id") or d.get("disposition") not in DISPOSITIONS:
+        if not isinstance(d, dict) or not d.get("id") or d.get("disposition") not in DISPOSITIONS + (CLEARED,):
             out["skipped"] += 1
             continue
         ev = _evaluation(store, d.get("evaluation_id"))
@@ -177,6 +184,7 @@ def adjusted_view(store, cfg, ev_row):
     out = compute(items, ev_row["kind"], cfg, trl_level=adj["to_value"])
     return {"field": "trl_level", "from_value": orig, "to_value": adj["to_value"],
             "reason": adj["reason"], "adjusted_at": adj["created_at"],
+            "source_id": adj["source_id"],
             "status": out["status"], "total": out["total"],
             "band": (out["band"] or {}).get("label"),
             "axes": out["axes"], "business_stage": out["business_stage"],

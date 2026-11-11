@@ -70,7 +70,7 @@ select.tsel{padding:8px 10px;border:1px solid var(--line);border-radius:10px;bac
 <section class="stats" id="cov" aria-label="監査の進み具合"></section>
 <div class="copybar">
 <button class="btn pri" id="copyBtn" type="button">反映用 JSON をコピー</button>
-<span class="hint" id="copyMsg">記録した処分・予約・調整を review_inbox.json の形で書き出します（取り込みは段階B）。</span>
+<span class="hint" id="copyMsg">まだ DB に反映されていない処分・予約・調整を review_inbox.json の形で書き出します（取り込みは段階B）。反映済みの状態は data.json 経由で全端末に表示されます。</span>
 </div>
 <div class="visrow" aria-label="表示の切り替え">
 <label class="sw"><input type="checkbox" id="swPast"> 過去の監査を表示 <span class="hint" id="pastCnt"></span></label>

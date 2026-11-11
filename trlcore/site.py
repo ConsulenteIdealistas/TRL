@@ -284,6 +284,20 @@ def _audits_by_eval(store):
             "entries": _audit_entries(flags),
             "summary": d.get("summary") or "",
             "created_at": d.get("created_at") or ""})
+    # 処分の端末またぎ: DB に取り込まれた処分の有効状態 (段階B) を監査
+    # ブロックへ同梱し、どの端末で開いても同じ処分が見えるようにする。
+    # ページ側はこれを「反映済み」の種として、端末内の未反映分と重ねる。
+    # 同じ評価のブロック (規則版・API 照合版) には同じ一覧を付ける
+    # (ページ側の照合キーは evaluation_id + check + item で監査者を
+    # 含まないため)。処分が無い評価では空の一覧を付ける (entries と
+    # 同じく、ブロック内では常にあるキーとして契約する)
+    by_eval = {}
+    for (eid, check, item), rec in store.effective_review_decisions().items():
+        by_eval.setdefault(eid, []).append({"check": check, "item": item, **rec})
+    for eid, blocks in out.items():
+        ds = sorted(by_eval.get(eid, []), key=lambda r: (r["check"], r["item"]))
+        for b in blocks:
+            b["decisions"] = ds
     return out
 
 
@@ -393,6 +407,7 @@ def build_site_data(store, cfg, now=None):
         ev_kinds.setdefault(cid, set()).add(kind)
     eval_counts = store.eval_counts_long()
     audits = _audits_by_eval(store)
+    open_reeval = store.open_reeval_candidate_ids()
     # tier 導出レイヤー (tiers/v1): 辞書は不変のまま、企業ごとの導出 tier と
     # 4層の分布・警告を data.json に同梱する (追加フィールド方式)
     derived = compute_derived_tiers(store, cfg.get("entities"))
@@ -475,6 +490,10 @@ def build_site_data(store, cfg, now=None):
             au = audits.get(event_row["id"])
             if au:
                 cand["audit_event"] = au
+        # 再評価予約の端末またぎ: DB のキューに未完了の予約がある候補には
+        # その印を同梱し、どの端末でも「予約済み」と表示できるようにする
+        if cid in open_reeval:
+            cand["reeval_booked"] = True
         # 論文の要点 (抄録からの決定的な抽出、表示専用)。対象でない候補には付けない
         if c["source"] in PAPER_SOURCES:
             summ = extract_summary(c["title"], c["abstract"], c.get("abstract_ja"))

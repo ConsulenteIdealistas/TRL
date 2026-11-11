@@ -44,7 +44,11 @@ try {
   if (r && r.decisions) REVIEW_DEC = r.decisions;
 } catch (e) { /* 読めなければ処分なしとして扱う */ }
 const DISP_L = {confirmed: "問題あり", false_positive: "誤検知", watch: "様子見"};
-const decOf = (a, e) => REVIEW_DEC[`${a.evaluation_id}:${e.check || ""}:${e.item || ""}`] || null;
+/* 処分は localStorage (監査ページと共有) を優先し、無い分は監査ブロックに
+   同梱された DB 側の有効な処分 (decisions) で補う。この端末で監査ページを
+   開いていなくても、反映済みの処分はここでも同じに見える */
+const decOf = (a, e) => REVIEW_DEC[`${a.evaluation_id}:${e.check || ""}:${e.item || ""}`]
+  || (a.decisions || []).find(d => (d.check || "") === (e.check || "") && (d.item || "") === (e.item || "")) || null;
 function auditGroupHtml(blocks, heading, link) {
   const latSet = new Set(latestAuditBlocks(blocks));
   const rowOf = (e, tag) => `<li><b>${esc(e.check || "")}</b> ${e.verdict === "gray" ? "グレー" : "要確認"}: ${esc(ACH[e.check] || "")}${e.item ? `（${esc(AIL[e.item] || IL[e.item] || e.item)}）` : ""}${tag || ""}</li>`;

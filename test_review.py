@@ -229,6 +229,86 @@ class AdjustedViewTests(ReviewFixture):
         self.assertNotIn("adjustment", by_id[other_cid]["long"])
 
 
+class CrossDeviceExportTests(ReviewFixture):
+    """処分・予約・調整の端末またぎ: DB の状態が export 経由で全端末へ
+    配られることと、処分の取り消し (cleared 墓標) が伝わること。"""
+
+    def _decide(self, eid, disposition="confirmed", sid="uuid-d1", note="材料を確認した"):
+        return T.import_inbox(self.store, {"version": 1, "reeval_queue": [],
+                                           "adjustments": [], "decisions": [
+            {"id": sid, "evaluation_id": eid, "check": "A2", "item": "trl_level",
+             "auditor": "rules/v4.1", "disposition": disposition, "note": note,
+             "decided_at": "2026-11-10T00:00:00+00:00"}]})
+
+    def test_effective_decisions_latest_row_wins(self):
+        cid, eid = self._mk_eval()
+        self._mk_audit(cid, eid)
+        self._decide(eid)
+        eff = self.store.effective_review_decisions()
+        rec = eff[(eid, "A2", "trl_level")]
+        self.assertEqual(rec["disposition"], "confirmed")
+        self.assertEqual(rec["source_id"], "uuid-d1")
+        # 同じ UUID で処分を変えた再送が最新の有効状態になる
+        self._decide(eid, disposition="watch")
+        eff = self.store.effective_review_decisions()
+        self.assertEqual(eff[(eid, "A2", "trl_level")]["disposition"], "watch")
+
+    def test_cleared_tombstone_reverts_to_undisposed(self):
+        cid, eid = self._mk_eval()
+        self._mk_audit(cid, eid)
+        self._decide(eid, disposition="false_positive")
+        self.assertIn((eid, "A2", "trl_level"), self.store.effective_review_decisions())
+        out = self._decide(eid, disposition="cleared")
+        self.assertEqual(out["decisions"], 1)  # 墓標も1件として取り込まれる
+        self.assertNotIn((eid, "A2", "trl_level"), self.store.effective_review_decisions())
+        # 墓標の再送は重複として弾かれる (行は増えない)
+        out = self._decide(eid, disposition="cleared")
+        self.assertEqual(out["decisions_dup"], 1)
+        n = self.store.conn.execute("SELECT COUNT(*) FROM review_decisions").fetchone()[0]
+        self.assertEqual(n, 2)
+
+    def test_export_carries_decisions_on_audit_blocks(self):
+        cid, eid = self._mk_eval()
+        self._mk_audit(cid, eid)
+        other_cid, other_eid = self._mk_eval(title="処分の無い論文")
+        self._mk_audit(other_cid, other_eid)
+        self._decide(eid, disposition="watch", note="次回を見る")
+        data = T.build_site_data(self.store, CFG, datetime(2026, 10, 26, tzinfo=timezone.utc))
+        by_id = {c["id"]: c for c in data["candidates"]}
+        blocks = by_id[cid]["audit"]
+        self.assertEqual(len(blocks), 1)
+        ds = blocks[0]["decisions"]
+        self.assertEqual(len(ds), 1)
+        self.assertEqual((ds[0]["check"], ds[0]["item"]), ("A2", "trl_level"))
+        self.assertEqual(ds[0]["disposition"], "watch")
+        self.assertEqual(ds[0]["note"], "次回を見る")
+        self.assertEqual(ds[0]["source_id"], "uuid-d1")
+        # 処分の無い評価のブロックでは decisions は空の一覧 (常にあるキー)
+        self.assertEqual(by_id[other_cid]["audit"][0]["decisions"], [])
+
+    def test_export_marks_open_reeval_booked(self):
+        cid, eid = self._mk_eval()
+        other_cid, _ = self._mk_eval(title="予約の無い論文")
+        T.import_inbox(self.store, {"version": 1, "decisions": [], "adjustments": [],
+                                    "reeval_queue": [{"id": "uuid-q1", "candidate_id": cid}]})
+        data = T.build_site_data(self.store, CFG, datetime(2026, 10, 26, tzinfo=timezone.utc))
+        by_id = {c["id"]: c for c in data["candidates"]}
+        self.assertTrue(by_id[cid]["reeval_booked"])
+        self.assertNotIn("reeval_booked", by_id[other_cid])
+
+    def test_adjusted_view_carries_source_id(self):
+        # 監査ページが DB 側の調整を種として取り込むため、調整の出所
+        # (source_id) が export の adjustment に同梱されること
+        cid, eid = self._mk_eval(trl_level=9)
+        ev_row = self.store.latest_evaluation(cid, "long")
+        T.import_inbox(self.store, {"version": 1, "decisions": [], "reeval_queue": [],
+                                    "adjustments": [
+            {"id": "uuid-a9", "evaluation_id": eid, "field": "trl_level",
+             "from_value": 9, "to_value": 8, "reason": "根拠の読み替え"}]})
+        view = T.adjusted_view(self.store, CFG, ev_row)
+        self.assertEqual(view["source_id"], "uuid-a9")
+
+
 class ReevalQueueTests(ReviewFixture):
     def test_import_reeval_and_dedup(self):
         cid, eid = self._mk_eval()

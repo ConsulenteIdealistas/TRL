@@ -6,8 +6,11 @@
    取り込み) になるため、このページは記録と「反映用 JSON」の書き出しまでを
    担う。元の評価・監査の記録はここでは一切変更しない (非破壊)。
    取り込まれた調整は詳細ページの通常表示に「調整後の値 (元: ○)」の
-   併記として出る。処分の状態表示はこのページ内では localStorage 側の
-   記録が正で、DB 側の取り込み結果はページへは戻らない (段階B の範囲)。 */
+   併記として出る。処分・予約・調整の DB 側の状態は data.json の export
+   経由で戻ってくる (監査ブロックの decisions、候補の reeval_booked、
+   long.adjustment) ため、起動時にそれを「反映済み」の種として端末内の
+   未反映分と重ね合わせ、どの端末で開いても同じ状態が見えるようにする
+   (DB が正で、端末内の記録は未反映の変更の層)。 */
 const $ = s => document.querySelector(s);
 const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
 const jst = iso => { try { return new Date(iso).toLocaleString("ja-JP", {timeZone: "Asia/Tokyo", hour12: false}); } catch (e) { return iso; } };
@@ -40,6 +43,10 @@ const dtLabelA = e => DTL[e.derived_tier || (e.tier === "watch" ? "look" : e.tie
 
 const RKEY = "trl-review";
 let review = loadReview();
+/* DB 側の状態のうち、この端末が最後に見た「反映済み」の姿 (data.json の
+   export から組み立てる)。起動時の重ね合わせと、反映用 JSON で
+   「未反映分だけを書き出す」ための比較に使う */
+let SERVER = {decisions: {}, reeval: {}, adjustments: {}};
 function loadReview() {
   try {
     const r = JSON.parse(localStorage.getItem(RKEY) || "null");
@@ -64,17 +71,122 @@ const adjDraft = {};  // 調整の下書き (未設定の選択・理由)。永�
    伝わらない。有効な調整として数えるのは to_value が元値と異なるものだけ */
 const activeAdj = eid => { const a = review.adjustments[eid]; return a && a.to_value !== a.from_value ? a : null; };
 
+/* 反映用 JSON は「未反映分だけ」を書き出す。すでに DB にある記録
+   (SERVER と同じ内容) を再送しても取り込み側で重複として弾かれるが、
+   件数表示が膨らんで「まだ反映されていない」と誤解されるため、ここで
+   落とす。処分の取り消しは、反映済みの記録を消す操作なので墓標
+   (disposition: "cleared") として書き出す (取り込み側の最新行として
+   効き、export と tier 導出の両方で未処分に戻る) */
 function buildInbox() {
-  const decisions = Object.values(review.decisions).filter(r => r && r.disposition).map(r => ({
+  const skey = r => `${r.evaluation_id}:${r.check || ""}:${r.item || ""}`;
+  const decisions = Object.values(review.decisions).filter(r => {
+    if (!r) return false;
+    const s = SERVER.decisions[skey(r)];
+    if (!s) return !!r.disposition;               // 端末だけの記録: 処分がある分だけ
+    if (r.id !== s.id) return !!r.disposition;    // 別端末の記録と違う判断 (新しい方)
+    // 同じ記録: 内容が変わっていれば未反映の変更 (取り消しは cleared で送る)
+    return r.disposition !== s.disposition || (r.note || "") !== (s.note || "");
+  }).map(r => ({
     id: r.id, evaluation_id: r.evaluation_id, check: r.check, item: r.item,
-    auditor: r.auditor || "", disposition: r.disposition, note: r.note || "",
+    auditor: r.auditor || "", disposition: r.disposition || "cleared", note: r.note || "",
     decided_at: r.updated_at || ""}));
-  const reeval_queue = Object.values(review.reeval).filter(r => r && r.on).map(r => ({
-    id: r.id, candidate_id: r.candidate_id}));
-  const adjustments = Object.values(review.adjustments).filter(Boolean).map(r => ({
+  // 予約は DB のキューに未完了の行があれば書き出さない (二重投入は
+  // 取り込み側でも弾かれるが、未反映分の件数に混ぜないため)
+  const reeval_queue = Object.values(review.reeval)
+    .filter(r => r && r.on && !SERVER.reeval[r.candidate_id]).map(r => ({
+      id: r.id, candidate_id: r.candidate_id}));
+  const adjustments = Object.values(review.adjustments).filter(r => {
+    if (!r) return false;
+    const s = SERVER.adjustments[r.evaluation_id];
+    if (!s) return true;
+    if (r.id !== s.id) return true;
+    return r.to_value !== s.to_value || (r.reason || "") !== (s.reason || "");
+  }).map(r => ({
     id: r.id, evaluation_id: r.evaluation_id, field: "trl_level",
     from_value: r.from_value, to_value: r.to_value, reason: r.reason || ""}));
   return {version: 1, exported_at: new Date().toISOString(), decisions, reeval_queue, adjustments};
+}
+
+/* data.json の export から DB 側 (反映済み) のレビュー状態を組み立てる。
+   処分は監査ブロックの decisions、予約は候補の reeval_booked、調整は
+   long.adjustment (段階B の adjusted_view、同梱は有効な調整だけ) が運ぶ */
+function serverReviewState() {
+  const s = {decisions: {}, reeval: {}, adjustments: {}};
+  for (const p of (DATA && DATA.candidates) || []) {
+    for (const a of [...(p.audit || []), ...(p.audit_event || [])]) {
+      for (const d of a.decisions || []) {
+        s.decisions[`${a.evaluation_id}:${d.check || ""}:${d.item || ""}`] = {
+          id: d.source_id || "", evaluation_id: a.evaluation_id, check: d.check || "",
+          item: d.item || "", auditor: d.auditor || "", disposition: d.disposition,
+          note: d.note || "", updated_at: d.decided_at || "", origin: "server"};
+      }
+    }
+    if (p.reeval_booked) s.reeval[p.id] = {id: "", candidate_id: p.id, on: true, origin: "server"};
+    const adj = p.long && p.long.adjustment;
+    const eid = (p.audit && p.audit[0] && p.audit[0].evaluation_id) || null;
+    if (adj && eid) s.adjustments[eid] = {
+      id: adj.source_id || "", evaluation_id: eid, field: "trl_level",
+      from_value: adj.from_value, to_value: adj.to_value, reason: adj.reason || "",
+      updated_at: adj.adjusted_at || "", origin: "server"};
+  }
+  return s;
+}
+
+/* 反映済み (サーバ) と端末内の記録の重ね合わせ。処分・調整は記録単位で:
+   同じ id なら内容が違う方 (= 端末側の新しい編集) を、違う id なら決めた
+   時刻が新しい方を採る (同点はサーバ側 = 共有された記録を優先する) */
+function mergeDecisions(server, local) {
+  const out = {...server};
+  for (const [key, l] of Object.entries(local || {})) {
+    if (!l) continue;
+    const s = server[key];
+    if (!s) {
+      // 端末だけの記録はそのまま残す。ただし「サーバ由来で取り消し済み」
+      // の残骸 (墓標が取り込まれてサーバ側から消えた記録) は役目を終えた
+      if (!(l.origin === "server" && !l.disposition)) out[key] = l;
+      continue;
+    }
+    if (l.id && l.id === s.id) {
+      out[key] = (l.disposition === s.disposition && (l.note || "") === (s.note || "")) ? s : l;
+    } else {
+      out[key] = String(l.updated_at || "") > String(s.updated_at || "") ? l : s;
+    }
+  }
+  return out;
+}
+function mergeAdjustments(server, local) {
+  const out = {...server};
+  for (const [key, l] of Object.entries(local || {})) {
+    if (!l) continue;
+    const s = server[key];
+    if (!s) { out[key] = l; continue; }
+    if (l.id && l.id === s.id) {
+      out[key] = (l.to_value === s.to_value && (l.reason || "") === (s.reason || "")) ? s : l;
+    } else {
+      out[key] = String(l.updated_at || "") > String(s.updated_at || "") ? l : s;
+    }
+  }
+  return out;
+}
+function mergeReeval(server, local) {
+  const out = {...server};
+  for (const [cid, l] of Object.entries(local || {})) {
+    if (!l) continue;
+    if (!server[cid]) { out[cid] = l; continue; }
+    // サーバに予約がある場合、端末側の新しい記録があればそちらを採る
+    // (予約済み同士なら表示は同じ)。端末で解除した記録 (on: false) は
+    // この端末の表示だけに効く: キューの行は追記専用で、解除は DB へは
+    // 伝わらない (処分の取り消しと違い、予約には墓標が無い)
+    if (l.origin !== "server") out[cid] = l;
+  }
+  return out;
+}
+function mergeServerState() {
+  SERVER = serverReviewState();
+  review = {decisions: mergeDecisions(SERVER.decisions, review.decisions),
+            reeval: mergeReeval(SERVER.reeval, review.reeval),
+            adjustments: mergeAdjustments(SERVER.adjustments, review.adjustments)};
+  saveReview();
 }
 
 async function copyText(t) {
@@ -523,10 +635,17 @@ $("#copyBtn").addEventListener("click", async () => {
   const inbox = buildInbox();
   const n = inbox.decisions.length + inbox.reeval_queue.length + inbox.adjustments.length;
   const msg = $("#copyMsg");
-  if (!n) { msg.textContent = "まだ記録がありません（処分・予約・調整を入れると書き出せます）。"; return; }
+  if (!n) {
+    const anyServer = Object.keys(SERVER.decisions).length
+      || Object.keys(SERVER.reeval).length || Object.keys(SERVER.adjustments).length;
+    msg.textContent = anyServer
+      ? "書き出す新しい記録はありません（表示中の処分・予約・調整はすべて DB に反映済みです）。"
+      : "まだ記録がありません（処分・予約・調整を入れると書き出せます）。";
+    return;
+  }
   const done = await copyText(JSON.stringify(inbox, null, 2));
   msg.textContent = done
-    ? `コピーしました（処分 ${inbox.decisions.length} 件・予約 ${inbox.reeval_queue.length} 件・調整 ${inbox.adjustments.length} 件）。review_inbox.json に貼ってください。`
+    ? `コピーしました（未反映分: 処分 ${inbox.decisions.length} 件・予約 ${inbox.reeval_queue.length} 件・調整 ${inbox.adjustments.length} 件）。review_inbox.json に貼ってください。`
     : "コピーできませんでした";
 });
 
@@ -552,6 +671,9 @@ $("#copyBtn").addEventListener("click", async () => {
       if (c && c.id && c.name) CHK[c.id] = c.name;
     }
   }
+  // DB 側 (反映済み) の状態を種として端末内の記録と重ね合わせる。
+  // 処分・予約・調整が端末をまたいで同じに見えるのはこの重ね合わせによる
+  mergeServerState();
   // 詳細ページからの遷移: ?k=event でイベント側、?k=all で両方を開く。
   // ?c= の候補が現在の種別に無ければ、監査がある側へ切り替える
   const q = new URLSearchParams(location.search);

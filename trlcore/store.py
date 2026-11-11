@@ -1163,6 +1163,34 @@ class Store:
             "ORDER BY id DESC LIMIT 1", (evaluation_id,)).fetchone()
         return dict(row) if row else None
 
+    def effective_review_decisions(self):
+        """(evaluation_id, check_name, item) ごとの有効な処分の最新状態。
+
+        規則は tier 導出 (trlcore/tiers) と同じ「そのキーで id 最大の行が
+        有効」。最新の行が取り消し (disposition == "cleared") のキーには
+        処分が無いものとして返さない。戻り値は {(評価ID, チェック, 項目):
+        {source_id, auditor, disposition, note, decided_at}}。
+        export (trlcore/site) が DB の処分状態を data.json 経由で全端末へ
+        配るために使う (端末またぎ: どの端末で開いても同じ処分が見える)。"""
+        out = {}
+        for r in self.conn.execute(
+                "SELECT evaluation_id, check_name, item, auditor, disposition, "
+                "note, decided_at, source_id FROM review_decisions ORDER BY id"):
+            d = dict(r)
+            key = (d["evaluation_id"], d["check_name"] or "", d["item"] or "")
+            if d["disposition"] == "cleared":
+                out.pop(key, None)
+            else:
+                out[key] = {"source_id": d["source_id"], "auditor": d["auditor"] or "",
+                            "disposition": d["disposition"], "note": d["note"] or "",
+                            "decided_at": d["decided_at"] or ""}
+        return out
+
+    def open_reeval_candidate_ids(self):
+        """未完了の再評価予約がある候補 ID の集合 (export の表示用)。"""
+        return {r[0] for r in self.conn.execute(
+            "SELECT candidate_id FROM reeval_queue WHERE done_at IS NULL")}
+
     def enqueue_reeval(self, source_id, candidate_id, reason):
         """再評価予約をキューに入れる。同じ source_id の取り込み済み、または
         その候補に未完了の予約が既にある場合は何もせず False。"""

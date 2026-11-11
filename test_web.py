@@ -265,6 +265,22 @@ class ExportTests(StoreFixture):
         self.assertIn("処分済み・過去の監査を見る", app)
         self.assertIn('localStorage.getItem("trl-review")', app)
 
+    def test_review_state_travels_across_devices(self):
+        # 処分・予約・調整の端末またぎ: DB に取り込まれた状態は data.json
+        # 経由で戻り、監査ページは起動時にそれを種として端末内の未反映分と
+        # 重ね合わせる。詳細ページは localStorage に無い分を監査ブロック
+        # 同梱の decisions で補う。処分の取り消しは cleared 墓標で書き出す
+        web = T.ROOT / "web"
+        audit = (web / "audit.js").read_text(encoding="utf-8")
+        app = (web / "app.js").read_text(encoding="utf-8")
+        self.assertIn("function serverReviewState", audit)
+        self.assertIn("function mergeServerState", audit)
+        self.assertIn("mergeServerState();", audit)
+        self.assertIn("a.decisions", audit)
+        self.assertIn("p.reeval_booked", audit)
+        self.assertIn('"cleared"', audit)
+        self.assertIn("a.decisions", app)
+
     def test_watch_page_language_toggle(self):
         # ウォッチページにも原文/日本語の切替を置く。主ページ・詳細と
         # 同じ localStorage キー (trl-lang) を共有し、既定は日本語訳。

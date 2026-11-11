@@ -24,11 +24,13 @@ SimFin のカバー圏外 (US / DE / CA 以外) の企業について、四半�
   その日の枠を超えるため、1実行の上限も「その日の残枠で完走できる
   社数」= (25 − 当日消費済み) // 3 とし、最大で 8社になる。実行は
   週4回のため、週あたり最大でも 8社×4回分がこの経路で進む
-- 当日消費済みの数え方は既存の記録 (run_sources) に寄せる: 当日に
-  記録された自ソースの試行行 × 3リクエスト。失敗した試行も枠は
-  消費しているため数に含める (枠側に倒した保守的な数え方)。
-  新しい永続化は作らない (pipeline の _collect_alphavantage が
-  store.source_attempts_on で読む)
+- 当日消費済みは実際に発行したリクエスト数で数える: _get がリクエストを
+  発行するたびに数え、fetch_alphavantage の呼び出し単位の消費を
+  last_fetch_requests で読み取れるようにする。pipeline の
+  _collect_alphavantage がそれを run の counts (alphavantage_requests)
+  に残し、当日分は各 run の記録の合算で読む (store の
+  alphavantage_used_requests_on)。失敗した試行も、発行した分だけ枠は
+  消費しているため数に含める。新しいテーブルは作らない
 
 統合 (対象選定・休止・記録・枠の消化) は pipeline の
 _collect_alphavantage が担う。休止の規則は ROIC / SimFin と同じ:
@@ -61,6 +63,20 @@ MAX_COMPANIES_PER_DAY = DAILY_REQUEST_LIMIT // REQUESTS_PER_COMPANY
 MIN_INTERVAL_SEC = 12.5
 _rate_lock = threading.Lock()
 _last_call = [0.0]
+
+# 発行したリクエスト数の計数。当日枠 (25回/日) の消費を「試行行数 × 3」の
+# 近似ではなく実数で数えるために使う: _get が実際に HTTP リクエストを
+# 発行するたびに _requests_made を増やし、fetch_alphavantage が呼び出し
+# 単位の消費を _last_fetch_requests に残す
+_requests_made = [0]
+_last_fetch_requests = [0]
+
+
+def last_fetch_requests():
+    """直近の fetch_alphavantage 呼び出しが発行したリクエスト数。
+    失敗で終わった呼び出しも、発行した分は数える (キー未設定で
+    リクエスト自体を発行しなかった場合は 0)。"""
+    return _last_fetch_requests[0]
 
 
 def _throttle(sleep=time.sleep, now=time.monotonic):
@@ -133,6 +149,7 @@ def _get(function, symbol, http):
     # 25回/日の枠を消費するため、再試行はその日の予算を食うだけ。
     # 失敗は収集側で失敗として記録され、休止に入らないため次回実行で
     # 再試行される (ROIC と同じ判断)
+    _requests_made[0] += 1  # ここから先は実際にリクエストが発行される
     raw = fetch(API_BASE,
                 params={"function": function, "symbol": symbol,
                         "apikey": key, "datatype": "json"},
@@ -262,7 +279,17 @@ def fetch_alphavantage(symbol, max_results, lookback_days, as_of, http=None):
     両方から消えるため、呼び出し側で失敗として記録させる)。枠超過
     (RateLimitError) と通信失敗も同じく例外のまま上げる。損益以外の表
     だけが無い場合は、ある表だけで材料にする (ROIC と同じ)。
-    """
+
+    この呼び出しが発行したリクエスト数は last_fetch_requests() で
+    読み取れる (例外で終わった場合も、発行した分は残る)。"""
+    start = _requests_made[0]
+    try:
+        return _fetch_alphavantage(symbol, max_results, lookback_days, as_of, http=http)
+    finally:
+        _last_fetch_requests[0] = _requests_made[0] - start
+
+
+def _fetch_alphavantage(symbol, max_results, lookback_days, as_of, http=None):
     q = str(symbol or "").strip()
     if not q:
         return []

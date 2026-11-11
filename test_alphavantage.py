@@ -179,6 +179,43 @@ class AlphaVantageFetcherTests(unittest.TestCase):
         finally:
             self._env.start()
 
+    def test_last_fetch_requests_counts_issued_requests(self):
+        # 当日枠の消費計数は「試行 × 3」ではなく実際に発行したリクエスト数
+        # 成功は 3表 = 3回
+        av.fetch_alphavantage("ONT.LON", 5, 400, AS_OF, http=make_http())
+        self.assertEqual(av.last_fetch_requests(), 3)
+        # 損益表だけが無い場合は、ある表だけで材料にするが発行は 3回
+        av.fetch_alphavantage("ONT.LON", 5, 400, AS_OF,
+                              http=make_http(bs_data={"Error Message": "Invalid API call."}))
+        self.assertEqual(av.last_fetch_requests(), 3)
+        # シンボル自体が無い場合は損益の 1回で打ち切る (×3 と数えない)
+        with self.assertRaises(Exception):
+            av.fetch_alphavantage("NOSUCH.LON", 5, 400, AS_OF,
+                                  http=make_http(is_data={"Error Message": "Invalid API call."}))
+        self.assertEqual(av.last_fetch_requests(), 1)
+        # 枠超過の応答も、発行した 1回分は消費として数える
+        with self.assertRaises(av.RateLimitError):
+            av.fetch_alphavantage("ONT.LON", 5, 400, AS_OF,
+                                  http=make_http(is_data={"Note": "rate limit"}))
+        self.assertEqual(av.last_fetch_requests(), 1)
+        # 通信失敗も発行した分だけ数える
+        def http500(url, params=None, headers=None, retries=None):
+            raise HttpError("HTTP 500", 500, None)
+        with self.assertRaises(HttpError):
+            av.fetch_alphavantage("ONT.LON", 5, 400, AS_OF, http=http500)
+        self.assertEqual(av.last_fetch_requests(), 1)
+
+    def test_last_fetch_requests_zero_when_no_request_issued(self):
+        # キー未設定はリクエスト自体を発行しないため 0
+        self._env.stop()
+        try:
+            os.environ.pop("ALPHA_VANTAGE_API_KEY", None)
+            with self.assertRaises(RuntimeError):
+                av.fetch_alphavantage("ONT.LON", 5, 400, AS_OF, http=make_http())
+            self.assertEqual(av.last_fetch_requests(), 0)
+        finally:
+            self._env.start()
+
     def test_quota_arithmetic(self):
         # 枠の定数は提供元の 25回/日 から導出される (恣意的な数字を置かない)
         self.assertEqual(av.DAILY_REQUEST_LIMIT, 25)
@@ -312,6 +349,26 @@ class AlphaVantageCollectTests(unittest.TestCase):
         self.assertEqual(self.counts["alphavantage_allowed"], 3)
         self.assertEqual(len(self.calls), 3)
         self.assertEqual(self.counts["alphavantage_deferred"], 2)
+
+    def test_same_day_prior_requests_counted_from_run_counts(self):
+        # 先行 run が counts に実リクエスト数 (7回) を残していれば、試行行数
+        # × 3 ではなく実数で数える (同じ run に試行行が 5行 = 15回相当
+        # あっても、記録された実数が優先される)
+        self.store.conn.execute(
+            "INSERT INTO runs(run_id, started_at, counts_json) VALUES(?, ?, ?)",
+            ("today-run", "2026-10-20T01:00:00+00:00",
+             json.dumps({"alphavantage_requests": 7})))
+        for i in range(5):
+            self.store.conn.execute(
+                "INSERT INTO run_sources VALUES('today-run', 'alphavantage', ?, "
+                "1, 0, 0, 0, 1, NULL, 0.1)", (f"other{i}-alphavantage",))
+        self.store.conn.commit()
+        ents = [{"id": f"z{i:02d}", "name": f"Z{i}", "tier": "core",
+                 "market": "GB", "ticker": f"Z{i}"} for i in range(5)]
+        self.run_collect(entities=ents)
+        self.assertEqual(self.counts["alphavantage_used_today"], 7)
+        self.assertEqual(self.counts["alphavantage_allowed"], 6)  # (25 − 7) // 3
+        self.assertEqual(len(self.calls), 5)
 
     def test_recent_success_rests(self):
         seed_attempts(self.store, "recent-run", "2026-10-15T00:00:00+00:00",

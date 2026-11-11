@@ -1435,18 +1435,33 @@ class Store:
             out.setdefault((source, q), (t, f))
         return out
 
-    def source_attempts_on(self, source, day):
-        """指定ソースについて、day (YYYY-MM-DD、runs.started_at の日付部分
-        = UTC) に記録された試行行数 (run_sources の行数) を返す。
-        Alpha Vantage の日次枠 (25回/日) の当日消費済みを数えるために使う:
-        1行 = 1社分の試行で、呼び出し側が社あたりのリクエスト数 (3) を
-        掛ける。失敗した試行も枠は消費しているため、ok の成否は問わない。"""
-        row = self.conn.execute(
-            "SELECT COUNT(*) FROM run_sources rs "
-            "JOIN runs r ON r.run_id = rs.run_id "
-            "WHERE rs.source = ? AND substr(r.started_at, 1, 10) = ?",
-            (source, str(day))).fetchone()
-        return row[0] if row else 0
+    def alphavantage_used_requests_on(self, day, requests_per_company):
+        """day (YYYY-MM-DD、runs.started_at の日付部分 = UTC) に始まった
+        run が Alpha Vantage に発行したリクエスト数の合計。当日枠
+        (25回/日) の当日消費済みを実数で数えるために使う。
+
+        各 run の counts_json の alphavantage_requests (pipeline が
+        実リクエスト数で記録する) を合算する。その記録が無い run
+        (この計数を始める前に実行された run) は、run_sources の試行
+        行数に 1社分のリクエスト数 (requests_per_company) を掛けて
+        読み替える (移行期の読み替えで、当日中に旧記録と新記録が
+        混ざっても消費を落とさないため)。"""
+        total = 0
+        rows = self.conn.execute(
+            "SELECT r.counts_json, "
+            "(SELECT COUNT(*) FROM run_sources rs "
+            " WHERE rs.run_id = r.run_id AND rs.source = 'alphavantage') "
+            "FROM runs r WHERE substr(r.started_at, 1, 10) = ?",
+            (str(day),)).fetchall()
+        for counts_json, attempts in rows:
+            v = None
+            try:
+                v = (json.loads(counts_json) or {}).get("alphavantage_requests")
+            except (TypeError, ValueError):
+                v = None
+            total += int(v) if isinstance(v, (int, float)) \
+                else int(attempts) * requests_per_company
+        return total
 
     def latest_financial_periods(self, source):
         """企業ごとの最新の財務レコードの期末日 (published) を返す。"""

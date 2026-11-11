@@ -23,7 +23,7 @@ from .sources.alphavantage import (DAILY_REQUEST_LIMIT as AV_DAILY_REQUEST_LIMIT
                                    REQUESTS_PER_COMPANY as AV_REQUESTS_PER_COMPANY,
                                    RateLimitError as AvRateLimitError,
                                    alphavantage_enabled, alphavantage_symbol,
-                                   fetch_alphavantage)
+                                   fetch_alphavantage, last_fetch_requests)
 from .sources.esef import esef_enabled, fetch_esef
 from .sources.swiss import SWISS_COMPANIES, fetch_eqs, fetch_gnw, swiss_enabled
 from .translate import crossed_thresholds, translate_display_set, translate_watch_queue, usage_totals
@@ -640,9 +640,10 @@ def _collect_alphavantage(store, cfg, run_id, as_of, counts, log, budget, collec
     - 対象は SimFin のカバー圏外 (US/DE/CA 以外) に限る。圏内はバルクで
       一括取得できる SimFin が担い、貴重な 25回/日をそちらに使わない
     - 1実行で処理する社数は、その日の残枠 (25回/日 − 当日消費済み) で
-      完走できる社数まで。当日消費済みは run_sources の当日の試行行数
-      × 3リクエスト (1社分) で数える (store.source_attempts_on)。
-      残りは次回へ回す (deferred として記録する)
+      完走できる社数まで。当日消費済みは実際に発行したリクエスト数で
+      数える (store.alphavantage_used_requests_on: 各 run の counts に
+      残した alphavantage_requests の合算)。残りは次回へ回す
+      (deferred として記録する)
     枠超過の応答 (RateLimitError) が返ったら、その社を失敗として記録
     して当日のキューを止める (残りは次回)。通常の失敗はその社だけを
     失敗として記録し、次へ進む (ROIC と同じ)。いずれも休止には入ら
@@ -680,9 +681,11 @@ def _collect_alphavantage(store, cfg, run_id, as_of, counts, log, budget, collec
         log(f"[collect] alphavantage: SimFin 圏内または接尾辞変換できないため "
             f"{n_unmapped} 社を対象外にしました")
     # その日の残枠。当日すでに他実行 (手動実行の重なり等) で消費した分を
-    # 差し引くため、この実行の上限は日次上限 (8社) 以下に下がりうる
-    used_today = store.source_attempts_on("alphavantage", as_of.isoformat()) \
-        * AV_REQUESTS_PER_COMPANY
+    # 差し引くため、この実行の上限は日次上限 (8社) 以下に下がりうる。
+    # 消費は試行行数 × 3 の近似ではなく実リクエスト数で数える (途中で
+    # 失敗した試行は発行した分だけしか枠を使っていないため)
+    used_today = store.alphavantage_used_requests_on(as_of.isoformat(),
+                                                     AV_REQUESTS_PER_COMPANY)
     remaining = AV_DAILY_REQUEST_LIMIT - used_today
     allowed = min(AV_MAX_COMPANIES_PER_DAY, max(0, remaining) // AV_REQUESTS_PER_COMPANY)
     counts["alphavantage_used_today"] = used_today
@@ -690,6 +693,7 @@ def _collect_alphavantage(store, cfg, run_id, as_of, counts, log, budget, collec
     now = datetime.now(timezone.utc).isoformat(timespec="seconds")
     chash = cfg.get("config_hash")
     done = 0
+    requests_made = 0
     for _prio, e, symbol in targets:
         if done >= allowed or (budget and time.monotonic() - collect_t0 > budget):
             counts["alphavantage_deferred"] = len(targets) - done
@@ -708,6 +712,11 @@ def _collect_alphavantage(store, cfg, run_id, as_of, counts, log, budget, collec
         except Exception as ex:
             err = redact(f"{type(ex).__name__}: {ex}")[:300]
             log(f"::warning::source alphavantage / {qname} failed: {err}")
+        # 発行したリクエスト数を実数で積む (当日消費の台帳は counts 経由で
+        # alphavantage_used_requests_on が読む)。差し替えられた fetcher
+        # (テスト用) では実数が読み取れないため数えない
+        if fetcher is fetch_alphavantage:
+            requests_made += last_fetch_requests()
         fetched = len(raws) if err is None else 0
         new = dups = invalid = 0
         if err is None:
@@ -744,6 +753,9 @@ def _collect_alphavantage(store, cfg, run_id, as_of, counts, log, budget, collec
                 counts["alphavantage_deferred"] = rest
                 log(f"[collect] alphavantage: 枠超過のため残り {rest} 社を次回へ回します")
             break
+    # この実行が発行したリクエスト数 (当日消費の台帳。当日分の合算は
+    # store.alphavantage_used_requests_on が counts_json から読む)
+    counts["alphavantage_requests"] = requests_made
 
 
 def _collect_esef(store, cfg, run_id, as_of, counts, log, budget, collect_t0, fetcher):
@@ -1563,16 +1575,21 @@ def run_pipeline(store, cfg, llm, *, as_of, sources=("pubmed", "arxiv"), kinds=(
             log(f"[eval] 再評価キューの予約 {marked} 件を消化済みにしました")
     # 翻訳は専用 API (Azure → DeepL → Google) で行い、評価用 LLM には任せない
     usage_before = usage_totals(store, today)
-    counts["translated"], counts["translation_chars"] = translate_display_set(store, cfg, today, log)
+    counts["translated"], counts["translation_chars"], failed_display = \
+        translate_display_set(store, cfg, today, log)
     # ウォッチ・参考の一次情報 (論文・治験・開示、ニュースは訳さない) も、
     # Azure の月枠から導く実行予算の内側で訳す。この実行で表示セットが
     # 使った分を spent_before として渡し、二重に枠を数えない。使用量の
     # 台帳は表示セットと合算する
-    counts["translated_watch"], watch_stats = translate_watch_queue(
+    counts["translated_watch"], watch_stats, failed_watch = translate_watch_queue(
         store, cfg, today, log,
         spent_before=sum(counts["translation_chars"].values()))
     for _name, _chars in watch_stats.items():
         counts["translation_chars"][_name] = counts["translation_chars"].get(_name, 0) + _chars
+    # 翻訳の失敗は原文表示に静かに劣化するだけで実害は小さいが、件数を
+    # counts に残して観測できるようにする (ログ止まりにしない)
+    if failed_display + failed_watch:
+        counts["translation_failed"] = failed_display + failed_watch
     # 無料枠のしきい値を跨いだら記録とログに残す (azure/google は月次累計、deepl は通算)
     alerts = []
     for name, chars in sorted(counts["translation_chars"].items()):

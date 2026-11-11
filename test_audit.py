@@ -167,7 +167,7 @@ class AuditFix2Tests(unittest.TestCase):
             qs = json.loads(data)["q"]
             return json.dumps({"data": {"translations": [{"translatedText": "新訳:" + q} for q in qs]}})
         with um.patch.dict(os.environ, {"GOOGLE_TRANSLATE_API_KEY": "gk"}, clear=False):
-            n, _stats = T.translate_display_set(store, CFG, AS_OF, log=lambda *_: None, http=g_http)
+            n, _stats, _failed = T.translate_display_set(store, CFG, AS_OF, log=lambda *_: None, http=g_http)
         self.assertEqual(n, 1)
         c = store.get_candidate(cid)
         self.assertTrue(c["title_ja"].startswith("新訳:"))
@@ -192,7 +192,7 @@ class AuditFix2Tests(unittest.TestCase):
             sent.extend(qs)
             return json.dumps({"data": {"translations": [{"translatedText": "訳:" + q} for q in qs]}})
         with um.patch.dict(os.environ, {"GOOGLE_TRANSLATE_API_KEY": "gk"}, clear=False):
-            n, stats = T.translate_display_set(store, CFG, AS_OF, log=lambda *_: None, http=g_http)
+            n, stats, _failed = T.translate_display_set(store, CFG, AS_OF, log=lambda *_: None, http=g_http)
         self.assertEqual(n, 1)
         self.assertEqual(sent, [rec["abstract"]])
         self.assertEqual(stats, {"google": len(rec["abstract"])})

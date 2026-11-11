@@ -3,6 +3,8 @@
 // プール材料を、企業単位・一次情報優先で読むための表示専用ページ。
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
+// リンク先は http(s) のみ許可する (主ページ・詳細ページの safeUrl と同じ扱い)
+const safeUrl = u => /^https?:\/\//i.test(String(u || "")) ? String(u) : "#";
 const ML = {JP: "日本", US: "米国", GB: "英国", CH: "スイス", DE: "ドイツ", DK: "デンマーク", SE: "スウェーデン", IT: "イタリア", CA: "カナダ", AU: "オーストラリア", ES: "スペイン", FR: "フランス", NL: "オランダ", FI: "フィンランド", NO: "ノルウェー", BE: "ベルギー", IN: "インド", SG: "シンガポール", NZ: "ニュージーランド", PL: "ポーランド", AT: "オーストリア", TW: "台湾", HK: "香港", IE: "アイルランド", PT: "ポルトガル", CZ: "チェコ", GR: "ギリシャ"};
 const CL = {space: "宇宙", bio: "バイオ", semiconductor: "半導体", ai: "AI", robotics: "ロボティクス", energy: "エネルギー・蓄電池", quantum: "量子技術", defense: "防衛"};
 const STG = {rd: "研究開発型", demo: "実証型", production: "量産型", commercial: "商業化型"};
@@ -72,7 +74,7 @@ function matHtml(c, m) {
   const sub = LANG === "ja" ? m.title : (m.title_ja || "");
   return `<article class="mat">
     <div class="mrow"><span class="${esc(SRC_CLASS[m.source] || "")}">${esc(srcName(m.source))}</span><span>${esc(m.published || "日付不明")}</span>${m.strength === "weak" ? "<span>・弱</span>" : ""}</div>
-    <h4 class="mt">${m.url ? `<a href="${esc(m.url)}" target="_blank" rel="noopener">${esc(dispT(m))}</a>` : esc(dispT(m))}</h4>
+    <h4 class="mt">${m.url ? `<a href="${esc(safeUrl(m.url))}" target="_blank" rel="noopener">${esc(dispT(m))}</a>` : esc(dispT(m))}</h4>
     ${sub && sub !== dispT(m) ? `<p class="mja">${esc(sub)}</p>` : ""}
     ${m.summary ? `<p class="msum"><strong>要点（抄録から抽出）</strong><br>${esc(m.summary)}</p>` : ""}
     ${abs}

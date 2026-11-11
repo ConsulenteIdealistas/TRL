@@ -186,10 +186,13 @@ def _wants(c):
 def _run_batches(store, todo, chain, log):
     """(cid, 候補, want_title, want_abs) の並びをバッチ翻訳して保存する。
 
-    -> (訳した件数, 段ごとの翻訳文字数)。失敗したバッチは原文表示に落ちる
-    だけで、残りは続ける。"""
+    -> (訳した件数, 段ごとの翻訳文字数, 失敗した件数)。失敗したバッチは
+    原文表示に落ちるだけで残りは続けるが、全経路で訳せなかった候補の
+    件数は呼び出し側に返し、実行レポート (counts) に残す (Actions の
+    ログ止まりにして観測から消さないため)。"""
     stats = {}
     done = 0
+    failed = 0
     for s in range(0, len(todo), BATCH):
         chunk = todo[s:s + BATCH]
         # 必要な側だけ送る (既訳・和文の側まで送ると API 枠と使用量カウントを無駄に消費する)
@@ -209,6 +212,7 @@ def _run_batches(store, todo, chain, log):
                 break
             got = {}
         if provider is None:
+            failed += len(chunk)
             continue
         sent = sum(len(x) for pair in items for x in pair if x)
         stats[provider] = stats.get(provider, 0) + sent
@@ -220,18 +224,18 @@ def _run_batches(store, todo, chain, log):
                                   title_by=provider if want_title else None,
                                   abstract_by=provider if want_abs else None)
             done += 1
-    return done, stats
+    return done, stats, failed
 
 
 def translate_display_set(store, cfg, today, log=print, http=http_fetch):
     """表示対象のうち未訳のものを訳して保存する。
 
-    -> (訳した件数, 段ごとの翻訳文字数 {"azure": 字数, ...})。
+    -> (訳した件数, 段ごとの翻訳文字数 {"azure": 字数, ...}, 失敗した件数)。
     文字数は実際に送信して訳し終えた原文の字数 (課金・枠消費の単位)。
     """
     chain = _backends(http)
     if not chain:
-        return 0, {}
+        return 0, {}, 0
     todo = []
     for cid in sorted(display_ids(store, cfg, today)):
         c = store.get_candidate(cid)
@@ -242,10 +246,12 @@ def translate_display_set(store, cfg, today, log=print, http=http_fetch):
             todo.append((cid, c, want_title, want_abs))
         if len(todo) >= MAX_PER_RUN:
             break
-    done, stats = _run_batches(store, todo, chain, log)
+    done, stats, failed = _run_batches(store, todo, chain, log)
     if done:
         log(f"[translate] 日本語訳を {done} 件作成")
-    return done, stats
+    if failed:
+        log(f"[translate] 翻訳に失敗した候補が {failed} 件あります (原文表示のまま、次回実行で再試行)")
+    return done, stats, failed
 
 
 # --- ウォッチ・参考の一次情報の翻訳キュー ------------------------------------
@@ -406,13 +412,13 @@ def watch_run_budget(store, today, spent_before=0):
 def translate_watch_queue(store, cfg, today, log=print, http=http_fetch, spent_before=0):
     """ウォッチ・参考 (と残りの core) の一次情報の未訳分を予算内で訳す。
 
-    -> (訳した件数, 段ごとの翻訳文字数)。予算は watch_run_budget の導出
-    (Azure の月枠 − 当月の使用済み) ÷ 当月の残り実行回数 × 安全率。表示セットの
-    枠を食い潰さないよう、spent_before にこの実行の表示セット分を
+    -> (訳した件数, 段ごとの翻訳文字数, 失敗した件数)。予算は watch_run_budget
+    の導出 (Azure の月枠 − 当月の使用済み) ÷ 当月の残り実行回数 × 安全率。
+    表示セットの枠を食い潰さないよう、spent_before にこの実行の表示セット分を
     受け取る。"""
     chain = _backends(http, exclude={"deepl"})
     if not chain:
-        return 0, {}
+        return 0, {}, 0
     budget = watch_run_budget(store, today, spent_before)
     todo, spent = [], 0
     for item in _watch_todo(store, cfg, today):
@@ -421,8 +427,10 @@ def translate_watch_queue(store, cfg, today, log=print, http=http_fetch, spent_b
         spent += item[4]
         todo.append(item[:4])
     if not todo:
-        return 0, {}
-    done, stats = _run_batches(store, todo, chain, log)
+        return 0, {}, 0
+    done, stats, failed = _run_batches(store, todo, chain, log)
     if done:
         log(f"[translate] ウォッチ・参考の一次情報の訳を {done} 件作成")
-    return done, stats
+    if failed:
+        log(f"[translate] ウォッチ・参考の翻訳に失敗した候補が {failed} 件あります (原文表示のまま、次回実行で再試行)")
+    return done, stats, failed

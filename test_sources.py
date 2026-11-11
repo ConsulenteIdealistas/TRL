@@ -181,15 +181,51 @@ class NewSourceParseTests(unittest.TestCase):
             qs = json.loads(data)["q"]
             return json.dumps({"data": {"translations": [{"translatedText": "訳:" + q} for q in qs]}})
         with um.patch.dict(os.environ, {"GOOGLE_TRANSLATE_API_KEY": "gk"}, clear=False):
-            n, stats = T.translate_display_set(store, CFG, AS_OF, log=lambda *_: None, http=g_http)
+            n, stats, failed = T.translate_display_set(store, CFG, AS_OF, log=lambda *_: None, http=g_http)
             self.assertEqual(n, 1)
+            self.assertEqual(failed, 0)
             # 訳した文字数は、送信した原文 (title + abstract) の字数を段ごとに数える
             self.assertEqual(stats, {"google": len(rec["title"]) + len(rec["abstract"])})
             c = store.get_candidate(cid)
             self.assertTrue(c["title_ja"].startswith("訳:"))
             self.assertEqual(json.loads(c["translation_src"]), {"title": "google", "abstract": "google"})
             # 2回目は未訳が無いので 0 件・0 字
-            self.assertEqual(T.translate_display_set(store, CFG, AS_OF, log=lambda *_: None, http=g_http), (0, {}))
+            self.assertEqual(T.translate_display_set(store, CFG, AS_OF, log=lambda *_: None, http=g_http), (0, {}, 0))
+        store.close()
+        tmp.cleanup()
+
+    def test_translate_failures_are_counted(self):
+        # 全経路で訳せなかった候補は、件数として呼び出し側に返る (pipeline が
+        # counts の translation_failed に残す)。失敗したバッチがあっても
+        # 残りのバッチは続け、失敗分は原文表示のまま残る
+        import os
+        from unittest import mock as um
+        tmp = tempfile.TemporaryDirectory()
+        store = T.Store(Path(tmp.name) / "d.sqlite")
+        cids = []
+        for i in range(6):  # BATCH=5 を超えて2バッチに分ける
+            rec, _ = T.normalize(raw(source="pubmed", sid=f"F{i}", title=f"Failure Paper {i}"), T.now_iso())
+            cid, _ = store.upsert_candidate(rec, "rX")
+            store.conn.execute(
+                "INSERT INTO evaluations(run_id, candidate_id, kind, status) VALUES('rX', ?, 'long', 'ok')", (cid,))
+            cids.append(cid)
+        store.conn.commit()
+        calls = []
+
+        def flaky_http(url, params=None, headers=None, data=None, **kw):
+            calls.append(url)
+            if len(calls) > 1:
+                raise RuntimeError("google down")
+            qs = json.loads(data)["q"]
+            return json.dumps({"data": {"translations": [{"translatedText": "訳:" + q} for q in qs]}})
+        env = {"GOOGLE_TRANSLATE_API_KEY": "gk", "AZURE_TRANSLATOR_KEY": "", "DEEPL_API_KEY": ""}
+        with um.patch.dict(os.environ, env, clear=False):
+            n, stats, failed = T.translate_display_set(store, CFG, AS_OF, log=lambda *_: None, http=flaky_http)
+        self.assertEqual(n, 5)       # 1バッチ目は訳せる
+        self.assertEqual(failed, 1)  # 2バッチ目の1件が失敗として数えられる
+        self.assertEqual(set(stats), {"google"})
+        untranslated = [cid for cid in cids if not store.get_candidate(cid).get("title_ja")]
+        self.assertEqual(len(untranslated), 1)
         store.close()
         tmp.cleanup()
 
@@ -225,8 +261,9 @@ class NewSourceParseTests(unittest.TestCase):
             return json.dumps({"data": {"translations": [{"translatedText": "訳:" + q} for q in qs]}})
         env = {"GOOGLE_TRANSLATE_API_KEY": "gk", "DEEPL_API_KEY": "dk:fx"}
         with um.patch.dict(os.environ, env, clear=False):
-            n, stats = T.translate_watch_queue(store, cfg, AS_OF, log=lambda *_: None, http=g_http)
+            n, stats, failed = T.translate_watch_queue(store, cfg, AS_OF, log=lambda *_: None, http=g_http)
             self.assertEqual(n, 5)  # 論文3件 + 開示2件 (ニュースは訳さない)
+            self.assertEqual(failed, 0)
             want = sum(len(made[k][1]["title"]) + len(made[k][1]["abstract"]) for k in ("w1", "w2", "r1", "y1", "e1"))
             self.assertEqual(stats, {"google": want})  # DeepL 温存枠は使わない
             self.assertTrue(all("translation.googleapis.com" in u for u in urls))
@@ -234,13 +271,13 @@ class NewSourceParseTests(unittest.TestCase):
             self.assertEqual(json.loads(store.get_candidate(made["w1"][0])["translation_src"]),
                              {"title": "google", "abstract": "google"})
             # 2回目は未訳が無いので 0 件
-            self.assertEqual(T.translate_watch_queue(store, cfg, AS_OF, log=lambda *_: None, http=g_http), (0, {}))
+            self.assertEqual(T.translate_watch_queue(store, cfg, AS_OF, log=lambda *_: None, http=g_http), (0, {}, 0))
             # Azure の月枠を極小にすると在庫があっても止まる
             rec, _ = T.normalize(raw(source="pubmed", sid="W9", title="Watch Paper Zeta"), T.now_iso())
             cid9, _ = store.upsert_candidate(rec, "rX")
             store.set_entities(cid9, [{"entity_id": "watch_co", "strength": "strong"}])
             with um.patch("trlcore.translate.AZURE_MONTHLY_QUOTA", 1):
-                self.assertEqual(T.translate_watch_queue(store, cfg, AS_OF, log=lambda *_: None, http=g_http), (0, {}))
+                self.assertEqual(T.translate_watch_queue(store, cfg, AS_OF, log=lambda *_: None, http=g_http), (0, {}, 0))
         store.close()
         tmp.cleanup()
 
@@ -356,8 +393,9 @@ class NewSourceParseTests(unittest.TestCase):
             return deepl_http(url, params=params, headers=headers, data=data)
         env = {"DEEPL_API_KEY": "k:fx", "AZURE_TRANSLATOR_KEY": "k2"}
         with um.patch.dict(os.environ, env, clear=False):
-            n, stats = T.translate_display_set(store, CFG, AS_OF, log=lambda *_: None, http=flaky_http)
+            n, stats, failed = T.translate_display_set(store, CFG, AS_OF, log=lambda *_: None, http=flaky_http)
         self.assertEqual(n, 1)
+        self.assertEqual(failed, 0)
         self.assertEqual(set(stats), {"deepl"})
         c = store.get_candidate(cid)
         self.assertTrue(c["title_ja"].startswith("訳:"))

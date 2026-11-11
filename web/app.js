@@ -67,11 +67,13 @@ const STG = {rd: "研究開発型", demo: "実証型", production: "量産型", 
 const DTL = {core: "Core", conditional: "Conditional", look: "Look", see: "See"};
 const dtierOf = e => e.derived_tier || (e.tier === "watch" ? "look" : e.tier === "reference" ? "see" : "core");
 const dtLabel = e => DTL[dtierOf(e)] || "";
-// Conditional は層名に未充足の理由 (導出の detail 文そのまま) を併記する (W-2)
+// Conditional は層名に未充足の理由 (導出の detail 文そのまま) を併記する (W-2)。
+// derived_reasons が配列でない形 (将来の部分スキーマ変更等) でも例外にせず、
+// 理由の併記だけを落として層名は出す (1社の壊れた値で一覧全体を止めない)
 const dtText = e => {
   const l = dtLabel(e);
   if (!l || dtierOf(e) !== "conditional") return l;
-  const rs = (e.derived_reasons || []).filter(Boolean);
+  const rs = (Array.isArray(e.derived_reasons) ? e.derived_reasons : []).filter(Boolean);
   return rs.length ? `Conditional（${rs.join("／")}）` : l;
 };
 // 関門 (barriers/v1) の表示名・定義。trlcore/barriers.py の定義が正本で、
@@ -457,14 +459,19 @@ function stats() {
 }
 function tierBand() {
   // 企業の層 (導出 tier) の分布と警告 (W-3)。数字は export (summary.tiers)
-  // の直読みで、表示側で閾値や丸めは作らない。警告は D-3 どおり出すだけ
+  // の直読みで、表示側で閾値や丸めは作らない。警告は D-3 どおり出すだけ。
+  // summary.tiers が部分的な形 (shares 欠落・warnings が配列でない等) でも
+  // 例外にせず、欠けた部分だけを落とす (この枠の不調で一覧全体を止めない)
   const el = $("#tierband");
   if (!el) return;
   const t = META && META.summary && META.summary.tiers;
   if (!t || !t.counts) { el.hidden = true; return; }
+  const shares = t.shares && typeof t.shares === "object" ? t.shares : {};
   const order = ["core", "conditional", "look", "see"];
-  const dist = order.map(k => `${DTL[k]} ${t.counts[k] || 0}社（${t.shares[k] ?? 0}%）`).join(" / ");
-  const warns = (t.warnings || []).map(w =>
+  const dist = order.map(k => `${DTL[k]} ${t.counts[k] || 0}社（${shares[k] ?? 0}%）`).join(" / ");
+  const warns = (Array.isArray(t.warnings) ? t.warnings : [])
+    .filter(w => w && typeof w === "object")
+    .map(w =>
     `${DTL[w.tier] || w.tier} は目標 ${w.target_share}% から ${w.diff_pt > 0 ? "+" : "−"}${Math.abs(w.diff_pt)}pt（許容 ±${t.tolerance_pt}pt の範囲外）`);
   el.innerHTML = `<span>企業の層: ${esc(dist)}</span>`
     + (warns.length ? `<span class="twarn">警告: ${esc(warns.join("、"))}</span>` : "");

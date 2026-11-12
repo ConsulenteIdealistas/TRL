@@ -308,10 +308,17 @@ def validate_assessment(obj, kind, cfg):
     return scores, details, errors
 
 
+def _evidence_ok(ev):
+    return isinstance(ev, list) and bool(ev) and all(
+        isinstance(e, dict) and str(e.get("ref", "")).strip()
+        and str(e.get("summary", "")).strip() and e.get("kind") in EVIDENCE_KINDS
+        for e in ev)
+
+
 def _parse_readiness_level(v, name):
-    """trl_level / crl_level 共通のパース (任意フィールド)。-> (dict|None,
-    errors)。level は 1〜9 の整数か null。整数のときは reason と
-    evidence が必須。換算や補完はしない。"""
+    """trl_level のパース (任意フィールド)。-> (dict|None, errors)。
+    level は 1〜9 の整数か null。整数のときは reason と evidence が
+    必須。換算や補完はしない。"""
     if v is None:
         return None, []
     if not isinstance(v, dict):
@@ -328,10 +335,7 @@ def _parse_readiness_level(v, name):
     errs = []
     if not out["reason"].strip():
         errs.append(f"{name}:reason_required")
-    ev = out["evidence"]
-    if not isinstance(ev, list) or not ev or any(
-            not isinstance(e, dict) or not str(e.get("ref", "")).strip() or not str(e.get("summary", "")).strip()
-            or e.get("kind") not in EVIDENCE_KINDS for e in ev):
+    if not _evidence_ok(out["evidence"]):
         errs.append(f"{name}:evidence_required")
     out["level"] = lv
     return out, errs
@@ -342,10 +346,50 @@ def parse_trl_level(v):
     return _parse_readiness_level(v, "trl_level")
 
 
-def parse_crl_level(v):
-    """長期評価の crl_level(任意、long v4〜)。商業成熟度 (CRL、規程
-    第3章の2)。trl_level と同じ規律で、換算や補完はしない。"""
-    return _parse_readiness_level(v, "crl_level")
+ANNEX_KINDS = {
+    "arl": {"first_sale", "supply_agreement", "paid_pilot",
+            "licensee_launch", "scale_deployment"},
+    "irl": {"integration_demo", "platform_adoption", "interoperability",
+            "standard_adoption"},
+    "srl": {"system_demo", "system_deployment", "operational_use"},
+}
+
+
+def parse_annex(v):
+    """長期評価の annex (任意、long v5〜)。観測された付記イベントの列
+    (規程第11条の4)。-> (list|None, errors)。フィールドが無ければ
+    (None, [])。各イベントは axis・kind (軸ごとの閉じた語彙)・
+    summary・evidence (1件以上) が必須で、日付は原資料に明記された
+    場合のみ (文字列か null)。レベルへの換算はしない。"""
+    if v is None:
+        return None, []
+    if not isinstance(v, list):
+        return None, ["annex:must_be_list"]
+    out, errs = [], []
+    for i, e in enumerate(v):
+        if not isinstance(e, dict):
+            errs.append(f"annex[{i}]:must_be_object")
+            continue
+        axis, kind = e.get("axis"), e.get("kind")
+        if axis not in ANNEX_KINDS:
+            errs.append(f"annex[{i}].axis:invalid")
+            continue
+        if kind not in ANNEX_KINDS[axis]:
+            errs.append(f"annex[{i}].kind:invalid")
+            continue
+        if not str(e.get("summary") or "").strip():
+            errs.append(f"annex[{i}]:summary_required")
+            continue
+        if not _evidence_ok(e.get("evidence")):
+            errs.append(f"annex[{i}]:evidence_required")
+            continue
+        item = {"axis": axis, "kind": kind,
+                "date": str(e["date"]) if e.get("date") else None,
+                "summary": str(e["summary"]), "evidence": e["evidence"]}
+        if isinstance(e.get("basis_claim_ids"), list):
+            item["basis_claim_ids"] = [str(x) for x in e["basis_claim_ids"]]
+        out.append(item)
+    return (None if errs else out), errs
 
 
 def parse_trl_levels(v):
@@ -489,9 +533,10 @@ def evaluate_one(cand, kind, cfg, llm, as_of, extraction=None, extract_meta=None
                     trl, trl_errs = parse_trl_level(obj.get("trl_level"))
                     errs = errs + trl_errs
                     result["extra"]["trl_level"] = trl
-                    crl, crl_errs = parse_crl_level(obj.get("crl_level"))
-                    errs = errs + crl_errs
-                    result["extra"]["crl_level"] = crl
+                    annex, annex_errs = parse_annex(obj.get("annex"))
+                    errs = errs + annex_errs
+                    if annex:
+                        result["extra"]["annex"] = annex
                     levels = parse_trl_levels(obj.get("trl_levels"))
                     if levels:
                         result["extra"]["trl_levels"] = levels

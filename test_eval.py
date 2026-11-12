@@ -631,9 +631,10 @@ class FreezeV3Tests(unittest.TestCase):
             "published": "2026-10-10", "fields": []}
 
     def test_prompts_are_v3(self):
-        self.assertEqual(CFG["config_version"], "2026.11.2")
+        # 現行世代のピン (v4 世代で long だけ v4、config は 2026.11.3)
+        self.assertEqual(CFG["config_version"], "2026.11.3")
         self.assertEqual(CFG["scoring"]["prompts"],
-                         {"extract": "v3", "long": "v3", "event": "v3"})
+                         {"extract": "v3", "long": "v4", "event": "v3"})
 
     def test_extract_v3_prompt_anchors(self):
         text = load_prompt("extract", "v3")["text"]
@@ -767,7 +768,7 @@ class FreezeV3Tests(unittest.TestCase):
         self.assertEqual(r["extra"]["trl_level"]["basis_claim_ids"], ["C1"])
         self.assertEqual(r["items"]["technology_readiness"]["constraint_codes"],
                          ["single_source"])
-        self.assertEqual(r["prompt_versions"]["long"]["version"], "v3")
+        self.assertEqual(r["prompt_versions"]["long"]["version"], "v4")
         self.assertEqual(r["prompt_versions"]["extract"]["version"], "v3")
 
     def test_evaluate_one_event_structured(self):
@@ -787,6 +788,94 @@ class FreezeV3Tests(unittest.TestCase):
         self.assertEqual(r["event"]["expectation"]["value"], "承認取得")
         self.assertNotIn("actual", r["event"])
         self.assertEqual(r["prompt_versions"]["event"]["version"], "v3")
+
+
+class CrlLevelTests(unittest.TestCase):
+    """CRL (商業成熟度、規程第3章の2) のパース・保存・export。long v4〜。"""
+
+    EVD = [{"ref": "https://example.com/pr", "summary": "当該製品の販売開始",
+            "kind": "fact"}]
+
+    def test_parse_valid_and_null(self):
+        out, errs = T.parse_crl_level({"level": 8, "reason": "販売実績がある",
+                                       "evidence": self.EVD,
+                                       "basis_claim_ids": ["C1"]})
+        self.assertEqual(errs, [])
+        self.assertEqual(out["level"], 8)
+        self.assertEqual(out["basis_claim_ids"], ["C1"])
+        out, errs = T.parse_crl_level({"level": None,
+                                       "missing_info": ["販売の証拠が無い"]})
+        self.assertEqual(errs, [])
+        self.assertIsNone(out["level"])
+        self.assertEqual(T.parse_crl_level(None), (None, []))
+
+    def test_parse_rejects_bad_shapes(self):
+        self.assertEqual(T.parse_crl_level("x")[1], ["crl_level:must_be_object"])
+        for lv in (0, 10, True, "8"):
+            out, errs = T.parse_crl_level({"level": lv, "reason": "r",
+                                           "evidence": self.EVD})
+            self.assertIsNone(out)
+            self.assertEqual(errs, ["crl_level.level:must_be_1_to_9_or_null"])
+        out, errs = T.parse_crl_level({"level": 7, "reason": " ",
+                                       "evidence": self.EVD})
+        self.assertIn("crl_level:reason_required", errs)
+        out, errs = T.parse_crl_level({"level": 7, "reason": "r",
+                                       "evidence": []})
+        self.assertIn("crl_level:evidence_required", errs)
+
+    def _fn(self, crl):
+        def fn(prompt):
+            if "長期成長評価" in prompt:
+                obj = assessment(LONG_KEYS, {k: 60 for k in LONG_KEYS})
+                obj["crl_level"] = crl
+                return json.dumps(obj)
+            return json.dumps(EXTRACTION)
+        return fn
+
+    def test_evaluate_one_records_crl(self):
+        cand = {"id": "c1", "title": "T", "abstract": "A" * 300, "url": "u",
+                "source": "arxiv", "published": "2026-10-10", "fields": []}
+        crl = {"level": 8, "reason": "当該製品の販売が始まっている",
+               "evidence": self.EVD, "missing_info": []}
+        r = ev.evaluate_one(cand, "long", CFG, Mock(self._fn(crl)), AS_OF)
+        self.assertEqual(r["status"], "final")
+        self.assertEqual(r["extra"]["crl_level"]["level"], 8)
+
+    def test_evaluate_one_bad_crl_is_error(self):
+        cand = {"id": "c1", "title": "T", "abstract": "A" * 300, "url": "u",
+                "source": "arxiv", "published": "2026-10-10", "fields": []}
+        crl = {"level": 10, "reason": "r", "evidence": self.EVD}
+        r = ev.evaluate_one(cand, "long", CFG, Mock(self._fn(crl)), AS_OF)
+        self.assertEqual(r["status"], "error")
+        self.assertTrue(any("crl_level" in e for e in r["errors"]))
+
+    def test_site_export_crl(self):
+        from trlcore.site import _ev_for_site
+        ev_row = {"kind": "long", "status": "final", "total": 60.0,
+                  "band": "strong", "as_of": "2026-11-12",
+                  "evaluated_at": "2026-11-12T00:00:00+00:00",
+                  "items_json": json.dumps({}),
+                  "extra_json": json.dumps({"crl_level": {
+                      "level": None, "reason": "",
+                      "missing_info": ["結果待ち：導出先での販売実績",
+                                       "販売の証拠が無い"]}}),
+                  "errors_json": "[]"}
+        out = _ev_for_site(ev_row, CFG)
+        self.assertEqual(out["crl_level"]["missing_info"], ["販売の証拠が無い"])
+        self.assertEqual(out["crl_level"]["awaiting_info"],
+                         ["導出先での販売実績"])
+        ev_row["extra_json"] = json.dumps({})
+        self.assertIsNone(_ev_for_site(ev_row, CFG)["crl_level"])
+
+    def test_prompt_and_config_wiring(self):
+        scoring = json.loads(Path("scoring.json").read_text(encoding="utf-8"))
+        self.assertEqual(scoring["prompts"]["long"], "v4")
+        text = Path("long.v4.md").read_text(encoding="utf-8")
+        self.assertIn("[CRL の判定]", text)
+        self.assertIn('"crl_level"', text)
+        # 凍結した v3 には CRL が入っていないこと (世代の分離)
+        old = Path("long.v3.md").read_text(encoding="utf-8")
+        self.assertNotIn("crl_level", old)
 
 
 if __name__ == "__main__":

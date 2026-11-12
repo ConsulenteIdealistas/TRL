@@ -839,6 +839,38 @@ class NewsPoolTests(unittest.TestCase):
         self.assertEqual([c["id"] for c in sel], [strong, weak])
         store.close()
 
+    def test_selection_ids_only_matches_full(self):
+        # 軽い行での走査 (list_selection_rows) でも選定結果は変わらない。
+        # ids_only は id しか使わない呼び出し側のための経路で、同じ id 列を返す
+        store = Store(self.path)
+
+        def add(r):
+            rec, _ = normalize(r, "2026-10-20T00:00:00+00:00")
+            cid, _ = store.upsert_candidate(rec, "r0")
+            store.set_entities(cid, link_entities(rec, CFG.get("entities", {})))
+            store.set_status(cid, "screened")
+            return cid
+        a = add(raw(sid="2610.9201", title="Debris removal demonstration", published="2026-10-19",
+                    affiliations=["Astroscale Holdings Inc."]))
+        b = add(raw(sid="2610.9202", title="Orbital prototype study", published="2026-10-18",
+                    affiliations=["Astroscale Holdings Inc."]))
+        full = select_for_eval(store, CFG, AS_OF, 10)
+        lite = select_for_eval(store, CFG, AS_OF, 10, ids_only=True)
+        self.assertEqual([c["id"] for c in full], [a, b])
+        self.assertEqual([c["id"] for c in lite], [a, b])
+        # 通常経路の戻りは候補本体の形 (本文・fields つき) を保つ
+        self.assertIn("abstract", full[0])
+        self.assertIn("fields", full[0])
+        # 軽い行は本文を持たず、fill_candidate_text で補える
+        rows = store.list_selection_rows(["screened"])
+        self.assertTrue(rows and "abstract" not in rows[0])
+        store.fill_candidate_text(rows)
+        self.assertIn("abstract", rows[0])
+        # get_candidates は列挙順を保つ
+        got = store.get_candidates([b, a])
+        self.assertEqual([c["id"] for c in got], [b, a])
+        store.close()
+
     def test_demo_signal_detection(self):
         self.assertTrue(T.has_demo_signal({"title": "Demonstration of a prototype device", "abstract": ""}))
         self.assertTrue(T.has_demo_signal({"title": "量子デバイスの実証実験", "abstract": ""}))

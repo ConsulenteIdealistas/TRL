@@ -147,7 +147,7 @@ def display_ids(store, cfg, today, pending_limit=10):
     """サイトに載る候補の id 集合: 評価済み全件 + 次に評価される上位。"""
     ids = {r[0] for r in store.conn.execute("SELECT DISTINCT candidate_id FROM evaluations")}
     from .pipeline import select_for_eval  # 循環 import 回避のため遅延 import
-    ids |= {c["id"] for c in select_for_eval(store, cfg, today, pending_limit)}
+    ids |= {c["id"] for c in select_for_eval(store, cfg, today, pending_limit, ids_only=True)}
     return ids
 
 

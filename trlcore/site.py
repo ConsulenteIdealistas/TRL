@@ -400,7 +400,7 @@ def build_site_data(store, cfg, now=None):
     pool_as_of = parse_date(run["as_of"]) if run else None
     next_ids = set()
     if pool_as_of is not None:
-        next_ids = {c["id"] for c in select_for_eval(store, cfg, pool_as_of, SITE_PENDING_LIMIT)}
+        next_ids = {c["id"] for c in select_for_eval(store, cfg, pool_as_of, SITE_PENDING_LIMIT, ids_only=True)}
     # 評価の有無は先に一括で引き、掲載する候補だけを本体ごと読み込む
     # (全候補を1件ずつ読むと候補数×数クエリになり、候補の増加に比例して重くなる)
     ev_kinds = {}

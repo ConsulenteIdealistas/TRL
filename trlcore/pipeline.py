@@ -979,7 +979,7 @@ def _is_current_generation(gen, cfg, kind="long"):
         and got.get(kind) == prompts.get(kind)
 
 
-def select_for_eval(store, cfg, today, limit, retry_failed="no", only_new=False, stats=None):
+def select_for_eval(store, cfg, today, limit, retry_failed="no", only_new=False, stats=None, ids_only=False):
     sc = cfg["scoring"]["screening"]
     rows = []
 
@@ -1018,7 +1018,13 @@ def select_for_eval(store, cfg, today, limit, retry_failed="no", only_new=False,
     oldgen_ids = {cid for cid, g in gen_map.items()
                   if not _is_current_generation(g, cfg)}
 
-    for c in store.list_by_status(statuses):
+    # 走査は軽い行で回す (プールの大半は info_type と企業リンクの
+    # フィルタで落ちるため、全行の本文運搬が支配的なコストだった)。
+    # テキストは通過分だけ、候補本体は最終選定分だけを後から一括で補う
+    lean = hasattr(store, "list_selection_rows")
+    pool = store.list_selection_rows(statuses) if lean \
+        else store.list_by_status(statuses)
+    for c in pool:
         if c.get("info_type") in ("news", "disclosure"):
             continue  # ニュースと開示(財務スナップショット)は単体評価せず、プールとして同梱する
         if only_new and (c["status"] != "screened" or c["last_eval_at"]):
@@ -1068,6 +1074,8 @@ def select_for_eval(store, cfg, today, limit, retry_failed="no", only_new=False,
 
         rows.append(c)
 
+    if lean and rows:
+        store.fill_candidate_text(rows)  # 実証シグナルの判定に title / abstract が要る
     rows.sort(key=lambda c: c["published"] or "", reverse=True)
     rows.sort(key=_selection_rank)
     # 初回評価の寄せ (F-1): 帰属可能な long 評価がまだ無いコア企業
@@ -1140,6 +1148,14 @@ def select_for_eval(store, cfg, today, limit, retry_failed="no", only_new=False,
         rows = first_head + old_head + middle + first_over + old_tail
     # 企業あたりの保持上限: 材料の多い大手がキューを抱え込まないようにする。
     # 上限を超えた分は今回の選定から外れる (新しい材料が来れば順位で入れ替わる)。
+    def _finish(picked):
+        # 最終選定分だけ候補本体を一括で読み直し、従来と同じ形で返す。
+        # ids_only の呼び出し側 (有無判定・id 収集) は軽い行のまま返す
+        if ids_only or not lean or not picked:
+            return picked
+        full = {d["id"]: d for d in store.get_candidates([c["id"] for c in picked])}
+        return [full.get(c["id"], c) for c in picked]
+
     cap = sc.get("eval_queue_per_entity", 10)
     counts, capped = {}, []
     for c in rows:
@@ -1179,12 +1195,12 @@ def select_for_eval(store, cfg, today, limit, retry_failed="no", only_new=False,
         if stats is not None:
             stats["oldgen_selected"] = sum(1 for c in picked if c["id"] in oldgen_ids)
             stats["firsteval_selected"] = sum(1 for c in picked if c["id"] in first_ids)
-        return picked
+        return _finish(picked)
     picked = capped[:limit]
     if stats is not None:
         stats["oldgen_selected"] = sum(1 for c in picked if c["id"] in oldgen_ids)
         stats["firsteval_selected"] = sum(1 for c in picked if c["id"] in first_ids)
-    return picked
+    return _finish(picked)
 
 
 def select_event_fill(store, cfg, as_of, limit, exclude_ids, log=print):
@@ -1351,7 +1367,8 @@ def run_pipeline(store, cfg, llm, *, as_of, sources=("pubmed", "arxiv"), kinds=(
         skip_collect = False
         if kinds and store.count_candidates() > 0 and not store.list_by_status(["new"]):
             eligible = select_for_eval(store, cfg, today, 10 ** 9,
-                                       retry_failed=retry_failed, only_new=only_new)
+                                       retry_failed=retry_failed, only_new=only_new,
+                                       ids_only=True)
             skip_collect = not eligible
         if skip_collect:
             counts["collect_skipped_no_eligible"] = 1

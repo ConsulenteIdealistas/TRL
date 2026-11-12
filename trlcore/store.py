@@ -594,12 +594,8 @@ class Store:
             for row in rows
         ]
 
-    def list_by_status(self, statuses):
-        # 候補本体と企業リンクを一括で引く (旧実装は候補ごとに2クエリで、
-        # 候補数に比例してクエリが増えた。出力の dict 形状・順序は同一に保つ)
-        q = ",".join("?" * len(statuses))
-        rows = self.conn.execute(f"SELECT * FROM candidates WHERE status IN ({q})", statuses).fetchall()
-        ids = [r["id"] for r in rows]
+    def _entities_for(self, ids):
+        """候補 id 群の企業リンクを一括で引く (チャンク分割つき)。"""
         links = {}
         for i in range(0, len(ids), 900):
             chunk = ids[i:i + 900]
@@ -613,6 +609,10 @@ class Store:
                      "matched_by": lr["matched_by"], "matched_alias": lr["matched_alias"],
                      "link_type": lr["link_type"], "product_id": lr["product_id"],
                      "product_name": lr["product_name"]})
+        return links
+
+    def _full_candidates(self, rows):
+        links = self._entities_for([r["id"] for r in rows])
         out = []
         for r in rows:
             d = dict(r)
@@ -620,6 +620,66 @@ class Store:
             d["entities"] = links.get(d["id"], [])
             out.append(d)
         return out
+
+    def list_by_status(self, statuses):
+        # 候補本体と企業リンクを一括で引く (旧実装は候補ごとに2クエリで、
+        # 候補数に比例してクエリが増えた。出力の dict 形状・順序は同一に保つ)
+        q = ",".join("?" * len(statuses))
+        rows = self.conn.execute(f"SELECT * FROM candidates WHERE status IN ({q})", statuses).fetchall()
+        return self._full_candidates(rows)
+
+    def get_candidates(self, ids):
+        """id の列挙順を保って候補本体 (list_by_status と同じ形) を返す。"""
+        if not ids:
+            return []
+        by_id = {}
+        for i in range(0, len(ids), 900):
+            chunk = ids[i:i + 900]
+            qq = ",".join("?" * len(chunk))
+            rows = self.conn.execute(
+                f"SELECT * FROM candidates WHERE id IN ({qq})", chunk).fetchall()
+            for d in self._full_candidates(rows):
+                by_id[d["id"]] = d
+        return [by_id[i] for i in ids if i in by_id]
+
+    # 選定の走査が候補行から読む列はこれだけ (フィルタ・ゲート・並び替え用)
+    _SELECTION_COLUMNS = ("id", "status", "info_type", "published",
+                          "last_eval_at", "material_updated_at", "retry_count")
+
+    def list_selection_rows(self, statuses):
+        """選定 (select_for_eval) の走査専用の軽い行を返す。
+
+        本文 (title / abstract) や fields は持たない。プールの大半は
+        info_type と企業リンクのフィルタで落ちるため、全行のテキスト
+        運搬と fields_json のパースが走査の支配的なコストになっていた。
+        テキストが要るのはフィルタ通過分だけ (fill_candidate_text)、
+        候補本体が要るのは最終選定分だけ (get_candidates) という前提で
+        使い分ける。"""
+        q = ",".join("?" * len(statuses))
+        cols = ",".join(self._SELECTION_COLUMNS)
+        rows = self.conn.execute(
+            f"SELECT {cols} FROM candidates WHERE status IN ({q})", statuses).fetchall()
+        links = self._entities_for([r["id"] for r in rows])
+        out = []
+        for r in rows:
+            d = dict(r)
+            d["entities"] = links.get(d["id"], [])
+            out.append(d)
+        return out
+
+    def fill_candidate_text(self, rows):
+        """行 dict の列に title / abstract を一括で補う (実証シグナルの判定用)。"""
+        ids = [r["id"] for r in rows]
+        texts = {}
+        for i in range(0, len(ids), 900):
+            chunk = ids[i:i + 900]
+            qq = ",".join("?" * len(chunk))
+            for r in self.conn.execute(
+                    f"SELECT id, title, abstract FROM candidates WHERE id IN ({qq})", chunk):
+                texts[r["id"]] = (r["title"], r["abstract"])
+        for d in rows:
+            d["title"], d["abstract"] = texts.get(d["id"], (None, None))
+        return rows
 
     def set_status(self, cid, status, reason=None, eval_at=None, retry_inc=False, retry_reset=False):
         # retry_reset: 成功 (hold/final) で再試行カウンタを戻す。戻さないと過去の失敗が

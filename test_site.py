@@ -1045,8 +1045,8 @@ class ZeroRiskBatchTests(unittest.TestCase):
                    "prev", "hold_cause", "total_orig", "band_orig",
                    # 世代 (gen) と関門 (barriers) は表示専用の意図的な追加
                    "gen", "barriers",
-                   # 商業成熟度 (CRL、v4 世代) も意図的な追加
-                   "crl_level"}
+                   # 付記イベント (annex、v5 世代) も意図的な追加
+                   "annex"}
         for c in data["candidates"]:
             self.assertLessEqual(set(c), cand_keys)
             if c["long"]:
@@ -1426,7 +1426,7 @@ class GenBarrierExportTests(StoreFixture):
                "evaluated_at": "2026-11-01T00:00:00+00:00",
                "items_json": "{}", "errors_json": "[]",
                "extra_json": "{}", "prompt_versions_json": "{}",
-               "config_version": "2026.11.3",
+               "config_version": "2026.11.4",
                "llm_provider": "gemini", "llm_model": "m"}
         row.update(kw)
         return row
@@ -1446,7 +1446,7 @@ class GenBarrierExportTests(StoreFixture):
 
     def test_gen_falls_back_to_row_version(self):
         gen = site_mod._ev_for_site(self._row(), cfg_with())["gen"]
-        self.assertEqual(gen["config"], "2026.11.3")
+        self.assertEqual(gen["config"], "2026.11.4")
         self.assertEqual(gen["prompts"], {})
         self.assertTrue(gen["current"])
 
@@ -1493,5 +1493,5 @@ class GenBarrierExportTests(StoreFixture):
             self.assertEqual(ev["gen"]["config"], data["config"]["version"])
             self.assertTrue(ev["gen"]["current"])
             self.assertEqual(ev["gen"]["prompts"],
-                             {"extract": "v3", "long": "v4"})
+                             {"extract": "v3", "long": "v5"})
             self.assertIn("barriers", ev)

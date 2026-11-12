@@ -1024,6 +1024,22 @@ class Store:
             (cid, kind)).fetchone()
         return dict(row) if row else None
 
+    def entities_with_attributable_long_eval(self):
+        """帰属可能な long 評価を持つ企業 id の集合を返す (F-1)。
+
+        帰属可能の定義は tier 導出 (tiers.load_tier_inputs) と同じ:
+        企業が候補へ link_type='entity' かつ strong でリンクし、その候補に
+        long 評価 (final/hold) があること。error は採点結果ではないため
+        評価に数えない (latest_long_eval_generations と同じ扱い)。
+        選定の初回評価の寄せが「未評価の企業」を判定するために使う。"""
+        rows = self.conn.execute(
+            "SELECT DISTINCT ce.entity_id FROM candidate_entities ce "
+            "JOIN evaluations e ON e.candidate_id = ce.candidate_id "
+            "AND e.kind = 'long' AND e.status IN ('final', 'hold') "
+            "WHERE ce.link_type = 'entity' AND ce.strength = 'strong'"
+        ).fetchall()
+        return {r["entity_id"] for r in rows}
+
     def latest_long_eval_generations(self):
         """候補ごとの最新の long 評価 (final/hold) の世代印を返す (G-5)。
 

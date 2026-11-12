@@ -301,7 +301,7 @@ def required_files(config_dir=None):
         prompts = {}
     names = list(CONFIG_FILES) + [f"{n}.{v}.md" for n, v in prompts.items()]
     if not prompts:
-        names += ["extract.v2.md", "long.v2.md", "event.v2.md"]  # scoring.json が読めないときの既定
+        names += ["extract.v3.md", "long.v4.md", "event.v3.md"]  # scoring.json が読めないときの既定
     return [(n, (d / n).is_file()) for n in names]
 
 

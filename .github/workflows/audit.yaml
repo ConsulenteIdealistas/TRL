@@ -1,10 +1,13 @@
 name: TRL audit pilot
 
-# 評価の監査 (監査役) のパイロット (手動実行のみ)。本番のパイプラインとは独立で、
+# 評価の監査 (監査役) のパイロット (手動実行 + 土曜 09:00 JST の週次実行)。本番のパイプラインとは独立で、
 # 監査は評価を読み取るだけで点・状態は変えない。結果は DB の audit_results と
 # audit-reports/ にだけ残る。完走率とフラグ品質の測定用。
 # data ブランチへの書込みが本番と競合しないよう、同時実行グループを共有する。
 on:
+  schedule:
+    # 土曜 09:00 JST = 土曜 00:00 UTC。その週の定期実行 (火〜金) が全て終わった後に回す
+    - cron: "0 0 * * 6"
   workflow_dispatch:
     inputs:
       limit:
@@ -72,8 +75,8 @@ jobs:
           python3 -c "import sqlite3; r = sqlite3.connect('file:_data/trl.sqlite?mode=ro', uri=True).execute('PRAGMA integrity_check').fetchone()[0]; assert r == 'ok', r" || { echo "::error::trl.sqlite failed the integrity check. Aborting to protect data"; exit 1; }
       - name: Audit evaluations
         env:
-          IN_LIMIT: ${{ inputs.limit }}
-          IN_BUDGET: ${{ inputs.budget_sec }}
+          IN_LIMIT: ${{ inputs.limit || '100' }}
+          IN_BUDGET: ${{ inputs.budget_sec || '9000' }}
         run: |
           python trl.py audit --data-dir _data --limit "$IN_LIMIT" --budget-sec "$IN_BUDGET"
       - name: Persist data (preserve history)

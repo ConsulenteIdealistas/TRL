@@ -197,6 +197,77 @@ class GenerationSelectionTests(StoreFixtureBase):
         self.assertNotIn(cid, [c["id"] for c in sel])
 
 
+class FirstEvalSelectionTests(StoreFixtureBase):
+    """F-1: 帰属可能な long 評価が無い企業の初回評価を上限の半分まで前面に出す。"""
+
+    def _core_count(self):
+        return sum(1 for e in CFG["entities"]["entities"]
+                   if (e.get("tier") or "core") == "core")
+
+    def test_attributable_entities_final_and_hold_only(self):
+        a = self._candidate(status="screened")
+        self.assertEqual(self.store.entities_with_attributable_long_eval(), set())
+        self._long_eval(a, status="hold")
+        self.assertEqual(self.store.entities_with_attributable_long_eval(),
+                         {"astroscale"})
+        b = self._candidate(status="screened",
+                            affiliations=["ispace, inc."])
+        self._long_eval(b, status="error")
+        self.assertEqual(self.store.entities_with_attributable_long_eval(),
+                         {"astroscale"})
+
+    def test_first_eval_fronted_half_cap_and_one_per_company(self):
+        a_new = self._candidate(published="2026-10-15", status="screened")
+        a_old = self._candidate(published="2026-10-14", status="screened")
+        i_new = self._candidate(published="2026-10-13", status="screened",
+                                affiliations=["ispace, inc."])
+        # 評価済み企業の再評価候補 (材料更新あり) は一般選定に回る
+        s_cand = self._candidate(published="2026-10-16", status="evaluated",
+                                 eval_at="2026-09-20T00:00:00+00:00",
+                                 updated="2026-10-19T00:00:00+00:00",
+                                 affiliations=["Synspective Inc."])
+        self._long_eval(s_cand)
+        stats = {}
+        sel = select_for_eval(self.store, CFG, AS_OF, 4, stats=stats)
+        ids = [c["id"] for c in sel]
+        # 前面は初回評価から上限の半分 (2件) まで・1社1件。残りは一般、
+        # 初回評価の溢れ (同じ企業の2件目) の順
+        self.assertEqual(ids, [a_new, i_new, s_cand, a_old])
+        self.assertEqual(stats["firsteval_eligible_companies"], 2)
+        self.assertEqual(stats["firsteval_selected"], 3)
+        self.assertEqual(stats["firsteval_companies_remaining"],
+                         self._core_count() - 1)
+
+    def test_first_eval_ahead_of_oldgen(self):
+        # 初回評価は再評価 (旧世代の寄せを含む) より前に置く
+        first = self._candidate(published="2026-10-10", status="screened")
+        old = self._candidate(published="2026-10-16", status="evaluated",
+                              eval_at="2026-09-20T00:00:00+00:00",
+                              affiliations=["Synspective Inc."])
+        self._long_eval(old, config="2026.11.1",
+                        prompts={"extract": {"version": "v2"},
+                                 "long": {"version": "v2"}})
+        stats = {}
+        sel = select_for_eval(self.store, CFG, AS_OF, 2, stats=stats)
+        self.assertEqual([c["id"] for c in sel], [first, old])
+        self.assertEqual(stats["firsteval_selected"], 1)
+        self.assertEqual(stats["oldgen_selected"], 1)
+
+    def test_multi_strong_candidate_not_fronted(self):
+        # strong リンクが複数企業に跨る候補は、評価しても帰属可能な評価に
+        # ならない (一意でない) ため前面の対象にしない
+        both = self._candidate(published="2026-10-15", status="screened",
+                               affiliations=["Astroscale Holdings Inc.",
+                                             "ispace, inc."])
+        stats = {}
+        sel = select_for_eval(self.store, CFG, AS_OF, 4, stats=stats)
+        self.assertEqual([c["id"] for c in sel], [both])
+        self.assertEqual(stats["firsteval_eligible_companies"], 0)
+        self.assertEqual(stats["firsteval_selected"], 0)
+        self.assertEqual(stats["firsteval_companies_remaining"],
+                         self._core_count())
+
+
 class ReferenceItemTests(unittest.TestCase):
     """N-1: 参考項目の欠落は理由コードで記録し、状態を判定できる。"""
 

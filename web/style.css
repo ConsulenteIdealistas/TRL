@@ -173,5 +173,11 @@ a.tg{display:inline-flex;align-items:center;text-decoration:none}
 .genb{display:inline-flex;padding:4px 8px;border:1px solid var(--line);border-radius:7px;color:var(--sub);background:var(--field);font-size:10px;font-weight:700}
 .brs{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .brz{padding:4px 8px;border:1px solid var(--line);border-radius:7px;color:var(--sub);background:var(--field);font-size:10px;font-weight:700;white-space:nowrap}
+.brz.off{opacity:.55}
+a.brz.lk{text-decoration:none;display:inline-block;margin-left:4px}
+/* 主ページ上部の関門の該当一覧 (.tierband と同じ枠の形)。関門ごとに
+   グループ化し、企業チップが詳細へのリンクになる */
+#brband .brg{display:inline-flex;flex-wrap:wrap;align-items:center;gap:4px}
+#brband .brg b{color:var(--ink,inherit)}
 .sw{display:inline-flex;align-items:center;gap:7px;min-height:42px;color:var(--sub);font-size:12px;font-weight:600;cursor:pointer}
 .sw input{width:18px;height:18px;accent-color:var(--accent)}

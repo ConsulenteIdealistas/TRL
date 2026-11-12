@@ -83,6 +83,10 @@ const GEN_NOTE = "世代は、その評価に使われた規程・プロンプ�
 let showGen = true;
 try { showGen = localStorage.getItem("trl-showgen") !== "0"; } catch (e) { /* 保存不可なら既定のまま */ }
 const barrierHits = ev => (ev && ev.barriers) ? BRO.filter(k => ev.barriers[k] && ev.barriers[k].status === "hit") : [];
+// 関門の状態ラベル。導出 (barriers/v1) の status の読み替えで、表示側で
+// 状態を作ることはしない (hit=該当 / clear=非該当 / unknown=判定しない
+// (材料不足) / na=対象外 (TRL のゲート外))
+const BRS = {hit: "該当", clear: "非該当", unknown: "判定しない", na: "対象外"};
 function genBadge(ev) {
   // 世代バッジ。世代に優劣はないため色は付けず、現行かどうかも文字列だけで区別する
   if (!showGen || !ev || !ev.gen) return "";
@@ -91,12 +95,19 @@ function genBadge(ev) {
   return `<span class="genb" title="${esc(GEN_NOTE)}">${esc(head)}${pr ? `（${esc(pr)}）` : ""}</span>`;
 }
 function barrierBlockHtml(ev) {
-  // 関門ブロック: 該当した関門ごとに、導出側が生成した根拠文
-  // (数値・状態・出典材料) と定義を併記する。該当しない関門と、
-  // 材料不足で判定しない関門は出さない
-  const hits = barrierHits(ev);
-  if (!hits.length) return "";
-  const rows = hits.map(k => `<li><b>${esc(BRL[k])}</b><span>${esc(ev.barriers[k].evidence || "")} — ${esc(BRD[k])}</span></li>`).join("");
+  // 関門ブロック: 全関門について状態チップ (該当 / 非該当 /
+  // 判定しない / 対象外) を出し、該当した関門には導出側が生成した
+  // 根拠文 (数値・状態・出典材料) と定義を併記する。状態は導出の
+  // status の直読みで、表示側で判定や理由は作らない
+  if (!ev || !ev.barriers) return "";
+  const rows = BRO.filter(k => ev.barriers[k]).map(k => {
+    const b = ev.barriers[k];
+    const st = BRS[b.status] || b.status;
+    if (b.status === "hit")
+      return `<li><b>${esc(BRL[k])}</b> <span class="brz">${esc(st)}</span><span>${esc(b.evidence || "")} — ${esc(BRD[k])}</span></li>`;
+    return `<li><b>${esc(BRL[k])}</b> <span class="brz off">${esc(st)}</span></li>`;
+  }).join("");
+  if (!rows) return "";
   return `<p style="margin-top:10px">関門</p><ul class="pts">${rows}</ul>`
     + `<p class="hint">関門は一次情報（治験・財務）の証拠条件から導出した表示専用の判定です（barriers/v1）。採点・選定・企業の層の判定には使いません。関門の定義は NEDO によります。</p>`;
 }

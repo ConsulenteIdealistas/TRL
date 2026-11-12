@@ -308,13 +308,14 @@ def validate_assessment(obj, kind, cfg):
     return scores, details, errors
 
 
-def parse_trl_level(v):
-    """長期評価の trl_level(任意)。-> (dict|None, errors)。level は 1〜9 の整数か null。
-    整数のときは reason と evidence が必須。換算や補完はしない。"""
+def _parse_readiness_level(v, name):
+    """trl_level / crl_level 共通のパース (任意フィールド)。-> (dict|None,
+    errors)。level は 1〜9 の整数か null。整数のときは reason と
+    evidence が必須。換算や補完はしない。"""
     if v is None:
         return None, []
     if not isinstance(v, dict):
-        return None, ["trl_level:must_be_object"]
+        return None, [f"{name}:must_be_object"]
     lv = v.get("level")
     out = {"level": None, "reason": str(v.get("reason") or ""), "evidence": v.get("evidence") or [],
            "missing_info": v.get("missing_info") or []}
@@ -323,17 +324,28 @@ def parse_trl_level(v):
     if lv is None:
         return out, []
     if isinstance(lv, bool) or not isinstance(lv, int) or not 1 <= lv <= 9:
-        return None, ["trl_level.level:must_be_1_to_9_or_null"]
+        return None, [f"{name}.level:must_be_1_to_9_or_null"]
     errs = []
     if not out["reason"].strip():
-        errs.append("trl_level:reason_required")
+        errs.append(f"{name}:reason_required")
     ev = out["evidence"]
     if not isinstance(ev, list) or not ev or any(
             not isinstance(e, dict) or not str(e.get("ref", "")).strip() or not str(e.get("summary", "")).strip()
             or e.get("kind") not in EVIDENCE_KINDS for e in ev):
-        errs.append("trl_level:evidence_required")
+        errs.append(f"{name}:evidence_required")
     out["level"] = lv
     return out, errs
+
+
+def parse_trl_level(v):
+    """長期評価の trl_level(任意)。"""
+    return _parse_readiness_level(v, "trl_level")
+
+
+def parse_crl_level(v):
+    """長期評価の crl_level(任意、long v4〜)。商業成熟度 (CRL、規程
+    第3章の2)。trl_level と同じ規律で、換算や補完はしない。"""
+    return _parse_readiness_level(v, "crl_level")
 
 
 def parse_trl_levels(v):
@@ -477,6 +489,9 @@ def evaluate_one(cand, kind, cfg, llm, as_of, extraction=None, extract_meta=None
                     trl, trl_errs = parse_trl_level(obj.get("trl_level"))
                     errs = errs + trl_errs
                     result["extra"]["trl_level"] = trl
+                    crl, crl_errs = parse_crl_level(obj.get("crl_level"))
+                    errs = errs + crl_errs
+                    result["extra"]["crl_level"] = crl
                     levels = parse_trl_levels(obj.get("trl_levels"))
                     if levels:
                         result["extra"]["trl_levels"] = levels

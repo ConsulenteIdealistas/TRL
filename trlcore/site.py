@@ -122,6 +122,12 @@ def _ev_for_site(ev, cfg):
         _m, _w = _split_missing(trl.get("missing_info"))
         trl["missing_info"] = _m
         trl["awaiting_info"] = _w
+    crl = extra.get("crl_level")
+    if isinstance(crl, dict) and crl.get("missing_info"):
+        crl = dict(crl)
+        _m, _w = _split_missing(crl.get("missing_info"))
+        crl["missing_info"] = _m
+        crl["awaiting_info"] = _w
     total_orig, band_orig = _as_evaluated(extra, ev)
     out = {
         "status": ev["status"], "total": ev["total"], "band": ev["band"], "as_of": ev["as_of"],
@@ -135,6 +141,8 @@ def _ev_for_site(ev, cfg):
         # 混ざっていた場合に備えてログと同じ秘匿処理を通す
         "errors": [redact(str(e)) for e in json.loads(ev["errors_json"] or "[]")] if ev["status"] == "error" else [],
         "trl_level": trl,
+        # 商業成熟度 CRL (v4 世代の任意フィールド。旧世代では None)
+        "crl_level": crl if isinstance(crl, dict) else None,
         # 技術ごとの TRL 内訳 (v3 世代の任意フィールド。旧世代では None)
         "trl_levels": extra.get("trl_levels") if isinstance(extra.get("trl_levels"), list) else None,
         "direction": extra.get("direction") if ev["status"] != "error" else None,  # error 評価の方向性は出さない (一覧・詳細で共通)

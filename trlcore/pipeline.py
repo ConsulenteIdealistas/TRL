@@ -1070,26 +1070,74 @@ def select_for_eval(store, cfg, today, limit, retry_failed="no", only_new=False,
 
     rows.sort(key=lambda c: c["published"] or "", reverse=True)
     rows.sort(key=_selection_rank)
+    # 初回評価の寄せ (F-1): 帰属可能な long 評価がまだ無いコア企業
+    # (tier 導出で Conditional に置かれる未評価の企業) について、その企業
+    # だけに strong リンクする候補を選定の前面に出す。定義は tier 導出
+    # (tiers/v1 の条件 a・b) と一致させる: strong リンクの集合がその企業
+    # のみでなければ、評価しても帰属可能な評価にならず層は動かないため
+    # 前面の対象にしない。未評価の企業は測定値自体が無く観測の対象に
+    # ならないため、「再評価は初回評価に従属する」という滞留対策の従来
+    # 原則をそのまま適用し、世代の寄せ (G-5) より前に置く。前面に出せる
+    # のは上限の半分 (切り上げ) までで、値と論拠は G-5 と同じ (1つの
+    # クラスが週予算を食い潰さない)。前面の中では1社1件 (その企業の
+    # 最上位候補のみ) にする: tier は最新評価のみで判定するため、同じ
+    # 実行で同じ企業を複数評価しても層の動きは1件分しかなく、枠は別の
+    # 未評価企業に回す。前面に入らなかった初回評価候補は世代寄せの
+    # 溢れより前に置き、他の適格候補が尽きればそちらからも選ばれる。
+    # 進捗は stats で観測可能にする (未評価の残社数・適格社数・選定数)。
+    evaluated_ids = store.entities_with_attributable_long_eval() \
+        if hasattr(store, "entities_with_attributable_long_eval") else set()
+    no_long_ids = core_ids - evaluated_ids
+
+    def _first_eval_company(c):
+        strong = {e["entity_id"] for e in c.get("entities", [])
+                  if e.get("strength") == "strong"
+                  and e.get("link_type", "entity") == "entity"}
+        if len(strong) == 1:
+            only = next(iter(strong))
+            if only in no_long_ids:
+                return only
+        return None
+
+    first_rows = [c for c in rows if _first_eval_company(c) is not None]
+    first_ids = {c["id"] for c in first_rows}
+    _seen_first, first_dedup = set(), []
+    for c in first_rows:
+        k = _first_eval_company(c)
+        if k in _seen_first:
+            continue
+        _seen_first.add(k)
+        first_dedup.append(c)
+    if stats is not None:
+        stats["firsteval_companies_remaining"] = len(no_long_ids)
+        stats["firsteval_eligible_companies"] = len(first_dedup)
     # 世代の寄せ (G-5): 再評価適格な候補のうち、最新 long 評価が旧世代の
     # ものを選定の前面に出し、世代混在の解消を偶発でなく選定の規則に
     # する。旧世代の適格は TH-1 ゲートの世代緩和で材料更新に依らない
     # ため、適格数そのものが移行の残量を表す。前面に出せるのは上限の
-    # 半分 (切り上げ) まで: 残り半分は通常選定 (未評価候補の初回評価を
-    # 含む) のために残し、週予算を旧世代の消化だけで食い潰さない。
-    # 半分という値は「再評価は初回評価に従属する」という滞留対策の
-    # 従来原則 (予約も上限の内数・別枠なし) を、世代寄せにも同じ強さで
-    # 適用したもの。前面分を超えた旧世代候補は通常選定の後ろに回り、
-    # 他の適格候補が尽きれば (rest が尽きれば) そちらからも選ばれる。
+    # 半分 (切り上げ) まで: 残り半分は通常選定のために残し、週予算を
+    # 旧世代の消化だけで食い潰さない。半分という値は「再評価は初回評価に
+    # 従属する」という滞留対策の従来原則 (予約も上限の内数・別枠なし)
+    # を、世代寄せにも同じ強さで適用したもの。前面分を超えた旧世代候補は
+    # 通常選定の後ろに回り、他の適格候補が尽きれば (rest が尽きれば)
+    # そちらからも選ばれる。初回評価の寄せ (F-1) が入った後は、その後ろ
+    # に置く (初回評価は再評価に従属しない、という同じ原則の裏側)。
     # 移行の進捗は stats で観測可能にする (旧世代の残数・適格数・選定数)。
     if stats is not None:
         stats["oldgen_long_remaining"] = len(oldgen_ids)
-    oldgen_rows = [c for c in rows if c["id"] in oldgen_ids]
-    if oldgen_rows:
-        if stats is not None:
-            stats["oldgen_reeval_eligible"] = len(oldgen_rows)
-        cap_old = -(-limit // 2)
-        head, tail = oldgen_rows[:cap_old], oldgen_rows[cap_old:]
-        rows = head + [c for c in rows if c["id"] not in oldgen_ids] + tail
+    oldgen_rows = [c for c in rows if c["id"] in oldgen_ids
+                   and c["id"] not in first_ids]
+    if oldgen_rows and stats is not None:
+        stats["oldgen_reeval_eligible"] = len(oldgen_rows)
+    if first_rows or oldgen_rows:
+        cap_front = -(-limit // 2)
+        first_head = first_dedup[:cap_front]
+        first_head_ids = {c["id"] for c in first_head}
+        old_head, old_tail = oldgen_rows[:cap_front], oldgen_rows[cap_front:]
+        middle = [c for c in rows if c["id"] not in first_ids
+                  and c["id"] not in oldgen_ids]
+        first_over = [c for c in first_rows if c["id"] not in first_head_ids]
+        rows = first_head + old_head + middle + first_over + old_tail
     # 企業あたりの保持上限: 材料の多い大手がキューを抱え込まないようにする。
     # 上限を超えた分は今回の選定から外れる (新しい材料が来れば順位で入れ替わる)。
     cap = sc.get("eval_queue_per_entity", 10)
@@ -1130,10 +1178,12 @@ def select_for_eval(store, cfg, today, limit, retry_failed="no", only_new=False,
                 picked_ids.add(c["id"])
         if stats is not None:
             stats["oldgen_selected"] = sum(1 for c in picked if c["id"] in oldgen_ids)
+            stats["firsteval_selected"] = sum(1 for c in picked if c["id"] in first_ids)
         return picked
     picked = capped[:limit]
     if stats is not None:
         stats["oldgen_selected"] = sum(1 for c in picked if c["id"] in oldgen_ids)
+        stats["firsteval_selected"] = sum(1 for c in picked if c["id"] in first_ids)
     return picked
 
 
@@ -1334,6 +1384,10 @@ def run_pipeline(store, cfg, llm, *, as_of, sources=("pubmed", "arxiv"), kinds=(
         log(f"[eval] 世代の寄せ (G-5): 旧世代の再評価 {counts['oldgen_selected']} 件を選定 "
             f"(適格 {counts.get('oldgen_reeval_eligible', 0)} 件 / "
             f"旧世代の残り {counts.get('oldgen_long_remaining', 0)} 件)")
+    if counts.get("firsteval_selected"):
+        log(f"[eval] 初回評価の寄せ (F-1): 未評価企業の初回評価 {counts['firsteval_selected']} 件を選定 "
+            f"(適格 {counts.get('firsteval_eligible_companies', 0)} 社 / "
+            f"未評価の残り {counts.get('firsteval_companies_remaining', 0)} 社)")
     # 引き継ぎ: 前回の実行が異常終了 (interrupted/partial/error) か、評価フェーズが
     # 打ち切られて (counts の llm_degraded) 選定が記録されていたら、その未完分を
     # 今回の選定の先頭に置く。前回の実行で評価が保存された候補は完了扱いで除く

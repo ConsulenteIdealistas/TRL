@@ -1,0 +1,68 @@
+{
+  "version": 1,
+  "exported_at": "2026-11-12T00:52:32.234Z",
+  "decisions": [
+    {
+      "id": "3060cc4b-c183-48a7-a202-39117a6f756e",
+      "evaluation_id": 341,
+      "check": "A11",
+      "item": "financial_sustainability",
+      "auditor": "rules/v2",
+      "disposition": "watch",
+      "note": "",
+      "decided_at": "2026-11-08T03:51:54.241Z"
+    },
+    {
+      "id": "143aef26-bb80-47c5-91e8-2e8accecc1a7",
+      "evaluation_id": 273,
+      "check": "A8",
+      "item": "counter_points",
+      "auditor": "rules/v3",
+      "disposition": "confirmed",
+      "note": "",
+      "decided_at": "2026-11-08T12:06:02.818Z"
+    },
+    {
+      "id": "164bfedd-7198-4cec-ace1-77d654cc1eb8",
+      "evaluation_id": 272,
+      "check": "A8",
+      "item": "counter_points",
+      "auditor": "rules/v2",
+      "disposition": "confirmed",
+      "note": "",
+      "decided_at": "2026-11-08T12:05:42.683Z"
+    },
+    {
+      "id": "888bcf04-477a-44ad-92e4-d96c162c00aa",
+      "evaluation_id": 354,
+      "check": "A12",
+      "item": "not_priced_in",
+      "auditor": "rules/v3",
+      "disposition": "confirmed",
+      "note": "",
+      "decided_at": "2026-11-08T03:47:20.377Z"
+    },
+    {
+      "id": "1dbaf5f4-bbb4-4e52-a28e-5602c05270a9",
+      "evaluation_id": 360,
+      "check": "A12",
+      "item": "expectation_gap",
+      "auditor": "rules/v3",
+      "disposition": "confirmed",
+      "note": "",
+      "decided_at": "2026-11-08T03:47:23.442Z"
+    },
+    {
+      "id": "55bfbaac-8392-4218-89cd-0dffd5840cbd",
+      "evaluation_id": 360,
+      "check": "A12",
+      "item": "not_priced_in",
+      "auditor": "rules/v3",
+      "disposition": "confirmed",
+      "note": "",
+      "decided_at": "2026-11-08T03:47:25.075Z"
+    }
+  ],
+  "reeval_queue": [],
+  "adjustments": []
+}

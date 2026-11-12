@@ -126,6 +126,10 @@ const GEN_NOTE = "世代は、その評価に使われた規程・プロンプ�
 let showGen = true;
 try { showGen = localStorage.getItem("trl-showgen") !== "0"; } catch (e) { /* 保存不可なら既定のまま */ }
 const barrierHits = ev => (ev && ev.barriers) ? BRO.filter(k => ev.barriers[k] && ev.barriers[k].status === "hit") : [];
+// 関門の状態ラベル。導出 (barriers/v1) の status の読み替えで、表示側で
+// 状態を作ることはしない (hit=該当 / clear=非該当 / unknown=判定しない
+// (材料不足) / na=対象外 (TRL のゲート外))
+const BRS = {hit: "該当", clear: "非該当", unknown: "判定しない", na: "対象外"};
 function genBadge(ev) {
   // 世代バッジ。世代に優劣はないため色は付けず、現行かどうかも文字列だけで区別する
   if (!showGen || !ev || !ev.gen) return "";
@@ -141,12 +145,19 @@ function barrierChipsHtml(ev) {
   return hits.length ? `<div class="brs">${hits.map(k => `<span class="brz">${esc(BRL[k])}</span>`).join("")}</div>` : "";
 }
 function barrierBlockHtml(ev) {
-  // 詳細・ドロワー用: 該当した関門ごとに、導出側が生成した根拠文
-  // (数値・状態・出典材料) と定義を併記する。該当しない関門と、
-  // 材料不足で判定しない関門は出さない
-  const hits = barrierHits(ev);
-  if (!hits.length) return "";
-  const rows = hits.map(k => `<li><b>${esc(BRL[k])}</b><span>${esc(ev.barriers[k].evidence || "")} — ${esc(BRD[k])}</span></li>`).join("");
+  // 詳細・ドロワー用: 全関門について状態チップ (該当 / 非該当 /
+  // 判定しない / 対象外) を出し、該当した関門には導出側が生成した
+  // 根拠文 (数値・状態・出典材料) と定義を併記する。状態は導出の
+  // status の直読みで、表示側で判定や理由は作らない
+  if (!ev || !ev.barriers) return "";
+  const rows = BRO.filter(k => ev.barriers[k]).map(k => {
+    const b = ev.barriers[k];
+    const st = BRS[b.status] || b.status;
+    if (b.status === "hit")
+      return `<li><b>${esc(BRL[k])}</b> <span class="brz">${esc(st)}</span><span>${esc(b.evidence || "")} — ${esc(BRD[k])}</span></li>`;
+    return `<li><b>${esc(BRL[k])}</b> <span class="brz off">${esc(st)}</span></li>`;
+  }).join("");
+  if (!rows) return "";
   return `<p style="margin-top:10px">関門</p><ul class="pts">${rows}</ul>`
     + `<p class="hint">関門は一次情報（治験・財務）の証拠条件から導出した表示専用の判定です（barriers/v1）。採点・選定・企業の層の判定には使いません。関門の定義は NEDO によります。</p>`;
 }
@@ -522,6 +533,40 @@ function tierBand() {
     + (warns.length ? `<span class="twarn">警告: ${esc(warns.join("、"))}</span>` : "");
   el.hidden = false;
 }
+function barrierBand() {
+  // 関門の該当一覧: 候補の long 評価に付いた関門 (barriers) から、関門
+  // ごとに該当した企業を集約して企業チップで出す。帰属は導出の置き方に
+  // 合わせ、strong リンクが一意な企業だけに付ける (別企業の評価を
+  // 貼らない)。同じ企業の複数評価は、最新の評価の候補へリンクする。
+  // 表示側で判定・件数の丸めは作らない。該当が無ければ枠ごと隠す
+  const el = $("#brband");
+  if (!el) return;
+  const byGate = {};
+  for (const p of P) {
+    const b = p.long && p.long.barriers;
+    if (!b) continue;
+    const strong = (p.entities || []).filter(e => e.strength === "strong");
+    if (strong.length !== 1) continue;
+    const name = strong[0].name;
+    if (!name) continue;
+    for (const k of BRO) {
+      if (b[k] && b[k].status === "hit") {
+        const m = byGate[k] || (byGate[k] = new Map());
+        const at = p.long.evaluated_at || "";
+        if (!m.has(name) || m.get(name).at < at) m.set(name, {id: p.id, at});
+      }
+    }
+  }
+  const parts = BRO.filter(k => byGate[k] && byGate[k].size).map(k => {
+    const chips = [...byGate[k].entries()]
+      .sort((a, b2) => a[0].localeCompare(b2[0]))
+      .map(([name, v]) => `<a class="brz lk" href="detail.html?id=${encodeURIComponent(v.id)}">${esc(name)}</a>`).join("");
+    return `<span class="brg"><b>${esc(BRL[k])}</b> ${byGate[k].size}社 ${chips}</span>`;
+  });
+  if (!parts.length) { el.hidden = true; return; }
+  el.innerHTML = `<span>関門の該当:</span>` + parts.join("");
+  el.hidden = false;
+}
 function showError(msg) {
   $("#list").innerHTML = "";
   $("#det").innerHTML = "";
@@ -582,7 +627,7 @@ async function load() {
   importPinsFromUrl();
   $("#gen").textContent = "更新 " + jst(d.generated_at);
   $("#fl").value = LANG;
-  facetChips(); warn(d); stats(); tierBand(); render();
+  facetChips(); warn(d); stats(); tierBand(); barrierBand(); render();
 }
 $("#sf").addEventListener("submit", e => { e.preventDefault(); render(); });
 document.addEventListener("keydown", e => {

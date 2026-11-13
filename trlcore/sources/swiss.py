@@ -35,7 +35,10 @@ from html.parser import HTMLParser
 from ..http import http_fetch
 
 EQS_BASE = "https://www.eqs-news.com"
-GNW_FEED_BASE = "https://www.globenewswire.com/atomfeed/organization"
+# フィードの取得先は rss ホストにする: www 側はボット保護で自動取得に
+# 403 を返す (2026-11-12・13 の定期実行で Basilea / Molecular Partners
+# の2社とも失敗し、同日に rss 側で同じパスの 200 を実測確認した)
+GNW_FEED_BASE = "https://rss.globenewswire.com/atomfeed/organization"
 
 # スイス10社 (entities/ch.json の id) の ISIN と、ワイヤ別の巡回情報。
 # ISIN は 2026-11-10 に各社の公表資料・銘柄情報で実測確認した値

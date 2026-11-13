@@ -66,6 +66,52 @@ GNW_FEED = """<?xml version="1.0" encoding="UTF-8"?>
 </feed>
 """
 
+# rss ホスト側フィードの実形式 (2026-11-13 実測): dc は DCMI 本家の
+# 名前空間、本文は summary でなく content にリード文のみが入る
+GNW_FEED_RSS = """<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns:dc="http://dublincore.org/documents/dcmi-namespace/" xmlns="http://www.w3.org/2005/Atom">
+<title>Molecular Partners AG</title>
+<entry>
+<title>Molecular Partners Reports Q3 2026 Financial Results</title>
+<link rel="alternate" href="https://www.globenewswire.com/news-release/2026/10/29/3390914/0/en/molecular-partners-reports-q3-2026-financial-results.html"/>
+<published>2026-10-29T06:00:00Z</published>
+<content type="html"><![CDATA[<p>ZURICH, Oct. 29, 2026 (GLOBE NEWSWIRE) -- Molecular Partners AG today announced financial results for the third quarter of 2026.</p>]]></content>
+<dc:identifier>3390914</dc:identifier>
+<dc:subject>Earnings Releases and Operating Results</dc:subject>
+</entry>
+<entry>
+<title>Molecular Partners meldet Ergebnisse für das dritte Quartal 2026</title>
+<link rel="alternate" href="https://www.globenewswire.com/news-release/2026/10/29/3390914/0/de/molecular-partners-meldet-ergebnisse.html"/>
+<published>2026-10-29T06:00:00Z</published>
+<content type="html"><![CDATA[<p>ZÜRICH, 29. Oktober 2026 (GLOBE NEWSWIRE) -- Molecular Partners AG gab heute die Finanzergebnisse bekannt.</p>]]></content>
+<dc:identifier>3390914</dc:identifier>
+<dc:subject>Earnings Releases and Operating Results</dc:subject>
+</entry>
+<entry>
+<title>Molecular Partners to Present at a Healthcare Conference</title>
+<link rel="alternate" href="https://www.globenewswire.com/news-release/2026/11/05/3395000/0/en/molecular-partners-to-present.html"/>
+<published>2026-11-05T06:00:00Z</published>
+<content type="html"><![CDATA[<p>Molecular Partners will present at a conference.</p>]]></content>
+<dc:identifier>3395000</dc:identifier>
+<dc:subject>Conferences</dc:subject>
+</entry>
+</feed>
+"""
+
+# 記事ページ: 本文コンテナの外 (ナビ) にも金額文を置き、本文だけが
+# 拾われることをテストで担保する
+GNW_ARTICLE_HTML = """
+<html><body>
+<div class="nav"><p>Other Corp revenue was CHF 999 million last year.</p></div>
+<div class="main-body-container article-body" id="main-body-container">
+<p>ZURICH, Oct. 29, 2026 -- Molecular Partners announced its Q3 results.</p>
+<div><p>The Company's cash and cash equivalents were CHF 57.5 million as of September 30, 2026.</p></div>
+<p>Total revenue was CHF 12.1 million in the third quarter.</p>
+</div>
+<div class="footer"><p>Another Corp profit was CHF 888 million.</p></div>
+</body></html>
+"""
+
 
 class SwissParseTests(unittest.TestCase):
     def test_eqs_search_extracts_article_links(self):
@@ -141,6 +187,48 @@ class SwissFetchTests(unittest.TestCase):
         self.assertIn("CHF 232.4 million", out[0]["abstract"])
         rec, problems = normalize(out[0], "2026-11-10T00:00:00+00:00")
         self.assertIsNotNone(rec, problems)
+
+    def test_parse_gnw_rss_feed(self):
+        items = swiss.parse_gnw_feed(GNW_FEED_RSS)
+        self.assertEqual(len(items), 2)  # de 版は identifier で畳まれる
+        en = items[0]
+        self.assertEqual(en["identifier"], "3390914")
+        self.assertIn("/en/", en["link"])
+        self.assertEqual(en["subjects"],
+                         ["Earnings Releases and Operating Results"])
+        self.assertIn("today announced", en["summary"])  # content へ fallback
+
+    def test_fetch_gnw_rss_article_body(self):
+        calls = []
+
+        def fake_http(url, params=None, headers=None, retries=None):
+            calls.append(url)
+            if "atomfeed/organization" in url:
+                return GNW_FEED_RSS.encode()
+            return GNW_ARTICLE_HTML.encode()
+
+        out = swiss.fetch_gnw("molecular_partners", 5, 400, AS_OF,
+                              http=fake_http)
+        self.assertEqual(len(out), 1)
+        self.assertIn("CHF 57.5 million", out[0]["abstract"])
+        self.assertNotIn("CHF 999 million", out[0]["abstract"])  # 本文の外は読まない
+        self.assertNotIn("CHF 888 million", out[0]["abstract"])
+        self.assertTrue(out[0]["url"].startswith(
+            "https://www.globenewswire.com/"))  # 記録 URL は正規側
+        article_calls = [u for u in calls if "news-release" in u]
+        self.assertEqual(len(article_calls), 1)
+        self.assertTrue(article_calls[0].startswith(
+            "https://rss.globenewswire.com/"))  # 取得だけ rss 側
+
+    def test_fetch_gnw_article_failure_raises(self):
+        def fake_http(url, params=None, headers=None, retries=None):
+            if "atomfeed/organization" in url:
+                return GNW_FEED_RSS.encode()
+            raise RuntimeError("boom")
+
+        with self.assertRaises(RuntimeError):
+            swiss.fetch_gnw("molecular_partners", 5, 400, AS_OF,
+                            http=fake_http)
 
 
 def swiss_raw(wire, entity_id):

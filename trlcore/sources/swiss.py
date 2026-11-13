@@ -11,10 +11,13 @@ Basilea (GNW) か Kardex (EQS) が必ず漏れる非対称性があるため併�
   構造化フッター (Company / ISIN / EQS News ID) の ISIN が対象企業の
   ISIN と一致した記事だけを採用する。会社名検索の混入は ISIN で排除する
   (同定は ISIN が担う)。記事 URL は /news/{種別}/{slug}/{UUID} の安定形式
-- GlobeNewswire: 会社別の Organization Atom フィード (直近20件・全文入り)
-  を巡回する。フィード自体が会社単位なので、同定はフィードが担う。
-  フィードのトークンは会社ごとに実測で確認したものだけを表に置く
-  (未確認の会社は表で None とし、収集側で「未対応」として記録する)
+- GlobeNewswire: 会社別の Organization Atom フィード (直近20件) を
+  rss ホストから巡回する (www 側はボット保護で 403)。フィード自体が
+  会社単位なので、同定はフィードが担う。rss 側フィードの本文は
+  リード文のみのため、決算と判定した記事は rss 側の記事ページ本文
+  (articleBody) から数値を取る。フィードのトークンは会社ごとに実測で
+  確認したものだけを表に置く (未確認の会社は表で None とし、収集側で
+  「未対応」として記録する)
 - どちらのワイヤも、決算発表と判定した記事 (タイトル / GNW の subject が
   決算系) のうち、本文から通貨金額を含む文を抽出できたものだけを財務候補
   にする。数値が確認できない発表は材料にしない (調査の判定基準と同じ)
@@ -260,11 +263,25 @@ def fetch_eqs(entity_id, max_results, lookback_days, as_of, http=None):
 # ---------------------------------------------------------------- GlobeNewswire
 
 _ATOM = {"a": "http://www.w3.org/2005/Atom", "dc": "http://purl.org/dc/elements/1.1/"}
+# dc の名前空間は配信ホストで異なる (www 側は purl、rss 側は DCMI 本家)。
+# identifier / subject の読み取りは両方を試す
+_DC_NS = ("http://purl.org/dc/elements/1.1/",
+          "http://dublincore.org/documents/dcmi-namespace/")
+
+
+def _dc_texts(entry, name):
+    out = []
+    for ns in _DC_NS:
+        for el in entry.findall(f"{{{ns}}}{name}"):
+            out.append((el.text or "").strip())
+    return out
 
 
 def parse_gnw_feed(raw):
     """GlobeNewswire の Organization Atom フィード → 記事のリスト。
-    同一リリースの多言語版 (同じ dc:identifier) は英語版を優先して1件に畳む。"""
+    同一リリースの多言語版 (同じ dc:identifier) は英語版を優先して1件に畳む。
+    本文は summary を優先し、無い配信形式 (rss 側はリード文のみの
+    content だけを持つ) では content にフォールバックする。"""
     if isinstance(raw, str):
         raw = raw.encode()
     root = ET.fromstring(raw)
@@ -279,26 +296,83 @@ def parse_gnw_feed(raw):
                 link = el.get("href") or link
         if not link:
             link = txt("a:id")
-        ident = txt("dc:identifier") or link
-        subjects = [ (el.text or "").strip()
-                     for el in entry.findall("dc:subject", _ATOM)]
+        ident = (_dc_texts(entry, "identifier") or [""])[0] or link
+        subjects = _dc_texts(entry, "subject")
         item = {"identifier": ident, "title": txt("a:title"), "link": link,
                 "published": (txt("a:published") or txt("a:updated"))[:10],
-                "summary": txt("a:summary"), "subjects": subjects}
+                "summary": txt("a:summary") or txt("a:content"),
+                "subjects": subjects}
         prev = by_id.get(ident)
         if prev is None or ("/en/" in link and "/en/" not in prev["link"]):
             by_id[ident] = item
     return list(by_id.values())
 
 
+class _ArticleBodyParser(HTMLParser):
+    """GlobeNewswire 記事ページから本文コンテナ (id=main-body-container)
+    の内側のテキストだけを拾う。ページ側のナビや関連リンクの数値が
+    他社の財務として混入しないよう、本文の外は読まない。"""
+
+    _VOID = {"br", "img", "hr", "meta", "link", "input", "wbr", "col"}
+
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.parts = []
+        self.found = False
+        self._depth = 0
+        self._skip = 0
+
+    def handle_starttag(self, tag, attrs):
+        if self._depth:
+            if tag in ("script", "style"):
+                self._skip += 1
+            if tag not in self._VOID:
+                self._depth += 1
+        elif dict(attrs).get("id") == "main-body-container":
+            self.found = True
+            self._depth = 1
+
+    def handle_endtag(self, tag):
+        if self._depth and tag not in self._VOID:
+            self._depth -= 1
+            if tag in ("script", "style") and self._skip:
+                self._skip -= 1
+
+    def handle_data(self, data):
+        if self._depth and not self._skip:
+            self.parts.append(data)
+
+
+def extract_gnw_article_text(raw):
+    """記事ページ HTML → 本文コンテナのテキスト。コンテナが無ければ
+    空文字 (呼び出し側で「本文を取れなかった」として扱う)。"""
+    if isinstance(raw, bytes):
+        raw = raw.decode("utf-8", errors="replace")
+    parser = _ArticleBodyParser()
+    parser.feed(raw or "")
+    if not parser.found:
+        return ""
+    return re.sub(r"\s+", " ", " ".join(parser.parts)).strip()
+
+
+def _gnw_article_url(link):
+    """記事ページの取得先を rss ホストに読み替える (www 側は 403)。
+    記録に残す URL は正規の www 側で、読み替えは取得時だけに使う。"""
+    return link.replace("https://www.globenewswire.com",
+                        "https://rss.globenewswire.com", 1)
+
+
 def fetch_gnw(entity_id, max_results, lookback_days, as_of, http=None):
     """entity_id の会社の GlobeNewswire 決算発表を会社別フィードから取得する。
     フィード未確認の会社は呼び出し側 (pipeline) で未対応として記録され、
-    ここには来ない。フィード取得の失敗は例外にする (0件で握りつぶさない)。"""
+    ここには来ない。フィード取得の失敗は例外にする (0件で握りつぶさない)。
+    数値の出所はフィード本文 (全文が載る形式) を優先し、リード文しか
+    無い rss 形式では記事ページの本文を取りに行く。"""
     comp = SWISS_COMPANIES[entity_id]
     fetch = http or http_fetch
     raw = fetch(f"{GNW_FEED_BASE}/{comp['gnw_feed']}", retries=1)
     out = []
+    article_errors = 0
     for item in parse_gnw_feed(raw):
         if len(out) >= max_results:
             break
@@ -317,8 +391,23 @@ def fetch_gnw(entity_id, max_results, lookback_days, as_of, http=None):
             continue
         sentences = extract_money_sentences(html_to_text(item["summary"]))
         if not sentences:
+            # フィード本文に数値が無い場合は記事ページ本文から取る。
+            # 本文自体が取れなければ失敗として数え、全滅した場合は
+            # 0件で握りつぶさず例外にする (EQS と同じ扱い)
+            try:
+                body = extract_gnw_article_text(
+                    fetch(_gnw_article_url(item["link"]), retries=1))
+            except Exception:
+                body = ""
+            if not body:
+                article_errors += 1
+                continue
+            sentences = extract_money_sentences(body)
+        if not sentences:
             continue
         out.append(_record("gnw", "GlobeNewswire", item["identifier"],
                            item["title"], sentences, item["link"], published,
                            comp["eqs_name"]))
+    if article_errors and not out:
+        raise RuntimeError(f"GNW article fetch failed ({article_errors} articles)")
     return out

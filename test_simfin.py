@@ -142,6 +142,22 @@ class SimFinFetcherTests(unittest.TestCase):
         self.assertEqual(n1["keys"][0], "srcid:simfin:US:XYZ-2026-06-30")
         self.assertNotEqual(n1["keys"][0], n2["keys"][0])
 
+    def test_fetch_records_bulk_freshness(self):
+        simfin.fetch_simfin_bulk("us", ["XYZ"], 400, AS_OF, http=make_http())
+        diag = simfin.bulk_freshness("us")
+        # 対象ティッカーで絞る前のファイル全体で測る: 対象外の ABC や、
+        # Publish Date が未来で材料にしない期間 (2026-09-30) も含めた
+        # 「ファイル自体の新しさ」が遅延切り分けの材料になる
+        self.assertEqual(diag["rows"], 9)
+        self.assertEqual(diag["max_report_date"], "2026-09-30")
+        self.assertEqual(diag["max_publish_date"], "2026-11-15")
+        self.assertEqual(diag["datasets"]["income/ttm"]["rows"], 5)
+        self.assertEqual(diag["datasets"]["income/ttm"]["max_report_date"],
+                         "2026-09-30")
+        self.assertEqual(diag["datasets"]["balance/quarterly"]["max_report_date"],
+                         "2026-06-30")
+        self.assertIsNone(simfin.bulk_freshness("de"))  # 未取得の市場は None
+
     def test_fetch_ticker_not_in_bulk_is_absent(self):
         out = simfin.fetch_simfin_bulk("us", ["NOSUCH"], 400, AS_OF, http=make_http())
         self.assertEqual(out, {})

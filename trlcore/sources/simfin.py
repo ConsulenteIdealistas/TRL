@@ -31,6 +31,11 @@ bulk-download のエンドポイント一覧で 2026-11-10 に確認):
 Yahoo の四半期累計と並べて読める)、貸借対照表は時点値なので quarterly
 (その期末の値そのもの)。統合 (対象選定・休止・記録) は pipeline の
 _collect_simfin が担う。
+
+遅延幅が未公表のため、取得のたびにファイル全体の鮮度 (最大の Report
+Date / Publish Date) を診断として残す (bulk_freshness)。「認証は通るが
+新しい期間が1件も無い」が続くとき、対象社の不在とデータ側の遅延を
+切り分ける材料になる。
 """
 
 import csv
@@ -287,6 +292,40 @@ def _known_by(as_of, row):
 MAX_PERIODS_PER_COMPANY = 2
 
 
+# 直近のバルク取得の鮮度診断 (市場コード → 診断 dict)。fetch_simfin_bulk が
+# 取得のたびに更新し、pipeline の _collect_simfin が取得直後に
+# bulk_freshness() で読んで run の counts とログに残す。取得の戻り値の
+# 契約 (社ごとのレコード) は変えないための置き場所で、プロセス内のみで使う
+_last_freshness = {}
+
+
+def _max_date(rows, field):
+    """行リストの ISO 日付列の最大値 (読めない値は無視)。無ければ None。"""
+    best = None
+    for r in rows or []:
+        v = str((r or {}).get(field) or "").strip()
+        if not v:
+            continue
+        try:
+            d = date.fromisoformat(v)
+        except ValueError:
+            continue
+        if best is None or d > best:
+            best = d
+    return best.isoformat() if best else None
+
+
+def bulk_freshness(market):
+    """直近に取得したバルクの鮮度診断。未取得の市場は None。
+
+    {datasets: {"income/ttm" 等: {rows, max_report_date, max_publish_date}},
+    rows, max_report_date, max_publish_date}。対象ティッカーで絞る前の
+    ファイル全体で測る: 遅延の切り分けは「ファイル自体がどこまで新しいか」
+    であって、対象社の有無とは別の問いだから。
+    """
+    return _last_freshness.get(str(market or "").strip().lower())
+
+
 def fetch_simfin_bulk(market, tickers, lookback_days, as_of, http=None):
     """市場1つ分のバルクを取得し、対象ティッカーのレコードを作る。
 
@@ -295,6 +334,7 @@ def fetch_simfin_bulk(market, tickers, lookback_days, as_of, http=None):
     無ければそのティッカーはキー自体が無い (0件として記録される側)。
     通信失敗・認証失敗は例外のまま上げる: 空で握りつぶすと「成功・0件」
     になり、休止判定と静かな0件の検知の両方が壊れる。
+    取得が成功したら、ファイル全体の鮮度診断を bulk_freshness に残す。
     """
     m = str(market or "").strip().lower()
     if m not in ("us", "de", "ca"):
@@ -304,9 +344,20 @@ def fetch_simfin_bulk(market, tickers, lookback_days, as_of, http=None):
     if not wanted:
         return {}
     tables = {}
+    diag = {"datasets": {}, "rows": 0,
+            "max_report_date": None, "max_publish_date": None}
     for dataset, variant in DATASETS:
-        payload = _get(dataset, variant, m, http)
-        tables[dataset] = _rows_by_ticker_period(parse_bulk_csv(payload), wanted)
+        rows = parse_bulk_csv(_get(dataset, variant, m, http))
+        d = {"rows": len(rows),
+             "max_report_date": _max_date(rows, "Report Date"),
+             "max_publish_date": _max_date(rows, "Publish Date")}
+        diag["datasets"][f"{dataset}/{variant}"] = d
+        diag["rows"] += d["rows"]
+        for k in ("max_report_date", "max_publish_date"):
+            if d[k] and (diag[k] is None or d[k] > diag[k]):
+                diag[k] = d[k]
+        tables[dataset] = _rows_by_ticker_period(rows, wanted)
+    _last_freshness[m] = diag
     out = {}
     for (ticker, end), is_row in sorted(tables["income"].items(), reverse=True):
         if ticker in out and len(out[ticker]) >= MAX_PERIODS_PER_COMPANY:

@@ -17,7 +17,7 @@ from .sources.edgar import edgar_fetch
 from .sources.yahoo import yahoo_fetch
 from .sources.openalex import openalex_fetch
 from .sources.roic import fetch_roic, roic_enabled, roic_symbol
-from .sources.simfin import fetch_simfin_bulk, simfin_enabled, simfin_market, simfin_ticker
+from .sources.simfin import bulk_freshness, fetch_simfin_bulk, simfin_enabled, simfin_market, simfin_ticker
 from .sources.alphavantage import (DAILY_REQUEST_LIMIT as AV_DAILY_REQUEST_LIMIT,
                                    MAX_COMPANIES_PER_DAY as AV_MAX_COMPANIES_PER_DAY,
                                    REQUESTS_PER_COMPANY as AV_REQUESTS_PER_COMPANY,
@@ -594,6 +594,17 @@ def _collect_simfin(store, cfg, run_id, as_of, counts, log, budget, collect_t0, 
         except Exception as ex:
             err = redact(f"{type(ex).__name__}: {ex}")[:300]
             log(f"::warning::source simfin / market={market} failed: {err}")
+        if err is None:
+            # バルク自体の鮮度 (遅延の切り分け用)。実取得の fetcher だけが
+            # 残す診断で、無ければ (テストの差し替え等) 何もしない
+            diag = bulk_freshness(market)
+            if diag:
+                counts[f"simfin_{market}_bulk_rows"] = diag["rows"]
+                counts[f"simfin_{market}_bulk_max_report_date"] = diag["max_report_date"]
+                counts[f"simfin_{market}_bulk_max_publish_date"] = diag["max_publish_date"]
+                log(f"[collect] simfin/{market}: bulk freshness rows={diag['rows']} "
+                    f"report_max={diag['max_report_date']} "
+                    f"publish_max={diag['max_publish_date']}")
         for _prio, e, _m, ticker in group:
             qname = f"{e['id']}-simfin"
             raws = [] if err is not None else (by_ticker.get(ticker) or [])

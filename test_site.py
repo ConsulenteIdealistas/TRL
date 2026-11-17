@@ -617,6 +617,51 @@ class ExportTests(StoreFixture):
         self.assertIn("79", by_id["A15"]["threshold"])
         self.assertFalse(by_id["A5"]["implemented"])
 
+    def test_pubmed_abstract_excerpted_in_export(self):
+        # 対策A (2026-11-17): PubMed 抄録は冒頭2文までの抜粋で export し、
+        # DB の値 (評価の材料) は全文のまま変えない
+        long_abs = ("First sentence states the objective of this study clearly. "
+                    "Second sentence describes the methods used in the trial. "
+                    "Third sentence reports the primary outcome results in detail. "
+                    "Fourth sentence discusses implications for future research.")
+        rec, _ = T.normalize(raw(source="pubmed", sid="99999999",
+                                 title="Long abstract paper", abstract=long_abs), T.now_iso())
+        cid, _ = self.store.upsert_candidate(rec)
+        ev = {"kind": "long", "as_of": AS_OF.isoformat(), "status": "hold", "total": None, "band": None,
+              "items": {"technology_readiness": {"score": 50, "reason": "", "evidence": [],
+                                                 "counter_evidence": [], "missing_info": []}},
+              "extraction": None, "event": None, "prompt_versions": {}, "config_version": "x",
+              "config_hash": "x", "llm_provider": "gemini", "llm_model": "m", "input_hash": "hA",
+              "errors": [], "extra": {}}
+        self.store.add_evaluation("rA", cid, ev)
+        data = T.build_site_data(self.store, cfg_with(),
+                                 datetime(2026, 10, 26, tzinfo=timezone.utc))
+        cand = [c for c in data["candidates"] if c["id"] == cid][0]
+        self.assertEqual(cand["abstract"],
+                         "First sentence states the objective of this study clearly. "
+                         "Second sentence describes the methods used in the trial.")
+        self.assertEqual(self.store.get_candidate(cid)["abstract"], long_abs)
+
+    def test_site_abstract_rules(self):
+        from trlcore.site import _site_abstract
+        # ニュース系の断片は出さない
+        self.assertEqual(_site_abstract("gnews", "見出し - 媒体 スニペット"), "")
+        self.assertEqual(_site_abstract("prtimes", "見出し - PR TIMES 断片"), "")
+        # 政府・CC0 系は全文のまま
+        full = "Summary sentence one. " * 30
+        self.assertEqual(_site_abstract("trials", full), full)
+        self.assertEqual(_site_abstract("openalex", full), full)
+        # 短い PubMed 抄録 (2文以内・300字以内) はそのまま
+        short = "目的は明確である。方法も妥当である。"
+        self.assertEqual(_site_abstract("pubmed", short), short)
+        # 冒頭1文が300字を超える場合は文字数で切る
+        long_first = "あ" * 350 + "。次の文。"
+        got = _site_abstract("pubmed", long_first)
+        self.assertEqual(len(got), 300)
+        # 空値はそのまま
+        self.assertEqual(_site_abstract("pubmed", ""), "")
+        self.assertIsNone(_site_abstract("pubmed", None))
+
     def test_prev_evaluation_diff_exported(self):
         # 前回比 (Issue 1): 再評価された候補には直前の比較可能な評価の要約が付く
         data = self.build(Mock(make_llm_fn(long_scores={k: 65 for k in LONG_KEYS})), n=1)

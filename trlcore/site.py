@@ -1,6 +1,7 @@
 """trl.sqlite から静的サイト用の data.json を作る。Web(web/app.js)との契約は web/schema.json。"""
 
 import json
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import quote_plus
@@ -16,6 +17,42 @@ from .tiers import compute_derived_tiers, tier_distribution
 
 
 SITE_SCHEMA_VERSION = 3
+
+# ライセンス配慮 (2026-11-17 対策A): 出版社側に著作権がある PubMed 抄録は
+# 全文をサイトに載せず、冒頭2文・最大300字の抜粋にする (文の境界で切る。
+# 冒頭2文で論文の同定と要点把握は足り、続きは出典リンク先で読める形が
+# 引用の常道。300字は構造化抄録で1文が長い場合の上限)。ニュース系の
+# 断片 (見出しの繰り返し+短いスニペット) はサイトに出さない。
+# ClinicalTrials.gov (米国政府)・OpenAlex (CC0)・arXiv は全文のまま。
+# ここは export 専用の整形で、DB の値と評価には触らない。
+ABSTRACT_EXCERPT_SOURCES = frozenset({"pubmed"})
+ABSTRACT_OMIT_SOURCES = frozenset({"gnews", "prtimes"})
+ABSTRACT_EXCERPT_SENTENCES = 2
+ABSTRACT_EXCERPT_MAX_CHARS = 300
+
+_SENTENCE_END = re.compile(r"[.!?。！？]")
+
+
+def _site_abstract(source, text):
+    """サイト export 用に抄録を整形する (DB の値は変えない)。"""
+    if not text:
+        return text
+    if source in ABSTRACT_OMIT_SOURCES:
+        return ""
+    if source not in ABSTRACT_EXCERPT_SOURCES:
+        return text
+    text = text.strip()
+    ends = [m.end() for m in _SENTENCE_END.finditer(text)]
+    if len(ends) <= ABSTRACT_EXCERPT_SENTENCES and len(text) <= ABSTRACT_EXCERPT_MAX_CHARS:
+        return text
+    cut = None
+    for i, e in enumerate(ends):
+        if i >= ABSTRACT_EXCERPT_SENTENCES or e > ABSTRACT_EXCERPT_MAX_CHARS:
+            break
+        cut = e
+    if cut is None:
+        cut = ABSTRACT_EXCERPT_MAX_CHARS
+    return text[:cut].rstrip()
 
 # サイトに載せる未評価は「次に評価される上位」だけ。未評価の在庫を全件出すと
 # 評価結果が埋もれてしまうため、書き出し側で絞る (エンジン側の選定と一致させる)
@@ -356,8 +393,8 @@ def _watch_companies(store, cfg, ent_derived=None, ent_reasons=None):
             if comp is None:
                 continue
             mat = {"id": cid, "source": source, "title": title or "",
-                   "title_ja": title_ja or None, "abstract": abstract or "",
-                   "abstract_ja": abstract_ja or None, "url": url or "",
+                   "title_ja": title_ja or None, "abstract": _site_abstract(source, abstract or ""),
+                   "abstract_ja": _site_abstract(source, abstract_ja) or None, "url": url or "",
                    "published": published, "strength": strength or "strong"}
             if source in PAPER_SOURCES:
                 summ = extract_summary(title, abstract, abstract_ja)
@@ -469,8 +506,8 @@ def build_site_data(store, cfg, now=None):
                              "stage": ent_stages.get(e["entity_id"])})
         cand = {
             "id": cid, "title": c["title"], "source": c["source"], "published": c["published"], "url": c["url"],
-            "abstract": c["abstract"] or "", "fields": c["fields"],
-            "title_ja": c.get("title_ja") or None, "abstract_ja": c.get("abstract_ja") or None,
+            "abstract": _site_abstract(c["source"], c["abstract"] or ""), "fields": c["fields"],
+            "title_ja": c.get("title_ja") or None, "abstract_ja": _site_abstract(c["source"], c.get("abstract_ja")) or None,
             "translation_src": _translation_src(c),
             "screen_reason": c.get("screen_reason") or None,
             "retrieved_at": c.get("retrieved_at") or None,

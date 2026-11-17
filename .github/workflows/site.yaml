@@ -1,10 +1,10 @@
 name: TRL site (UI only)
 
 # サイト (ブラウザ UI) だけを更新するワークフロー。収集・評価は行わず、
-# data ブランチの最新 DB から export して Pages へデプロイするだけなので
-# 1〜2 分で終わる。手動実行のほか、月曜 09:00 JST に週次で自動実行する
-# (土曜の週次監査の結果を、火曜の定期実行を待たずにサイトへ反映するため)。
-# データ側は読み取りのみで、data ブランチへは書き戻さない。
+# TRL-data リポジトリ (data ブランチ) の最新 DB から export して Pages へ
+# デプロイするだけなので 1〜2 分で終わる。手動実行のほか、月曜 09:00 JST に
+# 週次で自動実行する (土曜の週次監査の結果を、火曜の定期実行を待たずに
+# サイトへ反映するため)。データ側は読み取りのみで、書き戻しはしない。
 
 on:
   schedule:
@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
-      contents: read   # チェックアウトと data ブランチの読み取りに必要
+      contents: read   # チェックアウトに必要 (DB の読み取りは TRL-data へ PAT 経由)
       pages: write     # upload-pages-artifact に必要
     steps:
       - uses: actions/checkout@v4
@@ -32,15 +32,15 @@ jobs:
           python-version: "3.12"
       - name: Restore data branch
         env:
-          TOKEN: ${{ github.token }}
+          TOKEN: ${{ secrets.TRL_DATA_TOKEN }}
         run: |
           set +e
-          git ls-remote --exit-code --heads origin data >/dev/null 2>&1
+          git ls-remote --exit-code --heads "https://x-access-token:${TOKEN}@github.com/ConsulenteIdealistas/TRL-data.git" data >/dev/null 2>&1
           rc=$?
           set -e
 
           if [ "$rc" -eq 0 ]; then
-            git clone -q --depth 1 --branch data "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git" _data
+            git clone -q --depth 1 --branch data "https://x-access-token:${TOKEN}@github.com/ConsulenteIdealistas/TRL-data.git" _data
           elif [ "$rc" -eq 2 ]; then
             mkdir -p _data
           else

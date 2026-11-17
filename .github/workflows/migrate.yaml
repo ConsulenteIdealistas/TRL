@@ -26,7 +26,11 @@ jobs:
           ref: data
           path: _data
           fetch-depth: 0
-          persist-credentials: true
+          # persist-credentials は true にしない。保持された資格情報
+          # (本リポジトリ用 GITHUB_TOKEN の extraheader) が github.com 宛の
+          # 全リクエストに付くため、TRL-data への push がトークン URL の
+          # 認証より優先されて "Repository not found" になる (2026-11-17 実証)
+          persist-credentials: false
       - name: Verify data branch contents
         run: |
           if [ ! -f _data/trl.sqlite ]; then

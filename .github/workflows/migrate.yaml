@@ -1,0 +1,44 @@
+name: TRL data migration (one-time)
+
+# 一回限りの移設用 (ライセンス対策B2, 2026-11-17): 本リポジトリの data
+# ブランチを履歴ごと非公開リポジトリ TRL-data の data ブランチへ push する。
+# 移設の完了を確認したら、このファイルは削除してよい (通常運用には不要)。
+
+on:
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: trl-pipeline
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - name: Restore data branch (full history)
+        uses: actions/checkout@v6
+        with:
+          ref: data
+          path: _data
+          fetch-depth: 0
+          persist-credentials: true
+      - name: Verify data branch contents
+        run: |
+          if [ ! -f _data/trl.sqlite ]; then
+            echo "::error::data branch exists but trl.sqlite is missing. Aborting to protect data"
+            exit 1
+          fi
+          python3 -c "import sqlite3; r = sqlite3.connect('file:_data/trl.sqlite?mode=ro', uri=True).execute('PRAGMA integrity_check').fetchone()[0]; assert r == 'ok', r" || { echo "::error::trl.sqlite failed the integrity check. Aborting to protect data"; exit 1; }
+      - name: Push history to TRL-data
+        env:
+          DATA_TOKEN: ${{ secrets.TRL_DATA_TOKEN }}
+        run: |
+          cd _data
+          git remote add trldata "https://x-access-token:${DATA_TOKEN}@github.com/ConsulenteIdealistas/TRL-data.git"
+          git push -q trldata HEAD:refs/heads/data
+          git ls-remote trldata data

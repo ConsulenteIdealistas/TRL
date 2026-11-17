@@ -28,6 +28,10 @@ const state = {q: "", tier: "", markets: new Set(), sectors: new Set(), tags: ne
 let LANG = localStorage.getItem("trl-lang") || "ja";
 const dispT = m => LANG === "ja" && m.title_ja ? m.title_ja : m.title;
 const dispA = m => LANG === "ja" && m.abstract_ja ? m.abstract_ja : m.abstract || "";
+const ABS_N = 300;  // 抄録の折りたたみ閾値。サイトの抜粋基準 (PubMed 冒頭2文・最大300字) と同値
+const absHtmlW = (main, label) => main.length <= ABS_N
+  ? `<p class="mabs">${label}${esc(main)}</p>`
+  : `<p class="mabs">${label}${esc(main.slice(0, ABS_N))}…</p><details class="absfull"><summary>全文を表示</summary><p class="mabs">${esc(main)}</p></details>`;
 
 function haystack(c) {
   const parts = [c.name, c.ticker || "", ML[c.market] || "", CL[c.sector] || "",
@@ -68,7 +72,7 @@ function matHtml(c, m) {
   const main = dispA(m);
   const other = LANG === "ja" ? (m.abstract || "") : (m.abstract_ja || "");
   const abs = main
-    ? `<p class="mabs">${LANG === "ja" && m.abstract_ja ? "<strong>和訳抄録</strong><br>" : ""}${esc(main)}</p>` +
+    ? absHtmlW(main, LANG === "ja" && m.abstract_ja ? "<strong>和訳抄録</strong><br>" : "") +
       (other && other !== main ? `<details><summary>${LANG === "ja" ? "抄録（原文）" : "抄録（和訳）"}</summary><p class="mabs">${esc(other)}</p></details>` : "")
     : "";
   const sub = LANG === "ja" ? m.title : (m.title_ja || "");

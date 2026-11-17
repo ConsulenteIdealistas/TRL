@@ -103,6 +103,18 @@ def build_report(store, run_id, cfg=None):
             f"- ⚠ LLM API失敗 {counts.get('llm_infra_failed', 0)}件(評価結果として保存せず未評価のまま残しています)"
             + (f" / 打ち切り理由: {counts['llm_degraded']}" if counts.get("llm_degraded") else "")
         ]
+    # ソース別の収集所要 (取得時間の合計。並列取得のため壁時計とは一致
+    # しない)。予算枯渇時にどのソースが時間を食ったかを、レポート単体で
+    # 読めるようにする (2026-11-17 の深い日の診断が run_sources の行数
+    # 逆算を要したため)
+    _elapsed = {}
+    for s in store.run_sources(run_id):
+        if s["seconds"]:
+            _elapsed[s["source"]] = _elapsed.get(s["source"], 0.0) + s["seconds"]
+    if _elapsed:
+        _top = sorted(_elapsed.items(), key=lambda kv: -kv[1])
+        L.append("- 収集所要 (ソース別・取得時間の合計): "
+                 + " / ".join(f"{k} {v:.0f}秒" for k, v in _top))
     if counts.get("sources_failed"):
         L += [f"- ⚠ 収集に失敗したクエリ {counts['sources_failed']} 件（詳細は「情報源ごとの状況」）"]
     if counts.get("quiet_zero_sources"):

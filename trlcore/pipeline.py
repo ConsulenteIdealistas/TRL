@@ -283,6 +283,13 @@ def collect(store, cfg, run_id, as_of, sources, fetchers, counts, log, budget_ca
         counts["financial_skipped"] = counts.get("financial_skipped", 0) + skipped
         log(f"[collect] financial skip: {skipped} queries (cadence rules)")
     jobs = kept
+    # 実行順: Google News 系 (gnews / prtimes) を最後尾に回す。両者は同じ
+    # ホスト (news.google.com) で、レート制限時は応答遅延と 429 再試行が
+    # 時間予算を食い潰す (2026-11-17 の深い日: 予算 1200 秒が gnews 217 件
+    # 時点で尽き、trials 以降と補完群が全滅した)。gnews は窓がなく毎日
+    # 同じクエリを回すため深い日固有の価値が最も低い。gnews → prtimes の
+    # 相対順は従来どおり保つ (安定ソート)
+    jobs.sort(key=lambda j: 1 if j[0] == "gnews" else 2 if j[0] == "prtimes" else 0)
     # 後処理の間引き用に、既知アイテムの索引と invalid の記録を先読みする。
     # 取得のたびに同じ論文・ニュースへ企業リンクの照合 (辞書300社走査) を
     # 繰り返すのが後処理の主コストだったため、変わっていないものは触らない
@@ -402,6 +409,33 @@ def collect(store, cfg, run_id, as_of, sources, fetchers, counts, log, budget_ca
         budget = cap if not budget else min(budget, cap)
     exceeded = 0
     collect_t0 = time.monotonic()
+    # 補完群 (財務・スイス) は主収集の「前」に回す。従来は主収集の残り予算
+    # で回していたが、主収集が予算を使い切ると補完が丸ごと未実行になる
+    # (2026-11-17 の深い日で roic/simfin/alphavantage/esef/eqs/gnw が全滅)。
+    # 補完群は対象が小さく自前の上限で bounded なため、先行しても主収集の
+    # 圧迫は小さい。予算時計は従来どおり共通で、各補完の内部チェック
+    # (予算超過なら次回へ回す) もそのまま効く。補完の入力は辞書と前回まで
+    # の保存状態だけで、当日の主収集の結果には依存しない
+    if roic_enabled():
+        _collect_roic(store, cfg, run_id, as_of, counts, log, budget, collect_t0,
+                      roic_fetcher or fetch_roic)
+    # 財務補完 (SimFin バルク): ROIC の後段。キーがある場合だけ回す
+    if simfin_enabled():
+        _collect_simfin(store, cfg, run_id, as_of, counts, log, budget, collect_t0,
+                        simfin_fetcher or fetch_simfin_bulk)
+    # 財務補完 (Alpha Vantage 低速キュー): キーがある場合だけ回す
+    if alphavantage_enabled():
+        _collect_alphavantage(store, cfg, run_id, as_of, counts, log, budget, collect_t0,
+                              alphavantage_fetcher or fetch_alphavantage)
+    # ESEF (欧州公式開示の年次財務): 補完群の後段で回す (ゲートは esef_enabled)
+    if esef_enabled():
+        _collect_esef(store, cfg, run_id, as_of, counts, log, budget, collect_t0,
+                      esef_fetcher or fetch_esef)
+    # スイス収集 (EQS / GlobeNewswire): 補完群の最後に回す
+    # (ゲートは swiss_enabled)
+    if swiss_enabled():
+        _collect_swiss(store, cfg, run_id, as_of, counts, log, budget, collect_t0,
+                       swiss_fetchers or {"eqs": fetch_eqs, "gnw": fetch_gnw})
     from concurrent.futures import ThreadPoolExecutor
     with ThreadPoolExecutor(max_workers=5) as ex:
         idx = 0
@@ -422,28 +456,6 @@ def collect(store, cfg, run_id, as_of, sources, fetchers, counts, log, budget_ca
             f"{exceeded} クエリを打ち切りました")
     store.add_invalid(neg_adds, chash)
     store.touch_invalids(neg_seen, chash)
-    # 財務補完 (ROIC.ai): キーがある場合だけ、主収集の残り予算で回す。
-    # 補完ソースなので主収集を圧迫しない (予算超過時は対象を次回へ回す)
-    if roic_enabled():
-        _collect_roic(store, cfg, run_id, as_of, counts, log, budget, collect_t0,
-                      roic_fetcher or fetch_roic)
-    # 財務補完 (SimFin バルク): ROIC の後段。キーがある場合だけ回す
-    if simfin_enabled():
-        _collect_simfin(store, cfg, run_id, as_of, counts, log, budget, collect_t0,
-                        simfin_fetcher or fetch_simfin_bulk)
-    # 財務補完 (Alpha Vantage 低速キュー): 最後段。キーがある場合だけ回す
-    if alphavantage_enabled():
-        _collect_alphavantage(store, cfg, run_id, as_of, counts, log, budget, collect_t0,
-                              alphavantage_fetcher or fetch_alphavantage)
-    # ESEF (欧州公式開示の年次財務): 補完群の後段で回す (ゲートは esef_enabled)
-    if esef_enabled():
-        _collect_esef(store, cfg, run_id, as_of, counts, log, budget, collect_t0,
-                      esef_fetcher or fetch_esef)
-    # スイス収集 (EQS / GlobeNewswire): 後段バッチの最後に回す
-    # (ゲートは swiss_enabled)
-    if swiss_enabled():
-        _collect_swiss(store, cfg, run_id, as_of, counts, log, budget, collect_t0,
-                       swiss_fetchers or {"eqs": fetch_eqs, "gnw": fetch_gnw})
 
 
 def _collect_roic(store, cfg, run_id, as_of, counts, log, budget, collect_t0, fetcher):

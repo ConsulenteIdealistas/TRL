@@ -93,8 +93,16 @@ def _rss_fetch(query, max_results, lookback_days, as_of, http, source):
     return items[:max_results]
 
 
+def _fetch_no429(url, **kw):
+    # 429 は再試行しない (LLM 経路と同じ扱い)。Google News のレート制限下
+    # では、最大60秒のバックオフ再試行がクエリ単位で積み上がり、収集全体
+    # の時間予算を食い潰す (2026-11-17 の深い日で実証)。gnews / prtimes は
+    # 窓がなく毎日同じクエリを回すため、429 のクエリは翌日以降に回る
+    return http_fetch(url, retry_429=False, **kw)
+
+
 def gnews_fetch(query, max_results, lookback_days, as_of, http=None):
-    return _rss_fetch(query, max_results, lookback_days, as_of, http or http_fetch, "gnews")
+    return _rss_fetch(query, max_results, lookback_days, as_of, http or _fetch_no429, "gnews")
 
 
 def prtimes_fetch(query, max_results, lookback_days, as_of, http=None):
@@ -109,5 +117,5 @@ def prtimes_fetch(query, max_results, lookback_days, as_of, http=None):
     terms = [t.strip() for t in query.split("|") if t.strip()]
     phrase = " OR ".join(f'"{t}"' for t in terms)
     items = _rss_fetch(f"({phrase}) site:prtimes.jp", max_results, lookback_days, as_of,
-                       http or http_fetch, "prtimes")
+                       http or _fetch_no429, "prtimes")
     return [i for i in items if any(t.lower() in i["title"].lower() for t in terms)]

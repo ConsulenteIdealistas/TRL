@@ -114,6 +114,25 @@ class NewSourceParseTests(unittest.TestCase):
         self.assertIn("Rocket Lab", calls[0]["q"])
         self.assertEqual(len(out), 1)
 
+    def test_gnews_fetch_does_not_retry_429(self):
+        # 本番経路 (http 未指定) では 429 を再試行しない: レート制限下の
+        # バックオフ再試行が収集の時間予算を食い潰すため (2026-11-17)
+        from trlcore.sources import gnews as gnews_mod
+        seen = {}
+
+        def fake_fetch(url, **kw):
+            seen.update(kw)
+            return GNEWS_XML
+
+        orig = gnews_mod.http_fetch
+        gnews_mod.http_fetch = fake_fetch
+        try:
+            out = gnews_mod.gnews_fetch("アストロスケール", 20, 30, AS_OF)
+        finally:
+            gnews_mod.http_fetch = orig
+        self.assertEqual(seen.get("retry_429"), False)
+        self.assertEqual(len(out), 1)
+
     def test_prtimes_fetch_uses_site_filter(self):
         calls = []
 

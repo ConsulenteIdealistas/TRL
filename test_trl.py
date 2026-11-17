@@ -1496,6 +1496,65 @@ class IntegrationTests(unittest.TestCase):
         self.assertEqual(len(skipped), 2)
         store.close()
 
+    def test_collect_supplementary_runs_despite_main_budget(self):
+        # 補完群 (財務・スイス) は主収集の前に回す: 主収集が時間予算を
+        # 使い切っても補完が未実行のまま終わらない (2026-11-17 の深い日で
+        # roic 等が丸ごと未実行になった事故の回帰防止)
+        import copy
+        import os
+        import time as time_mod
+        from unittest import mock
+        store = Store(self.path)
+        store.start_run("r1", "test", "hash", AS_OF.isoformat(), {})
+        c = copy.deepcopy(CFG)
+        c["sources"] = {"defaults": {"max_results": 5, "lookback_days": 30},
+                        "queries": [{"name": f"q{i}", "arxiv": "a"} for i in range(12)]}
+        c["scoring"]["screening"]["collect_budget_sec"] = 0.05
+        calls = []
+
+        def fake_roic(symbol, max_results, lookback, as_of):
+            calls.append(symbol)
+            return []
+
+        def slow(q, max_results, lookback_days, as_of):
+            time_mod.sleep(0.1)
+            return []
+
+        counts = {k: 0 for k in ("fetched", "new", "duplicates", "invalid",
+                                 "sources_ok", "sources_failed")}
+        with mock.patch.dict(os.environ, {"ROIC_API_KEY": "test-key"}):
+            collect(store, c, "r1", AS_OF, ("arxiv",), {"arxiv": slow},
+                    counts, lambda *_: None, roic_fetcher=fake_roic)
+        self.assertGreater(counts.get("collect_budget_exceeded", 0), 0)
+        self.assertTrue(calls)  # 主収集は打ち切られても補完は先に実行された
+        store.close()
+
+    def test_collect_gnews_queries_run_last(self):
+        # Google News 系 (gnews / prtimes) は主収集の最後尾: レート制限で
+        # 遅くなっても他の発見系ソースを巻き込まない。相対順は従来どおり
+        # 非 Google 系 → gnews → prtimes
+        import copy
+        store = Store(self.path)
+        store.start_run("r1", "test", "hash", AS_OF.isoformat(), {})
+        c = copy.deepcopy(CFG)
+        c["sources"] = {"defaults": {"max_results": 5, "lookback_days": 30},
+                        "queries": [{"name": "n1", "gnews": "x"},
+                                    {"name": "p1", "pubmed": "y"},
+                                    {"name": "n2", "gnews": "x"},
+                                    {"name": "t1", "prtimes": "z"}]}
+
+        def instant(q, max_results, lookback_days, as_of):
+            return []
+
+        counts = {k: 0 for k in ("fetched", "new", "duplicates", "invalid",
+                                 "sources_ok", "sources_failed")}
+        collect(store, c, "r1", AS_OF, ("gnews", "pubmed", "prtimes"),
+                {"gnews": instant, "pubmed": instant, "prtimes": instant},
+                counts, lambda *_: None)
+        order = [r["source"] for r in store.run_sources("r1")]
+        self.assertEqual(order, ["pubmed", "gnews", "gnews", "prtimes"])
+        store.close()
+
     def test_recalc_recomputes_totals_under_current_weights(self):
         # 規程 A2 類: 保存済み評価の総合点を現行の重みで再計算する (LLM不要)
         from trlcore.recalc import recalculate_evaluations

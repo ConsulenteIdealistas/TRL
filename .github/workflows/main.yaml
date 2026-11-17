@@ -86,6 +86,13 @@ jobs:
       pages: write     # upload-pages-artifact に必要 (id-token は deploy 側だけに残す)
     steps:
       - uses: actions/checkout@v4
+        with:
+          # 資格情報を保持しない。保持された GITHUB_TOKEN の extraheader が
+          # ワークスペース内の全 git コマンドに付くため、TRL-data への
+          # ls-remote が URL のトークンより優先されて失敗する (2026-11-17
+          # 実証)。data の保存は _data 側の資格情報 (PAT) で行い、初期化
+          # 経路も PAT から組み立てるため、ルート側の保持は不要
+          persist-credentials: false
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"

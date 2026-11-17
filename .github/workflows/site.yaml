@@ -27,6 +27,12 @@ jobs:
       pages: write     # upload-pages-artifact に必要
     steps:
       - uses: actions/checkout@v4
+        with:
+          # 資格情報を保持しない。保持された GITHUB_TOKEN の extraheader が
+          # ワークスペース内の全 git コマンドに付くため、TRL-data への
+          # ls-remote / clone が URL のトークンより優先されて失敗する
+          # (2026-11-17 実証)。このジョブは git で push しないので保持は不要
+          persist-credentials: false
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"

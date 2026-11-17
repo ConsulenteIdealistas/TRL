@@ -82,7 +82,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
-      contents: write  # チェックアウトと data ブランチへの保存に必要
+      contents: write  # チェックアウトに必要 (data の保存は TRL-data リポジトリへ PAT 経由)
       pages: write     # upload-pages-artifact に必要 (id-token は deploy 側だけに残す)
     steps:
       - uses: actions/checkout@v4
@@ -93,9 +93,11 @@ jobs:
         run: python -m unittest discover -s . -p "test_*.py" -v
       - name: Check data branch
         id: data_branch
+        env:
+          DATA_TOKEN: ${{ secrets.TRL_DATA_TOKEN }}
         run: |
           set +e
-          git ls-remote --exit-code --heads origin data >/dev/null 2>&1
+          git ls-remote --exit-code --heads "https://x-access-token:${DATA_TOKEN}@github.com/ConsulenteIdealistas/TRL-data.git" data >/dev/null 2>&1
           rc=$?
           set -e
 
@@ -111,7 +113,9 @@ jobs:
         if: steps.data_branch.outputs.exists == 'true'
         uses: actions/checkout@v6
         with:
+          repository: ConsulenteIdealistas/TRL-data
           ref: data
+          token: ${{ secrets.TRL_DATA_TOKEN }}
           path: _data
           # Persist の push が資格情報を読めずに落ちるのを防ぐため、checkout の
           # 資格情報を _data の git 設定に保持する。トークンを URL に埋め込む
@@ -214,6 +218,8 @@ jobs:
           path: _site
       - name: Persist data (preserve history)
         if: always()
+        env:
+          DATA_TOKEN: ${{ secrets.TRL_DATA_TOKEN }}
         run: |
           if [ ! -d _data ]; then
             echo "No data directory to persist"
@@ -229,13 +235,12 @@ jobs:
 
           if [ ! -d .git ]; then
             git init -q -b data
-            git remote add origin "https://github.com/${GITHUB_REPOSITORY}.git"
+            git remote add origin "https://github.com/ConsulenteIdealistas/TRL-data.git"
             # data ブランチが無く checkout できなかった場合の初期化経路。
-            # トークンを URL に埋め込む旧方式は使わず、ルートの checkout が
-            # 保持した資格情報 (extraheader) を引き継ぐ
-            if AUTH_HEADER=$(git -C "$GITHUB_WORKSPACE" config --get "http.https://github.com/.extraheader" 2>/dev/null); then
-              git config "http.https://github.com/.extraheader" "$AUTH_HEADER"
-            fi
+            # ルートの checkout の資格情報は本リポジトリ専用で TRL-data には
+            # 使えないため、TRL-data 用トークンから extraheader を組み立てる
+            BASIC=$(printf 'x-access-token:%s' "$DATA_TOKEN" | base64 | tr -d '\n')
+            git config "http.https://github.com/.extraheader" "AUTHORIZATION: basic $BASIC"
           fi
 
           git config user.name github-actions

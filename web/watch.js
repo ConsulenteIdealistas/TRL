@@ -31,7 +31,7 @@ const dispA = m => LANG === "ja" && m.abstract_ja ? m.abstract_ja : m.abstract |
 const ABS_N = 300;  // 抄録の折りたたみ閾値。サイトの抜粋基準 (PubMed 冒頭2文・最大300字) と同値
 const absHtmlW = (main, label) => main.length <= ABS_N
   ? `<p class="mabs">${label}${esc(main)}</p>`
-  : `<p class="mabs">${label}${esc(main.slice(0, ABS_N))}…</p><details class="absfull"><summary>全文を表示</summary><p class="mabs">${esc(main)}</p></details>`;
+  : `<p class="mabs">${label}${esc(main.slice(0, ABS_N))}…</p><details class="absfull"><summary>続きを表示</summary><p class="mabs">${esc(main.slice(ABS_N))}</p></details>`;
 
 function haystack(c) {
   const parts = [c.name, c.ticker || "", ML[c.market] || "", CL[c.sector] || "",

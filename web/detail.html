@@ -48,7 +48,7 @@ try { LANG = localStorage.getItem("trl-lang") || "ja"; } catch (e) { /* 既定�
 const dispT = p => LANG === "ja" && p.title_ja ? p.title_ja : p.title;
 const dispA = p => LANG === "ja" && p.abstract_ja ? p.abstract_ja : p.abstract || "";
 const ABS_N = 300;  // 要旨の折りたたみ閾値。サイトの抜粋基準 (PubMed 冒頭2文・最大300字) と同値
-const absHtml = t => { const s = t || ""; if (!s) return "<p>（要旨なし）</p>"; if (s.length <= ABS_N) return `<p>${esc(s)}</p>`; return `<p>${esc(s.slice(0, ABS_N))}…</p><details class="absfull"><summary>全文を表示</summary><p>${esc(s)}</p></details>`; };
+const absHtml = t => { const s = t || ""; if (!s) return "<p>（要旨なし）</p>"; if (s.length <= ABS_N) return `<p>${esc(s)}</p>`; return `<p>${esc(s.slice(0, ABS_N))}…</p><details class="absfull"><summary>続きを表示</summary><p>${esc(s.slice(ABS_N))}</p></details>`; };
 const TR_SRC = {deepl: "DeepL", azure: "Azure", google: "Google", llm: "LLM"};
 const srcOf = p => { const s = p.translation_src || {}; const used = [...new Set([p.title_ja ? s.title : null, p.abstract_ja ? s.abstract : null].filter(Boolean))]; return used.map(v => TR_SRC[v] || v).join(" / "); };
 const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));

@@ -642,11 +642,13 @@ class FreezeV3Tests(unittest.TestCase):
                        "facets", "grounded", "取りこぼし防止", "経営陣の就任・退任"):
             self.assertIn(anchor, text)
 
-    def test_long_v3_prompt_anchors(self):
-        text = load_prompt("long", "v3")["text"]
+    def test_long_v4_prompt_anchors(self):
+        # 凍結する long は v4 (2026-11-22 決定: v3 は削除し、直近の旧世代 v4 を物差しにする)
+        text = load_prompt("long", "v4")["text"]
         for anchor in ("trl_levels", "basis_claim_ids", "constraint_codes",
                        "deduction_codes", "missing_codes", "防衛・軍事技術",
-                       "硬い上限ではない", "TAM", "原資は現預金に短期投資"):
+                       "硬い上限ではない", "TAM", "原資は現預金に短期投資",
+                       "crl_level"):
             self.assertIn(anchor, text)
 
     def test_normalize_extraction_envelope(self):
@@ -881,11 +883,11 @@ class AnnexTests(unittest.TestCase):
         self.assertIn("[付記イベントの語彙]", text)
         self.assertIn('"annex"', text)
         self.assertNotIn("crl_level", text)
-        # v4 は未使用のまま削除された (残っていないことが世代の正しさ)
-        self.assertFalse(Path("long.v4.md").exists())
-        # 凍結した v3 には付記が入っていないこと (世代の分離)
-        old = Path("long.v3.md").read_text(encoding="utf-8")
+        # 凍結した v4 には付記が入っていないこと (世代の分離)。
+        # v3 は削除済みで、凍結の物差しは直近の旧世代 v4 (2026-11-22 決定)
+        old = Path("long.v4.md").read_text(encoding="utf-8")
         self.assertNotIn('"annex"', old)
+        self.assertIn("crl_level", old)
 
 
 if __name__ == "__main__":

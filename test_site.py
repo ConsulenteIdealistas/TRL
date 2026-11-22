@@ -801,6 +801,26 @@ class ExportTests(StoreFixture):
         self.assertEqual((got["title_ja"], got["abstract_ja"]), ("邦題", "邦文抄録"))
         self.assertEqual(got["translation_src"], {"title": "deepl", "abstract": "azure"})
 
+    def test_translation_usage_exported(self):
+        # data.json に翻訳使用量の累計を同梱する (しきい値監視が公開側だけで
+        # 完結するように)。azure/google は最新ランの as_of の属する月のみ、
+        # deepl は通算。集計の定義は translate.usage_totals と同一
+        def add_run(rid, started, as_of, chars):
+            self.store.conn.execute(
+                "INSERT INTO runs(run_id, started_at, as_of, status, counts_json) "
+                "VALUES(?, ?, ?, 'ok', ?)",
+                (rid, started, as_of, json.dumps({"translation_chars": chars})))
+        add_run("r-sep", "2026-09-15T00:00:00Z", "2026-09-15",
+                {"azure": 700_000, "deepl": 300_000, "google": 10_000})
+        add_run("r-oct", "2026-10-05T00:00:00Z", "2026-10-05",
+                {"azure": 200_000, "deepl": 100_000, "google": 5_000})
+        self.store.conn.commit()
+        data = T.build_site_data(self.store, cfg_with(), datetime(2026, 10, 26, tzinfo=timezone.utc))
+        self.assertEqual(data["translation_usage"],
+                         {"month": "2026-10",
+                          "monthly": {"azure": 200_000, "google": 5_000},
+                          "cumulative": {"deepl": 400_000}})
+
     def test_pending_rejected_and_legacy_api_errors(self):
         data = self.build(None)  # LLM未設定 → すべて未評価
         self.assertEqual({c["display_status"] for c in data["candidates"]}, {"pending"})

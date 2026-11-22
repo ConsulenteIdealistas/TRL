@@ -14,6 +14,7 @@ from .pipeline import select_for_eval
 from .review import adjusted_view
 from .summarize import PAPER_SOURCES, extract_summary
 from .tiers import compute_derived_tiers, tier_distribution
+from .translate import usage_totals
 
 
 SITE_SCHEMA_VERSION = 3
@@ -553,10 +554,21 @@ def build_site_data(store, cfg, now=None):
         # 導出 tier の分布 (社数・シェア・目標との差・±5pt 枠外の警告)。
         # 警告は D-3 により出すだけで、層の自動調整はしない
         "tiers": tier_distribution(derived)}
+    # 翻訳使用量の累計 (しきい値監視用)。従来 data.json に載るのは最新ランの
+    # counts (1ラン分) だけで、月次累計は非公開 DB の全ラン合算でしか読め
+    # なかった。監視が公開側だけで完結するよう、集計済みの累計を同梱する。
+    # 集計の定義は translate.usage_totals と同一 (azure/google は as_of の
+    # 属する月の累計、deepl は一回限り枠のため通算)
+    usage = usage_totals(store, pool_as_of) if pool_as_of else {"azure": 0, "deepl": 0, "google": 0}
+    translation_usage = {
+        "month": pool_as_of.strftime("%Y-%m") if pool_as_of else None,
+        "monthly": {"azure": usage["azure"], "google": usage["google"]},
+        "cumulative": {"deepl": usage["deepl"]}}
     return {
         "schema_version": SITE_SCHEMA_VERSION,
         "generated_at": (now or datetime.now(timezone.utc)).isoformat(timespec="seconds"),
         "run": run_out,
+        "translation_usage": translation_usage,
         "summary": summary,
         "config": {"version": cfg["config_version"], "hash": cfg["config_hash"],
                    "long_weights": long_w,

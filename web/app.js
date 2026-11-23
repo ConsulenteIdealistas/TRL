@@ -562,6 +562,7 @@ ${L && REF.some(k => L.items[k]) ? `<section class="ds"><h4>参考項目</h4><p 
 ${auditSectionHtml(p)}
 ${EV ? `<section class="ds"><h4>イベント評価（短期）</h4>${genBadge(EV) ? `<p style="margin-bottom:8px">${genBadge(EV)}</p>` : ""}${Object.keys(EV.items).map(k => scoreRow(k, EV.items[k])).join("")}<p>総合点 ${EV.total != null ? EV.total + " / 100(" + esc(EV.band || "") + ")" : "未確定（保留）"}</p></section>` : ""}
 ${L && L.prev ? `<section class="ds"><h4>前回評価との比較</h4>${prevCmp(L, lvl(p))}</section>` : ""}
+${Array.isArray(p.history) && p.history.length >= 2 ? `<section class="ds"><h4>評価の推移</h4>${histHtml(p)}</section>` : ""}
 <section class="ds"><h4>材料の方向性</h4>${L && L.direction ? `<p>${dirB(p)} ${esc(L.direction.reason || "")}</p><p class="hint">方向性は点数やTRLとは独立に、資料が示す出来事の追い風・逆風を判定したものです。</p>` : `<p class="hint">未判定です（方向を決める出来事が資料に無いか、旧基準の評価です）。</p>`}</section>
 <section class="ds"><h4>不足している観点</h4>${L && L.critical_missing.length ? `<p class="m" style="color:#a96500;font-weight:700">必須項目の不足: ${L.critical_missing.map(k => esc(label(k))).join("、")}</p>` : ""}${pts(missAll, 1)}${waitAll.length ? `<p class="hint">結果待ち（不足ではなく、治験の結果公表など時間の経過でしか解けないもの）:</p><ul class="pts">${waitAll.map(x => `<li><b>◷</b><span>${esc(x)}</span></li>`).join("")}</ul>` : ""}${q && q.next_sources.length ? `<p class="hint">次に確認する情報源: ${q.next_sources.map(esc).join(" / ")}</p>` : ""}${q && q.reeval_conditions.length ? `<p class="hint">再評価の条件: ${q.reeval_conditions.map(esc).join(" / ")}</p>` : ""}</section>
 ${p.display_status === "error" && LL && LL.errors.length ? `<section class="ds"><h4>処理上の注意</h4>${pts(LL.errors, 1)}</section>` : ""}
@@ -616,6 +617,80 @@ function auditOpenFlags(cands) {
     }
   }
   return n;
+}
+function digestBand() {
+  // 変化ダイジェスト: 最新ランで生まれた評価 (export の digest) を、
+  // 新規と再評価に分けて出す。値は評価の直読みで、再評価には前回の
+  // 値を併記するだけ (新しい判定は作らない)。digest が無い古い
+  // data.json では枠ごと隠す
+  const el = $("#dgst");
+  if (!el) return;
+  const dg = META && Array.isArray(META.digest) ? META.digest : [];
+  if (!dg.length) { el.hidden = true; return; }
+  const byId = new Map(P.map(p => [p.id, p]));
+  const fmtPt = d => `${d.total != null ? d.total + "点" : (SL[d.status] || d.status)} / TRL ${d.trl_level != null ? d.trl_level : "未確定"}`;
+  const row = d => {
+    const p = byId.get(d.candidate_id);
+    const name = p ? dispT(p) : d.candidate_id;
+    const kind = d.kind === "event" ? "（イベント評価）" : "";
+    const link = `<a href="detail.html?id=${encodeURIComponent(d.candidate_id)}">${esc(name)}</a>`;
+    if (!d.prev) return `<span class="dgr"><b>新規</b> ${link}${kind} — ${esc(fmtPt(d))}</span>`;
+    const dt = d.prev.trl_level != null && d.trl_level != null ? d.trl_level - d.prev.trl_level : 0;
+    const arrow = dt ? ` <span class="${dt > 0 ? "td-up" : "td-dn"}">TRL ${d.prev.trl_level}→${d.trl_level}${dt > 0 ? "↑" : "↓"}</span>` : "";
+    return `<span class="dgr"><b>再評価</b> ${link}${kind} — ${esc(fmtPt(d.prev))} → ${esc(fmtPt(d))}${arrow}</span>`;
+  };
+  const news = dg.filter(d => !d.prev).length;
+  el.innerHTML = `<span>最新の実行の変化: 新規評価 ${news}件 / 再評価 ${dg.length - news}件</span>` + dg.map(row).join("");
+  el.hidden = false;
+}
+function nqBand() {
+  // 次回キュー: export の next_queue (選定順の ID 列) をその順で出す。
+  // next_up フラグと同じ集合で、並び順だけが追加の情報
+  const el = $("#nqband");
+  if (!el) return;
+  const q = META && Array.isArray(META.next_queue) ? META.next_queue : [];
+  const byId = new Map(P.map(p => [p.id, p]));
+  const items = q.filter(id => byId.has(id)).map((id, i) =>
+    `<a class="brz lk nq" href="detail.html?id=${encodeURIComponent(id)}">${i + 1}. ${esc(dispT(byId.get(id)))}</a>`);
+  if (!items.length) { el.hidden = true; return; }
+  el.innerHTML = `<span>次回評価予定（選定順）:</span>` + items.join("");
+  el.hidden = false;
+}
+/* 評価履歴の推移図の幾何 (純粋関数)。x は評価時刻に比例させ (時刻が
+   全部同じ場合は等間隔に倒す)、y は総合点 0-100 をそのまま使う。
+   総合点の無い評価 (保留・エラー) は線に含めず、下端の点で示す */
+function histGeom(hist, W, H) {
+  const ts = hist.map(h => Date.parse(h.evaluated_at));
+  const t0 = Math.min(...ts), t1 = Math.max(...ts);
+  const xs = hist.map((h, i) => {
+    const f = t1 > t0 ? (ts[i] - t0) / (t1 - t0) : (hist.length > 1 ? i / (hist.length - 1) : 0.5);
+    return 8 + f * (W - 16);
+  });
+  const y = v => H - 8 - (v / 100) * (H - 16);
+  const dots = hist.map((h, i) => ({x: xs[i], y: h.total != null ? y(h.total) : H - 8, total: h.total, trl: h.trl_level, status: h.status}));
+  const segs = [];
+  let cur = [];
+  for (const d of dots) {
+    if (d.total != null) cur.push(d);
+    else { if (cur.length) segs.push(cur); cur = []; }
+  }
+  if (cur.length) segs.push(cur);
+  return {dots, segs, y};
+}
+function histHtml(p) {
+  const hist = p.history;
+  const W = 320, H = 96;
+  const g = histGeom(hist, W, H);
+  const lines = g.segs.filter(s => s.length > 1).map(s =>
+    `<polyline points="${s.map(d => `${d.x.toFixed(1)},${d.y.toFixed(1)}`).join(" ")}" fill="none" stroke="var(--accent)" stroke-width="2"/>`).join("");
+  const dots = g.dots.map(d => d.total != null
+    ? `<circle cx="${d.x.toFixed(1)}" cy="${d.y.toFixed(1)}" r="3.5" fill="var(--accent)"><title>${esc(d.total)}点</title></circle>`
+    : `<circle cx="${d.x.toFixed(1)}" cy="${d.y.toFixed(1)}" r="3" fill="none" stroke="var(--muted)"><title>総合点なし（${esc(SL[d.status] || d.status)}）</title></circle>`).join("");
+  const grid = [0, 50, 100].map(v => { const yy = g.y(v); return `<line x1="8" x2="${W - 8}" y1="${yy.toFixed(1)}" y2="${yy.toFixed(1)}" stroke="var(--line)" stroke-width="1"/><text x="10" y="${(yy - 2).toFixed(1)}" font-size="8" fill="var(--muted)">${v}</text>`; }).join("");
+  const rows = hist.map(h => `<li><b>${esc(String(h.evaluated_at).slice(0, 10))}</b><span>${esc(SL[h.status] || h.status)} / 総合 ${h.total != null ? h.total + "点" : "—"} / TRL ${h.trl_level != null ? h.trl_level : "未確定"}${h.gen_config ? ` / 世代 ${esc(h.gen_config)}` : ""}</span></li>`).join("");
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" role="img" aria-label="総合点の推移">${grid}${lines}${dots}</svg>`
+    + `<ul class="pts">${rows}</ul>`
+    + `<p class="hint">総合点の推移です。線は総合点がある評価どうしをつなぎ、総合点の無い評価（保留・エラー）は下端の輪で示します。世代が異なる点どうしの差には、物差し自体の変化が含まれます。</p>`;
 }
 function auditBadge() {
   // ナビの並びは他ページと同形に保つ (test_web が文字列で固定している) ため、
@@ -748,7 +823,7 @@ async function load() {
     + (d.run ? ` · run ${d.run.id} · ${d.run.status}` : "")
     + (cv ? ` · 規程 ${cv}` : "");
   $("#fl").value = LANG;
-  facetChips(); warn(d); stats(); tierBand(); barrierBand(); auditBadge(); render();
+  facetChips(); warn(d); stats(); tierBand(); barrierBand(); auditBadge(); digestBand(); nqBand(); render();
 }
 $("#sf").addEventListener("submit", e => { e.preventDefault(); render(); });
 document.addEventListener("keydown", e => {

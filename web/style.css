@@ -188,6 +188,9 @@ a.tg{display:inline-flex;align-items:center;text-decoration:none}
 .brz{padding:4px 8px;border:1px solid var(--line);border-radius:7px;color:var(--sub);background:var(--field);font-size:10px;font-weight:700;white-space:nowrap}
 .brz.off{opacity:.55}
 a.brz.lk{text-decoration:none;display:inline-block;margin-left:4px}
+.nq{max-width:230px;overflow:hidden;text-overflow:ellipsis}
+.dgr{display:inline-flex;gap:6px;align-items:baseline;flex-wrap:wrap}
+.dgr a{color:var(--accent)}
 /* 主ページ上部の関門の該当一覧 (.tierband と同じ枠の形)。関門ごとに
    グループ化し、企業チップが詳細へのリンクになる */
 #brband .brg{display:inline-flex;flex-wrap:wrap;align-items:center;gap:4px}

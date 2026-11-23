@@ -5,10 +5,31 @@
     "schema_version",
     "generated_at",
     "run",
+    "digest",
+    "next_queue",
     "config",
     "candidates",
     "summary",
     "audit_catalog"
+  ],
+  "digest_entry": [
+    "candidate_id",
+    "kind",
+    "evaluated_at",
+    "status",
+    "total",
+    "band",
+    "trl_level",
+    "gen_config",
+    "prev"
+  ],
+  "light_point": [
+    "evaluated_at",
+    "status",
+    "total",
+    "band",
+    "trl_level",
+    "gen_config"
   ],
   "audit_catalog": [
     "rules_version",
@@ -60,7 +81,8 @@
     "audit",
     "audit_event",
     "summary",
-    "reeval_booked"
+    "reeval_booked",
+    "history"
   ],
   "audit": [
     "evaluation_id",

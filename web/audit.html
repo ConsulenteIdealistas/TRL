@@ -56,6 +56,8 @@ select.tsel{padding:8px 10px;border:1px solid var(--line);border-radius:10px;bac
 .sbadge.adj{color:var(--vc);background:color-mix(in srgb,var(--vc) 14%,transparent)}
 .sbadge.evk{color:#22d3ee;background:rgba(34,211,238,.13)}
 .sbadge.lngk{color:#a78bfa;background:rgba(124,58,237,.15)}
+.acard.sel{outline:2px solid var(--accent);outline-offset:2px}
+#asum p{margin:4px 0}
 </style>
 </head>
 <body>
@@ -68,6 +70,7 @@ select.tsel{padding:8px 10px;border:1px solid var(--line);border-radius:10px;bac
 <p class="hint">ここでの処分・再評価の予約・TRL の読み替え（調整）は、すべてこの端末の中だけに記録され、元の評価や監査の記録は変更されません。調整はこのページ内だけの表示で、一覧・詳細の通常表示には影響しません。</p>
 <p class="hint">表示は、系統（規則監査・API照合）ごとに最新の監査バッチと、未処分の項目だけが既定です。過去の監査と処分済みの項目は、下のスイッチで表示できます（記録自体は残ります）。</p>
 <section class="stats" id="cov" aria-label="監査の進み具合"></section>
+<section class="stats" id="asum" aria-label="監査の集計"></section>
 <div class="copybar">
 <button class="btn pri" id="copyBtn" type="button">反映用 JSON をコピー</button>
 <span class="hint" id="copyMsg">まだ DB に反映されていない処分・予約・調整を review_inbox.json の形で書き出します（取り込みは段階B）。反映済みの状態は data.json 経由で全端末に表示されます。</span>
@@ -90,6 +93,7 @@ select.tsel{padding:8px 10px;border:1px solid var(--line);border-radius:10px;bac
 </div>
 <div id="list"><div class="empty">読み込み中…</div></div>
 </div>
+<div id="apal" class="palov" hidden><div class="palbox"><input id="apalq" type="text" placeholder="コマンドを入力 (絞り込み、ページ移動…)" aria-label="監査ページのコマンドパレット"><div id="apallist"></div></div></div>
 </main>
 <footer class="ft"><span>TRL Explorer</span><span><a href="criteria.html">採点基準（評価規程と重み）</a></span><span><a href="audit.html">監査（要確認の処分）</a></span><span>技術成熟度と事業化評価は独立した評価軸です。スコアは評価尺度であり、株価上昇確率・成功確率・投資利益率ではありません。</span></footer>
 <script src="audit.js"></script>

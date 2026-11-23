@@ -516,8 +516,116 @@ function cardHtml(c) {
   </section>`;
 }
 
+/* 監査の集計: 系統ごとの最新ブロックの未処分エントリをチェック別に数え、
+   処分待ちの最古 (data の生成時刻からの日数) を添える。値は直読みで、
+   処分の有無はこの端末の処分記録 (review) で判定する */
+function auditSummary() {
+  const byCheck = new Map(), byApi = new Map();
+  let oldest = null, openCards = 0;
+  const genMs = Date.parse(DATA.generated_at || "");
+  for (const p of DATA.candidates || []) for (const k of ["long", "event"]) {
+    let open = false;
+    for (const a of latestBlocks(blocksOf(p, k))) for (const e of a.entries || []) {
+      const d = decisionOf(a, e);
+      if (d && d.disposition) continue;
+      if (e.verdict !== "flag" && e.verdict !== "gray") continue;
+      open = true;
+      const m = a.provider === "api" ? byApi : byCheck;
+      const cur = m.get(e.check) || {flag: 0, gray: 0};
+      cur[e.verdict === "gray" ? "gray" : "flag"]++;
+      m.set(e.check, cur);
+      if (!oldest || String(a.created_at || "") < oldest) oldest = a.created_at;
+    }
+    if (open) openCards++;
+  }
+  const fmt = m => [...m.entries()]
+    .sort((x, y) => (y[1].flag + y[1].gray) - (x[1].flag + x[1].gray))
+    .map(([c, v]) => `${c}: 要確認 ${v.flag} / グレー ${v.gray}`).join("、");
+  const days = oldest && !Number.isNaN(genMs) && !Number.isNaN(Date.parse(oldest))
+    ? Math.max(0, Math.floor((genMs - Date.parse(oldest)) / 86400000)) : null;
+  return {rules: fmt(byCheck), api: fmt(byApi), openCards, days};
+}
+function renderSummary() {
+  const el = $("#asum");
+  if (!el || !DATA) return;
+  const s = auditSummary();
+  el.innerHTML = `<h2 style="font-size:15px;margin:0 0 6px">監査の集計（未処分）</h2>`
+    + (s.rules ? `<p>規則監査: ${esc(s.rules)}</p>` : `<p>規則監査の未処分はありません。</p>`)
+    + (s.api ? `<p>API照合: ${esc(s.api)}</p>` : "")
+    + (s.openCards ? `<p>処分待ちのカード ${s.openCards}件${s.days !== null ? `（最古の監査から ${s.days}日）` : ""}</p>` : "");
+}
+/* 監査ページのキー操作: j/k でカード移動、Enter で詳細へ */
+let ACUR = -1;
+document.addEventListener("keydown", ev => {
+  const t = ev.target;
+  if ((t && typeof t.matches === "function" && t.matches("input, textarea, select")) || ev.isComposing) return;
+  if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === "k") { ev.preventDefault(); openAPal(); return; }
+  const els = [...document.querySelectorAll("#list .acard")];
+  if (!els.length) return;
+  if (ev.key === "j" || ev.key === "k") {
+    ACUR = Math.min(els.length - 1, Math.max(0, ACUR + (ev.key === "j" ? 1 : -1)));
+    els.forEach((c, i) => c.classList.toggle("sel", i === ACUR));
+    els[ACUR].scrollIntoView({block: "nearest"});
+    ev.preventDefault();
+  } else if (ev.key === "Enter" && ACUR >= 0 && els[ACUR]) {
+    const a = els[ACUR].querySelector("a.atitle");
+    if (a) location.href = a.href;
+  }
+});
+/* 監査ページのコマンドパレット (Ctrl/Cmd+K) */
+const AACTS = [
+  {label: "絞り込み: すべて", run() { viewState.filter = "all"; render(); }},
+  {label: "絞り込み: 要確認", run() { viewState.filter = "flag"; render(); }},
+  {label: "絞り込み: グレー", run() { viewState.filter = "gray"; render(); }},
+  {label: "絞り込み: 処分済み", run() { viewState.filter = "done"; render(); }},
+  {label: "過去の監査の表示を切り替え", run() { showPast = !showPast; saveVis(); render(); }},
+  {label: "処分済みの表示を切り替え", run() { showDone = !showDone; saveVis(); render(); }},
+  {label: "候補一覧へ移動", run() { location.href = "index.html"; }},
+  {label: "実行履歴へ移動", run() { location.href = "runs.html"; }},
+  {label: "企業一覧へ移動", run() { location.href = "company.html"; }},
+  {label: "採点基準へ移動", run() { location.href = "criteria.html"; }},
+];
+let apalList = [], apalSel = 0;
+function openAPal() {
+  const ov = $("#apal");
+  if (!ov) return;
+  ov.hidden = false;
+  $("#apalq").value = "";
+  drawAPal("");
+  $("#apalq").focus();
+}
+function closeAPal() { const ov = $("#apal"); if (ov) ov.hidden = true; }
+function drawAPal(q, keepSel) {
+  apalList = AACTS.filter(a => !q || a.label.toLowerCase().includes(q.toLowerCase()));
+  if (!keepSel) apalSel = 0;
+  apalSel = Math.min(Math.max(apalSel, 0), Math.max(0, apalList.length - 1));
+  $("#apallist").innerHTML = apalList.map((a, i) => `<button type="button" class="pal-i${i === apalSel ? " on" : ""}" data-apal="${i}">${esc(a.label)}</button>`).join("")
+    || `<p class="hint" style="padding:10px 14px">一致するコマンドがありません。</p>`;
+}
+document.addEventListener("DOMContentLoaded", () => {
+  const ov = $("#apal"), q = $("#apalq");
+  if (!ov || !q) return;
+  q.addEventListener("input", () => drawAPal(q.value.trim()));
+  q.addEventListener("keydown", ev => {
+    if (ev.key === "ArrowDown" || ev.key === "ArrowUp") {
+      apalSel += ev.key === "ArrowDown" ? 1 : -1;
+      drawAPal(q.value.trim(), true);
+      ev.preventDefault();
+    } else if (ev.key === "Enter" && apalList[apalSel]) {
+      const a = apalList[apalSel];
+      closeAPal();
+      a.run();
+    } else if (ev.key === "Escape") closeAPal();
+  });
+  ov.addEventListener("click", ev => {
+    if (ev.target === ov) { closeAPal(); return; }
+    const b = ev.target.closest("[data-apal]");
+    if (b) { const a = apalList[Number(b.dataset.apal)]; closeAPal(); if (a) a.run(); }
+  });
+});
 function render() {
   renderCov();
+  renderSummary();
   renderControls();
   const all = cards();
   const list = applyView(all);

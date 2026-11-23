@@ -31,7 +31,7 @@ function render(d) {
       + `<td>${num(c.final)} / ${num(c.hold)} / ${num(c.error)}</td><td>${num(c.translated)}</td></tr>`;
   }).join("");
   const table = hist.length ? `<h2>実行の一覧（新しい順）</h2><div class="tscroll"><table class="rt"><thead><tr><th>日付</th><th>状態</th><th>所要</th><th>収集 成功/失敗</th><th>成功率</th><th>取得</th><th>新規</th><th>評価 確定/保留/エラー</th><th>翻訳数</th></tr></thead><tbody>${rows}</tbody></table></div>` : "";
-  const srows = ss.map(s => `<tr><td>${esc(s.source)}</td><td>${s.calls}</td><td>${pct(s.calls - s.ok_calls, s.calls)}</td><td>${s.fetched}</td><td>${s.new}</td><td>${s.duplicates}</td><td>${s.invalid}</td><td>${Math.round(s.seconds)}</td></tr>`).join("");
+  const srows = ss.map(s => `<tr><td>${esc(s.source)}${(s.top_errors || []).length ? `<br><span class="hint">${s.top_errors.map(e => `${esc(e.error)} ×${e.count}`).join(" / ")}</span>` : ""}</td><td>${s.calls}</td><td>${pct(s.calls - s.ok_calls, s.calls)}</td><td>${s.fetched}</td><td>${s.new}</td><td>${s.duplicates}</td><td>${s.invalid}</td><td>${Math.round(s.seconds)}</td></tr>`).join("");
   const stable = ss.length ? `<h2>ソース別（基準ラン ${(d.run && d.run.as_of) || ""}）</h2><div class="tscroll"><table class="rt"><thead><tr><th>ソース</th><th>呼び出し</th><th>失敗率</th><th>取得</th><th>新規</th><th>重複</th><th>無効</th><th>秒</th></tr></thead><tbody>${srows}</tbody></table></div>` : "";
   $("#rbody").innerHTML = chart + table + stable;
 }

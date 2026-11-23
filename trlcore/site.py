@@ -265,7 +265,7 @@ def _light_point(ev):
 
 
 _RUN_HISTORY_COUNTS = ("sources_ok", "sources_failed", "fetched", "new", "screened",
-                       "selected", "final", "hold", "error", "translated")
+                       "selected", "final", "hold", "error", "translated", "db_orphans")
 
 
 def _run_history_for_site(store, limit=30):
@@ -287,20 +287,29 @@ def _run_history_for_site(store, limit=30):
 
 def _source_stats_for_site(store, run_id):
     """基準ランのソース別収集量 (run_sources の集計、取得量の多い順)。
-    失敗率は表示側が ok_calls / calls から出す。ここは生の集計だけを持つ"""
+    失敗率は表示側が ok_calls / calls から出す。ここは生の集計だけを持つ。
+    top_errors は失敗理由の上位3件 (文面と件数)"""
+    from collections import Counter
     agg = {}
+    errs = {}
     for r in store.run_sources(run_id):
         a = agg.setdefault(r["source"], {"source": r["source"], "calls": 0, "ok_calls": 0,
                                          "fetched": 0, "new": 0, "duplicates": 0,
                                          "invalid": 0, "seconds": 0.0})
         a["calls"] += 1
         a["ok_calls"] += 1 if r["ok"] else 0
+        if r["error"]:
+            errs.setdefault(r["source"], Counter())[r["error"]] += 1
         a["fetched"] += r["fetched"] or 0
         a["new"] += r["new"] or 0
         a["duplicates"] += r["duplicates"] or 0
         a["invalid"] += r["invalid"] or 0
         a["seconds"] += r["seconds"] or 0.0
-    return sorted(agg.values(), key=lambda a: -a["fetched"])
+    out = sorted(agg.values(), key=lambda a: -a["fetched"])
+    for a in out:
+        a["top_errors"] = [{"error": e, "count": n}
+                           for e, n in errs.get(a["source"], Counter()).most_common(3)]
+    return out
 
 
 def _digest_for_site(store, run_id):
@@ -676,6 +685,38 @@ def build_site_data(store, cfg, now=None):
         "watch_companies": _watch_companies(store, cfg, ent_derived, ent_reasons)}
 
 
+SITE_BASE_URL = "https://consulenteidealistas.github.io/TRL/"
+
+
+def _feed_xml(data):
+    """最新ランの評価 (digest) から Atom フィードを作る。値は data.json の
+    輸出値をそのまま使い、ここで新しい判定はしない"""
+    from xml.sax.saxutils import escape
+    titles = {c["id"]: c.get("title") or c["id"] for c in data.get("candidates", [])}
+    updated = data.get("generated_at") or ""
+    entries = []
+    for it in (data.get("digest") or [])[:50]:
+        cid = it["candidate_id"]
+        title = titles.get(cid, cid)
+        summ = (f"状態 {it.get('status') or ''} / 総合 {it.get('total')}"
+                f" / TRL {it.get('trl_level')}")
+        entries.append(
+            "  <entry>\n"
+            f"    <title>{escape(str(title))}</title>\n"
+            f"    <link href=\"{SITE_BASE_URL}detail.html?id={escape(str(cid))}\"/>\n"
+            f"    <id>{SITE_BASE_URL}detail.html?id={escape(str(cid))}#{escape(str(it.get('evaluated_at') or ''))}</id>\n"
+            f"    <updated>{escape(str(it.get('evaluated_at') or updated))}</updated>\n"
+            f"    <summary>{escape(summ)}</summary>\n"
+            "  </entry>")
+    return ("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+            "<feed xmlns=\"http://www.w3.org/2005/Atom\">\n"
+            "  <title>TRL Explorer — 新着評価</title>\n"
+            f"  <link href=\"{SITE_BASE_URL}\"/>\n"
+            f"  <id>{SITE_BASE_URL}feed.xml</id>\n"
+            f"  <updated>{escape(str(updated))}</updated>\n"
+            + "\n".join(entries) + "\n</feed>\n")
+
+
 def export_site(store, cfg, out_dir, web_dir=None, now=None):
     """out_dir に data.json と web/ の静的ファイルを書き出す(GitHub Pages にそのまま配備できる)。"""
     import shutil
@@ -698,6 +739,7 @@ def export_site(store, cfg, out_dir, web_dir=None, now=None):
     # export は経路によらず読み取り専用に保つ (表示用の導出計算自体は
     # build_site_data が行う)。
     (out / "data.json").write_text(json.dumps(data, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    (out / "feed.xml").write_text(_feed_xml(data), encoding="utf-8")
     web = Path(web_dir) if web_dir else ROOT / "web"
     if web.is_dir():
         for p in web.iterdir():

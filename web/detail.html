@@ -426,7 +426,7 @@ async function load() {
   const totalMain = ADJ ? (ADJ.total != null ? `${ADJ.total} / 100(${esc(ADJ.band || "")})` : "未確定") : total;
   const scopeMain = ADJ ? ADJ.total_scope : (LL ? LL.total_scope : null);
   const news = (p.related_news || []).map(n => { const href = n.via_google_news ? (n.search_url || n.url) : n.url; const media = n.media ? (n.media_url ? `<a class="date" href="${esc(safeUrl(n.media_url))}" target="_blank" rel="noopener noreferrer">${esc(n.media)}</a>` : `<span class="date">${esc(n.media)}</span>`) : ""; return `<li><span class="org ${n.origin === "企業発表" ? "org-p" : ""}">${esc(n.origin || "報道")}</span><span class="date">${esc(n.published || "")}</span><a href="${esc(safeUrl(href))}" target="_blank" rel="noopener noreferrer">${esc(n.title)}</a>${media}</li>`; }).join("");
-  const fins = (p.related_financials || []).map(f => `<li><span class="date">${esc(f.published || "")}</span><a href="${esc(safeUrl(f.url))}" target="_blank" rel="noopener noreferrer">${esc(f.title)}</a><p style="margin:4px 0 0">${esc(f.text || "")}</p></li>`).join("");
+  const fins = (p.related_financials || []).map(f => `<li><span class="date">${esc(f.published || "")}</span>${f.source ? `<span class="date">${esc(f.source)}</span>` : ""}<a href="${esc(safeUrl(f.url))}" target="_blank" rel="noopener noreferrer">${esc(f.title)}</a><p style="margin:4px 0 0">${esc(f.text || "")}</p></li>`).join("");
   // 材料タイムライン: ニュースと財務を公表日の新しい順に1本へ統合した一覧
   const matTl = [...(p.related_news || []).map(n => ({at: n.published || "", kind: "ニュース", title: n.title, url: n.via_google_news ? (n.search_url || n.url) : n.url})),
     ...(p.related_financials || []).map(f => ({at: f.published || "", kind: "財務", title: f.title, url: f.url}))]

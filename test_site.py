@@ -911,8 +911,24 @@ class ExportTests(StoreFixture):
         self.assertIsInstance(data["source_stats"], list)
         for s in data["source_stats"]:
             self.assertEqual(set(s), {"source", "calls", "ok_calls", "fetched",
-                                      "new", "duplicates", "invalid", "seconds"})
+                                      "new", "duplicates", "invalid", "seconds",
+                                      "top_errors"})
             self.assertLessEqual(s["ok_calls"], s["calls"])
+            self.assertIsInstance(s["top_errors"], list)
+
+    def test_feed_xml_from_digest(self):
+        # Atom フィードは digest の輸出値だけで作る (新しい判定はしない)
+        import xml.etree.ElementTree as ET
+        data = {"generated_at": "2026-11-24T00:00:00+00:00",
+                "candidates": [{"id": "c1", "title": "Paper <One>"}],
+                "digest": [{"candidate_id": "c1", "status": "final", "total": 55,
+                            "trl_level": 6,
+                            "evaluated_at": "2026-11-24T01:00:00+00:00"}]}
+        xml = site_mod._feed_xml(data)
+        root = ET.fromstring(xml)
+        self.assertEqual(root.tag, "{http://www.w3.org/2005/Atom}feed")
+        self.assertIn("Paper &lt;One&gt;", xml)
+        self.assertIn("detail.html?id=c1", xml)
 
     def test_contract_matches_web_schema(self):
         base = make_llm_fn(long_scores={"monetization": None})

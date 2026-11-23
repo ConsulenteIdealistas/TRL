@@ -967,9 +967,20 @@ function runBand() {
   const lastRate = pts.length ? Math.round(pts[pts.length - 1].rate * 100) : null;
   const recent = hist.slice(-5).reverse().map(r => `<span class="tz">${esc((r.as_of || "").slice(0, 10))} ${esc(r.status || "")} 確定 ${r.counts && r.counts.final != null ? r.counts.final : "—"}/保留 ${r.counts && r.counts.hold != null ? r.counts.hold : "—"}${r.duration_sec ? ` ・${Math.round(r.duration_sec / 60)}分` : ""}</span>`).join("");
   const srcs = ss.slice(0, 8).map(s => `<span class="tz">${esc(s.source)}: 取得 ${s.fetched}・新規 ${s.new}・失敗率 ${s.calls ? Math.round((s.calls - s.ok_calls) / s.calls * 100) : 0}%</span>`).join("");
+  const orphans = META.run && META.run.counts && META.run.counts.db_orphans;
+  // 財務根拠の出所別に、その出所の根拠を持つ候補の数を数える (補間の適用状況)
+  const finBySrc = {};
+  for (const p of P) {
+    const seen = new Set((p.related_financials || []).map(f => f.source).filter(Boolean));
+    for (const s of seen) finBySrc[s] = (finBySrc[s] || 0) + 1;
+  }
+  const finTxt = Object.entries(finBySrc).sort((a, b) => b[1] - a[1])
+    .map(([s, n]) => `${esc(srcName(s))} ${n}件`).join(" / ");
   el.innerHTML = `<span>収集の成功率${lastRate !== null ? `（最新 ${lastRate}%）` : ""} <a href="runs.html">実行履歴ページ</a></span>${line}`
     + (recent ? `<span>直近の実行</span>${recent}` : "")
-    + (srcs ? `<span>ソース別（基準ラン）</span>${srcs}` : "");
+    + (srcs ? `<span>ソース別（基準ラン）</span>${srcs}` : "")
+    + (orphans ? `<span class="tz">辞書に無い候補（孤児） ${orphans}件</span>` : "")
+    + (finTxt ? `<span>財務根拠の出所（候補数）</span><span class="tz">${finTxt}</span>` : "");
   el.hidden = false;
 }
 function statsBand() {

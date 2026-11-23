@@ -948,7 +948,7 @@ class Store:
         # 取得され通常は strong で付くため、実測では現行と同件数になる。
         # I-6 の訂正除外で枠が空く場合に備え、limit より多めに取ってから絞る。
         rows = self.conn.execute(
-            "SELECT DISTINCT n.title, n.published, n.url, n.abstract FROM candidates n "
+            "SELECT DISTINCT n.title, n.published, n.url, n.abstract, n.source FROM candidates n "
             "JOIN candidate_entities ne ON ne.candidate_id = n.id "
             "JOIN candidate_entities ce ON ce.entity_id = ne.entity_id "
             "WHERE ce.candidate_id = ? AND n.id != ? AND n.info_type = 'disclosure' "
@@ -958,7 +958,7 @@ class Store:
             "ORDER BY n.published DESC, n.id LIMIT ?",
             (cid, cid, as_of.isoformat(), start, limit + 4)).fetchall()
         out = [{"title": r["title"], "published": r["published"], "url": r["url"],
-                "text": r["abstract"]} for r in rows]
+                "text": r["abstract"], "source": r["source"]} for r in rows]
         # I-6: 訂正報告書は別 docID で別候補になるため、同一企業の同一期に
         # 訂正版がある元書類はプールから外す (新旧の数値が併記されないように)。
         # 期の対応は EDINET の表題にある「第N期(開始－終了)」の一致で取る。

@@ -95,6 +95,8 @@ class FinancialPoolTests(unittest.TestCase):
         rel = store.related_financials(paper, AS_OF)
         self.assertEqual(len(rel), 2)  # EDINET と Yahoo の両方が対象。数値マーカーの無い開示は入らない
         self.assertTrue(all("財務数値(" in r["text"] for r in rel))
+        # 出所 (収集ソース) も同梱する (財務補間の適用状況の表示用)
+        self.assertEqual({r["source"] for r in rel}, {"edinet", "yahoo"})
         store.close()
 
     def _bare(self, store, r):

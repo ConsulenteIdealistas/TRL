@@ -517,6 +517,8 @@ function recentBand() {
 }
 function savePins() { try { localStorage.setItem("trl-pins", JSON.stringify([...pins])); } catch (e) { /* 保存不可でも表示は続ける */ } }
 function togglePin(id) { if (!id) return; if (pins.has(id)) pins.delete(id); else pins.add(id); savePins(); render(); pinBand(); }
+/* BANした瞬間の軽い振動 (スマホのみ。対応しない環境では何もしない) */
+const buzz = () => { try { if (navigator.vibrate) navigator.vibrate(15); } catch (e) { /* 非対応は無視 */ } };
 /* 短い通知 (キー操作の結果を返すためだけの小さな帯) */
 function toast(msg) {
   let el = $("#toast");
@@ -533,12 +535,12 @@ function banKeyOf(id, kind) {
     if (!e) { toast("企業リンクが無い候補は企業BANできません"); return; }
     const i = BANS.findIndex(b => b.t === "company" && b.v === e.name);
     if (i >= 0) { BANS.splice(i, 1); toast(`企業BANを解除: ${e.name}`); }
-    else { BANS.push({t: "company", v: e.name, on: true}); toast(`企業をBAN: ${e.name}`); }
+    else { BANS.push({t: "company", v: e.name, on: true}); buzz(); toast(`企業をBAN: ${e.name}`); }
     saveBans(); buildBanUI(); render();
   } else {
     if (!e || !e.market) { toast("市場が無い候補は市場BANできません"); return; }
     if (chipBans.fmc.has(e.market)) { chipBans.fmc.delete(e.market); toast(`市場BANを解除: ${e.market}`); }
-    else { chipBans.fmc.add(e.market); toast(`市場をBAN: ${e.market}`); }
+    else { chipBans.fmc.add(e.market); buzz(); toast(`市場をBAN: ${e.market}`); }
     saveChipBans(); syncChips("fmc", mkSel); render();
   }
 }
@@ -1601,6 +1603,7 @@ const ACTIONS = [
   {label: "監査ページへ移動", keys: "g a", seq: "a", run: () => { location.href = "audit.html"; }},
   {label: "Look・See ページへ移動", keys: "g w", seq: "w", run: () => { location.href = "watch.html"; }},
   {label: "観測ページへ移動", keys: "g o", seq: "o", run: () => { location.href = "observe.html"; }},
+  {label: "ブリーフィングページへ移動", keys: "g b", seq: "b", run: () => { location.href = "brief.html"; }},
   {label: "次回評価予定ページへ移動", keys: "g q", seq: "q", run: () => { location.href = "queue.html"; }},
   {label: "実行履歴ページへ移動", keys: "g r", seq: "r", run: () => { location.href = "runs.html"; }},
   {label: "項目別の不足ページへ移動", keys: "g d", seq: "d", run: () => { location.href = "deductions.html"; }},
@@ -1772,6 +1775,24 @@ function loadChipBans() {
   } catch (e) { /* 壊れた保存は無視 */ }
 }
 loadChipBans();
+/* BAN一式 (チップBAN・TRL BAN・指名BAN) の取り込み/戻し。プロファイルと
+   BANの書き出し/読み込みで共用する */
+function captureBanState() {
+  const o = {};
+  for (const k of BANKEYS) o[k] = [...chipBans[k]];
+  o.ftc = [...trlBan];
+  o.named = BANS.map(b => ({t: b.t, v: b.v, on: !!b.on}));
+  return o;
+}
+function restoreBanState(o) {
+  if (!o || typeof o !== "object") return;
+  for (const k of BANKEYS) { chipBans[k].clear(); if (Array.isArray(o[k])) for (const v of o[k]) chipBans[k].add(v); }
+  trlBan.clear(); if (Array.isArray(o.ftc)) for (const v of o.ftc) trlBan.add(v === "u" ? "u" : Number(v));
+  if (Array.isArray(o.named)) BANS = o.named.filter(b => b && typeof b.v === "string" && typeof b.t === "string").map(b => ({t: b.t, v: b.v, on: !!b.on}));
+  saveChipBans(); saveBans();
+  [...CHIPG, ["fgc", tagSel]].forEach(([id, set]) => syncChips(id, set));
+  syncTrlUI(); syncEvUI(); buildBanUI();
+}
 function syncChips(id, set) {
   document.querySelectorAll("#" + id + " button").forEach(b => {
     const on = set.has(b.dataset.v);
@@ -1795,7 +1816,7 @@ function bindChips(id, set, after) {
     timer = setTimeout(() => {
       box.dataset.lp = "1";
       const bs = chipBans[id];
-      if (bs) { if (bs.has(b.dataset.v)) bs.delete(b.dataset.v); else { bs.add(b.dataset.v); set.delete(b.dataset.v); } saveChipBans(); }
+      if (bs) { if (bs.has(b.dataset.v)) bs.delete(b.dataset.v); else { bs.add(b.dataset.v); set.delete(b.dataset.v); buzz(); } saveChipBans(); }
       syncChips(id, set); if (after) after(); render();
     }, 450);
   });
@@ -1808,7 +1829,7 @@ function bindChips(id, set, after) {
     const b = e.target.closest("button"); if (!b) return;
     e.preventDefault();
     const bs = chipBans[id];
-    if (bs) { if (bs.has(b.dataset.v)) bs.delete(b.dataset.v); else { bs.add(b.dataset.v); set.delete(b.dataset.v); } saveChipBans(); }
+    if (bs) { if (bs.has(b.dataset.v)) bs.delete(b.dataset.v); else { bs.add(b.dataset.v); set.delete(b.dataset.v); buzz(); } saveChipBans(); }
     syncChips(id, set); if (after) after(); render();
   });
 }
@@ -1853,7 +1874,7 @@ $("#ftc").addEventListener("click", e => {
         for (let i = 1; i <= 9; i++) { if (all) trlBan.delete(i); else { trlBan.add(i); trlSel.delete(i); } }
       } else {
         const k = b.dataset.l === "u" ? "u" : Number(b.dataset.l);
-        if (trlBan.has(k)) trlBan.delete(k); else { trlBan.add(k); trlSel.delete(k); }
+        if (trlBan.has(k)) trlBan.delete(k); else { trlBan.add(k); trlSel.delete(k); buzz(); }
       }
       saveChipBans(); syncTrlUI(); render();
     }, 450);
@@ -1870,7 +1891,7 @@ $("#ftc").addEventListener("click", e => {
       for (let i = 1; i <= 9; i++) { if (all) trlBan.delete(i); else { trlBan.add(i); trlSel.delete(i); } }
     } else {
       const k = b.dataset.l === "u" ? "u" : Number(b.dataset.l);
-      if (trlBan.has(k)) trlBan.delete(k); else { trlBan.add(k); trlSel.delete(k); }
+      if (trlBan.has(k)) trlBan.delete(k); else { trlBan.add(k); trlSel.delete(k); buzz(); }
     }
     saveChipBans(); syncTrlUI(); render();
   });
@@ -1895,7 +1916,7 @@ const syncEvUI = () => document.querySelectorAll("#fevc button").forEach(b => {
 const evBanToggle = b => {
   if (chipBans.fevc.has(b.dataset.v)) chipBans.fevc.delete(b.dataset.v);
   else {
-    chipBans.fevc.add(b.dataset.v);
+    chipBans.fevc.add(b.dataset.v); buzz();
     const v = b.dataset.v === "latest" ? "latest" : Number(b.dataset.v);
     if (evWin === v) evWin = null;  // 選択中の窓をBANしたら選択も外す
   }
@@ -2002,6 +2023,32 @@ function filterLinkUrl() {
   return u.toString();
 }
 $("#fplink").addEventListener("click", e => copyText(filterLinkUrl(), e.currentTarget));
+/* プロファイル: 条件 (絞り込み一式) + BAN一式を「視点」として名前付き保存する。
+   条件だけの保存 (trl-presets) とは別に、BANまで含めた束を扱う */
+const PROF_KEY = "trl-profiles";
+function loadProfiles() { try { const o = JSON.parse(localStorage.getItem(PROF_KEY) || "{}"); return o && typeof o === "object" && !Array.isArray(o) ? o : {}; } catch (e) { return {}; } }
+function saveProfiles(o) { try { localStorage.setItem(PROF_KEY, JSON.stringify(o)); } catch (e) { /* 保存不可でも操作は続ける */ } }
+function syncProfileSel() {
+  const names = Object.keys(loadProfiles()).sort((a, b) => a.localeCompare(b, "ja"));
+  $("#pfsel").innerHTML = names.length ? names.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join("") : `<option value="">（プロファイルなし）</option>`;
+}
+$("#pfsave").addEventListener("click", e => {
+  const name = $("#pfname").value.trim();
+  if (!name) { flashBtn(e.currentTarget, "名前を入れてください"); return; }
+  const all = loadProfiles();
+  all[name] = {filter: captureFilterState(), bans: captureBanState()};
+  saveProfiles(all); syncProfileSel(); $("#pfsel").value = name; $("#pfname").value = "";
+  flashBtn(e.currentTarget, "保存しました");
+});
+$("#pfapply").addEventListener("click", () => {
+  const name = $("#pfsel").value; const all = loadProfiles();
+  if (name && all[name]) { restoreFilterState(all[name].filter); restoreBanState(all[name].bans); render(); toast(`プロファイルを適用: ${name}`); }
+});
+$("#pfdel").addEventListener("click", () => {
+  const name = $("#pfsel").value; if (!name) return;
+  const all = loadProfiles(); delete all[name]; saveProfiles(all); syncProfileSel();
+});
+syncProfileSel();
 function importFiltersFromUrl(prm) {
   if (!prm || ![...prm.keys()].some(k => k === "q" || k.startsWith("f_"))) return;
   const csv = k => { const v = prm.get("f_" + k); return v ? v.split(",").filter(Boolean) : []; };
@@ -2172,7 +2219,7 @@ $("#det").addEventListener("click", e => {
       const hits = opts.filter(o => o.toLowerCase().includes(v.toLowerCase()));
       if (hits.length === 1) v = hits[0];
     }
-    if (!BANS.some(b => b.t === t && b.v === v)) { BANS.push({t, v, on: true}); saveBans(); }
+    if (!BANS.some(b => b.t === t && b.v === v)) { BANS.push({t, v, on: true}); saveBans(); buzz(); }
     $("#banval").value = "";
     buildBanUI(); render();
   });
@@ -2185,5 +2232,26 @@ $("#det").addEventListener("click", e => {
     const x = e.target.closest && e.target.closest("[data-banx]");
     if (x) { BANS.splice(+x.dataset.banx, 1); saveBans(); buildBanUI(); render(); }
   });
+  /* BAN一式の書き出し/読み込み (視点の共有・バックアップ用) */
+  const expBtn = $("#banexp"), impBtn = $("#banimpb"), impFile = $("#banimp");
+  if (expBtn) expBtn.addEventListener("click", () => {
+    downloadBlob(new Blob([JSON.stringify({version: 1, bans: captureBanState()}, null, 1)], {type: "application/json"}), "trl-bans.json");
+    toast("BANを書き出しました");
+  });
+  if (impBtn && impFile) {
+    impBtn.addEventListener("click", () => impFile.click());
+    impFile.addEventListener("change", () => {
+      const f = impFile.files && impFile.files[0];
+      if (!f) return;
+      f.text().then(tx => {
+        try {
+          const o = JSON.parse(tx);
+          restoreBanState(o.bans || o);
+          render(); toast("BANを読み込みました");
+        } catch (e) { toast("BANファイルを読み込めませんでした"); }
+        impFile.value = "";
+      });
+    });
+  }
 }
 load();

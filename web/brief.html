@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ブリーフィング — TRL Explorer</title>
+<link rel="stylesheet" href="style.css">
+<script>try{var tt=localStorage.getItem("trl-theme");document.documentElement.dataset.theme=(tt==="light"||tt==="dark"||tt==="cb")?tt:(window.matchMedia&&matchMedia("(prefers-color-scheme: light)").matches?"light":"dark");}catch(e){document.documentElement.dataset.theme="dark";}</script>
+<style>
+.docwrap{max-width:880px;margin:0 auto}
+.doct{font-size:22px;margin:2px 0 8px}
+.doc{font-size:13.5px;line-height:1.85}
+.doc h2{font-size:17px;margin:26px 0 8px;padding-top:16px;border-top:1px solid var(--line)}
+.qrow{border:1px solid var(--line);border-radius:12px;padding:10px 14px;margin:8px 0;background:var(--surface)}
+.qrow .qm{font-size:12.5px;color:var(--muted);margin-top:2px}
+</style>
+</head>
+<body>
+<header class="topbar"><a class="brand" href="index.html"><span class="mark">T</span><span>TRL<span class="light"> Explorer</span></span></a><div class="meta">Research Intelligence</div></header>
+<main class="ws"><div class="docwrap">
+<p style="margin:0 0 12px"><a class="tg" href="index.html">← 一覧に戻る</a></p>
+<h1 class="doct">ブリーフィング</h1>
+<div class="doc">
+<p id="bsub">前回このページを開いてからの変化だけをまとめます。</p>
+<p id="berr" class="hint"></p>
+<h2>新しい確定評価</h2>
+<div id="bnew"></div>
+<h2>大きく動いた候補</h2>
+<div id="bmoved"></div>
+<h2>ピン候補の変化</h2>
+<div id="bpins"></div>
+<h2>次回評価予定（先頭）</h2>
+<div id="bqueue"></div>
+<div id="bnote"></div>
+</div>
+</div></main>
+<footer class="ft"><span>TRL Explorer</span><span><a href="observe.html">観測</a></span><span><a href="queue.html">次回評価予定</a></span></footer>
+<script src="brief.js"></script>
+</body>
+</html>

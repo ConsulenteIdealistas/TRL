@@ -22,6 +22,7 @@ const dtier = c => c.derived_tier || (c.tier === "reference" ? "see" : "look");
 let companies = [];
 const state = {q: "", tier: "", markets: new Set(), sectors: new Set(), tags: new Set(), sort: "latest"};
 /* チップのBAN (長押し/右クリックで除外)。主ページと同じ考え方で端末に保存する */
+const buzz = () => { try { if (navigator.vibrate) navigator.vibrate(15); } catch (e) { /* 非対応は無視 */ } };
 const wBans = {markets: new Set(), sectors: new Set(), tags: new Set(), tier: ""};
 try {
   const o = JSON.parse(localStorage.getItem("trl-watch-bans") || "{}");
@@ -194,20 +195,20 @@ async function init() {
     v => state.tier === v,
     v => { state.tier = v; initChipsOnly(); render(); },
     v => !!v && wBans.tier === v,
-    v => { if (!v) return; if (wBans.tier === v) wBans.tier = ""; else { wBans.tier = v; if (state.tier === v) state.tier = ""; } saveWBans(); initChipsOnly(); render(); });
+    v => { if (!v) return; if (wBans.tier === v) wBans.tier = ""; else { wBans.tier = v; buzz(); if (state.tier === v) state.tier = ""; } saveWBans(); initChipsOnly(); render(); });
   const mkts = [...new Set(companies.map(c => c.market).filter(Boolean))]
     .sort((a, b) => companies.filter(c => c.market === b).length - companies.filter(c => c.market === a).length);
   chips($("#markets"), mkts.map(m => [m, ML[m] || m]),
     v => state.markets.has(v),
     v => { state.markets.has(v) ? state.markets.delete(v) : state.markets.add(v); initChipsOnly(); render(); },
     v => wBans.markets.has(v),
-    v => { if (wBans.markets.has(v)) wBans.markets.delete(v); else { wBans.markets.add(v); state.markets.delete(v); } saveWBans(); initChipsOnly(); render(); });
+    v => { if (wBans.markets.has(v)) wBans.markets.delete(v); else { wBans.markets.add(v); buzz(); state.markets.delete(v); } saveWBans(); initChipsOnly(); render(); });
   const secs = [...new Set(companies.map(c => c.sector).filter(Boolean))];
   chips($("#sectors"), secs.map(s => [s, CL[s] || s]),
     v => state.sectors.has(v),
     v => { state.sectors.has(v) ? state.sectors.delete(v) : state.sectors.add(v); initChipsOnly(); render(); },
     v => wBans.sectors.has(v),
-    v => { if (wBans.sectors.has(v)) wBans.sectors.delete(v); else { wBans.sectors.add(v); state.sectors.delete(v); } saveWBans(); initChipsOnly(); render(); });
+    v => { if (wBans.sectors.has(v)) wBans.sectors.delete(v); else { wBans.sectors.add(v); buzz(); state.sectors.delete(v); } saveWBans(); initChipsOnly(); render(); });
   // タグは数が多いのでセクターごとに折り畳んで出す。同じタグが複数セクターに
   // 現れる場合は同じ選択を共有し、チップの押下状態は全グループで同期する
   const tagOrder = Object.keys(TL);
@@ -224,7 +225,7 @@ async function init() {
       v => state.tags.has(v),
       v => { state.tags.has(v) ? state.tags.delete(v) : state.tags.add(v); initChipsOnly(); render(); },
       v => wBans.tags.has(v),
-      v => { if (wBans.tags.has(v)) wBans.tags.delete(v); else { wBans.tags.add(v); state.tags.delete(v); } saveWBans(); initChipsOnly(); render(); });
+      v => { if (wBans.tags.has(v)) wBans.tags.delete(v); else { wBans.tags.add(v); buzz(); state.tags.delete(v); } saveWBans(); initChipsOnly(); render(); });
   });
   function initChipsOnly() {
     document.querySelectorAll("#tiers .dchip").forEach(b => { b.setAttribute("aria-pressed", String(state.tier === b.dataset.v)); b.classList.toggle("ban", !!b.dataset.v && wBans.tier === b.dataset.v); });
@@ -258,7 +259,7 @@ init();
 /* ページ移動のキーシーケンス: g の後にホームポジション周辺のキー
    (a=監査 c=採点基準 w=Look・See o=観測 q=次回評価予定 r=実行履歴 d=項目別の不足 l=用語集) */
 {
-  const GKEYS = {a: "audit.html", c: "criteria.html", w: "watch.html", o: "observe.html", q: "queue.html", r: "runs.html", d: "deductions.html", l: "glossary.html"};
+  const GKEYS = {b: "brief.html", a: "audit.html", c: "criteria.html", w: "watch.html", o: "observe.html", q: "queue.html", r: "runs.html", d: "deductions.html", l: "glossary.html"};
   let gAt = 0;
   document.addEventListener("keydown", e => {
     if (e.metaKey || e.ctrlKey || e.altKey || e.isComposing) return;

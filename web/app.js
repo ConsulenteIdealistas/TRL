@@ -203,6 +203,7 @@ const genOf = p => (p.long && p.long.gen) || (p.event && p.event.gen) || null;
 const isCurGen = p => { const g = genOf(p); return !!(g && g.current); };
 const holdSel = new Set();  // 保留の理由 (long.hold_cause) の選択状態。空なら絞らない
 const moveSel = new Set();  // 前回比の選択状態 ("any" / "up" / "down")。空なら絞らない
+const histSel = new Set();  // 履歴の選択状態 ("first" / "moved" / "band" / "stale")。空なら絞らない
 /* 前回評価との差分 (純粋関数)。TRL を主軸に方向を決め、TRL が同点の
    ときだけ総合点の増減で決める。両方が逆向きに動いたものは "mixed" で、
    「変動あり」にだけ含める (上昇でも下降でもないため) */
@@ -256,6 +257,9 @@ function filtered() {
     && evalInWindow(evalTs(p), evalMaxTs, evWin)
     && (!holdSel.size || (p.display_status === "hold" && p.long && holdSel.has(p.long.hold_cause)))
     && (!moveSel.size || (() => { const m = moveOf(p); return !!m && (moveSel.has("any") || moveSel.has(m)); })())
+    && (!histSel.size || (() => { const f = histFacts(p); return (histSel.has("first") && f.first)
+      || (histSel.has("moved") && f.moved) || (histSel.has("band") && f.bandCross)
+      || (histSel.has("stale") && p.display_status === "final" && p.long && p.long.evaluated_at && evalMaxTs && evalMaxTs - Date.parse(p.long.evaluated_at) > 30 * 864e5); })())
     && (!mkSel.size || p.entities.some(e => mkSel.has(e.market || "JP")))
     && (!scSel.size || p.entities.some(e => scSel.has(e.sector)))
     && (!tagSel.size || p.entities.some(e => (e.tags || []).some(t => tagSel.has(t))))
@@ -655,6 +659,29 @@ function digestBand() {
 }
 /* 分布の集計 (純粋関数)。母数は掲載中 (除外を除く) の候補で、総合点は
    点数がある評価、TRL は error でない long 評価がある候補だけを数える */
+/* 履歴から読める事実 (純粋関数)。history は古い順の軽い点で、最新と
+   1つ前を比べる。点が無い項目は null のままにし、差は作らない */
+function histFacts(p) {
+  const h = Array.isArray(p.history) ? p.history : [];
+  const cur = h.length ? h[h.length - 1] : null;
+  const prv = h.length > 1 ? h[h.length - 2] : null;
+  const dTrl = cur && prv && cur.trl_level != null && prv.trl_level != null ? cur.trl_level - prv.trl_level : null;
+  const dTot = cur && prv && cur.total != null && prv.total != null ? Math.round((cur.total - prv.total) * 10) / 10 : null;
+  return {
+    n: h.length, first: h.length === 1, dTrl, dTot,
+    bandCross: !!(cur && prv && cur.band && prv.band && cur.band !== prv.band),
+    moved: dTrl !== null ? dTrl !== 0 : (dTot !== null ? dTot !== 0 : false),
+    latestAt: cur ? cur.evaluated_at : null,
+  };
+}
+/* その候補の評価時点の列 (週間集計用)。履歴が無い候補は最新の評価だけ */
+function evalPoints(p) {
+  const h = Array.isArray(p.history) ? p.history : [];
+  if (h.length) return h.map((pt, i) => ({at: pt.evaluated_at, first: i === 0}));
+  if (p.long && p.long.evaluated_at) return [{at: p.long.evaluated_at, first: (p.eval_count || 1) <= 1}];
+  return [];
+}
+const candName = p => { const e = (p.entities || []).find(x => x.strength === "strong"); return e ? e.name : (p.title || "").slice(0, 24); };
 function distBins(cands) {
   const score = new Array(10).fill(0), trl = new Array(10).fill(0);  // trl[0..8]=TRL1..9、trl[9]=未確定
   for (const p of cands || []) {
@@ -687,7 +714,99 @@ function distBand() {
   const ns = b.score.reduce((a, x) => a + x, 0), nt = b.trl.reduce((a, x) => a + x, 0);
   if (!ns && !nt) { el.hidden = true; return; }
   el.innerHTML = `<span>総合点の分布（${ns}件）</span>${barsSvg(b.score, ["0", "10", "20", "30", "40", "50", "60", "70", "80", "90"], 170, 40)}`
-    + `<span>TRLの分布（${nt}件）</span>${barsSvg(b.trl, ["1", "2", "3", "4", "5", "6", "7", "8", "9", "未"], 170, 40)}`;
+    + `<span>TRLの分布（${nt}件）</span>${barsSvg(b.trl, ["1", "2", "3", "4", "5", "6", "7", "8", "9", "未"], 170, 40)}`
+    + scatterHtml() + nullDistHtml();
+  el.hidden = false;
+}
+/* 変動の散布 (純粋関数): 再評価の (総合点の差, TRLの差) を座標にする。
+   軸の範囲は総合点 ±50・TRL ±8 で固定し、範囲外は端に寄せる */
+function scatterGeom(pts) {
+  const W = 170, H = 64;
+  return pts.map(({dTot, dTrl}) => ({
+    x: Math.round((W / 2 + Math.max(-50, Math.min(50, dTot)) / 50 * (W / 2 - 4)) * 10) / 10,
+    y: Math.round((H / 2 - Math.max(-8, Math.min(8, dTrl)) / 8 * (H / 2 - 4)) * 10) / 10,
+  }));
+}
+function scatterHtml() {
+  const pts = [];
+  for (const p of P) { const f = histFacts(p); if (f.dTot !== null && f.dTrl !== null) pts.push(f); }
+  if (!pts.length) return "";
+  const cs = scatterGeom(pts);
+  return `<span>変動の散布（再評価 ${pts.length}件、横=総合点の差 / 縦=TRLの差）</span>`
+    + `<svg viewBox="0 0 170 64" width="170" height="64" role="img"><line x1="85" y1="2" x2="85" y2="62" stroke="var(--line)"/><line x1="2" y1="32" x2="168" y2="32" stroke="var(--line)"/>`
+    + cs.map(c => `<circle cx="${c.x}" cy="${c.y}" r="2.5" fill="var(--accent)" opacity="0.7"/>`).join("") + `</svg>`;
+}
+/* 項目別の未確定 (null) の分布: 最新の long 評価 (error を除く) のうち、
+   その項目に点が付いていない候補の数。材料の不足がどこに出るかの観測用 */
+function nullDistHtml() {
+  const keys = ["technology_readiness", "technological_advantage", "monetization", "market_growth", "financial_sustainability", "moat_durability"];
+  const cnt = {}; let base = 0;
+  for (const p of P) {
+    if (!p.long || p.long.status === "error") continue;
+    base++;
+    for (const k of keys) { const it = p.long.items ? p.long.items[k] : null; if (!it || it.score == null) cnt[k] = (cnt[k] || 0) + 1; }
+  }
+  if (!base) return "";
+  const parts = keys.filter(k => cnt[k]).map(k => `${label(k)} ${cnt[k]}件`);
+  return `<span>項目別の未確定（評価 ${base}件中）: ${parts.length ? esc(parts.join(" / ")) : "なし"}</span>`;
+}
+function moveBand() {
+  // 直近7日の評価件数 (履歴と最新の評価から数える) と、大きく動いた候補
+  const el = $("#moveband");
+  if (!el) return;
+  let week = 0, firsts = 0;
+  if (evalMaxTs) for (const p of P) for (const pt of evalPoints(p)) {
+    const at = Date.parse(pt.at || "");
+    if (at && evalMaxTs - at <= 7 * 864e5 && at <= evalMaxTs) { week++; if (pt.first) firsts++; }
+  }
+  const moved = [];
+  for (const p of P) {
+    const f = histFacts(p);
+    if (f.n >= 2 && (f.bandCross || (f.dTrl !== null && f.dTrl !== 0) || (f.dTot !== null && Math.abs(f.dTot) >= 10))) moved.push({p, f});
+  }
+  moved.sort((a, b) => String(b.f.latestAt || "").localeCompare(String(a.f.latestAt || "")));
+  if (!week && !moved.length) { el.hidden = true; return; }
+  el.innerHTML = `<span>直近7日の評価 <strong>${week}件</strong>（初回 ${firsts}件 / 再評価 ${week - firsts}件）</span>`
+    + moved.slice(0, 12).map(({p, f}) => `<a class="tz" href="detail.html?id=${encodeURIComponent(p.id)}">${esc(candName(p))}: ${f.dTrl !== null && f.dTrl !== 0 ? `TRL ${f.dTrl > 0 ? "+" : ""}${f.dTrl} ` : ""}${f.dTot !== null ? `総合 ${f.dTot > 0 ? "+" : ""}${f.dTot}` : ""}${f.bandCross ? " ・帯域を跨いだ" : ""}</a>`).join("");
+  el.hidden = false;
+}
+function nearBand() {
+  // あと1項目で確定: 保留のうち必須項目の不足が1項目だけの候補
+  const el = $("#nearband");
+  if (!el) return;
+  const rows = P.filter(p => p.display_status === "hold" && p.long && Array.isArray(p.long.critical_missing) && p.long.critical_missing.length === 1)
+    .sort((a, b) => String(b.long.evaluated_at || "").localeCompare(String(a.long.evaluated_at || "")));
+  if (!rows.length) { el.hidden = true; return; }
+  el.innerHTML = `<span>あと1項目で確定 <strong>${rows.length}件</strong></span>`
+    + rows.slice(0, 12).map(p => `<a class="tz" href="detail.html?id=${encodeURIComponent(p.id)}">${esc(candName(p))}（不足: ${esc(label(p.long.critical_missing[0]))}）</a>`).join("");
+  el.hidden = false;
+}
+function usageBand() {
+  // 翻訳使用量のゲージ (translation_usage の直読み)
+  const el = $("#usageband");
+  if (!el) return;
+  const u = META && META.translation_usage;
+  if (!u) { el.hidden = true; return; }
+  const caps = [["Azure (月)", 2000000, (u.monthly || {}).azure], ["Google (月)", 500000, (u.monthly || {}).google], ["DeepL (通算)", 1000000, (u.cumulative || {}).deepl]];
+  const seg = ([lab, cap, v]) => {
+    if (typeof v !== "number") return "";
+    const pct = Math.min(100, Math.round(v / cap * 1000) / 10);
+    return `<span>${lab} <strong>${v.toLocaleString("ja-JP")}字</strong> / ${cap.toLocaleString("ja-JP")}字 (${pct}%)</span><span class="ubar"><span style="width:${pct}%"></span></span>`;
+  };
+  el.innerHTML = `<span>翻訳使用量（${esc(u.month || "")}）</span>` + caps.map(seg).join("");
+  el.hidden = false;
+}
+function alertBand() {
+  // 実行の失敗と、データの鮮度の警告。通常の発行間隔 (火〜金の実行と
+  // 月曜のサイト更新) の最長空白は4日程度で、5日を超えたら異常側に倒す
+  const el = $("#alertband");
+  if (!el) return;
+  const msgs = [];
+  if (META && META.run && META.run.status === "error") msgs.push("最新の実行はエラーで終了しました。表示されているのは前回までのデータです。");
+  const gen = META && META.generated_at ? Date.parse(META.generated_at) : null;
+  if (gen && Date.now() - gen > 5 * 864e5) msgs.push(`このデータは生成から ${Math.floor((Date.now() - gen) / 864e5)} 日が経過しています（通常の発行間隔は最長でも4日程度）。`);
+  if (!msgs.length) { el.hidden = true; return; }
+  el.innerHTML = msgs.map(m => `<span>${esc(m)}</span>`).join("");
   el.hidden = false;
 }
 function nqBand() {
@@ -870,7 +989,7 @@ async function load() {
     + (d.run ? ` · run ${d.run.id} · ${d.run.status}` : "")
     + (cv ? ` · 規程 ${cv}` : "");
   $("#fl").value = LANG;
-  facetChips(); warn(d); stats(); tierBand(); barrierBand(); auditBadge(); digestBand(); nqBand(); distBand(); render();
+  facetChips(); warn(d); stats(); tierBand(); barrierBand(); auditBadge(); digestBand(); nqBand(); distBand(); moveBand(); nearBand(); usageBand(); alertBand(); render();
 }
 $("#sf").addEventListener("submit", e => { e.preventDefault(); render(); });
 /* キー操作とコマンドパレット。よく使う操作はホームポジション
@@ -1034,7 +1153,7 @@ function bindChips(id, set, after) {
   });
 }
 const syncTagN = () => { $("#fgn").textContent = tagSel.size ? `（${tagSel.size}件選択中）` : ""; };
-const CHIPG = [["fsc", stSel], ["fdc", dirSel], ["fmc", mkSel], ["fcc", scSel], ["fstc", stgSel], ["ftierc", tierSel], ["fgenc", genSel], ["fown", ownSel], ["fhcc", holdSel], ["fmvc", moveSel]];
+const CHIPG = [["fsc", stSel], ["fdc", dirSel], ["fmc", mkSel], ["fcc", scSel], ["fstc", stgSel], ["ftierc", tierSel], ["fgenc", genSel], ["fown", ownSel], ["fhcc", holdSel], ["fmvc", moveSel], ["fhistc", histSel]];
 CHIPG.forEach(([id, set]) => bindChips(id, set));
 bindChips("fgc", tagSel, syncTagN);
 const syncTrlUI = () => document.querySelectorAll("#ftc button").forEach(b => {
@@ -1109,7 +1228,7 @@ function captureFilterState() {
   return {q: $("#q").value, sort: $("#fo").value,
     st: [...stSel], trl: [...trlSel], dir: [...dirSel], mk: [...mkSel], sc: [...scSel],
     tag: [...tagSel], stg: [...stgSel], tier: [...tierSel], gen: [...genSel], own: [...ownSel],
-    hold: [...holdSel], move: [...moveSel], slo: $("#fsn").value, shi: $("#fsm").value,
+    hold: [...holdSel], move: [...moveSel], hist: [...histSel], slo: $("#fsn").value, shi: $("#fsm").value,
     ev: evWin == null ? "" : String(evWin)};
 }
 function restoreFilterState(s) {
@@ -1117,7 +1236,7 @@ function restoreFilterState(s) {
   const put = (set, arr) => { set.clear(); if (Array.isArray(arr)) for (const v of arr) set.add(v); };
   put(stSel, s.st); put(dirSel, s.dir); put(mkSel, s.mk); put(scSel, s.sc);
   put(tagSel, s.tag); put(stgSel, s.stg); put(tierSel, s.tier); put(genSel, s.gen);
-  put(ownSel, s.own); put(holdSel, s.hold); put(moveSel, s.move);
+  put(ownSel, s.own); put(holdSel, s.hold); put(moveSel, s.move); put(histSel, s.hist);
   trlSel.clear(); if (Array.isArray(s.trl)) for (const v of s.trl) trlSel.add(v === "u" ? "u" : Number(v));
   $("#q").value = typeof s.q === "string" ? s.q : "";
   if (typeof s.sort === "string" && [...$("#fo").options].some(o => o.value === s.sort)) $("#fo").value = s.sort;

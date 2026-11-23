@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>用語集 — TRL Explorer</title>
+<link rel="stylesheet" href="style.css">
+<script>try{var tt=localStorage.getItem("trl-theme");document.documentElement.dataset.theme=(tt==="light"||tt==="dark")?tt:"dark";}catch(e){document.documentElement.dataset.theme="dark";}</script>
+<style>
+.docwrap{max-width:880px;margin:0 auto}
+.doct{font-size:22px;margin:2px 0 8px}
+.doc{font-size:13.5px;line-height:1.85}
+.doc h2{font-size:17px;margin:26px 0 8px;padding-top:16px;border-top:1px solid var(--line)}
+.doc dt{font-weight:800;margin:14px 0 2px}
+.doc dd{margin:0 0 6px}
+.doc p{margin:6px 0}
+</style>
+</head>
+<body>
+<header class="topbar"><a class="brand" href="index.html"><span class="mark">T</span><span>TRL<span class="light"> Explorer</span></span></a><div class="meta">Research Intelligence</div></header>
+<main class="ws"><div class="docwrap">
+<p style="margin:0 0 12px"><a class="tg" href="index.html">← 一覧に戻る</a>　<a class="tg" href="criteria.html">採点基準 →</a></p>
+<h1 class="doct">用語集</h1>
+<div class="doc">
+<p>このサイトで使う言葉の定義です。採点の詳しい規則は<a href="criteria.html">採点基準</a>にあります。定義が変わるときは規程の版と一緒に変わります。</p>
+
+<h2>評価の軸</h2>
+<dl>
+<dt>TRL（技術成熟度レベル）</dt>
+<dd>技術が実証された成熟度を 1〜9 で表す段階です。項目「技術成熟度」の点から決まります。商用の進み具合は測りません（売上や展開は事業側の項目で見ます）。証拠が無いときは「未確定」で、低い段階とは別です。</dd>
+<dt>総合点</dt>
+<dd>6項目の加重合計（0〜100）。重みは技術成熟度30 / 技術的優位性15 / 収益化能力20 / 市場成長性15 / 財務的持続可能性10 / 競争優位性の持続性10 です。</dd>
+<dt>帯域</dt>
+<dd>総合点の区間表示です。0–19 極めて弱い / 20–39 弱い / 40–59 中程度・不確実 / 60–79 強い / 80–100 非常に強い。</dd>
+<dt>参考項目（経営陣・実行力）</dt>
+<dd>併記するだけの項目で、総合点にも必須判定にも入れません。</dd>
+<dt>null（未確定）</dt>
+<dd>証拠が資料に無い項目には点が付きません。0点（できていない）とは意味が違うため、不足として数え、材料の補強対象になります。</dd>
+<dt>方向性</dt>
+<dd>資料が示す出来事の追い風・逆風を、点数とは独立に判定したもの。ポジティブ / ネガティブ / 混在。出来事が無いときは未判定です。</dd>
+</dl>
+
+<h2>候補の状態</h2>
+<dl>
+<dt>選定可能（final）</dt>
+<dd>必須項目がそろい、評価が確定した候補です。</dd>
+<dt>保留（hold）</dt>
+<dd>評価は行われたが確定できない候補です。理由は「企業を特定できず」（資料の中で対象企業を一意に定められなかった）か「根拠不足」（必須項目の根拠が資料に無かった）のいずれかです。</dd>
+<dt>要追加調査（review）</dt>
+<dd>監査で要確認が付き、人の処分を待っている候補です。</dd>
+<dt>未評価（pending）／除外（rejected）</dt>
+<dd>未評価はまだ long 評価を受けていない候補、除外は対象外と判定された候補です。</dd>
+<dt>次回評価予定</dt>
+<dd>選定の順序で次回の実行に入る候補です。再評価の予約とは別です。</dd>
+</dl>
+
+<h2>企業と市場</h2>
+<dl>
+<dt>層（ティア）</dt>
+<dd>企業単位の区分で Core / Conditional / Look / See の4層です。目標比率は 2:3:4:1。Core は評価が確定し企業リンクが一意で未処分の要確認が無い企業、Conditional はその条件のいずれかが未充足の評価対象、Look・See は評価対象外の監視企業です。</dd>
+<dt>関門（barriers）</dt>
+<dd>一次情報の証拠条件から機械的に判定する表示専用の目印で、採点や選定には使いません。Devil River＝TRL 3以下で治験の Phase 1 以上が始まっていない、Valley of Death＝TRL 4以上で資金の持ち（ランウェイ）が1年未満、Darwinian Sea＝TRL 7以上で通期売上が前年より減った状態です。判定材料が足りないときは「判定しない」になります。</dd>
+<dt>段階（ステージ）</dt>
+<dd>企業の事業段階の表示で、研究開発型 / 実証型 / 量産型 / 商業化型。表示・分析専用で、採点の入力には使いません。</dd>
+<dt>付記（annex）</dt>
+<dd>ARL（提携・販売などの到達）/ IRL（統合）/ SRL（社会実装）の観測イベントを詳細画面に記録する仕組みです。スコア・選定・層・監査には触りません。</dd>
+</dl>
+
+<h2>運用と監査</h2>
+<dl>
+<dt>世代</dt>
+<dd>規程とプロンプトの版の組み合わせです。旧世代の評価は現在の物差しと混ぜず、世代表示の切り替えで分けて見られます。</dd>
+<dt>監査</dt>
+<dd>評価の後に決定的な規則（A・E・P の各規則と API 照合）で照合する仕組みです。引っかかったものは「要確認」として残り、人の処分（確定・再評価など）で閉じます。LLM は監査に使いません。</dd>
+<dt>母集団（コホート）</dt>
+<dd>統計の対象集合です。既定は表示時点で選定可能な候補の最新の評価で、カレンダーで基準日を選ぶと、その日時点の集合に固定されます。</dd>
+<dt>統計量</dt>
+<dd>四分位数は線形補間（type 7）、標準偏差は標本標準偏差（n−1）です。Sn と Qn は Rousseeuw &amp; Croux のロバストなばらつきの推定量で、外れ値に引かれにくいのが特徴です。実装は R の robustbase と照合済みです。</dd>
+<dt>一次情報／監視材料</dt>
+<dd>一次情報は企業自身の開示（決算・適時開示・治験登録など）で、監視材料は Look・See の企業について集めている材料です。</dd>
+</dl>
+</div>
+</div></main>
+</body>
+</html>

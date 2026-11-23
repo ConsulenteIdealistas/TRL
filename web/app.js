@@ -245,11 +245,50 @@ function inR(t) {
 function haystack(p) {
   const items = p.long ? Object.values(p.long.items).flatMap(i => i.missing_info) : [];
   const facets = p.entities.flatMap(e => [...(e.tags || []), ...(e.tags || []).map(tagLabel), CL[e.sector] || "", ML[e.market || "JP"] || "", STG[e.stage] || ""]);
-  return [p.title, p.title_ja || "", p.source, p.abstract, p.abstract_ja || "", ...(p.fields || []), ...p.entities.map(e => e.name), ...facets, ...items].join(" ").toLowerCase();
+  return [p.title, p.title_ja || "", p.source, p.abstract, p.abstract_ja || "", ...(p.fields || []), ...p.entities.map(e => e.name), ...p.entities.map(e => e.product_name || ""), ...facets, ...items].join(" ").toLowerCase();
+}
+/* 検索クエリの解釈 (純粋関数)。空白区切りで、key:value 形式の語は条件に、
+   -語 は除外に、それ以外は全文検索の語にする (全て AND)。
+   key: tier / trl (7 または 7-9) / dir / status / model / src /
+   item (item:monetization>=60) / missing (不足項目の key) */
+function parseQuery(q) {
+  const out = {text: [], excl: [], conds: []};
+  for (const w of String(q || "").toLowerCase().split(/\s+/).filter(Boolean)) {
+    if (w.startsWith("-") && w.length > 1) { out.excl.push(w.slice(1)); continue; }
+    const m = w.match(/^([a-z]+):(.+)$/);
+    if (m && ["tier", "trl", "dir", "status", "model", "item", "missing", "src"].includes(m[1])) out.conds.push({key: m[1], val: m[2]});
+    else out.text.push(w);
+  }
+  return out;
+}
+function condOk(p, c) {
+  const v = c.val;
+  switch (c.key) {
+    case "tier": return p.entities.some(e => dtierOf(e) === v);
+    case "trl": { const L = lvl(p); if (L == null) return false; const r = v.split("-").map(Number); return r.length === 2 ? (L >= r[0] && L <= r[1]) : L === r[0]; }
+    case "dir": return (dirOf(p) || "none") === v;
+    case "status": return p.display_status === v;
+    case "model": return !!(p.long && p.long.llm_model && p.long.llm_model.toLowerCase().includes(v));
+    case "src": return (p.source || "").toLowerCase().includes(v);
+    case "missing": return !!(p.long && Array.isArray(p.long.critical_missing) && p.long.critical_missing.includes(v));
+    case "item": {
+      const im = v.match(/^([a-z_]+)(>=|<=|>|<|=)(\d+(?:\.\d+)?)$/);
+      if (!im || !p.long || !p.long.items || !p.long.items[im[1]]) return false;
+      const s = p.long.items[im[1]].score;
+      if (typeof s !== "number") return false;
+      const n = Number(im[3]);
+      return im[2] === ">=" ? s >= n : im[2] === "<=" ? s <= n : im[2] === ">" ? s > n : im[2] === "<" ? s < n : s === n;
+    }
+  }
+  return true;
+}
+function queryOk(p, q) {
+  const hs = haystack(p);
+  return q.text.every(w => hs.includes(w)) && q.excl.every(w => !hs.includes(w)) && q.conds.every(c => condOk(p, c));
 }
 function filtered() {
   const q = $("#q").value.trim().toLowerCase(), o = $("#fo").value;
-  const r = P.filter(p => (!q || haystack(p).includes(q))
+  const r = P.filter(p => queryOk(p, parseQuery(q))
     && (stSel.size ? stSel.has(p.display_status) : p.display_status !== "rejected")  // 除外はチップを明示的に押した時だけ混ざる
     && inR(lvl(p))
     && (!dirSel.size || dirSel.has(dirOf(p) || "none"))
@@ -1186,9 +1225,29 @@ async function load() {
     + (cv ? ` · 規程 ${cv}` : "");
   $("#fl").value = LANG;
   buildCohort();
-  facetChips(); warn(d); stats(); tierBand(); barrierBand(); auditBadge(); digestBand(); nqBand(); distBand(); moveBand(); nearBand(); usageBand(); alertBand(); runBand(); statsBand(); pinBand(); render();
+  facetChips(); warn(d); stats(); tierBand(); barrierBand(); auditBadge(); digestBand(); nqBand(); distBand(); moveBand(); nearBand(); usageBand(); alertBand(); runBand(); statsBand(); pinBand(); searchHistBand(); render();
 }
-$("#sf").addEventListener("submit", e => { e.preventDefault(); render(); });
+$("#sf").addEventListener("submit", e => { e.preventDefault(); saveSearch($("#q").value); render(); });
+/* 検索履歴 (この端末のみ、直近8件)。チップを押すとその検索を再実行する */
+function saveSearch(q) {
+  q = (q || "").trim();
+  if (!q) return;
+  let h = [];
+  try { h = JSON.parse(localStorage.getItem("trl-searches") || "[]"); } catch (e) { /* 壊れた保存値は空として扱う */ }
+  h = [q, ...h.filter(x => x !== q)].slice(0, 8);
+  try { localStorage.setItem("trl-searches", JSON.stringify(h)); } catch (e) { /* 保存不可なら履歴なし */ }
+  searchHistBand();
+}
+function searchHistBand() {
+  const el = $("#shist");
+  if (!el) return;
+  let h = [];
+  try { h = JSON.parse(localStorage.getItem("trl-searches") || "[]"); } catch (e) { /* 同上 */ }
+  if (!h.length) { el.hidden = true; return; }
+  el.innerHTML = `<span>最近の検索</span>` + h.map(x => `<button class="tz" data-q="${esc(x)}">${esc(x)}</button>`).join("");
+  el.hidden = false;
+  el.querySelectorAll("[data-q]").forEach(b => b.addEventListener("click", () => { $("#q").value = b.dataset.q; render(); }));
+}
 /* 母集団の基準日カレンダー: 日を選ぶと母集団をその日時点で再構成する */
 $("#statband").addEventListener("click", e => {
   const mv = e.target.closest("[data-mv]"), day = e.target.closest("[data-d]");

@@ -29,7 +29,8 @@
     "total",
     "band",
     "trl_level",
-    "gen_config"
+    "gen_config",
+    "items"
   ],
   "audit_catalog": [
     "rules_version",

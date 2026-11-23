@@ -869,7 +869,9 @@ class ExportTests(StoreFixture):
         self.assertEqual(len(cand2["history"]), 2)
         self.assertEqual(cand2["history"][-1]["total"], 70.0)
         self.assertEqual(set(cand2["history"][0]),
-                         {"evaluated_at", "status", "total", "band", "trl_level", "gen_config"})
+                         {"evaluated_at", "status", "total", "band", "trl_level", "gen_config", "items"})
+        # 項目点は as-of 母集団の再構成用に直読みで載る
+        self.assertEqual(cand2["history"][0]["items"]["monetization"], 65)
 
     def test_digest_covers_latest_run_with_prev(self):
         # ダイジェストは表示の基準ラン (最新の終了ラン) の評価だけを持ち、

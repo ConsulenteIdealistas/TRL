@@ -247,14 +247,16 @@ def _prev_for_site(ev):
 
 
 def _light_point(ev):
-    """評価行の軽い要約 (履歴・変化ダイジェスト用)。前回比の要約
-    (_prev_for_site) から項目点を除いた形で、状態・総合点・TRL・世代
-    だけを持つ。値はいずれも評価行の直読みで、差分の材料に徹する。"""
+    """評価行の軽い要約 (履歴・変化ダイジェスト用)。状態・総合点・TRL・
+    世代に加えて項目点を持つ。項目点は、任意の日付時点の母集団を履歴から
+    再構成する (統計の as-of 固定) ために要る。値はいずれも評価行の
+    直読みで、差分と再構成の材料に徹する。"""
     s = _prev_for_site(ev)
     if s is None:
         return None
     return {"evaluated_at": s["evaluated_at"], "status": s["status"], "total": s["total"],
-            "band": s["band"], "trl_level": s["trl_level"], "gen_config": s["gen_config"]}
+            "band": s["band"], "trl_level": s["trl_level"], "gen_config": s["gen_config"],
+            "items": s["items"]}
 
 
 def _digest_for_site(store, run_id):

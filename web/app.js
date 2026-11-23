@@ -790,17 +790,76 @@ function statsOf(xs) {
   return {n: v.length, mean: meanOf(v), median: pct7(v, 0.5), sd: sdOf(v), sn: snOf(v), qn: qnOf(v),
     q1: pct7(v, 0.25), q3: pct7(v, 0.75), min: Math.min(...v), max: Math.max(...v)};
 }
-/* 母集団 (コホート): 表示時点で選定可能 (final) の候補の最新の long 評価。
-   日付は data.json の as_of が固定する。項目の並びは config の群定義に従う */
-let COHORT = null, ITEM_KEYS = [];
+/* 母集団 (コホート): 既定は表示時点で選定可能 (final) の候補の最新の
+   long 評価。カレンダーで基準日 (ASOF) を選ぶと、各候補についてその日
+   以前の最新の long 評価を履歴から再構成し、その日時点で final だった
+   候補だけを母集団にする。項目の並びは config の群定義に従う */
+let COHORT = null, ITEM_KEYS = [], ASOF = null, CALM = null, CALOPEN = false;
+function pointOf(p) {
+  if (!p.long) return null;
+  const items = {};
+  for (const k of Object.keys(p.long.items || {})) items[k] = p.long.items[k] && p.long.items[k].score;
+  return {evaluated_at: p.long.evaluated_at, status: p.long.status, total: p.long.total, items};
+}
+/* 基準日以前の最新の評価点 (純粋関数)。履歴は最新の評価も含む全件 */
+function asOfPoint(p, asOf) {
+  const pts = [...(p.history || []), ...(p.history && p.history.length ? [] : [pointOf(p)])]
+    .filter(pt => pt && pt.evaluated_at && pt.evaluated_at.slice(0, 10) <= asOf);
+  if (!pts.length) return null;
+  pts.sort((a, b) => a.evaluated_at < b.evaluated_at ? -1 : 1);
+  return pts[pts.length - 1];
+}
+/* 評価があった日の件数 (カレンダーのドット用、純粋関数) */
+function evalDayCounts() {
+  const m = new Map();
+  const add = ts => { if (!ts) return; const d = ts.slice(0, 10); m.set(d, (m.get(d) || 0) + 1); };
+  for (const p of P) {
+    if (p.history && p.history.length) p.history.forEach(pt => add(pt.evaluated_at));
+    else if (p.long) add(p.long.evaluated_at);
+  }
+  return m;
+}
+/* 月のマス目 (純粋関数): 月曜始まり、先行・後続の空白は null */
+function monthCells(y, m) {
+  const first = new Date(Date.UTC(y, m, 1));
+  const lead = (first.getUTCDay() + 6) % 7;
+  const days = new Date(Date.UTC(y, m + 1, 0)).getUTCDate();
+  const cells = [];
+  for (let i = 0; i < lead; i++) cells.push(null);
+  for (let d = 1; d <= days; d++) cells.push(`${y}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`);
+  while (cells.length % 7) cells.push(null);
+  return cells;
+}
 function buildCohort() {
   const g = (META.config && META.config.item_groups) || {};
   ITEM_KEYS = [...(g.technology || ["technology_readiness", "technological_advantage"]),
     ...(g.business || ["monetization", "market_growth", "financial_sustainability", "moat_durability"])];
-  const finals = P.filter(p => p.display_status === "final" && p.long && p.long.items);
+  if (!ASOF) {
+    const finals = P.filter(p => p.display_status === "final" && p.long && p.long.items);
+    const items = {};
+    for (const k of ITEM_KEYS) items[k] = statsOf(finals.map(p => p.long.items[k] && p.long.items[k].score));
+    COHORT = {items, total: statsOf(finals.map(p => p.long.total)), asOf: null};
+    return;
+  }
+  const pts = P.map(p => asOfPoint(p, ASOF)).filter(pt => pt && pt.status === "final");
   const items = {};
-  for (const k of ITEM_KEYS) items[k] = statsOf(finals.map(p => p.long.items[k] && p.long.items[k].score));
-  COHORT = {items, total: statsOf(finals.map(p => p.long.total))};
+  for (const k of ITEM_KEYS) items[k] = statsOf(pts.map(pt => pt.items && pt.items[k]));
+  COHORT = {items, total: statsOf(pts.map(pt => pt.total)), asOf: ASOF};
+}
+function calHtml() {
+  if (!CALOPEN || !CALM) return "";
+  const counts = evalDayCounts();
+  const maxDay = [...counts.keys()].sort().pop() || "";
+  const wd = ["月", "火", "水", "木", "金", "土", "日"].map(w => `<span class="calw">${w}</span>`).join("");
+  const cells = monthCells(CALM.y, CALM.m).map(d => {
+    if (!d) return `<span class="cald empty"></span>`;
+    const n = counts.get(d) || 0, dis = d > maxDay ? " disabled" : "", sel = d === ASOF ? " sel" : "";
+    return `<button class="cald${sel}" data-d="${d}"${dis}>${Number(d.slice(8))}${n ? `<span class="cdot">${n}件</span>` : ""}</button>`;
+  }).join("");
+  return `<div class="calpop"><div class="calhead"><button class="chip" data-mv="-1">‹ 前月</button>`
+    + `<b>${CALM.y}年${CALM.m + 1}月</b><button class="chip" data-mv="1">翌月 ›</button></div>`
+    + `<div class="calgrid">${wd}${cells}</div>`
+    + `<p class="hint">件数はその日に行われた long 評価の数です。日を選ぶと、その日時点の母集団で統計とレーダーの中央値が再計算されます。</p></div>`;
 }
 const fmt1 = v => v == null ? "—" : (Math.round(v * 10) / 10).toFixed(1);
 function boxGeom(st, W = 170) { const X = v => Math.round((v / 100 * (W - 4) + 2) * 10) / 10; return {min: X(st.min), q1: X(st.q1), med: X(st.median), q3: X(st.q3), max: X(st.max)}; }
@@ -811,10 +870,15 @@ function boxSvg(st) {
 function statsBand() {
   const el = $("#statband");
   if (!el) return;
-  if (!COHORT || !COHORT.total) { el.hidden = true; return; }
+  if (!COHORT) { el.hidden = true; return; }
   const row = (lab, st) => st ? `<span class="srow"><b>${esc(lab)}</b> ${boxSvg(st)}<span class="snum">n=${st.n} 平均 ${fmt1(st.mean)} / 中央値 ${fmt1(st.median)} / SD ${fmt1(st.sd)} / Sn ${fmt1(st.sn)} / Qn ${fmt1(st.qn)} / Q1 ${fmt1(st.q1)} / Q3 ${fmt1(st.q3)}</span></span>` : "";
-  el.innerHTML = `<span>確定評価の統計（母集団 ${COHORT.total.n}件、箱は最小–Q1–中央値–Q3–最大）</span>`
-    + row("総合点", COHORT.total) + ITEM_KEYS.map(k => row(label(k), COHORT.items[k])).join("");
+  const when = COHORT.asOf ? `${COHORT.asOf} 時点` : "最新";
+  el.innerHTML = `<span>確定評価の統計（${when}の母集団 ${COHORT.total ? COHORT.total.n : 0}件、箱は最小–Q1–中央値–Q3–最大）</span>`
+    + `<span class="srow"><button class="chip" id="asofbtn">母集団の基準日: ${COHORT.asOf || "最新（as_of）"}</button>`
+    + (COHORT.asOf ? `<button class="chip" id="asofclear">最新に戻す</button>` : "") + `</span>`
+    + calHtml()
+    + (COHORT.total ? row("総合点", COHORT.total) + ITEM_KEYS.map(k => row(label(k), COHORT.items[k])).join("")
+      : `<span class="snum">その日時点で確定した評価はまだありません。</span>`);
   el.hidden = false;
 }
 /* レーダーの幾何 (純粋関数): 6項目を正六角形の頂点に置く。中心 60,60、
@@ -837,7 +901,7 @@ function radarHtml(p) {
     + `<svg viewBox="0 0 120 120" width="150" height="150" role="img">${grid}`
     + `<polygon points="${poly(radarGeom(meds))}" fill="none" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="3 2"/>`
     + `<polygon points="${poly(radarGeom(vals))}" fill="var(--accent)" fill-opacity="0.22" stroke="var(--accent)" stroke-width="1.5"/></svg>`
-    + `<p class="hint">実線がこの候補、破線が母集団（選定可能 ${COHORT.total ? COHORT.total.n : 0}件）の項目別中央値です。</p>`
+    + `<p class="hint">実線がこの候補、破線が母集団（${COHORT.asOf ? COHORT.asOf + " 時点で選定可能" : "選定可能"} ${COHORT.total ? COHORT.total.n : 0}件）の項目別中央値です。</p>`
     + `<ul class="pts">${ITEM_KEYS.map((k, i) => `<li><b>${esc(label(k))}</b><span>候補 ${fmt1(vals[i])} / 中央値 ${fmt1(meds[i])}</span></li>`).join("")}</ul></section>`;
 }
 function moveBand() {
@@ -1083,6 +1147,28 @@ async function load() {
   facetChips(); warn(d); stats(); tierBand(); barrierBand(); auditBadge(); digestBand(); nqBand(); distBand(); moveBand(); nearBand(); usageBand(); alertBand(); statsBand(); render();
 }
 $("#sf").addEventListener("submit", e => { e.preventDefault(); render(); });
+/* 母集団の基準日カレンダー: 日を選ぶと母集団をその日時点で再構成する */
+$("#statband").addEventListener("click", e => {
+  const mv = e.target.closest("[data-mv]"), day = e.target.closest("[data-d]");
+  if (e.target.id === "asofbtn") {
+    CALOPEN = !CALOPEN;
+    if (CALM == null) {
+      const days = [...evalDayCounts().keys()].sort();
+      const base = (ASOF || days[days.length - 1] || (META.generated_at || "")).slice(0, 7).split("-").map(Number);
+      CALM = {y: base[0] || 2026, m: (base[1] || 1) - 1};
+    }
+    statsBand();
+  } else if (e.target.id === "asofclear") {
+    ASOF = null; CALOPEN = false; buildCohort(); statsBand(); detail();
+  } else if (mv && CALM) {
+    const d = new Date(Date.UTC(CALM.y, CALM.m + Number(mv.dataset.mv), 1));
+    CALM = {y: d.getUTCFullYear(), m: d.getUTCMonth()}; statsBand();
+  } else if (day && !day.disabled) {
+    ASOF = day.dataset.d; CALOPEN = false;
+    const b = ASOF.split("-").map(Number); CALM = {y: b[0], m: b[1] - 1};
+    buildCohort(); statsBand(); detail();
+  }
+});
 /* キー操作とコマンドパレット。よく使う操作はホームポジション
    (j/k/f/d/s/l/;) に寄せ、残りはパレットから名前で呼べるようにする。
    ACTIONS が正本で、キー割り当て・パレット・ヘルプはすべてここから出る */

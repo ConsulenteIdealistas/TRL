@@ -207,7 +207,15 @@ a.brz.lk{text-decoration:none;display:inline-block;margin-left:4px}
 .alertband{border-color:#a96500;color:#a96500;font-weight:700}
 .srow{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center;width:100%}
 .snum{color:var(--sub);font-size:12px}
-
+.calpop{width:100%;max-width:330px}
+.calhead{display:flex;justify-content:space-between;align-items:center;margin:6px 0}
+.calgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.calw{text-align:center;font-size:11px;color:var(--sub);padding:2px 0}
+.cald{padding:5px 0;text-align:center;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:6px;font-size:12px;cursor:pointer}
+.cald.sel{border-color:var(--accent);font-weight:700}
+.cald:disabled{opacity:.35;cursor:default}
+.cald.empty{border:none;background:none}
+.cdot{display:block;font-size:9px;color:var(--accent)}
 /* 主ページ上部の関門の該当一覧 (.tierband と同じ枠の形)。関門ごとに
    グループ化し、企業チップが詳細へのリンクになる */
 #brband .brg{display:inline-flex;flex-wrap:wrap;align-items:center;gap:4px}

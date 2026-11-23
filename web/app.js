@@ -1721,7 +1721,14 @@ function bindChips(id, set, after) {
   box.addEventListener("pointerup", cancel);
   box.addEventListener("pointerleave", cancel);
   box.addEventListener("pointercancel", cancel);
-  box.addEventListener("contextmenu", e => { if (e.target.closest("button")) e.preventDefault(); });
+  // PC では右クリックでも BAN を切り替える (長押しと同じ操作)
+  box.addEventListener("contextmenu", e => {
+    const b = e.target.closest("button"); if (!b) return;
+    e.preventDefault();
+    const bs = chipBans[id];
+    if (bs) { if (bs.has(b.dataset.v)) bs.delete(b.dataset.v); else bs.add(b.dataset.v); saveChipBans(); }
+    syncChips(id, set); if (after) after(); render();
+  });
 }
 const syncTagN = () => { $("#fgn").textContent = tagSel.size ? `（${tagSel.size}件選択中）` : ""; };
 const CHIPG = [["fsc", stSel], ["fdc", dirSel], ["fmc", mkSel], ["fcc", scSel], ["fstc", stgSel], ["ftierc", tierSel], ["fgenc", genSel], ["fown", ownSel], ["fhcc", holdSel], ["fmvc", moveSel], ["fhistc", histSel]];
@@ -1772,7 +1779,18 @@ $("#ftc").addEventListener("click", e => {
   box.addEventListener("pointerup", cancel);
   box.addEventListener("pointerleave", cancel);
   box.addEventListener("pointercancel", cancel);
-  box.addEventListener("contextmenu", e => { if (e.target.closest("button")) e.preventDefault(); });
+  box.addEventListener("contextmenu", e => {
+    const b = e.target.closest("button"); if (!b) return;
+    e.preventDefault();
+    if (b.dataset.l === "all") {
+      const all = [1, 2, 3, 4, 5, 6, 7, 8, 9].every(i => trlBan.has(i));
+      for (let i = 1; i <= 9; i++) { if (all) trlBan.delete(i); else trlBan.add(i); }
+    } else {
+      const k = b.dataset.l === "u" ? "u" : Number(b.dataset.l);
+      if (trlBan.has(k)) trlBan.delete(k); else trlBan.add(k);
+    }
+    saveChipBans(); syncTrlUI(); render();
+  });
 }
 const applyRange = () => {  // n〜m を入れたら、その範囲のレベルだけを選択状態にする (未確定チップはそのまま)
   if ($("#ftn").value === "" || $("#ftm").value === "") return;

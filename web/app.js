@@ -308,6 +308,7 @@ function filtered() {
     && (!dirSel.size || dirSel.has(dirOf(p) || "none"))
     && scoreInRange(p)
     && evalInWindow(evalTs(p), evalMaxTs, evWin)
+    && ![...chipBans.fevc].some(v => evalInWindow(evalTs(p), evalMaxTs, v === "latest" ? "latest" : Number(v)))
     && (!holdSel.size || (p.display_status === "hold" && p.long && holdSel.has(p.long.hold_cause)))
     && (!moveSel.size || (() => { const m = moveOf(p); return !!m && (moveSel.has("any") || moveSel.has(m)); })())
     && (!histSel.size || (() => { const f = histFacts(p); return (histSel.has("first") && f.first)
@@ -1672,7 +1673,7 @@ $("#fo").addEventListener("change", render);
 /* チップのBAN: 絞り込みチップを長押しすると、その値を除外 (BAN) する。
    選択 (含む) とは別に持ち、BAN中のチップには赤い斜線が入る。
    例: 保留をBANすると、保留以外 (と、もともと隠れている除外以外) が全部出る */
-const BANKEYS = ["fsc", "fdc", "fmc", "fcc", "fgc", "fstc", "ftierc", "fgenc", "fown", "fhcc", "fmvc", "fhistc"];
+const BANKEYS = ["fsc", "fdc", "fmc", "fcc", "fgc", "fstc", "ftierc", "fgenc", "fown", "fhcc", "fmvc", "fhistc", "fevc"];
 const chipBans = {};
 for (const k of BANKEYS) chipBans[k] = new Set();
 const trlBan = new Set();
@@ -1705,6 +1706,7 @@ function bindChips(id, set, after) {
   box.addEventListener("click", e => {
     const b = e.target.closest("button"); if (!b) return;
     if (box.dataset.lp === "1") { box.dataset.lp = ""; return; }  // 長押し直後のクリックは飲む
+    if (b.classList.contains("ban")) return;  // BAN中のチップは通常クリック/タップを通さない (解除は長押し/右クリックだけ)
     if (set.has(b.dataset.v)) set.delete(b.dataset.v); else set.add(b.dataset.v);
     syncChips(id, set); if (after) after(); render();
   });
@@ -1714,7 +1716,7 @@ function bindChips(id, set, after) {
     timer = setTimeout(() => {
       box.dataset.lp = "1";
       const bs = chipBans[id];
-      if (bs) { if (bs.has(b.dataset.v)) bs.delete(b.dataset.v); else bs.add(b.dataset.v); saveChipBans(); }
+      if (bs) { if (bs.has(b.dataset.v)) bs.delete(b.dataset.v); else { bs.add(b.dataset.v); set.delete(b.dataset.v); } saveChipBans(); }
       syncChips(id, set); if (after) after(); render();
     }, 450);
   });
@@ -1727,7 +1729,7 @@ function bindChips(id, set, after) {
     const b = e.target.closest("button"); if (!b) return;
     e.preventDefault();
     const bs = chipBans[id];
-    if (bs) { if (bs.has(b.dataset.v)) bs.delete(b.dataset.v); else bs.add(b.dataset.v); saveChipBans(); }
+    if (bs) { if (bs.has(b.dataset.v)) bs.delete(b.dataset.v); else { bs.add(b.dataset.v); set.delete(b.dataset.v); } saveChipBans(); }
     syncChips(id, set); if (after) after(); render();
   });
 }
@@ -1747,6 +1749,7 @@ const syncTrlUI = () => document.querySelectorAll("#ftc button").forEach(b => {
 $("#ftc").addEventListener("click", e => {
   const b = e.target.closest("button"); if (!b) return;
   if ($("#ftc").dataset.lp === "1") { $("#ftc").dataset.lp = ""; return; }  // 長押し直後のクリックは飲む
+  if (b.classList.contains("ban")) return;  // BAN中のチップは通常クリックを通さない
   if (b.dataset.l === "all") {
     // 判定済み = レベルが確定したもの全部。範囲入力と同じ「チップ状態への近道」で、
     // 全選択なら全解除、そうでなければ 1〜9 を全選択にする (未確定チップはそのまま)
@@ -1768,10 +1771,10 @@ $("#ftc").addEventListener("click", e => {
       box.dataset.lp = "1";
       if (b.dataset.l === "all") {
         const all = [1, 2, 3, 4, 5, 6, 7, 8, 9].every(i => trlBan.has(i));
-        for (let i = 1; i <= 9; i++) { if (all) trlBan.delete(i); else trlBan.add(i); }
+        for (let i = 1; i <= 9; i++) { if (all) trlBan.delete(i); else { trlBan.add(i); trlSel.delete(i); } }
       } else {
         const k = b.dataset.l === "u" ? "u" : Number(b.dataset.l);
-        if (trlBan.has(k)) trlBan.delete(k); else trlBan.add(k);
+        if (trlBan.has(k)) trlBan.delete(k); else { trlBan.add(k); trlSel.delete(k); }
       }
       saveChipBans(); syncTrlUI(); render();
     }, 450);
@@ -1785,10 +1788,10 @@ $("#ftc").addEventListener("click", e => {
     e.preventDefault();
     if (b.dataset.l === "all") {
       const all = [1, 2, 3, 4, 5, 6, 7, 8, 9].every(i => trlBan.has(i));
-      for (let i = 1; i <= 9; i++) { if (all) trlBan.delete(i); else trlBan.add(i); }
+      for (let i = 1; i <= 9; i++) { if (all) trlBan.delete(i); else { trlBan.add(i); trlSel.delete(i); } }
     } else {
       const k = b.dataset.l === "u" ? "u" : Number(b.dataset.l);
-      if (trlBan.has(k)) trlBan.delete(k); else trlBan.add(k);
+      if (trlBan.has(k)) trlBan.delete(k); else { trlBan.add(k); trlSel.delete(k); }
     }
     saveChipBans(); syncTrlUI(); render();
   });
@@ -1803,17 +1806,46 @@ const applyRange = () => {  // n〜m を入れたら、その範囲のレベル�
 };
 ["#ftn", "#ftm"].forEach(s => $(s).addEventListener("change", applyRange));
 ["#fsn", "#fsm"].forEach(s => $(s).addEventListener("change", render));
-// 評価日の窓は単一選択 (押したものだけが残り、同じものをもう一度押すと解除)
+// 評価日の窓は単一選択 (押したものだけが残り、同じものをもう一度押すと解除)。
+// 他のチップと同じく長押し/右クリックでBANでき、BANした窓に入る候補は除外する
 const syncEvUI = () => document.querySelectorAll("#fevc button").forEach(b => {
   const on = evWin != null && String(evWin) === b.dataset.v;
   b.classList.toggle("on", on); b.setAttribute("aria-pressed", on ? "true" : "false");
+  b.classList.toggle("ban", chipBans.fevc.has(b.dataset.v));
 });
+const evBanToggle = b => {
+  if (chipBans.fevc.has(b.dataset.v)) chipBans.fevc.delete(b.dataset.v);
+  else {
+    chipBans.fevc.add(b.dataset.v);
+    const v = b.dataset.v === "latest" ? "latest" : Number(b.dataset.v);
+    if (evWin === v) evWin = null;  // 選択中の窓をBANしたら選択も外す
+  }
+  saveChipBans(); syncEvUI(); render();
+};
 $("#fevc").addEventListener("click", e => {
   const b = e.target.closest("button"); if (!b) return;
+  if ($("#fevc").dataset.lp === "1") { $("#fevc").dataset.lp = ""; return; }  // 長押し直後のクリックは飲む
+  if (b.classList.contains("ban")) return;  // BAN中のチップは通常クリックを通さない
   const v = b.dataset.v === "latest" ? "latest" : Number(b.dataset.v);
   evWin = evWin === v ? null : v;
   syncEvUI(); render();
 });
+{  // 評価日チップの長押し/右クリック = BAN
+  const box = $("#fevc");
+  let timer = null;
+  box.addEventListener("pointerdown", e => {
+    const b = e.target.closest("button"); if (!b) return;
+    timer = setTimeout(() => { box.dataset.lp = "1"; evBanToggle(b); }, 450);
+  });
+  const cancel = () => { if (timer) { clearTimeout(timer); timer = null; } };
+  box.addEventListener("pointerup", cancel);
+  box.addEventListener("pointerleave", cancel);
+  box.addEventListener("pointercancel", cancel);
+  box.addEventListener("contextmenu", e => {
+    const b = e.target.closest("button"); if (!b) return;
+    e.preventDefault(); evBanToggle(b);
+  });
+}
 $("#fl").addEventListener("change", () => { LANG = $("#fl").value; try { localStorage.setItem("trl-lang", LANG); } catch (e) { /* 保存できなくても切替は効く */ } render(); });
 const syncTh = () => { $("#fth").value = document.documentElement.dataset.theme || "dark"; };
 $("#fth").addEventListener("change", () => { document.documentElement.dataset.theme = $("#fth").value; try { localStorage.setItem("trl-theme", $("#fth").value); } catch (e) { /* 保存できなくても切替は効く */ } });

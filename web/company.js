@@ -85,6 +85,36 @@ function barrierHitsOf(co) {
   }
   return out;
 }
+/* 市場×分野のカバレッジ (純粋関数): 企業数の行列と市場別の集計。
+   選定可能は、その企業の最新の long 評価を持つ候補が final のこと */
+function coverageOf(cos) {
+  const markets = new Map(), sectors = new Set();
+  for (const co of cos.values()) {
+    const mk = co.market || "—";
+    if (!markets.has(mk)) markets.set(mk, {total: 0, finals: 0, bySector: new Map()});
+    const m = markets.get(mk);
+    m.total++;
+    const lat = latestLong(co);
+    if (lat && lat.cand.display_status === "final") m.finals++;
+    const sc = co.sector || "—";
+    sectors.add(sc);
+    m.bySector.set(sc, (m.bySector.get(sc) || 0) + 1);
+  }
+  return {markets, sectors: [...sectors].sort()};
+}
+function coverageHtml(cos) {
+  const {markets, sectors} = coverageOf(cos);
+  const mks = [...markets.entries()].sort((a, b) => b[1].total - a[1].total);
+  if (!mks.length) return "";
+  const maxCell = Math.max(1, ...mks.flatMap(([, m]) => sectors.map(s => m.bySector.get(s) || 0)));
+  const head = `<tr><th>市場</th>${sectors.map(s => `<th>${esc(CL[s] || s)}</th>`).join("")}<th>企業数</th><th>選定可能</th></tr>`;
+  const body = mks.map(([mk, m]) => `<tr><td>${esc(ML[mk] || mk)}</td>${sectors.map(s => {
+    const n = m.bySector.get(s) || 0;
+    const bg = n ? ` style="background:color-mix(in srgb, var(--accent) ${Math.round(12 + 50 * n / maxCell)}%, transparent)"` : "";
+    return `<td${bg}>${n || ""}</td>`;
+  }).join("")}<td>${m.total}</td><td>${m.finals}</td></tr>`).join("");
+  return `<section class="ds"><h4>市場×分野のカバレッジ（企業数）</h4><div class="tscroll"><table class="rt"><thead>${head}</thead><tbody>${body}</tbody></table></div><p class="hint">選定可能は、その企業の最新の評価が確定している企業の数です。色の濃さは企業数に比例します。</p></section>`;
+}
 const metaLine = co => [co.market ? ML[co.market] || co.market : "", co.sector ? CL[co.sector] || co.sector : "",
   co.stage ? STG[co.stage] || co.stage : "", dtText(co)].filter(Boolean).join("・");
 
@@ -102,6 +132,7 @@ function renderIndex(cos) {
   };
   $("#root").innerHTML = `<h1 class="ptitle">企業</h1>`
     + `<p class="pdesc">候補に紐づく企業と、Look・See の監視企業を企業単位で集約した一覧です。値は各候補の評価の直読みで、企業単位の新しい判定は作りません。</p>`
+    + coverageHtml(cos)
     + `<input id="q" class="tin" type="search" placeholder="企業名で検索" aria-label="企業名で検索">`
     + `<p class="pdesc" id="cnt" role="status"></p><div id="list"></div>`;
   const draw = () => {

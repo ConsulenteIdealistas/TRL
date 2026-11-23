@@ -76,6 +76,29 @@ function latestLong(co) {
   }
   return best;
 }
+/* 企業の全評価を1本に繋いだ統合タイムライン (純粋関数)。
+   各候補の history (最新を含む全点) を評価日時の新しい順に並べる */
+function entityTimeline(co) {
+  const rows = [];
+  for (const l of co.links) {
+    const pts = Array.isArray(l.cand.history) && l.cand.history.length
+      ? l.cand.history
+      : (l.cand.long ? [{evaluated_at: l.cand.long.evaluated_at, status: l.cand.long.status, total: l.cand.long.total, trl_level: lvl(l.cand)}] : []);
+    for (const pt of pts) rows.push({at: pt.evaluated_at || "", cand: l.cand, pt});
+  }
+  return rows.sort((a, b) => String(b.at).localeCompare(String(a.at)));
+}
+/* 同分野の競合ランキング (純粋関数)。順位のキーは各企業の最新の long 評価の
+   総合点で、同点は企業名順。対象は総合点のある企業だけ */
+function sectorRanking(cos, sector) {
+  const rows = [];
+  for (const co of cos.values()) {
+    if (co.sector !== sector) continue;
+    const lat = latestLong(co);
+    if (lat && typeof lat.ev.total === "number") rows.push({co, total: lat.ev.total});
+  }
+  return rows.sort((a, b) => b.total - a.total || a.co.name.localeCompare(b.co.name, "ja"));
+}
 function barrierHitsOf(co) {
   const out = [];
   for (const l of co.links) {
@@ -144,7 +167,7 @@ function renderIndex(cos) {
   $("#q").addEventListener("input", draw);
   draw();
 }
-function renderCompany(co) {
+function renderCompany(co, cos) {
   const lat = latestLong(co);
   const hits = barrierHitsOf(co);
   const links = [...co.links].sort((a, b) =>
@@ -161,10 +184,20 @@ function renderCompany(co) {
       l.product_name ? `製品: ${l.product_name}` : ""].filter(Boolean).join(" / ");
     return `<div class="lrow"><div class="lt"><a href="detail.html?id=${encodeURIComponent(p.id)}">${esc(dispT(p))}</a></div><div class="lm">${esc(parts)}</div></div>`;
   };
-  const mats = co.watch ? (co.watch.materials || []) : [];
+  const mats = co.watch ? [...(co.watch.materials || [])].sort((a, b) => String(b.published || "").localeCompare(String(a.published || ""))) : [];
+  const tl = entityTimeline(co);
+  const rank = co.sector ? sectorRanking(cos, co.sector) : [];
+  const myRank = rank.findIndex(r => r.co.id === co.id);
+  const rankHtml = rank.length >= 2 && myRank >= 0
+    ? `<section class="ds"><h4>同分野（${esc(CL[co.sector] || co.sector)}）の順位</h4><p class="hint">${rank.length}社中 ${myRank + 1}位（各企業の最新の評価の総合点順）。</p>${rank.slice(0, 5).map((r, i) => `<div class="lrow"><div class="lt">${i + 1}. ${r.co.id === co.id ? `<b>${esc(r.co.name)}</b>` : `<a href="company.html?e=${encodeURIComponent(r.co.id)}">${esc(r.co.name)}</a>`}</div><div class="lm">総合 ${r.total}点</div></div>`).join("")}${myRank >= 5 ? `<div class="lrow"><div class="lt">${myRank + 1}. <b>${esc(co.name)}</b></div><div class="lm">総合 ${rank[myRank].total}点</div></div>` : ""}</section>`
+    : "";
+  const tlHtml = tl.length
+    ? `<section class="ds"><h4>評価の統合タイムライン（${tl.length}件）</h4>${tl.slice(0, 20).map(r => `<div class="lrow"><div class="lt"><a href="detail.html?id=${encodeURIComponent(r.cand.id)}">${esc(dispT(r.cand))}</a></div><div class="lm">${esc(String(r.at).slice(0, 10))} / ${esc(SL[r.pt.status] || r.pt.status || "")} / 総合 ${r.pt.total != null ? r.pt.total + "点" : "—"} / TRL ${r.pt.trl_level != null ? r.pt.trl_level : "未確定"}</div></div>`).join("")}${tl.length > 20 ? `<p class="hint">新しい順に20件まで表示しています。</p>` : ""}</section>`
+    : "";
   $("#root").innerHTML = `<h1 class="ptitle">${esc(co.name)}</h1>`
     + `<p class="kv">${esc(metaLine(co))}${co.ticker ? ` / ティッカー ${esc(co.ticker)}` : ""}${(co.tags || []).length ? `<br>タグ: ${co.tags.map(t => esc(tagLabel(t))).join("・")}` : ""}</p>`
     + (lat ? `<section class="ds"><h4>最新の評価</h4><p>${esc(SL[lat.cand.display_status] || lat.cand.display_status)} / 総合 ${lat.ev.total != null ? lat.ev.total + "点" : "—"} / TRL ${lvl(lat.cand) != null ? lvl(lat.cand) : "未確定"}（評価 ${esc(String(lat.ev.evaluated_at || "").slice(0, 10))}）</p><p><a class="tg" href="detail.html?id=${encodeURIComponent(lat.cand.id)}">この候補の詳細を見る →</a></p></section>` : `<section class="ds"><h4>最新の評価</h4><p class="hint">この企業の候補に long 評価はまだありません。</p></section>`)
+    + rankHtml + tlHtml
     + (hits.length ? `<section class="ds"><h4>関門の該当</h4><ul class="pts">${hits.map(h => `<li><b>${esc(BRL[h.gate])}</b><span><a href="detail.html?id=${encodeURIComponent(h.cand.id)}">${esc(dispT(h.cand))}</a></span></li>`).join("")}</ul></section>` : "")
     + `<section class="ds"><h4>関連する候補（${links.length}件）</h4>${links.map(lrow).join("") || `<p class="hint">候補はありません。</p>`}</section>`
     + (co.watch ? `<section class="ds"><h4>監視材料</h4><p class="hint">一次情報 ${co.watch.counts.primary}件 / ニュース ${co.watch.counts.news}件（Look・See の材料置き場から）。</p>${mats.map(m => `<div class="lrow"><div class="lt"><a href="${esc(safeUrl(m.url))}" target="_blank" rel="noopener noreferrer">${esc(LANG === "ja" && m.title_ja ? m.title_ja : m.title)}</a></div><div class="lm">${esc(m.source || "")}${m.published ? ` / ${esc(m.published)}` : ""}</div></div>`).join("")}</section>` : "");
@@ -183,7 +216,7 @@ async function load() {
   DATA = d;
   const cos = buildCompanies(d.candidates, d.watch_companies);
   const id = new URLSearchParams(location.search).get("e");
-  if (id && cos.has(id)) renderCompany(cos.get(id));
+  if (id && cos.has(id)) renderCompany(cos.get(id), cos);
   else renderIndex(cos);
 }
 load();

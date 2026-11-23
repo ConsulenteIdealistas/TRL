@@ -396,6 +396,30 @@ function prevCmp(ev, curTrl) {
     + (diffs.length ? `<ul class="pts">${diffs.map(d => `<li><b>→</b><span>${esc(d)}</span></li>`).join("")}</ul>`
       : `<p class="hint">項目点に変化はありません。</p>`);
 }
+/* 同分野・同TRLの母集団との項目比較 (純粋関数)。他の選定可能候補で主企業の
+   分野と TRL が同じものの項目中央値と、この候補の項目点の差を返す */
+function peerDiffs(p) {
+  const sec = p.entities && p.entities[0] && p.entities[0].sector;
+  const L = lvl(p);
+  if (!sec || L == null || !p.long) return null;
+  const peers = P.filter(x => x !== p && x.display_status === "final" && x.long
+    && x.entities && x.entities[0] && x.entities[0].sector === sec && lvl(x) === L);
+  if (!peers.length) return null;
+  const diffs = {};
+  for (const k of Object.keys(p.long.items)) {
+    const mine = p.long.items[k] && p.long.items[k].score;
+    if (typeof mine !== "number") continue;
+    const vals = peers.map(x => x.long.items[k] && x.long.items[k].score).filter(v => typeof v === "number");
+    if (vals.length) diffs[k] = Math.round((mine - statsOf(vals).median) * 10) / 10;
+  }
+  return Object.keys(diffs).length ? {n: peers.length, sector: sec, trl: L, diffs} : null;
+}
+function peerDiffHtml(p) {
+  const pd = peerDiffs(p);
+  if (!pd) return "";
+  const rows = Object.entries(pd.diffs).map(([k, d]) => `${label(k)} ${d > 0 ? "+" : ""}${d}`).join(" / ");
+  return `<section class="ds"><h4>同分野・同TRLとの比較</h4><p class="hint">${esc(CL[pd.sector] || pd.sector)}・TRL ${pd.trl} の選定可能な他候補 ${pd.n}件の項目中央値との差です。</p><p>${esc(rows)}</p></section>`;
+}
 function card(p) {
   const s = p.id === sel;
   const ents = p.entities.filter(e => e.strength === "strong").length;
@@ -627,7 +651,7 @@ ${Array.isArray(p.history) && p.history.length >= 2 ? `<section class="ds"><h4>�
 <section class="ds"><h4>不足している観点</h4>${L && L.critical_missing.length ? `<p class="m" style="color:#a96500;font-weight:700">必須項目の不足: ${L.critical_missing.map(k => esc(label(k))).join("、")}</p>` : ""}${pts(missAll, 1)}${waitAll.length ? `<p class="hint">結果待ち（不足ではなく、治験の結果公表など時間の経過でしか解けないもの）:</p><ul class="pts">${waitAll.map(x => `<li><b>◷</b><span>${esc(x)}</span></li>`).join("")}</ul>` : ""}${q && q.next_sources.length ? `<p class="hint">次に確認する情報源: ${q.next_sources.map(esc).join(" / ")}</p>` : ""}${q && q.reeval_conditions.length ? `<p class="hint">再評価の条件: ${q.reeval_conditions.map(esc).join(" / ")}</p>` : ""}</section>
 ${p.display_status === "error" && LL && LL.errors.length ? `<section class="ds"><h4>処理上の注意</h4>${pts(LL.errors, 1)}</section>` : ""}
 ${p.display_status === "rejected" ? `<section class="ds"><h4>除外理由</h4><p>${esc(p.screen_reason ? (SR[p.screen_reason] || p.screen_reason) : "理由は記録されていません")}</p><p class="hint">除外は関連性スクリーニングの機械的な判定で、評価 (採点) は行われていません。</p></section>` : ""}
-${radarHtml(p)}<section class="ds"><h4>関連企業</h4>${p.entities.map(e => `<span class="chip"><a class="colink" href="company.html?e=${encodeURIComponent(e.entity_id)}">${esc(e.name)}</a>${e.product_name ? "（" + esc(e.product_name) + "）" : ""}${e.market ? "・" + esc(ML[e.market] || e.market) : ""}${e.sector ? "・" + esc(CL[e.sector] || e.sector) : ""}${(e.tags || []).length ? "・" + e.tags.map(t => esc(tagLabel(t))).join("・") : ""}${e.stage ? "・" + esc(STG[e.stage] || e.stage) : ""} ${e.strength === "strong" ? "" : "・弱"}${dtText(e) ? "・" + esc(dtText(e)) : ""}</span>`).join("") || '<span class="hint">関連企業は未特定です。</span>'}</section>
+${radarHtml(p)}${peerDiffHtml(p)}<section class="ds"><h4>関連企業</h4>${p.entities.map(e => `<span class="chip"><a class="colink" href="company.html?e=${encodeURIComponent(e.entity_id)}">${esc(e.name)}</a>${e.product_name ? "（" + esc(e.product_name) + "）" : ""}${e.market ? "・" + esc(ML[e.market] || e.market) : ""}${e.sector ? "・" + esc(CL[e.sector] || e.sector) : ""}${(e.tags || []).length ? "・" + e.tags.map(t => esc(tagLabel(t))).join("・") : ""}${e.stage ? "・" + esc(STG[e.stage] || e.stage) : ""} ${e.strength === "strong" ? "" : "・弱"}${dtText(e) ? "・" + esc(dtText(e)) : ""}</span>`).join("") || '<span class="hint">関連企業は未特定です。</span>'}</section>
 <section class="ds"><h4>調査メモ</h4><textarea id="note" aria-label="調査メモ" placeholder="仮説、確認したい点、次の調査などを記録...">${esc(p.id in noteDrafts ? noteDrafts[p.id] : getNote(p.id))}</textarea><div class="acts"><button class="btn sec" type="button" id="save">メモを保存</button><button class="btn sec" type="button" id="cpys">出典をコピー</button><a class="btn src" href="${esc(safeUrl(p.url))}" target="_blank" rel="noopener noreferrer">原文サイトを開く ↗</a></div><p id="msg" class="hint" aria-live="polite">メモはこの端末のブラウザにだけ保存されます。</p></section></div>`;
 }
 function render() {

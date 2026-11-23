@@ -399,3 +399,19 @@ load();
     gAt = e.key === "g" ? Date.now() : 0;
   });
 }
+
+/* 基準日 (as-of) を評価日単位で前後に送る: [ で前へ、] で次へ。
+   最後より先へ送ると「最新」に戻る。カレンダーを開かずに当時の母集団をめくる用 */
+document.addEventListener("keydown", e => {
+  if (e.metaKey || e.ctrlKey || e.altKey || e.isComposing) return;
+  if (e.key !== "[" && e.key !== "]") return;
+  const days = [...evalDayCounts().keys()].sort();
+  if (!days.length) return;
+  const cur = ASOF ? days.indexOf(ASOF) : days.length;
+  const nxt = e.key === "[" ? cur - 1 : cur + 1;
+  if (nxt < 0) return;
+  ASOF = nxt >= days.length ? null : days[nxt];
+  if (ASOF) { const b = ASOF.split("-").map(Number); CALM = {y: b[0], m: b[1] - 1}; }
+  CALOPEN = false;
+  buildCohort(); statsBand();
+});

@@ -240,6 +240,7 @@ a.brz.lk{text-decoration:none;display:inline-block;margin-left:4px}
 .tsel{min-height:42px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--field);color:var(--ink)}
 #banadd{background:#b3261e;border-color:#b3261e;color:#fff;font-weight:700}
 #banbox summary{cursor:pointer;font-weight:600}
+.toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:var(--surface);border:1px solid var(--line);color:var(--ink);padding:8px 14px;border-radius:10px;font-size:13px;z-index:60;box-shadow:0 4px 18px rgba(0,0,0,.35)}
 /* BAN中のチップ: 赤い斜線で「除外」を示す */
 .chips button{position:relative}
 .chips button.ban{border-color:#e5484d;color:#e5484d;opacity:.85}

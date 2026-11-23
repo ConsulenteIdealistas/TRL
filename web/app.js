@@ -286,9 +286,16 @@ function queryOk(p, q) {
   const hs = haystack(p);
   return q.text.every(w => hs.includes(w)) && q.excl.every(w => !hs.includes(w)) && q.conds.every(c => condOk(p, c));
 }
+/* 検索欄が /pattern/ 形式なら正規表現として解釈する (壊れた正規表現は通常検索に落とす) */
+function regexOf(q) {
+  const m = String(q || "").trim().match(/^\/(.+)\/([a-z]*)$/s);
+  if (!m) return null;
+  try { return new RegExp(m[1], m[2].includes("i") ? m[2] : m[2] + "i"); } catch (e) { return null; }
+}
 function filtered() {
   const q = $("#q").value.trim().toLowerCase(), o = $("#fo").value;
-  const r = P.filter(p => queryOk(p, parseQuery(q))
+  const re = regexOf($("#q").value), pq = re ? null : parseQuery(q);
+  const r = P.filter(p => (re ? re.test(haystack(p)) : queryOk(p, pq))
     && !banned(p)
     && !chipBans.fsc.has(p.display_status)
     && !(ok(lvl(p)) ? trlBan.has(lvl(p)) : trlBan.has("u"))
@@ -510,6 +517,56 @@ function recentBand() {
 }
 function savePins() { try { localStorage.setItem("trl-pins", JSON.stringify([...pins])); } catch (e) { /* 保存不可でも表示は続ける */ } }
 function togglePin(id) { if (!id) return; if (pins.has(id)) pins.delete(id); else pins.add(id); savePins(); render(); pinBand(); }
+/* 短い通知 (キー操作の結果を返すためだけの小さな帯) */
+function toast(msg) {
+  let el = $("#toast");
+  if (!el) { el = document.createElement("div"); el.id = "toast"; el.className = "toast"; document.body.appendChild(el); }
+  el.textContent = msg; el.hidden = false;
+  clearTimeout(toast._t); toast._t = setTimeout(() => { el.hidden = true; }, 2600);
+}
+/* キー操作からのBAN: 選択中の候補の企業 (指名BAN) / 市場 (市場チップのBAN) を切り替える */
+function banKeyOf(id, kind) {
+  const p = P.find(x => x.id === id);
+  if (!p) return;
+  const e = (p.entities || []).find(x => x.strength === "strong");
+  if (kind === "company") {
+    if (!e) { toast("企業リンクが無い候補は企業BANできません"); return; }
+    const i = BANS.findIndex(b => b.t === "company" && b.v === e.name);
+    if (i >= 0) { BANS.splice(i, 1); toast(`企業BANを解除: ${e.name}`); }
+    else { BANS.push({t: "company", v: e.name, on: true}); toast(`企業をBAN: ${e.name}`); }
+    saveBans(); buildBanUI(); render();
+  } else {
+    if (!e || !e.market) { toast("市場が無い候補は市場BANできません"); return; }
+    if (chipBans.fmc.has(e.market)) { chipBans.fmc.delete(e.market); toast(`市場BANを解除: ${e.market}`); }
+    else { chipBans.fmc.add(e.market); toast(`市場をBAN: ${e.market}`); }
+    saveChipBans(); syncChips("fmc", mkSel); render();
+  }
+}
+/* 比較バスケット: c キーで候補を積み (最大4件)、帯から横並び比較へ渡す */
+let basket = [];
+try { basket = JSON.parse(localStorage.getItem("trl-basket") || "[]"); } catch (e) { basket = []; }
+function saveBasket() { try { localStorage.setItem("trl-basket", JSON.stringify(basket)); } catch (e) { /* 保存できなくても動く */ } }
+function toggleBasket(id) {
+  if (!id) return;
+  const i = basket.indexOf(id);
+  if (i >= 0) { basket.splice(i, 1); toast("比較バスケットから外しました"); }
+  else if (basket.length >= 4) { toast("比較バスケットは4件までです"); return; }
+  else { basket.push(id); toast(`比較バスケットに追加 (${basket.length}件)`); }
+  saveBasket(); cmpBand();
+}
+function cmpBand() {
+  const el = $("#cmpband");
+  if (!el) return;
+  basket = basket.filter(id => P.some(p => p.id === id));
+  if (!basket.length) { el.hidden = true; return; }
+  el.innerHTML = `<span>比較バスケット <strong>${basket.length}件</strong></span>`
+    + basket.map(id => { const p = P.find(x => x.id === id); return `<a class="tz" href="detail.html?id=${encodeURIComponent(id)}">${esc(p ? candName(p) : id)}</a>`; }).join("")
+    + `<a class="tz" href="compare.html?ids=${basket.map(encodeURIComponent).join(",")}">横並び比較を開く</a>`
+    + `<button class="btn quiet" type="button" id="cmpclear">空にする</button>`;
+  el.hidden = false;
+  const cc = $("#cmpclear");
+  if (cc) cc.addEventListener("click", () => { basket = []; saveBasket(); cmpBand(); });
+}
 /* 文字サイズ (表示の拡大率)。対応しないブラウザでは何も起きない */
 const ZOOMS = ["", "1.15", "1.3"];
 function applyZoom() {
@@ -1099,7 +1156,7 @@ function newNote() {
   }
 }
 /* 帯の表示設定 (この端末のみ)。帯の描画後に適用し、OFF の帯は隠す */
-const BANDS = [["dgst", "変化ダイジェスト"], ["pinband", "注目ピン"], ["shist", "検索履歴"],
+const BANDS = [["dgst", "変化ダイジェスト"], ["pinband", "注目ピン"], ["cmpband", "比較バスケット"], ["shist", "検索履歴"],
   ["recentband", "最近見た候補"]];
 let bandPrefs = {};
 try { bandPrefs = JSON.parse(localStorage.getItem("trl-bands") || "{}"); } catch (e) { /* 壊れた保存値は既定として扱う */ }
@@ -1452,7 +1509,7 @@ async function load() {
     + (cv ? ` · 規程 ${cv}` : "");
   $("#fl").value = LANG;
   buildCohort();
-  facetChips(); warn(d); stats(); tierBand(); barrierBand(); auditBadge(); digestBand(); nqBand(); distBand(); moveBand(); nearBand(); usageBand(); alertBand(); runBand(); statsBand(); pinBand(); searchHistBand(); recentBand(); tourBand(); buildBanUI(); newNote(); buildBandSettings(); applyBandPrefs(); applyZoom(); render();
+  facetChips(); warn(d); stats(); tierBand(); barrierBand(); auditBadge(); digestBand(); nqBand(); distBand(); moveBand(); nearBand(); usageBand(); alertBand(); runBand(); statsBand(); pinBand(); cmpBand(); searchHistBand(); recentBand(); tourBand(); buildBanUI(); newNote(); buildBandSettings(); applyBandPrefs(); applyZoom(); render();
 }
 $("#sf").addEventListener("submit", e => { e.preventDefault(); saveSearch($("#q").value); render(); });
 /* 検索履歴 (この端末のみ、直近8件)。チップを押すとその検索を再実行する */
@@ -1522,6 +1579,9 @@ const ACTIONS = [
   {label: "前の候補へ移動", keys: "k", run: () => stepSel(-1)},
   {label: "選択中の候補の詳細ページを開く", keys: "Enter", run: () => { if (sel) location.href = "detail.html?id=" + encodeURIComponent(sel); }},
   {label: "選択中の候補をピン留め / 解除", keys: "f", run: () => togglePin(sel)},
+  {label: "選択中の候補の企業をBAN / 解除", keys: "b", run: () => banKeyOf(sel, "company")},
+  {label: "選択中の候補の市場をBAN / 解除", keys: "B", run: () => banKeyOf(sel, "market")},
+  {label: "選択中の候補を比較バスケットに追加 / 解除", keys: "c", run: () => toggleBasket(sel)},
   {label: "検索欄へ移動", keys: "/", run: () => $("#q").focus()},
   {label: "並び順を次へ切り替える", keys: "s", run: () => { const s = $("#fo"); s.selectedIndex = (s.selectedIndex + 1) % s.options.length; s.dispatchEvent(new Event("change")); }},
   {label: "新着だけ表示を切り替える", keys: "n", run: () => { const b = document.querySelector('#fown [data-v="new"]'); if (b) b.click(); }},

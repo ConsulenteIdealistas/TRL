@@ -243,5 +243,6 @@ a.brz.lk{text-decoration:none;display:inline-block;margin-left:4px}
 /* BAN中のチップ: 赤い斜線で「除外」を示す */
 .chips button{position:relative}
 .chips button.ban{border-color:#e5484d;color:#e5484d;opacity:.85}
+.chips button,.dchip{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 .chips button.ban::after{content:"";position:absolute;left:6%;right:6%;top:50%;height:2px;background:#e5484d;transform:rotate(-14deg);border-radius:2px}
 .chips button{-webkit-touch-callout:none}

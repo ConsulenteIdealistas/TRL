@@ -76,7 +76,8 @@ class ExportTests(StoreFixture):
         # のみ (ヘッダーは両ページともリンクなしで揃える)
         index = (web / "index.html").read_text(encoding="utf-8")
         self.assertIn('<nav class="pagelinks"><a href="criteria.html">採点基準</a>'
-                      '<a href="audit.html">監査</a><a href="watch.html">Look・See</a></nav>', index)
+                      '<a href="audit.html">監査</a><a href="watch.html">Look・See</a>'
+                      '<a href="observe.html">観測</a></nav>', index)
         self.assertIn('<a href="audit.html">監査（要確認の処分）</a>', index)
         # Look・See ページも同格に存在し、一覧から辿れる
         wpage = (web / "watch.html").read_text(encoding="utf-8")

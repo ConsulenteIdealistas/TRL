@@ -336,6 +336,18 @@ function runBand() {
     + (() => { const nr = nextRuns(Date.now(), 1)[0]; return nr ? `<span>次回実行</span><span class="tz">${esc(fmtRunAt(nr))} JST（あと約 ${Math.max(1, Math.round((nr - Date.now()) / 3600000))}時間）</span>` : ""; })();
   el.hidden = false;
 }
+function nearBand() {
+  // あと1項目で確定: 保留のうち必須項目の不足が1項目だけの候補
+  const el = $("#nearband");
+  if (!el) return;
+  const rows = P.filter(p => p.display_status === "hold" && p.long && Array.isArray(p.long.critical_missing) && p.long.critical_missing.length === 1)
+    .sort((a, b) => String(b.long.evaluated_at || "").localeCompare(String(a.long.evaluated_at || "")));
+  if (!rows.length) { el.hidden = true; return; }
+  el.innerHTML = `<span>あと1項目で確定 <strong>${rows.length}件</strong></span>`
+    + rows.slice(0, 12).map(p => `<a class="tz" href="detail.html?id=${encodeURIComponent(p.id)}">${esc(candName(p))}（不足: ${esc(label(p.long.critical_missing[0]))}）</a>`).join("");
+  el.hidden = false;
+}
+
 /* 母集団の基準日カレンダー: 日を選ぶと母集団をその日時点で再構成する */
 $("#statband").addEventListener("click", e => {
   const mv = e.target.closest("[data-mv]"), day = e.target.closest("[data-d]");
@@ -366,7 +378,7 @@ async function load() {
     META = d; P = d.candidates || [];
     evalMaxTs = Math.max(0, ...P.flatMap(p => evalPoints(p).map(pt => Date.parse(pt.at || "") || 0))) || null;
     buildCohort();
-    distBand(); moveBand(); usageBand(); statsBand(); runBand();
+    distBand(); moveBand(); nearBand(); usageBand(); statsBand(); runBand();
   } catch (e) {
     const el = $("#oberr");
     if (el) el.textContent = "data.json を読み込めませんでした。";

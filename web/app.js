@@ -1099,8 +1099,7 @@ function newNote() {
   }
 }
 /* 帯の表示設定 (この端末のみ)。帯の描画後に適用し、OFF の帯は隠す */
-const BANDS = [["dgst", "変化ダイジェスト"], ["nqband", "次回評価予定"],
-  ["nearband", "あと1項目で確定"], ["pinband", "注目ピン"], ["shist", "検索履歴"],
+const BANDS = [["dgst", "変化ダイジェスト"], ["pinband", "注目ピン"], ["shist", "検索履歴"],
   ["recentband", "最近見た候補"]];
 let bandPrefs = {};
 try { bandPrefs = JSON.parse(localStorage.getItem("trl-bands") || "{}"); } catch (e) { /* 壊れた保存値は既定として扱う */ }

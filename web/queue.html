@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>次回評価予定 — TRL Explorer</title>
+<link rel="stylesheet" href="style.css">
+<script>try{var tt=localStorage.getItem("trl-theme");document.documentElement.dataset.theme=(tt==="light"||tt==="dark"||tt==="cb")?tt:(window.matchMedia&&matchMedia("(prefers-color-scheme: light)").matches?"light":"dark");}catch(e){document.documentElement.dataset.theme="dark";}</script>
+<style>
+.docwrap{max-width:880px;margin:0 auto}
+.doct{font-size:22px;margin:2px 0 8px}
+.doc{font-size:13.5px;line-height:1.85}
+.doc h2{font-size:17px;margin:26px 0 8px;padding-top:16px;border-top:1px solid var(--line)}
+.qrow{border:1px solid var(--line);border-radius:12px;padding:10px 14px;margin:8px 0;background:var(--surface)}
+.qrow .qt{font-weight:600}
+.qrow .qm{font-size:12.5px;color:var(--muted);margin-top:4px;line-height:1.7}
+</style>
+</head>
+<body>
+<header class="topbar"><a class="brand" href="index.html"><span class="mark">T</span><span>TRL<span class="light"> Explorer</span></span></a><div class="meta">Research Intelligence</div></header>
+<main class="ws"><div class="docwrap">
+<p style="margin:0 0 12px"><a class="tg" href="index.html">← 一覧に戻る</a></p>
+<h1 class="doct">次回評価予定（選定順）</h1>
+<div class="doc">
+<p>次の実行で評価される候補を、選ばれた順番のまま全件並べたページです。一覧の帯は先頭だけの要約で、こちらが詳細です。定期実行は1回に最大5件まで評価するので、この列の先頭から順に消費されていきます。</p>
+<h2>選定の順番の決まり方</h2>
+<dl>
+<dt>再評価の予約が最優先</dt>
+<dd>監査の処分などで「次回に再評価する」と予約された候補が先頭に来ます。</dd>
+<dt>初回評価が次</dt>
+<dd>まだ一度も評価されていない候補を優先します。未評価のまま埋もれるのを防ぐためです。</dd>
+<dt>中止系の材料を持つ候補</dt>
+<dd>治験の中止・撤回といった材料を持つ候補は、状態が変わっている可能性が高いので前に寄せます。</dd>
+<dt>旧世代の評価</dt>
+<dd>採点の物差しが古い版のままの評価は、新しい版で測り直すために前に寄せます。</dd>
+<dt>それ以外は一般の順</dt>
+<dd>残りは通常の選定順です。前面に寄せる枠（予約以外）は、1回の上限の半分までに制限しています。</dd>
+</dl>
+<p id="qerr" class="hint"></p>
+<div id="qlist"></div>
+</div>
+</div></main>
+<footer class="ft"><span>TRL Explorer</span><span><a href="criteria.html">採点基準（評価規程と重み）</a></span><span><a href="observe.html">観測</a></span></footer>
+<script src="queue.js"></script>
+</body>
+</html>

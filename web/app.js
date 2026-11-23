@@ -573,7 +573,7 @@ ${Array.isArray(p.history) && p.history.length >= 2 ? `<section class="ds"><h4>�
 <section class="ds"><h4>不足している観点</h4>${L && L.critical_missing.length ? `<p class="m" style="color:#a96500;font-weight:700">必須項目の不足: ${L.critical_missing.map(k => esc(label(k))).join("、")}</p>` : ""}${pts(missAll, 1)}${waitAll.length ? `<p class="hint">結果待ち（不足ではなく、治験の結果公表など時間の経過でしか解けないもの）:</p><ul class="pts">${waitAll.map(x => `<li><b>◷</b><span>${esc(x)}</span></li>`).join("")}</ul>` : ""}${q && q.next_sources.length ? `<p class="hint">次に確認する情報源: ${q.next_sources.map(esc).join(" / ")}</p>` : ""}${q && q.reeval_conditions.length ? `<p class="hint">再評価の条件: ${q.reeval_conditions.map(esc).join(" / ")}</p>` : ""}</section>
 ${p.display_status === "error" && LL && LL.errors.length ? `<section class="ds"><h4>処理上の注意</h4>${pts(LL.errors, 1)}</section>` : ""}
 ${p.display_status === "rejected" ? `<section class="ds"><h4>除外理由</h4><p>${esc(p.screen_reason ? (SR[p.screen_reason] || p.screen_reason) : "理由は記録されていません")}</p><p class="hint">除外は関連性スクリーニングの機械的な判定で、評価 (採点) は行われていません。</p></section>` : ""}
-<section class="ds"><h4>関連企業</h4>${p.entities.map(e => `<span class="chip"><a class="colink" href="company.html?e=${encodeURIComponent(e.entity_id)}">${esc(e.name)}</a>${e.product_name ? "（" + esc(e.product_name) + "）" : ""}${e.market ? "・" + esc(ML[e.market] || e.market) : ""}${e.sector ? "・" + esc(CL[e.sector] || e.sector) : ""}${(e.tags || []).length ? "・" + e.tags.map(t => esc(tagLabel(t))).join("・") : ""}${e.stage ? "・" + esc(STG[e.stage] || e.stage) : ""} ${e.strength === "strong" ? "" : "・弱"}${dtText(e) ? "・" + esc(dtText(e)) : ""}</span>`).join("") || '<span class="hint">関連企業は未特定です。</span>'}</section>
+${radarHtml(p)}<section class="ds"><h4>関連企業</h4>${p.entities.map(e => `<span class="chip"><a class="colink" href="company.html?e=${encodeURIComponent(e.entity_id)}">${esc(e.name)}</a>${e.product_name ? "（" + esc(e.product_name) + "）" : ""}${e.market ? "・" + esc(ML[e.market] || e.market) : ""}${e.sector ? "・" + esc(CL[e.sector] || e.sector) : ""}${(e.tags || []).length ? "・" + e.tags.map(t => esc(tagLabel(t))).join("・") : ""}${e.stage ? "・" + esc(STG[e.stage] || e.stage) : ""} ${e.strength === "strong" ? "" : "・弱"}${dtText(e) ? "・" + esc(dtText(e)) : ""}</span>`).join("") || '<span class="hint">関連企業は未特定です。</span>'}</section>
 <section class="ds"><h4>調査メモ</h4><textarea id="note" aria-label="調査メモ" placeholder="仮説、確認したい点、次の調査などを記録...">${esc(p.id in noteDrafts ? noteDrafts[p.id] : getNote(p.id))}</textarea><div class="acts"><button class="btn sec" type="button" id="save">メモを保存</button><button class="btn sec" type="button" id="cpys">出典をコピー</button><a class="btn src" href="${esc(safeUrl(p.url))}" target="_blank" rel="noopener noreferrer">原文サイトを開く ↗</a></div><p id="msg" class="hint" aria-live="polite">メモはこの端末のブラウザにだけ保存されます。</p></section></div>`;
 }
 function render() {
@@ -749,6 +749,96 @@ function nullDistHtml() {
   if (!base) return "";
   const parts = keys.filter(k => cnt[k]).map(k => `${label(k)} ${cnt[k]}件`);
   return `<span>項目別の未確定（評価 ${base}件中）: ${parts.length ? esc(parts.join(" / ")) : "なし"}</span>`;
+}
+/* 統計量 (純粋関数群)。定義は固定: パーセンタイルは type 7 (線形補間)、
+   SD は標本標準偏差 (n-1)、Sn/Qn は Rousseeuw & Croux のロバスト尺度で
+   有限標本修正は Sn が CR92 の表と予測式、Qn が robustbase の精密表
+   (n<=12) と Qn.finite.c 多項式。2026-11-24 に R robustbase 0.99.2 と
+   n=2..60 の掃引で照合済み (Qn の残差 2.0e-6 は R 側の定数切捨て分) */
+function pct7(xs, p) {
+  const s = [...xs].sort((a, b) => a - b);
+  if (s.length === 1) return s[0];
+  const k = (s.length - 1) * p, f = Math.floor(k), c = Math.min(f + 1, s.length - 1);
+  return s[f] + (s[c] - s[f]) * (k - f);
+}
+const meanOf = xs => xs.reduce((a, b) => a + b, 0) / xs.length;
+function sdOf(xs) { if (xs.length < 2) return null; const m = meanOf(xs); return Math.sqrt(xs.reduce((a, b) => a + (b - m) ** 2, 0) / (xs.length - 1)); }
+const SN_FINITE = {2: 0.743, 3: 1.851, 4: 0.954, 5: 1.351, 6: 0.993, 7: 1.198, 8: 1.005, 9: 1.131};
+const snCorr = n => SN_FINITE[n] !== undefined ? SN_FINITE[n] : (n % 2 === 1 ? n / (n - 0.9) : 1.0);
+function snOf(xs) {
+  const s = [...xs].sort((a, b) => a - b), n = s.length;
+  if (n === 1) return 0;
+  const inner = s.map(x => { const d = s.map(y => Math.abs(x - y)).sort((a, b) => a - b); return d[Math.floor(n / 2)]; });
+  inner.sort((a, b) => a - b);
+  return 1.1926 * snCorr(n) * inner[Math.floor((n + 1) / 2) - 1];
+}
+const QN_FINITE = {2: 0.399356, 3: 0.99365, 4: 0.51321, 5: 0.84401, 6: 0.6122, 7: 0.85877, 8: 0.66993, 9: 0.87344, 10: 0.72014, 11: 0.88906, 12: 0.75743};
+function qnFiniteC(n) { const t = 1 / n; return n % 2 === 1 ? 1 + (1.60188 + (-2.1284 - 5.172 * t) * t) * t : 1 + (3.67561 + (1.9654 + (6.987 - 77 * t) * t) * t) * t; }
+const qnCorr = n => QN_FINITE[n] !== undefined ? QN_FINITE[n] : 1 / qnFiniteC(n);
+function qnOf(xs) {
+  const s = [...xs].sort((a, b) => a - b), n = s.length;
+  if (n < 2) return null;
+  const diffs = [];
+  for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) diffs.push(Math.abs(s[i] - s[j]));
+  diffs.sort((a, b) => a - b);
+  const h = Math.floor(n / 2) + 1, k = h * (h - 1) / 2;
+  return 2.21914446598508 * qnCorr(n) * diffs[k - 1];
+}
+function statsOf(xs) {
+  const v = (xs || []).filter(x => typeof x === "number" && isFinite(x));
+  if (!v.length) return null;
+  return {n: v.length, mean: meanOf(v), median: pct7(v, 0.5), sd: sdOf(v), sn: snOf(v), qn: qnOf(v),
+    q1: pct7(v, 0.25), q3: pct7(v, 0.75), min: Math.min(...v), max: Math.max(...v)};
+}
+/* 母集団 (コホート): 表示時点で選定可能 (final) の候補の最新の long 評価。
+   日付は data.json の as_of が固定する。項目の並びは config の群定義に従う */
+let COHORT = null, ITEM_KEYS = [];
+function buildCohort() {
+  const g = (META.config && META.config.item_groups) || {};
+  ITEM_KEYS = [...(g.technology || ["technology_readiness", "technological_advantage"]),
+    ...(g.business || ["monetization", "market_growth", "financial_sustainability", "moat_durability"])];
+  const finals = P.filter(p => p.display_status === "final" && p.long && p.long.items);
+  const items = {};
+  for (const k of ITEM_KEYS) items[k] = statsOf(finals.map(p => p.long.items[k] && p.long.items[k].score));
+  COHORT = {items, total: statsOf(finals.map(p => p.long.total))};
+}
+const fmt1 = v => v == null ? "—" : (Math.round(v * 10) / 10).toFixed(1);
+function boxGeom(st, W = 170) { const X = v => Math.round((v / 100 * (W - 4) + 2) * 10) / 10; return {min: X(st.min), q1: X(st.q1), med: X(st.median), q3: X(st.q3), max: X(st.max)}; }
+function boxSvg(st) {
+  const b = boxGeom(st);
+  return `<svg viewBox="0 0 170 18" width="170" height="18" role="img"><line x1="${b.min}" y1="9" x2="${b.max}" y2="9" stroke="var(--muted)"/><rect x="${b.q1}" y="4" width="${Math.max(1, b.q3 - b.q1)}" height="10" fill="var(--accent)" opacity="0.35" stroke="var(--accent)"/><line x1="${b.med}" y1="3" x2="${b.med}" y2="15" stroke="var(--accent)" stroke-width="2"/></svg>`;
+}
+function statsBand() {
+  const el = $("#statband");
+  if (!el) return;
+  if (!COHORT || !COHORT.total) { el.hidden = true; return; }
+  const row = (lab, st) => st ? `<span class="srow"><b>${esc(lab)}</b> ${boxSvg(st)}<span class="snum">n=${st.n} 平均 ${fmt1(st.mean)} / 中央値 ${fmt1(st.median)} / SD ${fmt1(st.sd)} / Sn ${fmt1(st.sn)} / Qn ${fmt1(st.qn)} / Q1 ${fmt1(st.q1)} / Q3 ${fmt1(st.q3)}</span></span>` : "";
+  el.innerHTML = `<span>確定評価の統計（母集団 ${COHORT.total.n}件、箱は最小–Q1–中央値–Q3–最大）</span>`
+    + row("総合点", COHORT.total) + ITEM_KEYS.map(k => row(label(k), COHORT.items[k])).join("");
+  el.hidden = false;
+}
+/* レーダーの幾何 (純粋関数): 6項目を正六角形の頂点に置く。中心 60,60、
+   半径 52 が 100 点。値は 0..100 に丸める */
+function radarGeom(vals, R = 52) {
+  return vals.map((v, i) => {
+    const a = -Math.PI / 2 + i * Math.PI / 3, r = Math.max(0, Math.min(100, v)) / 100 * R;
+    return [Math.round((60 + r * Math.cos(a)) * 10) / 10, Math.round((60 + r * Math.sin(a)) * 10) / 10];
+  });
+}
+function radarHtml(p) {
+  if (!p.long || !p.long.items || !COHORT) return "";
+  const vals = ITEM_KEYS.map(k => p.long.items[k] && p.long.items[k].score);
+  if (vals.some(v => typeof v !== "number")) return "";  // 未確定の項目がある候補は形が作れない
+  const meds = ITEM_KEYS.map(k => COHORT.items[k] ? COHORT.items[k].median : null);
+  if (meds.some(v => v == null)) return "";
+  const poly = pts => pts.map(pt => pt.join(",")).join(" ");
+  const grid = [25, 50, 75, 100].map(g => `<polygon points="${poly(radarGeom(ITEM_KEYS.map(() => g)))}" fill="none" stroke="var(--line)"/>`).join("");
+  return `<section class="ds"><h4>項目の形（母集団の中央値との比較）</h4>`
+    + `<svg viewBox="0 0 120 120" width="150" height="150" role="img">${grid}`
+    + `<polygon points="${poly(radarGeom(meds))}" fill="none" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="3 2"/>`
+    + `<polygon points="${poly(radarGeom(vals))}" fill="var(--accent)" fill-opacity="0.22" stroke="var(--accent)" stroke-width="1.5"/></svg>`
+    + `<p class="hint">実線がこの候補、破線が母集団（選定可能 ${COHORT.total ? COHORT.total.n : 0}件）の項目別中央値です。</p>`
+    + `<ul class="pts">${ITEM_KEYS.map((k, i) => `<li><b>${esc(label(k))}</b><span>候補 ${fmt1(vals[i])} / 中央値 ${fmt1(meds[i])}</span></li>`).join("")}</ul></section>`;
 }
 function moveBand() {
   // 直近7日の評価件数 (履歴と最新の評価から数える) と、大きく動いた候補
@@ -989,7 +1079,8 @@ async function load() {
     + (d.run ? ` · run ${d.run.id} · ${d.run.status}` : "")
     + (cv ? ` · 規程 ${cv}` : "");
   $("#fl").value = LANG;
-  facetChips(); warn(d); stats(); tierBand(); barrierBand(); auditBadge(); digestBand(); nqBand(); distBand(); moveBand(); nearBand(); usageBand(); alertBand(); render();
+  buildCohort();
+  facetChips(); warn(d); stats(); tierBand(); barrierBand(); auditBadge(); digestBand(); nqBand(); distBand(); moveBand(); nearBand(); usageBand(); alertBand(); statsBand(); render();
 }
 $("#sf").addEventListener("submit", e => { e.preventDefault(); render(); });
 /* キー操作とコマンドパレット。よく使う操作はホームポジション

@@ -405,7 +405,21 @@ function setNote(id, v) { try { localStorage.setItem("trl-note:" + id, v); retur
 let pins = new Set();
 try { pins = new Set(JSON.parse(localStorage.getItem("trl-pins") || "[]")); } catch (e) { /* 壊れた保存値は空として扱う */ }
 function savePins() { try { localStorage.setItem("trl-pins", JSON.stringify([...pins])); } catch (e) { /* 保存不可でも表示は続ける */ } }
-function togglePin(id) { if (!id) return; if (pins.has(id)) pins.delete(id); else pins.add(id); savePins(); render(); }
+function togglePin(id) { if (!id) return; if (pins.has(id)) pins.delete(id); else pins.add(id); savePins(); render(); pinBand(); }
+/* ピン候補の現況まとめ: 状態・総合点・前回比・評価日を1行ずつ。
+   値は候補の直読みで、並びはピンした順 (保存値の順) を保つ */
+function pinBand() {
+  const el = $("#pinband");
+  if (!el) return;
+  const rows = [...pins].map(id => P.find(p => p.id === id)).filter(Boolean);
+  if (!rows.length) { el.hidden = true; return; }
+  el.innerHTML = `<span>★注目（${rows.length}件）</span>` + rows.map(p => {
+    const mv = moveOf(p);
+    const mvTxt = mv === "up" ? " ↑前回より上昇" : mv === "down" ? " ↓前回より下降" : mv === "mixed" ? " ・前回と混在" : "";
+    return `<a class="tz" href="detail.html?id=${encodeURIComponent(p.id)}">${esc(candName(p))}: ${esc(SL[p.display_status] || p.display_status)}${p.long && typeof p.long.total === "number" ? ` 総合 ${p.long.total}` : ""}${mvTxt}${p.long && p.long.evaluated_at ? ` (${esc(p.long.evaluated_at.slice(0, 10))})` : ""}</a>`;
+  }).join("");
+  el.hidden = false;
+}
 function importPinsFromUrl() {
   // 共有リンクで届いた注目ピンを、この端末の保存分へ統合する (上書きはしない)
   try {
@@ -1172,7 +1186,7 @@ async function load() {
     + (cv ? ` · 規程 ${cv}` : "");
   $("#fl").value = LANG;
   buildCohort();
-  facetChips(); warn(d); stats(); tierBand(); barrierBand(); auditBadge(); digestBand(); nqBand(); distBand(); moveBand(); nearBand(); usageBand(); alertBand(); runBand(); statsBand(); render();
+  facetChips(); warn(d); stats(); tierBand(); barrierBand(); auditBadge(); digestBand(); nqBand(); distBand(); moveBand(); nearBand(); usageBand(); alertBand(); runBand(); statsBand(); pinBand(); render();
 }
 $("#sf").addEventListener("submit", e => { e.preventDefault(); render(); });
 /* 母集団の基準日カレンダー: 日を選ぶと母集団をその日時点で再構成する */

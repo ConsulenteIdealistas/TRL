@@ -36,10 +36,12 @@
 <div class="fitem"><span>世代表示</span><label class="sw"><input type="checkbox" id="swgen"> 世代を表示</label></div>
 <div class="fitem"><span>表示密度</span><label class="sw"><input type="checkbox" id="swcompact"> コンパクト表示</label></div>
 <div class="fitem wide"><span>保存した条件</span><div class="prow"><select id="fpsel" aria-label="保存した条件"><option value="">（保存した条件なし）</option></select><button id="fpapply" class="btn quiet" type="button">適用</button><button id="fpdel" class="btn quiet" type="button">削除</button></div><div class="prow"><input id="fpname" type="text" placeholder="条件名" aria-label="条件名"><button id="fpsave" class="btn quiet" type="button">今の条件を保存</button><button id="fplink" class="btn quiet" type="button">条件リンクをコピー</button></div></div></div></section>
-<div class="row rh"><div><h2>検索結果 <span id="rc" class="pill">0</span></h2><p>論文を選択すると評価の詳細を確認できます。</p></div><span class="exps"><button id="expcsv" class="btn quiet" type="button">CSVで書き出す</button><button id="expjson" class="btn quiet" type="button">JSONで書き出す</button></span><span id="gen" class="demo">読み込み中…</span></div>
+<div class="row rh"><div><h2>検索結果 <span id="rc" class="pill">0</span></h2><p>論文を選択すると評価の詳細を確認できます。</p></div><span class="exps"><button id="expcsv" class="btn quiet" type="button">CSVで書き出す</button><button id="expjson" class="btn quiet" type="button">JSONで書き出す</button></span><span class="exps"><button id="palbtn" class="btn quiet" type="button">コマンド (Ctrl+K)</button><button id="khbtn" class="btn quiet" type="button">キー操作 (?)</button></span><span id="gen" class="demo">読み込み中…</span></div>
 <section class="lay"><div id="list" class="list" aria-live="polite"></div><aside id="det" class="panelD"></aside></section>
 <p id="empty" class="empty" hidden>条件に一致する論文がありません。検索語やフィルターを変更してください。</p>
 <footer class="ft"><span>TRL Explorer</span><span><a href="criteria.html">採点基準（評価規程と重み）</a></span><span><a href="audit.html">監査（要確認の処分）</a></span><span><a href="watch.html">Look・See（未評価の監視企業）</a></span><span>技術成熟度と事業化評価は独立した評価軸です。スコアは評価尺度であり、株価上昇確率・成功確率・投資利益率ではありません。</span></footer>
+<div id="pal" class="palov" hidden><div class="palbox"><input id="palq" type="text" placeholder="コマンドを入力 (ピン、並び、企業、書き出し…)" aria-label="コマンドパレット"><div id="pallist"></div></div></div>
+<div id="khelp" class="palov" hidden><div class="palbox"><h3 class="palt">キー操作</h3><div id="khlist"></div><p class="hint" style="padding:10px 14px">Ctrl+K (Mac は Cmd+K) でコマンドパレット、Esc で閉じます。入力欄にフォーカスがある間はキー操作は効きません。</p></div></div>
 </main>
 <script src="app.js"></script>
 </body>

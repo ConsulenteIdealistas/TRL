@@ -3,6 +3,7 @@
    評価値はすべて data.json の値をそのまま表示し、画面側で再計算・換算・平均はしない。 */
 let P = [], META = null, sel = null;
 let RANK = new Map();  // おすすめ順のときの「状態グループ内の順位」(render が毎回作る)
+let VIEW = [];  // 直近の render で並んだ候補の列 (キー移動の対象)
 let LANG = "ja";
 try { LANG = localStorage.getItem("trl-lang") || "ja"; } catch (e) { /* 保存不可なら既定のまま */ }
 const dispT = p => LANG === "ja" && p.title_ja ? p.title_ja : p.title;
@@ -574,6 +575,7 @@ ${p.display_status === "rejected" ? `<section class="ds"><h4>除外理由</h4><p
 function render() {
   const r = filtered();
   $("#rc").textContent = r.length;
+  VIEW = r;
   $("#empty").hidden = r.length !== 0;
   // おすすめ順の根拠: 並びは「状態の優先度 → TRL → 公開日」で決まるため、
   // 状態グループ内での順位をカードに出す (それ以外の並び順では出さない)
@@ -871,11 +873,87 @@ async function load() {
   facetChips(); warn(d); stats(); tierBand(); barrierBand(); auditBadge(); digestBand(); nqBand(); distBand(); render();
 }
 $("#sf").addEventListener("submit", e => { e.preventDefault(); render(); });
+/* キー操作とコマンドパレット。よく使う操作はホームポジション
+   (j/k/f/d/s/l/;) に寄せ、残りはパレットから名前で呼べるようにする。
+   ACTIONS が正本で、キー割り当て・パレット・ヘルプはすべてここから出る */
+function stepSel(dir) {
+  if (!VIEW.length) return;
+  let i = VIEW.findIndex(p => p.id === sel);
+  if (i < 0) i = 0;
+  const n = Math.min(VIEW.length - 1, Math.max(0, i + dir));
+  if (VIEW[n].id === sel) return;
+  sel = VIEW[n].id;
+  document.querySelectorAll("#list .card.sel").forEach(el => el.classList.remove("sel"));
+  const el = document.querySelector(`#list .card[data-id="${window.CSS && CSS.escape ? CSS.escape(sel) : sel}"]`);
+  if (el) { el.classList.add("sel"); el.scrollIntoView({block: "nearest"}); }
+  detail();
+}
+const flipSelect = id => { const s = $(id); s.value = s.value === s.options[0].value ? s.options[1].value : s.options[0].value; s.dispatchEvent(new Event("change")); };
+const flipCheck = id => { const c = $(id); c.checked = !c.checked; c.dispatchEvent(new Event("change")); };
+const ACTIONS = [
+  {label: "次の候補へ移動", keys: "j", run: () => stepSel(1)},
+  {label: "前の候補へ移動", keys: "k", run: () => stepSel(-1)},
+  {label: "選択中の候補の詳細ページを開く", keys: "Enter", run: () => { if (sel) location.href = "detail.html?id=" + encodeURIComponent(sel); }},
+  {label: "選択中の候補をピン留め / 解除", keys: "f", run: () => togglePin(sel)},
+  {label: "検索欄へ移動", keys: "/", run: () => $("#q").focus()},
+  {label: "並び順を次へ切り替える", keys: "s", run: () => { const s = $("#fo"); s.selectedIndex = (s.selectedIndex + 1) % s.options.length; s.dispatchEvent(new Event("change")); }},
+  {label: "新着だけ表示を切り替える", keys: "n", run: () => { const b = document.querySelector('#fown [data-v="new"]'); if (b) b.click(); }},
+  {label: "世代表示を切り替える", keys: "d", run: () => flipCheck("#swgen")},
+  {label: "言語を切り替える (日本語訳 / 原文)", keys: "l", run: () => flipSelect("#fl")},
+  {label: "コンパクト表示を切り替える", keys: ";", run: () => flipCheck("#swcompact")},
+  {label: "テーマを切り替える (ダーク / ライト)", keys: "", run: () => flipSelect("#fth")},
+  {label: "条件をリセットする", keys: "a", run: () => $("#rst").click()},
+  {label: "現在の条件に名前を付けて保存", keys: "", run: () => $("#fpsave").click()},
+  {label: "現在の絞り込みを CSV で書き出す", keys: "", run: () => exportData("csv")},
+  {label: "現在の絞り込みを JSON で書き出す", keys: "", run: () => exportData("json")},
+  {label: "企業ページへ移動", keys: "", run: () => { location.href = "company.html"; }},
+  {label: "採点基準ページへ移動", keys: "", run: () => { location.href = "criteria.html"; }},
+  {label: "監査ページへ移動", keys: "", run: () => { location.href = "audit.html"; }},
+  {label: "Look・See ページへ移動", keys: "", run: () => { location.href = "watch.html"; }},
+  {label: "キー操作の一覧を開く / 閉じる", keys: "?", run: () => toggleHelp()},
+];
+let palIdx = 0, palList = [];
+function palRender() {
+  const q = $("#palq").value.trim().toLowerCase();
+  palList = ACTIONS.filter(a => !q || a.label.toLowerCase().includes(q));
+  palIdx = Math.min(palIdx, Math.max(0, palList.length - 1));
+  $("#pallist").innerHTML = palList.map((a, i) => `<button type="button" class="pal-i ${i === palIdx ? "on" : ""}" data-i="${i}"><span>${esc(a.label)}</span>${a.keys ? `<kbd>${esc(a.keys)}</kbd>` : ""}</button>`).join("")
+    || `<p class="hint" style="padding:10px 14px">一致するコマンドがありません。</p>`;
+}
+function openPal() { $("#pal").hidden = false; $("#palq").value = ""; palIdx = 0; palRender(); $("#palq").focus(); }
+function closePal() { $("#pal").hidden = true; }
+function runPal() { const a = palList[palIdx]; if (!a) return; closePal(); a.run(); }
+function toggleHelp() {
+  const h = $("#khelp");
+  if (h.hidden) {
+    $("#khlist").innerHTML = ACTIONS.filter(a => a.keys).map(a => `<div class="kh-r"><kbd>${esc(a.keys)}</kbd><span>${esc(a.label)}</span></div>`).join("");
+    h.hidden = false;
+  } else h.hidden = true;
+}
+$("#palq").addEventListener("input", () => { palIdx = 0; palRender(); });
+$("#palq").addEventListener("keydown", e => {
+  if (e.isComposing) return;  // IME 変換中の Enter は確定に使う
+  if (e.key === "ArrowDown") { e.preventDefault(); palIdx = Math.min(palList.length - 1, palIdx + 1); palRender(); }
+  else if (e.key === "ArrowUp") { e.preventDefault(); palIdx = Math.max(0, palIdx - 1); palRender(); }
+  else if (e.key === "Enter") { e.preventDefault(); runPal(); }
+  else if (e.key === "Escape") closePal();
+});
+$("#pallist").addEventListener("pointerdown", e => { const b = e.target.closest("[data-i]"); if (b) { e.preventDefault(); palIdx = +b.dataset.i; runPal(); } });
+$("#pal").addEventListener("pointerdown", e => { if (e.target === $("#pal")) closePal(); });
+$("#khelp").addEventListener("pointerdown", e => { if (e.target === $("#khelp")) $("#khelp").hidden = true; });
+$("#palbtn").addEventListener("click", openPal);
+$("#khbtn").addEventListener("click", toggleHelp);
 document.addEventListener("keydown", e => {
-  // "/" で検索欄へ移動 (入力中は邪魔しない)
-  if (e.key === "/" && !/INPUT|TEXTAREA|SELECT/.test((document.activeElement || {}).tagName || "")) {
-    e.preventDefault(); $("#q").focus();
-  }
+  // コマンドパレット (Ctrl+K / Cmd+K) は入力中でも開閉できる
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); $("#pal").hidden ? openPal() : closePal(); return; }
+  if (e.key === "Escape") { closePal(); $("#khelp").hidden = true; return; }
+  if (!$("#pal").hidden || !$("#khelp").hidden) return;  // 画面が開いている間はそちらの操作を優先
+  const tag = (document.activeElement || {}).tagName || "";
+  if (/INPUT|TEXTAREA|SELECT/.test(tag) || e.isComposing || composing) return;  // 入力中と IME 変換中は邪魔しない
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  if (e.key === "Enter" && /BUTTON|A/.test(tag)) return;  // ボタンやリンクにフォーカスがあるときは本来の動作を優先
+  const a = ACTIONS.find(x => x.keys && x.keys === e.key);
+  if (a) { e.preventDefault(); a.run(); }
 });
 $("#q").addEventListener("input", render);
 

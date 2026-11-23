@@ -839,6 +839,65 @@ class ExportTests(StoreFixture):
         self.assertEqual(len(pend), 10)
         self.assertTrue(all(c["next_up"] for c in pend))
 
+    def test_next_queue_matches_next_up_in_selection_order(self):
+        # next_queue は next_up フラグと同じ集合を、選定順そのままの ID 列で持つ
+        self.build(None, n=1)
+        for i in range(15):
+            rec, _ = T.normalize(raw(sid=f"2610.55{i:02d}", title=f"Queued paper {i}",
+                                     published="2026-10-19"), T.now_iso())
+            cid, _ = self.store.upsert_candidate(rec, "rX")
+            self.store.set_entities(cid, T.link_entities(rec, CFG.get("entities", {})))
+            self.store.set_status(cid, "screened")
+        data = T.build_site_data(self.store, cfg_with(), datetime(2026, 10, 26, tzinfo=timezone.utc))
+        flagged = {c["id"] for c in data["candidates"] if c["next_up"]}
+        self.assertEqual(set(data["next_queue"]), flagged)
+        expected = [c["id"] for c in T.select_for_eval(self.store, cfg_with(), AS_OF, 10, ids_only=True)]
+        self.assertEqual(data["next_queue"], expected)
+
+    def test_history_attached_only_with_two_long_evals(self):
+        # 評価履歴 (推移の観測用) は long 評価が2件以上ある候補にだけ付く
+        data = self.build(Mock(make_llm_fn(long_scores={k: 65 for k in LONG_KEYS})))
+        cand = data["candidates"][0]
+        self.assertNotIn("history", cand)
+        ev2 = {"kind": "long", "as_of": AS_OF.isoformat(), "status": "final", "total": 70.0,
+               "band": {"label": "強い"}, "items": {}, "extraction": None, "event": None,
+               "prompt_versions": {}, "config_version": "x", "config_hash": "x",
+               "llm_provider": "gemini", "llm_model": "m", "input_hash": "h9", "errors": [], "extra": {}}
+        self.store.add_evaluation("r9", cand["id"], ev2)
+        data2 = T.build_site_data(self.store, cfg_with(), datetime(2026, 10, 26, tzinfo=timezone.utc))
+        cand2 = [c for c in data2["candidates"] if c["id"] == cand["id"]][0]
+        self.assertEqual(len(cand2["history"]), 2)
+        self.assertEqual(cand2["history"][-1]["total"], 70.0)
+        self.assertEqual(set(cand2["history"][0]),
+                         {"evaluated_at", "status", "total", "band", "trl_level", "gen_config"})
+
+    def test_digest_covers_latest_run_with_prev(self):
+        # ダイジェストは表示の基準ラン (最新の終了ラン) の評価だけを持ち、
+        # 再評価には前回値 (軽い点) が付く。新規評価の prev は None
+        data = self.build(Mock(make_llm_fn(long_scores={k: 65 for k in LONG_KEYS})))
+        cand = data["candidates"][0]
+        first = [d for d in data["digest"] if d["candidate_id"] == cand["id"] and d["kind"] == "long"]
+        self.assertEqual(len(first), 1)
+        self.assertIsNone(first[0]["prev"])
+        # パイプラインのランより後に始まったランを基準ランにする
+        self.store.conn.execute("UPDATE runs SET started_at='2020-01-01T00:00:00+00:00'")
+        self.store.conn.execute(
+            "INSERT INTO runs(run_id, started_at, finished_at, as_of, status, counts_json)"
+            " VALUES ('rZ', '2026-10-27T00:00:00+00:00', '2026-10-27T01:00:00+00:00', '2026-10-27', 'ok', '{}')")
+        self.store.conn.commit()
+        ev2 = {"kind": "long", "as_of": AS_OF.isoformat(), "status": "final", "total": 70.0,
+               "band": {"label": "強い"}, "items": {}, "extraction": None, "event": None,
+               "prompt_versions": {}, "config_version": "x", "config_hash": "x",
+               "llm_provider": "gemini", "llm_model": "m", "input_hash": "h9", "errors": [], "extra": {}}
+        self.store.add_evaluation("rZ", cand["id"], ev2)
+        data2 = T.build_site_data(self.store, cfg_with(), datetime(2026, 10, 28, tzinfo=timezone.utc))
+        self.assertEqual(data2["run"]["id"], "rZ")
+        self.assertEqual(len(data2["digest"]), 1)
+        d0 = data2["digest"][0]
+        self.assertEqual(d0["total"], 70.0)
+        self.assertIsNotNone(d0["prev"])
+        self.assertNotEqual(d0["prev"]["total"], 70.0)
+
     def test_contract_matches_web_schema(self):
         base = make_llm_fn(long_scores={"monetization": None})
         data = self.build(Mock(base))
@@ -1103,7 +1162,9 @@ class ZeroRiskBatchTests(unittest.TestCase):
         cand_keys = {"id", "title", "source", "published", "url", "abstract", "fields",
                      "title_ja", "abstract_ja", "translation_src", "screen_reason", "retrieved_at",
                      "display_status", "eval_count", "next_up", "long", "event",
-                     "entities", "related_news", "related_financials", "queue", "summary"}
+                     "entities", "related_news", "related_financials", "queue", "summary",
+                     # 評価履歴 (推移の観測用) は意図的な追加
+                     "history"}
         ev_keys = {"status", "total", "band", "as_of", "evaluated_at", "items",
                    "critical_missing", "errors", "trl_level", "trl_levels", "direction", "axes",
                    "business_stage", "total_scope", "llm_provider", "llm_model",

@@ -246,6 +246,30 @@ def _prev_for_site(ev):
     }
 
 
+def _light_point(ev):
+    """評価行の軽い要約 (履歴・変化ダイジェスト用)。前回比の要約
+    (_prev_for_site) から項目点を除いた形で、状態・総合点・TRL・世代
+    だけを持つ。値はいずれも評価行の直読みで、差分の材料に徹する。"""
+    s = _prev_for_site(ev)
+    if s is None:
+        return None
+    return {"evaluated_at": s["evaluated_at"], "status": s["status"], "total": s["total"],
+            "band": s["band"], "trl_level": s["trl_level"], "gen_config": s["gen_config"]}
+
+
+def _digest_for_site(store, run_id):
+    """最新ランで生まれた評価の要約 (変化ダイジェスト用)。各評価について
+    その値と前回評価の値を軽い点で並べる。新規評価は prev が None。
+    ここでは差分を計算せず、表示側が差を出すための材料だけを持つ。"""
+    out = []
+    for r in store.conn.execute(
+            "SELECT * FROM evaluations WHERE run_id=? ORDER BY id", (run_id,)):
+        prev = store.prev_evaluation(r["candidate_id"], r["kind"], r["id"])
+        out.append({"candidate_id": r["candidate_id"], "kind": r["kind"],
+                    **_light_point(dict(r)), "prev": _light_point(prev)})
+    return out
+
+
 def display_status(cand, long_ev, store, event_ev=None):
     """画面表示用の状態。final=選定可能 / review=要追加調査(必須項目は揃っている) / hold=保留(必須項目が不足) /
     pending=未評価(API失敗で未評価のものを含む) / error=内容起因のエラー / rejected=除外。"""
@@ -437,8 +461,18 @@ def build_site_data(store, cfg, now=None):
         run = store.conn.execute("SELECT * FROM runs ORDER BY started_at DESC LIMIT 1").fetchone()
     pool_as_of = parse_date(run["as_of"]) if run else None
     next_ids = set()
+    next_queue = []
     if pool_as_of is not None:
-        next_ids = {c["id"] for c in select_for_eval(store, cfg, pool_as_of, SITE_PENDING_LIMIT, ids_only=True)}
+        next_rows = select_for_eval(store, cfg, pool_as_of, SITE_PENDING_LIMIT, ids_only=True)
+        next_ids = {c["id"] for c in next_rows}
+        # 次回キューの全体表示用に、選定順そのままの ID 列も持つ
+        # (next_up フラグと同じ集合を、選定の優先順で並べたもの)
+        next_queue = [c["id"] for c in next_rows]
+    # 評価履歴 (long の全評価を古い順に軽い点で一括取得)。推移の観測用で、
+    # 2件以上ある候補にだけ付ける (1件では推移にならない)
+    history = {}
+    for r in store.conn.execute("SELECT * FROM evaluations WHERE kind='long' ORDER BY id"):
+        history.setdefault(r["candidate_id"], []).append(_light_point(dict(r)))
     # 評価の有無は先に一括で引き、掲載する候補だけを本体ごと読み込む
     # (全候補を1件ずつ読むと候補数×数クエリになり、候補の増加に比例して重くなる)
     ev_kinds = {}
@@ -534,6 +568,9 @@ def build_site_data(store, cfg, now=None):
         # その印を同梱し、どの端末でも「予約済み」と表示できるようにする
         if cid in open_reeval:
             cand["reeval_booked"] = True
+        hist = history.get(cid)
+        if hist and len(hist) >= 2:
+            cand["history"] = hist
         # 論文の要点 (抄録からの決定的な抽出、表示専用)。対象でない候補には付けない
         if c["source"] in PAPER_SOURCES:
             summ = extract_summary(c["title"], c["abstract"], c.get("abstract_ja"))
@@ -568,6 +605,10 @@ def build_site_data(store, cfg, now=None):
         "schema_version": SITE_SCHEMA_VERSION,
         "generated_at": (now or datetime.now(timezone.utc)).isoformat(timespec="seconds"),
         "run": run_out,
+        # 変化ダイジェストの材料 (最新ランの評価とその前回値) と、次回
+        # キューの選定順。どちらも追加キーで、schema_version は上げない
+        "digest": _digest_for_site(store, run["run_id"]) if run else [],
+        "next_queue": next_queue,
         "translation_usage": translation_usage,
         "summary": summary,
         "config": {"version": cfg["config_version"], "hash": cfg["config_hash"],

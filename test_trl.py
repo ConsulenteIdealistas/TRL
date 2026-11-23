@@ -1053,6 +1053,62 @@ class NewsPoolTests(unittest.TestCase):
         self.assertEqual(stats.get("reeval_skipped_no_material_update"), 2)
         store.close()
 
+    def test_stop_status_detection(self):
+        # 中止系の判定は治験候補の "Status: <状態>" の記述だけを見る
+        self.assertTrue(T.has_stop_status({"info_type": "trial", "abstract": "A study. Status: TERMINATED. Phase: PHASE2"}))
+        self.assertTrue(T.has_stop_status({"info_type": "trial", "abstract": "Status: WITHDRAWN"}))
+        self.assertTrue(T.has_stop_status({"info_type": "trial", "abstract": "Status: SUSPENDED"}))
+        self.assertFalse(T.has_stop_status({"info_type": "trial", "abstract": "Status: RECRUITING"}))
+        self.assertFalse(T.has_stop_status({"info_type": "trial", "abstract": "Status: COMPLETED"}))
+        self.assertFalse(T.has_stop_status({"info_type": "paper", "abstract": "Status: TERMINATED"}))
+        self.assertFalse(T.has_stop_status({"info_type": "trial", "abstract": ""}))
+        self.assertFalse(T.has_stop_status({"info_type": "trial"}))
+
+    def test_selection_fronts_stopped_trials(self):
+        # 中止系の寄せ: 評価後に中止へ変わった治験 (材料更新あり) は、
+        # 通常順位で上になる新しい治験より先に再評価へ選ばれる
+        store = Store(self.path)
+
+        def add_trial(sid, status_line, published, status="screened", eval_at=None, updated=None):
+            r = raw(source="trials", sid=sid, title=f"Trial {sid}",
+                    abstract=f"A Phase 2 study of {sid}. {status_line}",
+                    published=published, info_type="trial")
+            rec, _ = normalize(r, "2026-10-20T00:00:00+00:00")
+            cid, _ = store.upsert_candidate(rec, "r0")
+            store.set_entities(cid, link_entities(rec, CFG.get("entities", {})))
+            store.set_status(cid, status, eval_at=eval_at)
+            if updated:
+                store.conn.execute("UPDATE candidates SET material_updated_at=? WHERE id=?",
+                                   (updated, cid))
+                store.conn.commit()
+            return cid
+
+        # 帰属可能な long 評価を先に作り、初回評価の寄せ (F-1) を効かせない
+        anchor = add_trial("NCT00000001", "Status: COMPLETED", "2026-10-01")
+        items = {"technology_readiness": {"score": 100},
+                 **{k: {"score": 0} for k in
+                    ("technological_advantage", "monetization", "market_growth",
+                     "financial_sustainability", "moat_durability")}}
+        ev = {"kind": "long", "as_of": "2026-10-20", "status": "final", "total": 25.0,
+              "band": {"label": "弱い"}, "items": items, "extraction": None, "event": None,
+              "prompt_versions": {}, "config_version": "2026.10.0", "config_hash": "x",
+              "llm_provider": "gemini", "llm_model": "gemini-3.6-flash",
+              "input_hash": "ah", "errors": [], "extra": {}}
+        store.add_evaluation("r0", anchor, ev)
+
+        stopped = add_trial("NCT00000002", "Status: TERMINATED", "2026-10-15",
+                            status="evaluated", eval_at="2026-10-10T00:00:00+00:00",
+                            updated="2026-10-19T00:00:00+00:00")
+        active = add_trial("NCT00000003", "Status: RECRUITING", "2026-10-19",
+                           status="evaluated", eval_at="2026-10-10T00:00:00+00:00",
+                           updated="2026-10-19T00:00:00+00:00")
+        stats = {}
+        sel = select_for_eval(store, CFG, AS_OF, 1, stats=stats)
+        self.assertEqual([c["id"] for c in sel], [stopped])
+        self.assertEqual(stats.get("stopstat_eligible"), 1)
+        self.assertEqual(stats.get("stopstat_selected"), 1)
+        store.close()
+
     def test_selection_only_new_mode(self):
         store = Store(self.path)
 

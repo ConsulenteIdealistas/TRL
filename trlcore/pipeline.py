@@ -978,6 +978,25 @@ def has_demo_signal(c):
     return any(t in text for t in DEMO_SIGNAL_TERMS)
 
 
+# 治験レジストリの中止系ステータス。語彙は監査の API 照合 (CT1) が使う
+# audit_api.STOP_STATUSES と揃える。収集 (sources/trials) がレジストリの
+# 状態を要旨末尾へ "Status: <状態>" の形で埋め込むため、選定ではその
+# 記述を読む (再取得はしない)
+STOP_STATUSES = ("TERMINATED", "WITHDRAWN", "SUSPENDED")
+
+
+def has_stop_status(c):
+    """治験候補の材料が中止系ステータスを示しているか (下降の一次情報)。
+
+    治験かどうかは info_type で見る (選定の軽い行が持つ列に合わせる。
+    has_demo_signal の治験判定と同じ)。本文は fill_candidate_text で
+    補われた後の行を前提とする"""
+    if c.get("info_type") != "trial":
+        return False
+    text = c.get("abstract") or ""
+    return any(f"Status: {s}" in text for s in STOP_STATUSES)
+
+
 def _selection_rank(c):
     # 対象企業に紐付く候補を優先する (TRL・事業項目の根拠が揃いやすい)。
     # strong(所属・スポンサー等で特定) > weak(言及のみ) > 紐付けなし。
@@ -1156,19 +1175,36 @@ def select_for_eval(store, cfg, today, limit, retry_failed="no", only_new=False,
     # 移行の進捗は stats で観測可能にする (旧世代の残数・適格数・選定数)。
     if stats is not None:
         stats["oldgen_long_remaining"] = len(oldgen_ids)
+    # 中止系の寄せ: 治験レジストリで中止系ステータスになった治験候補を
+    # 選定の前面に出す。中止は「下降」の一次情報だが、材料更新ゲート
+    # (TH-1) を通過しても一般の再評価として初回・旧世代の寄せの後ろに
+    # 回り、週5件の枠では長く選ばれないままになりやすい。前面の位置は
+    # 初回評価の後ろ (未測定の企業が先という原則は維持し、変化の観測は
+    # 物差しの移行より前に置く)。前面に出せるのは上限の半分 (切り上げ)
+    # までで、値と論拠は F-1 / G-5 と同じ (1つのクラスが週予算を食い
+    # 潰さない)。前面を超えた分は通常選定の後ろに回り、他の適格候補が
+    # 尽きればそちらからも選ばれる。進捗は stats で観測可能にする
+    stop_rows = [c for c in rows if c["id"] not in first_ids
+                 and has_stop_status(c)]
+    stop_ids = {c["id"] for c in stop_rows}
+    if stats is not None:
+        stats["stopstat_eligible"] = len(stop_rows)
     oldgen_rows = [c for c in rows if c["id"] in oldgen_ids
-                   and c["id"] not in first_ids]
+                   and c["id"] not in first_ids
+                   and c["id"] not in stop_ids]
     if oldgen_rows and stats is not None:
         stats["oldgen_reeval_eligible"] = len(oldgen_rows)
-    if first_rows or oldgen_rows:
+    if first_rows or stop_rows or oldgen_rows:
         cap_front = -(-limit // 2)
         first_head = first_dedup[:cap_front]
         first_head_ids = {c["id"] for c in first_head}
+        stop_head, stop_over = stop_rows[:cap_front], stop_rows[cap_front:]
         old_head, old_tail = oldgen_rows[:cap_front], oldgen_rows[cap_front:]
         middle = [c for c in rows if c["id"] not in first_ids
+                  and c["id"] not in stop_ids
                   and c["id"] not in oldgen_ids]
         first_over = [c for c in first_rows if c["id"] not in first_head_ids]
-        rows = first_head + old_head + middle + first_over + old_tail
+        rows = first_head + stop_head + old_head + middle + first_over + stop_over + old_tail
     # 企業あたりの保持上限: 材料の多い大手がキューを抱え込まないようにする。
     # 上限を超えた分は今回の選定から外れる (新しい材料が来れば順位で入れ替わる)。
     def _finish(picked):
@@ -1218,11 +1254,13 @@ def select_for_eval(store, cfg, today, limit, retry_failed="no", only_new=False,
         if stats is not None:
             stats["oldgen_selected"] = sum(1 for c in picked if c["id"] in oldgen_ids)
             stats["firsteval_selected"] = sum(1 for c in picked if c["id"] in first_ids)
+            stats["stopstat_selected"] = sum(1 for c in picked if c["id"] in stop_ids)
         return _finish(picked)
     picked = capped[:limit]
     if stats is not None:
         stats["oldgen_selected"] = sum(1 for c in picked if c["id"] in oldgen_ids)
         stats["firsteval_selected"] = sum(1 for c in picked if c["id"] in first_ids)
+        stats["stopstat_selected"] = sum(1 for c in picked if c["id"] in stop_ids)
     return _finish(picked)
 
 
@@ -1428,6 +1466,9 @@ def run_pipeline(store, cfg, llm, *, as_of, sources=("pubmed", "arxiv"), kinds=(
         log(f"[eval] 初回評価の寄せ (F-1): 未評価企業の初回評価 {counts['firsteval_selected']} 件を選定 "
             f"(適格 {counts.get('firsteval_eligible_companies', 0)} 社 / "
             f"未評価の残り {counts.get('firsteval_companies_remaining', 0)} 社)")
+    if counts.get("stopstat_selected"):
+        log(f"[eval] 中止系の寄せ: 中止系ステータスの治験 {counts['stopstat_selected']} 件を選定 "
+            f"(適格 {counts.get('stopstat_eligible', 0)} 件)")
     # 引き継ぎ: 前回の実行が異常終了 (interrupted/partial/error) か、評価フェーズが
     # 打ち切られて (counts の llm_degraded) 選定が記録されていたら、その未完分を
     # 今回の選定の先頭に置く。前回の実行で評価が保存された候補は完了扱いで除く

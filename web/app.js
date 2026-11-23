@@ -289,6 +289,7 @@ function queryOk(p, q) {
 function filtered() {
   const q = $("#q").value.trim().toLowerCase(), o = $("#fo").value;
   const r = P.filter(p => queryOk(p, parseQuery(q))
+    && !banned(p)
     && (stSel.size ? stSel.has(p.display_status) : p.display_status !== "rejected")  // 除外はチップを明示的に押した時だけ混ざる
     && inR(lvl(p))
     && (!dirSel.size || dirSel.has(dirOf(p) || "none"))
@@ -1019,6 +1020,39 @@ function nextRuns(fromMs, n) {
 }
 const fmtRunAt = t => new Date(t).toLocaleString("ja-JP", {timeZone: "Asia/Tokyo", month: "numeric", day: "numeric", weekday: "short", hour: "2-digit", minute: "2-digit"});
 /* 前回見た後に新しい確定評価があれば知らせる帯 (開いたときの通知) */
+/* BAN (除外のピックアップ): 企業・分野・出所を指名して一覧から外す。
+   NOT検索の視覚版。各BANはスイッチで有効/無効を切り替えられる */
+let BANS = [];
+try { BANS = JSON.parse(localStorage.getItem("trl-bans") || "[]"); } catch (e) { BANS = []; }
+function saveBans() { try { localStorage.setItem("trl-bans", JSON.stringify(BANS)); } catch (e) { /* 保存できなくても動く */ } }
+function banMatch(p, b) {
+  if (b.t === "company") return (p.entities || []).some(e => e.strength === "strong" && e.name === b.v);
+  if (b.t === "market") return (p.entities || []).some(e => e.strength === "strong" && e.market === b.v);
+  if (b.t === "sector") return (p.fields || []).includes(b.v);
+  if (b.t === "source") return p.source === b.v;
+  return false;
+}
+function banned(p) { return BANS.some(b => b.on && banMatch(p, b)); }
+function banOptions(t) {
+  const s = new Set();
+  for (const p of P) {
+    if (t === "company") { for (const e of p.entities || []) if (e.strength === "strong") s.add(e.name); }
+    else if (t === "market") { for (const e of p.entities || []) if (e.strength === "strong" && e.market) s.add(e.market); }
+    else if (t === "sector") { for (const f of p.fields || []) s.add(f); }
+    else if (t === "source" && p.source) s.add(p.source);
+  }
+  return [...s].sort();
+}
+function buildBanUI() {
+  const list = $("#banlist");
+  if (!list) return;
+  const TL = {company: "企業", market: "国・市場", sector: "分野", source: "出所"};
+  list.innerHTML = BANS.map((b, i) => `<div class="brow"><label class="sw"><input type="checkbox" data-ban="${i}" ${b.on ? "checked" : ""}><span>${esc(TL[b.t] || b.t)}: ${esc(b.v)}</span></label><button class="btn quiet" type="button" data-banx="${i}" aria-label="BANを取り消す">×</button></div>`).join("");
+  const bc = $("#bancount");
+  if (bc) bc.textContent = BANS.some(b => b.on) ? `（現在 ${P.filter(banned).length}件を除外中）` : "";
+  const dl = $("#banvals"), ty = $("#bantype");
+  if (dl && ty) dl.innerHTML = banOptions(ty.value).map(v => `<option value="${esc(v)}">`).join("");
+}
 /* 初回ガイド: 見たことがなければ一度だけ出す。閉じたら端末に記録する */
 function tourBand() {
   const el = $("#tour");
@@ -1406,7 +1440,7 @@ async function load() {
     + (cv ? ` · 規程 ${cv}` : "");
   $("#fl").value = LANG;
   buildCohort();
-  facetChips(); warn(d); stats(); tierBand(); barrierBand(); auditBadge(); digestBand(); nqBand(); distBand(); moveBand(); nearBand(); usageBand(); alertBand(); runBand(); statsBand(); pinBand(); searchHistBand(); recentBand(); tourBand(); newNote(); buildBandSettings(); applyBandPrefs(); applyZoom(); render();
+  facetChips(); warn(d); stats(); tierBand(); barrierBand(); auditBadge(); digestBand(); nqBand(); distBand(); moveBand(); nearBand(); usageBand(); alertBand(); runBand(); statsBand(); pinBand(); searchHistBand(); recentBand(); tourBand(); buildBanUI(); newNote(); buildBandSettings(); applyBandPrefs(); applyZoom(); render();
 }
 $("#sf").addEventListener("submit", e => { e.preventDefault(); saveSearch($("#q").value); render(); });
 /* 検索履歴 (この端末のみ、直近8件)。チップを押すとその検索を再実行する */
@@ -1907,4 +1941,32 @@ $("#det").addEventListener("click", e => {
     else copyBuilt(() => citeText(p), cs);
   }
 });
+/* BAN の操作 (追加・スイッチ・取り消し) */
+{
+  const addBtn = $("#banadd"), typeSel = $("#bantype");
+  if (addBtn) addBtn.addEventListener("click", () => {
+    const t = $("#bantype").value;
+    let v = $("#banval").value.trim();
+    if (!v) return;
+    // 候補に完全一致が無く、含む候補が1つだけならそちらに寄せる
+    // (「Genmab」と打って「Genmab A/S」を指す、のを取りこぼさないため)
+    const opts = banOptions(t);
+    if (!opts.includes(v)) {
+      const hits = opts.filter(o => o.toLowerCase().includes(v.toLowerCase()));
+      if (hits.length === 1) v = hits[0];
+    }
+    if (!BANS.some(b => b.t === t && b.v === v)) { BANS.push({t, v, on: true}); saveBans(); }
+    $("#banval").value = "";
+    buildBanUI(); render();
+  });
+  if (typeSel) typeSel.addEventListener("change", buildBanUI);
+  document.addEventListener("change", e => {
+    const sw = e.target.closest && e.target.closest("[data-ban]");
+    if (sw) { const b = BANS[+sw.dataset.ban]; if (b) { b.on = sw.checked; saveBans(); buildBanUI(); render(); } }
+  });
+  document.addEventListener("click", e => {
+    const x = e.target.closest && e.target.closest("[data-banx]");
+    if (x) { BANS.splice(+x.dataset.banx, 1); saveBans(); buildBanUI(); render(); }
+  });
+}
 load();

@@ -236,3 +236,4 @@ a.brz.lk{text-decoration:none;display:inline-block;margin-left:4px}
   .card{break-inside:avoid;box-shadow:none}
   a{color:inherit;text-decoration:none}
 }
+.brow{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:3px 0}

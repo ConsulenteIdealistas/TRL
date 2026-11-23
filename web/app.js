@@ -343,9 +343,9 @@ function getNote(id) { try { return localStorage.getItem("trl-note:" + id) || ""
 const noteDrafts = {};  // 未保存のメモ下書き。再描画で入力途中のメモが消えないように保持する
 function setNote(id, v) { try { localStorage.setItem("trl-note:" + id, v); return true; } catch (e) { return false; } }
 
-// 端末内の状態 (注目ピンと最終訪問時刻)。サーバを持たない静的サイトなので
-// 端末ごとに保持する (調査メモと同じ)。可用性の担保として、注目ピンと
-// 新着の基準時刻 (最終訪問時刻) は共有リンク (?pins=候補ID,...&seen=ISO時刻)
+// 端末内の状態 (注目ピンと新着の基準時刻)。サーバを持たない静的サイト
+// なので端末ごとに保持する (調査メモと同じ)。可用性の担保として、
+// 注目ピンと新着の基準時刻は共有リンク (?pins=候補ID,...&seen=ISO時刻)
 // で別端末へ持ち運べるようにする
 let pins = new Set();
 try { pins = new Set(JSON.parse(localStorage.getItem("trl-pins") || "[]")); } catch (e) { /* 壊れた保存値は空として扱う */ }
@@ -362,25 +362,49 @@ function importPinsFromUrl() {
     history.replaceState(null, "", location.pathname);
   } catch (e) { /* 取り込みに失敗しても通常表示は続ける */ }
 }
-// 最終訪問時刻はページを開いた時点の保存値で判定する (セッション中に
-// バッジが消えないように、判定に使う値は読み込み時のまま固定する)。
+// 新着の基準は「前回のデータで最新だった評価時刻」。基準が前進するのは
+// 新しい評価が来たときだけなので、訪問を繰り返しても、評価の増えない
+// サイト再生成があっても、新着は次の新しい評価が来るまで消えない。
+// 判定に使う値は読み込み時に確定させ、セッション中は固定する。
 // 初回訪問では基準だけを置いてバッジは付けない (全部が新着になるため)
-let lastVisit = null;
+let newBase = null;    // 新着の基準時刻 (これより後の long 評価が新着)
+let newSeenMax = null; // 基準を決めた時点で最新だった long 評価の時刻
 try {
-  lastVisit = localStorage.getItem("trl-last-visit");
+  newBase = localStorage.getItem("trl-new-base");
+  newSeenMax = localStorage.getItem("trl-new-max");
+  // 旧方式 (最終訪問時刻) の保存値があれば基準として引き継ぐ
+  if (!newBase) newBase = localStorage.getItem("trl-last-visit");
   // 共有リンク (?seen=) で届いた基準時刻を取り込む。既読の統合なので、
   // 保存値と届いた値のうち遅い方を基準にする (ピンの統合と同じ考え方)。
   // 未来の時刻は「今」で頭打ちにする (まだ見ていない分まで既読にしない)
   const seenQ = new URLSearchParams(location.search).get("seen");
   if (seenQ && !Number.isNaN(Date.parse(seenQ))) {
     const seenIso = new Date(Math.min(Date.parse(seenQ), Date.now())).toISOString();
-    if (!lastVisit || seenIso > lastVisit) lastVisit = seenIso;
+    if (!newBase || seenIso > newBase) newBase = seenIso;
     const u = new URL(location.href); u.searchParams.delete("seen");
     history.replaceState(null, "", u.pathname + u.search);
   }
-  localStorage.setItem("trl-last-visit", new Date().toISOString());
 } catch (e) { /* 保存不可なら新着判定は無効 */ }
-const isNewEval = p => !!(lastVisit && p.long && p.long.evaluated_at && p.long.evaluated_at > lastVisit);
+const isNewEval = p => !!(newBase && p.long && p.long.evaluated_at && p.long.evaluated_at > newBase);
+// 基準の前進規則 (純粋関数)。curMax は今回のデータで最新の long 評価時刻。
+// 新しい評価が来ていたら基準を前回の最新時刻へ進め、来ていなければ据え置く。
+// 基準は後退させない (共有リンクで新しい基準を取り込んだ直後の巻き戻し防止)
+function advanceNewBase(base, seenMax, curMax) {
+  if (!curMax) return [base, seenMax];
+  if (!seenMax) return [base || curMax, curMax];
+  if (curMax > seenMax) return [base && base > seenMax ? base : seenMax, curMax];
+  return [base, seenMax];
+}
+// データ読み込み後に1回だけ呼び、基準を確定させて保存する
+function resolveNewBase() {
+  let curMax = null;
+  for (const p of P) if (p.long && p.long.evaluated_at && (!curMax || p.long.evaluated_at > curMax)) curMax = p.long.evaluated_at;
+  [newBase, newSeenMax] = advanceNewBase(newBase, newSeenMax, curMax);
+  try {
+    if (newBase) localStorage.setItem("trl-new-base", newBase);
+    if (newSeenMax) localStorage.setItem("trl-new-max", newSeenMax);
+  } catch (e) { /* 保存不可でも表示は続ける */ }
+}
 function citeText(p) { return [p.title, srcName(p.source) + (p.published ? " ・ " + p.published : ""), p.url].filter(Boolean).join("\n"); }
 function detailUrl(p) { return location.origin + location.pathname.replace(/[^/]*$/, "") + "detail.html?id=" + encodeURIComponent(p.id); }
 function evalText(p) {
@@ -638,6 +662,7 @@ async function load() {
   if (d.schema_version !== 3) { showError("data.json の形式(schema_version)がこの画面に対応していません。"); return; }
   META = d; P = d.candidates;
   importPinsFromUrl();
+  resolveNewBase();
   $("#gen").textContent = "更新 " + jst(d.generated_at);
   $("#fl").value = LANG;
   facetChips(); warn(d); stats(); tierBand(); barrierBand(); render();
@@ -786,15 +811,13 @@ $("#list").addEventListener("click", e => {
 });
 $("#cpypins").addEventListener("click", e => {
   const btn = e.currentTarget;
-  // 共有リンクには注目ピンと新着の基準時刻 (?seen=) を含める。基準時刻は
-  // コピーの時点 (= ここまで見た) とし、この端末の保存値も同じ時刻へ
-  // 進める (送り先と自分の次回訪問で新着の見え方が揃うように)。
-  // 表示中の判定値 (lastVisit) は変えないので、今見ているバッジは消えない
-  const seen = new Date().toISOString();
-  try { localStorage.setItem("trl-last-visit", seen); } catch (err) { /* 保存不可でもリンクは作る */ }
+  // 共有リンクには注目ピンと新着の基準時刻 (?seen=) を含める。基準は
+  // 現在の新着判定に使っている値そのもので、送り先が取り込めば送り主と
+  // 同じ新着の見え方になる。基準は新しい評価が来るまで変わらないので、
+  // コピーのたびに進めたりはしない
   const parts = [];
   if (pins.size) parts.push(`pins=${[...pins].map(encodeURIComponent).join(",")}`);
-  parts.push(`seen=${encodeURIComponent(seen)}`);
+  if (newBase) parts.push(`seen=${encodeURIComponent(newBase)}`);
   copyText(`${location.origin}${location.pathname}?${parts.join("&")}`, btn);
 });
 $("#det").addEventListener("input", e => { if (e.target.id === "note" && sel) noteDrafts[sel] = e.target.value; });

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>観測 — TRL Explorer</title>
+<link rel="stylesheet" href="style.css">
+<script>try{var tt=localStorage.getItem("trl-theme");document.documentElement.dataset.theme=(tt==="light"||tt==="dark"||tt==="cb")?tt:(window.matchMedia&&matchMedia("(prefers-color-scheme: light)").matches?"light":"dark");}catch(e){document.documentElement.dataset.theme="dark";}</script>
+<style>
+.docwrap{max-width:880px;margin:0 auto}
+.doct{font-size:22px;margin:2px 0 8px}
+.doc{font-size:13.5px;line-height:1.85}
+.doc h2{font-size:17px;margin:26px 0 8px;padding-top:16px;border-top:1px solid var(--line)}
+.why{font-size:12.5px;color:var(--muted);line-height:1.8;margin:6px 0 10px}
+.obband{border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--surface)}
+</style>
+</head>
+<body>
+<header class="topbar"><a class="brand" href="index.html"><span class="mark">T</span><span>TRL<span class="light"> Explorer</span></span></a><div class="meta">Research Intelligence</div></header>
+<main class="ws"><div class="docwrap">
+<p style="margin:0 0 12px"><a class="tg" href="index.html">← 一覧に戻る</a></p>
+<h1 class="doct">観測</h1>
+<div class="doc">
+<p>評価そのものではなく、「評価の集まりがどう動いているか」「収集が健全に回っているか」を眺めるページです。一覧は候補を見る場所に専念させ、分布・統計・実行の観測はこちらに集めました。数字はすべて data.json の輸出値からの決定的な集計で、画面側で新しい判定はしていません。</p>
+<p id="oberr" class="hint"></p>
+
+<h2>統計（確定評価の母集団）</h2>
+<p class="why">なぜ平均だけでなく中央値と箱ひげ図を載せるのか。評価点には極端に高い・低い候補が混ざります。平均はその数件に引っ張られて動きますが、中央値は「真ん中の候補」そのものなので典型像がぶれません。箱ひげ図は、中央値に加えて「真ん中50%の幅（箱）」と「全体の幅（ひげ）」を一度に見せる図で、点が揃っているのか散っているのかが読み取れます。詳しい読み方は末尾の「統計の読み方」にあります。</p>
+<div class="obband"><section class="tierband" id="statband"></section></div>
+
+<h2>分布と散布図</h2>
+<p class="why">総合点とTRLの度数（棒）、再評価でどれだけ動いたか（散布図）、項目ごとの未確定（null）の件数です。分布の形が変わっていくこと自体が、観測の対象です。</p>
+<div class="obband"><section class="tierband" id="distband"></section></div>
+
+<h2>直近の動き</h2>
+<div class="obband"><section class="tierband" id="moveband"></section></div>
+
+<h2>翻訳使用量</h2>
+<p class="why">翻訳は無料枠の文字数で回しています。上限に近づいたら気づけるよう、使用量をここに常設します。</p>
+<div class="obband"><section class="tierband" id="usageband"></section></div>
+
+<h2>収集と実行</h2>
+<p class="why">収集の成功率とソース別の失敗率です。失敗が増えたソースは、材料の偏り（＝評価の偏り）に直結するので監視します。実行ごとの詳細は<a href="runs.html">実行履歴ページ</a>にあります。</p>
+<div class="obband"><section class="tierband" id="runband"></section></div>
+
+<h2>統計の読み方</h2>
+<dl>
+<dt>母集団</dt>
+<dd>統計の対象は「選定可能（final）」の候補の最新の long 評価だけです。保留はまだ点が確定していないので混ぜません（混ぜると、統計が「候補の姿」と「未確定の多さ」の二重の意味になってしまうため）。</dd>
+<dt>平均と中央値</dt>
+<dd>平均は全員の真ん中、中央値は順位の真ん中です。両方が大きく離れているときは、少数の極端な候補が平均を引っ張っています。その場合は中央値が典型像です。</dd>
+<dt>箱ひげ図</dt>
+<dd>箱の左端が Q1（下から25%の点）、右端が Q3（75%の点）、箱の中の線が中央値、ひげの両端が最小と最大です。箱が狭い＝評価が揃っている、箱が広い・ひげが長い＝ばらつきが大きい、と読みます。</dd>
+<dt>SD と Sn・Qn（散らばりの物差しが3つある理由）</dt>
+<dd>SD（標準偏差）はよく知られた散らばりの物差しですが、外れ値に弱く、極端な1件で大きく膨らみます。Sn と Qn は外れ値に強い（ロバストな）散らばりの物差しです。SD だけが大きくて Sn・Qn が小さいときは、「散らばりは外れ値のせいで、本体は固まっている」と読めます。逆に全部大きいときは、本当に散っています。点が数段の決まった値に固まる項目（例: 市場成長性）では Qn が 0 になることもあります。</dd>
+<dt>世代別</dt>
+<dd>採点の物差し（規程と重みの版）が違う評価を混ぜて中央値を出すと、変化が「候補の変化」なのか「物差しの変化」なのか区別できません。だから世代（config の版）ごとに分けて出しています。</dd>
+<dt>基準日（as-of）</dt>
+<dd>カレンダーで日を選ぶと、その日時点の母集団（各候補の、その日以前で最新の評価）で統計を再構成します。「当時はどう見えていたか」を、後から増えた評価で塗り替えないための仕組みです。</dd>
+</dl>
+</div>
+</div></main>
+<footer class="ft"><span>TRL Explorer</span><span><a href="criteria.html">採点基準（評価規程と重み）</a></span><span><a href="audit.html">監査（要確認の処分）</a></span></footer>
+<script src="observe.js"></script>
+</body>
+</html>

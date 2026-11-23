@@ -1098,9 +1098,8 @@ function newNote() {
   }
 }
 /* 帯の表示設定 (この端末のみ)。帯の描画後に適用し、OFF の帯は隠す */
-const BANDS = [["dgst", "変化ダイジェスト"], ["nqband", "次回評価予定"], ["moveband", "直近の動き"],
-  ["nearband", "あと1項目で確定"], ["usageband", "翻訳使用量"], ["distband", "分布と散布図"],
-  ["statband", "統計"], ["runband", "収集と実行"], ["pinband", "注目ピン"], ["shist", "検索履歴"],
+const BANDS = [["dgst", "変化ダイジェスト"], ["nqband", "次回評価予定"],
+  ["nearband", "あと1項目で確定"], ["pinband", "注目ピン"], ["shist", "検索履歴"],
   ["recentband", "最近見た候補"]];
 let bandPrefs = {};
 try { bandPrefs = JSON.parse(localStorage.getItem("trl-bands") || "{}"); } catch (e) { /* 壊れた保存値は既定として扱う */ }
@@ -1477,8 +1476,10 @@ function searchHistBand() {
   el.querySelectorAll("[data-q]").forEach(b => b.addEventListener("click", () => { $("#q").value = b.dataset.q; render(); }));
   applyBandPrefs();
 }
-/* 母集団の基準日カレンダー: 日を選ぶと母集団をその日時点で再構成する */
-$("#statband").addEventListener("click", e => {
+/* 母集団の基準日カレンダー: 日を選ぶと母集団をその日時点で再構成する
+   (統計帯は観測ページへ移設したため、一覧に #statband が無い場合は何もしない) */
+const statbandEl = $("#statband");
+if (statbandEl) statbandEl.addEventListener("click", e => {
   const mv = e.target.closest("[data-mv]"), day = e.target.closest("[data-d]");
   if (e.target.id === "asofbtn") {
     CALOPEN = !CALOPEN;

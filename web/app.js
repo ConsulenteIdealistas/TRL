@@ -2,6 +2,7 @@
 /* TRL Explorer: trl.py export が出力した data.json を読んで表示する(契約: schema.json)。
    評価値はすべて data.json の値をそのまま表示し、画面側で再計算・換算・平均はしない。 */
 let P = [], META = null, sel = null;
+let RANK = new Map();  // おすすめ順のときの「状態グループ内の順位」(render が毎回作る)
 let LANG = "ja";
 try { LANG = localStorage.getItem("trl-lang") || "ja"; } catch (e) { /* 保存不可なら既定のまま */ }
 const dispT = p => LANG === "ja" && p.title_ja ? p.title_ja : p.title;
@@ -355,7 +356,7 @@ function card(p) {
   const ents = p.entities.filter(e => e.strength === "strong").length;
   const facet = facetText(p);
   const diffTxt = prevDiffTxt(p);
-  return `<article class="card ${s ? "sel" : ""}" data-id="${esc(p.id)}"><div class="main"><div style="min-width:0"><div class="top"><span class="${src(p.source)}">${srcName(p.source)}</span><span class="date">${esc(p.published || "")}</span>${p.retrieved_at ? `<span class="date">収集 ${esc(String(p.retrieved_at).slice(0, 10))}</span>` : ""}${LANG === "ja" && srcOf(p) ? `<span class="date">訳: ${esc(srcOf(p))}</span>` : ""}${p.long && p.long.llm_model ? `<span class="date">評価: ${esc(p.long.llm_model)}</span>` : ""}${genBadge(p.long) || genBadge(p.event)}${isNewEval(p) ? `<span class="nw">新着</span>` : ""}</div><h3 class="title">${esc(dispT(p))}</h3><p class="abs">${esc(dispA(p))}</p><div class="tags">${(p.fields || []).slice(0, 4).map(t => `<span class="tag">${esc(t)}</span>`).join("")}</div><div class="mi"><span>技術成熟度 <strong>${fmtScore(sc(p, "technology_readiness"))}</strong></span><span>技術的優位性 <strong>${fmtScore(sc(p, "technological_advantage"))}</strong></span><span>関連企業 <strong>${ents ? ents + "社" : "未特定"}</strong></span>${facet ? `<span>国・分野 <strong>${esc(facet)}</strong></span>` : ""}${diffTxt ? `<span>前回比 <strong>${esc(diffTxt)}</strong></span>` : ""}${evShort(p) ? `<span>イベント評価 <strong>${esc(evShort(p))}</strong></span>` : ""}</div>${barrierChipsHtml(p.long)}</div><div class="side">${stB(p.display_status)}${dirB(p)}${trl(lvl(p))}<button type="button" class="pin ${pins.has(p.id) ? "on" : ""}" data-pin="${esc(p.id)}" aria-pressed="${pins.has(p.id) ? "true" : "false"}" title="注目ピン (この端末に保存)">${pins.has(p.id) ? "★" : "☆"}</button></div></div><div class="foot"><span>${p.long && p.long.critical_missing.length ? `必須の不足 ${p.long.critical_missing.length}件` : p.display_status === "pending" ? (p.next_up ? "次回評価予定" : "評価待ち") : p.display_status === "rejected" ? "除外" + (p.screen_reason ? ": " + (SR[p.screen_reason] || p.screen_reason) : "") : ""}</span><span class="facts"><button type="button" class="clink" data-ccite="${esc(p.id)}">出典コピー</button><button type="button" class="clink" data-clink="${esc(p.id)}">リンクコピー</button><a class="tg" href="detail.html?id=${encodeURIComponent(p.id)}">詳細を見る →</a></span></div></article>`;
+  return `<article class="card ${s ? "sel" : ""}" data-id="${esc(p.id)}"><div class="main"><div style="min-width:0"><div class="top"><span class="${src(p.source)}">${srcName(p.source)}</span><span class="date">${esc(p.published || "")}</span>${p.retrieved_at ? `<span class="date">収集 ${esc(String(p.retrieved_at).slice(0, 10))}</span>` : ""}${LANG === "ja" && srcOf(p) ? `<span class="date">訳: ${esc(srcOf(p))}</span>` : ""}${p.long && p.long.llm_model ? `<span class="date">評価: ${esc(p.long.llm_model)}</span>` : ""}${genBadge(p.long) || genBadge(p.event)}${isNewEval(p) ? `<span class="nw">新着</span>` : ""}</div><h3 class="title">${esc(dispT(p))}</h3><p class="abs">${esc(dispA(p))}</p><div class="tags">${(p.fields || []).slice(0, 4).map(t => `<span class="tag">${esc(t)}</span>`).join("")}</div><div class="mi"><span>技術成熟度 <strong>${fmtScore(sc(p, "technology_readiness"))}</strong></span><span>技術的優位性 <strong>${fmtScore(sc(p, "technological_advantage"))}</strong></span><span>関連企業 <strong>${ents ? ents + "社" : "未特定"}</strong></span>${facet ? `<span>国・分野 <strong>${esc(facet)}</strong></span>` : ""}${diffTxt ? `<span>前回比 <strong>${esc(diffTxt)}</strong></span>` : ""}${RANK.has(p.id) ? `<span>並び <strong>${esc(RANK.get(p.id))}</strong></span>` : ""}${evShort(p) ? `<span>イベント評価 <strong>${esc(evShort(p))}</strong></span>` : ""}</div>${barrierChipsHtml(p.long)}</div><div class="side">${stB(p.display_status)}${dirB(p)}${trl(lvl(p))}<button type="button" class="pin ${pins.has(p.id) ? "on" : ""}" data-pin="${esc(p.id)}" aria-pressed="${pins.has(p.id) ? "true" : "false"}" title="注目ピン (この端末に保存)">${pins.has(p.id) ? "★" : "☆"}</button></div></div><div class="foot"><span>${p.long && p.long.critical_missing.length ? `必須の不足 ${p.long.critical_missing.length}件` : p.display_status === "pending" ? (p.next_up ? "次回評価予定" : "評価待ち") : p.display_status === "rejected" ? "除外" + (p.screen_reason ? ": " + (SR[p.screen_reason] || p.screen_reason) : "") : ""}</span><span class="facts"><button type="button" class="clink" data-ccite="${esc(p.id)}">出典コピー</button><button type="button" class="clink" data-clink="${esc(p.id)}">リンクコピー</button><a class="tg" href="detail.html?id=${encodeURIComponent(p.id)}">詳細を見る →</a></span></div></article>`;
 }
 function scoreRow(k, it) {
   const v = it && typeof it.score === "number" && isFinite(it.score) ? it.score : null;
@@ -574,6 +575,13 @@ function render() {
   const r = filtered();
   $("#rc").textContent = r.length;
   $("#empty").hidden = r.length !== 0;
+  // おすすめ順の根拠: 並びは「状態の優先度 → TRL → 公開日」で決まるため、
+  // 状態グループ内での順位をカードに出す (それ以外の並び順では出さない)
+  RANK = new Map();
+  if ($("#fo").value === "status") {
+    const seen = {};
+    for (const p of r) { const g = p.display_status; seen[g] = (seen[g] || 0) + 1; RANK.set(p.id, `${SL[g] || g}・${seen[g]}位`); }
+  }
   if (!r.some(p => p.id === sel)) sel = r[0] ? r[0].id : null;
   $("#list").innerHTML = r.map(card).join("");
   detail();
@@ -641,6 +649,43 @@ function digestBand() {
   };
   const news = dg.filter(d => !d.prev).length;
   el.innerHTML = `<span>最新の実行の変化: 新規評価 ${news}件 / 再評価 ${dg.length - news}件</span>` + dg.map(row).join("");
+  el.hidden = false;
+}
+/* 分布の集計 (純粋関数)。母数は掲載中 (除外を除く) の候補で、総合点は
+   点数がある評価、TRL は error でない long 評価がある候補だけを数える */
+function distBins(cands) {
+  const score = new Array(10).fill(0), trl = new Array(10).fill(0);  // trl[0..8]=TRL1..9、trl[9]=未確定
+  for (const p of cands || []) {
+    if (p.display_status === "rejected") continue;
+    const t = p.long && typeof p.long.total === "number" ? p.long.total : null;
+    if (t != null) score[Math.min(9, Math.max(0, Math.floor(t / 10)))]++;
+    if (p.long && p.long.status !== "error") {
+      const l = lvl(p);
+      if (l != null) trl[l - 1]++; else trl[9]++;
+    }
+  }
+  return {score, trl};
+}
+function barsSvg(counts, labels, w, h) {
+  const max = Math.max(1, ...counts);
+  const bw = w / counts.length;
+  const rects = counts.map((n, i) => {
+    const bh = Math.round((n / max) * (h - 12));
+    return `<rect x="${(i * bw + 1).toFixed(1)}" y="${h - 10 - bh}" width="${(bw - 2).toFixed(1)}" height="${bh}" fill="var(--accent)" opacity="${n ? 0.85 : 0.25}"><title>${esc(labels[i])}: ${n}件</title></rect>`
+      + `<text x="${(i * bw + bw / 2).toFixed(1)}" y="${h - 1}" font-size="7" text-anchor="middle" fill="var(--muted)">${esc(labels[i])}</text>`;
+  }).join("");
+  return `<svg viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" role="img">${rects}</svg>`;
+}
+function distBand() {
+  // 分布の可視化: 総合点 (10点刻み) と TRL (1〜9と未確定) の度数を
+  // 棒で出す。数える対象と単位は統計帯と同じ母数にそろえる
+  const el = $("#distband");
+  if (!el) return;
+  const b = distBins(P);
+  const ns = b.score.reduce((a, x) => a + x, 0), nt = b.trl.reduce((a, x) => a + x, 0);
+  if (!ns && !nt) { el.hidden = true; return; }
+  el.innerHTML = `<span>総合点の分布（${ns}件）</span>${barsSvg(b.score, ["0", "10", "20", "30", "40", "50", "60", "70", "80", "90"], 170, 40)}`
+    + `<span>TRLの分布（${nt}件）</span>${barsSvg(b.trl, ["1", "2", "3", "4", "5", "6", "7", "8", "9", "未"], 170, 40)}`;
   el.hidden = false;
 }
 function nqBand() {
@@ -823,7 +868,7 @@ async function load() {
     + (d.run ? ` · run ${d.run.id} · ${d.run.status}` : "")
     + (cv ? ` · 規程 ${cv}` : "");
   $("#fl").value = LANG;
-  facetChips(); warn(d); stats(); tierBand(); barrierBand(); auditBadge(); digestBand(); nqBand(); render();
+  facetChips(); warn(d); stats(); tierBand(); barrierBand(); auditBadge(); digestBand(); nqBand(); distBand(); render();
 }
 $("#sf").addEventListener("submit", e => { e.preventDefault(); render(); });
 document.addEventListener("keydown", e => {

@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>実行履歴 — TRL Explorer</title>
+<link rel="stylesheet" href="style.css">
+<script>try{var tt=localStorage.getItem("trl-theme");document.documentElement.dataset.theme=(tt==="light"||tt==="dark")?tt:"dark";}catch(e){document.documentElement.dataset.theme="dark";}</script>
+<style>
+.wwrap{max-width:980px;margin:0 auto}
+.ptitle{font-size:22px;margin:2px 0 8px}
+.pdesc{color:var(--sub);font-size:13px;line-height:1.8;margin:0 0 14px}
+table.rt{width:100%;border-collapse:collapse;font-size:12.5px;margin:0 0 18px}
+table.rt th,table.rt td{border:1px solid var(--line);padding:6px 8px;text-align:right;white-space:nowrap}
+table.rt th{background:var(--surface);color:var(--sub);font-weight:700}
+table.rt td:first-child,table.rt th:first-child{text-align:left}
+.tscroll{overflow-x:auto}
+</style>
+</head>
+<body>
+<header class="topbar"><a class="brand" href="index.html"><span class="mark">T</span><span>TRL<span class="light"> Explorer</span></span></a><div class="meta">Research Intelligence</div></header>
+<main class="ws"><div class="wwrap">
+<p style="margin:0 0 12px"><a class="tg" href="index.html">← 一覧に戻る</a></p>
+<h1 class="ptitle">実行履歴</h1>
+<p class="pdesc">パイプラインの実行履歴（data.json の run_history）と、基準ランのソース別収集量（source_stats）の直読みです。成功率は sources_ok / (sources_ok + sources_failed)、失敗率はソースの呼び出し回数に対する失敗の割合で、いずれも表示側の割り算だけです。</p>
+<div id="rbody"><p class="hint">読み込み中…</p></div>
+</div></main>
+<script src="runs.js"></script>
+</body>
+</html>

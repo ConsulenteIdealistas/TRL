@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>横並び比較 — TRL Explorer</title>
+<link rel="stylesheet" href="style.css">
+<script>try{var tt=localStorage.getItem("trl-theme");document.documentElement.dataset.theme=(tt==="light"||tt==="dark")?tt:"dark";}catch(e){document.documentElement.dataset.theme="dark";}</script>
+<style>
+.wwrap{max-width:980px;margin:0 auto}
+.ptitle{font-size:22px;margin:2px 0 8px}
+.pdesc{color:var(--sub);font-size:13px;line-height:1.8;margin:0 0 14px}
+.tin{width:100%;padding:8px 11px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:inherit;font:inherit;font-size:13px;margin:0 0 10px}
+table.rt{width:100%;border-collapse:collapse;font-size:12.5px;margin:0 0 18px}
+table.rt th,table.rt td{border:1px solid var(--line);padding:6px 8px;text-align:right;white-space:nowrap}
+table.rt th{background:var(--surface);color:var(--sub);font-weight:700}
+table.rt td:first-child,table.rt th:first-child{text-align:left}
+table.rt td.best{font-weight:800;color:var(--accent)}
+.tscroll{overflow-x:auto}
+.pick{display:block;width:100%;text-align:left;padding:8px 10px;border:1px solid var(--line);background:var(--surface);color:inherit;border-radius:8px;margin:0 0 6px;cursor:pointer;font-size:13px}
+</style>
+</head>
+<body>
+<header class="topbar"><a class="brand" href="index.html"><span class="mark">T</span><span>TRL<span class="light"> Explorer</span></span></a><div class="meta">Research Intelligence</div></header>
+<main class="ws"><div class="wwrap">
+<p style="margin:0 0 12px"><a class="tg" href="index.html">← 一覧に戻る</a></p>
+<h1 class="ptitle">横並び比較</h1>
+<p class="pdesc">候補を最大4件まで並べ、最新の long 評価の値をそのまま比べます。各行の最大値は太字です。URL の ids に候補 ID を並べると共有できます。</p>
+<input class="tin" id="q" type="search" placeholder="候補の題名で検索して追加" autocomplete="off">
+<div id="picks"></div>
+<div id="cbody"><p class="hint">読み込み中…</p></div>
+</div></main>
+<script src="compare.js"></script>
+</body>
+</html>

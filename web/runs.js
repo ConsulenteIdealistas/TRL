@@ -1,0 +1,46 @@
+/* 実行履歴ページ: data.json の run_history (直近30ラン) と source_stats
+   (基準ランのソース別集計) をそのまま表にする。率は2つの輸出値の
+   割り算だけで、新しい集計はしない */
+"use strict";
+const $ = s => document.querySelector(s);
+const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
+const pct = (a, b) => (typeof a === "number" && typeof b === "number" && b > 0) ? Math.round(a / b * 100) + "%" : "—";
+const num = v => typeof v === "number" ? v : "—";
+
+function rateGeom(hist, W = 560, H = 90) {
+  const rates = (hist || []).map(r => {
+    const c = r.counts || {}, ok = c.sources_ok, ng = c.sources_failed;
+    return (typeof ok === "number" && typeof ng === "number" && ok + ng > 0) ? ok / (ok + ng) : null;
+  }).filter(v => v !== null);
+  return rates.map((v, i) => ({
+    x: rates.length <= 1 ? Math.round(W / 2) : Math.round(i / (rates.length - 1) * (W - 6) + 3),
+    y: Math.round((H - 6) - v * (H - 16)), rate: v}));
+}
+
+function render(d) {
+  const hist = d.run_history || [], ss = d.source_stats || [];
+  if (!hist.length && !ss.length) { $("#rbody").innerHTML = `<p class="hint">実行履歴はまだ data.json に含まれていません（次の発行から載ります）。</p>`; return; }
+  const pts = rateGeom(hist);
+  const chart = pts.length > 1 ? `<h2>収集の成功率の推移</h2><svg viewBox="0 0 560 90" width="100%" height="90" role="img" style="max-width:560px"><polyline points="${pts.map(p => p.x + "," + p.y).join(" ")}" fill="none" stroke="var(--accent)"/>${pts.map(p => `<circle cx="${p.x}" cy="${p.y}" r="2.5" fill="var(--accent)"/>`).join("")}</svg>` : "";
+  const rows = [...hist].reverse().map(r => {
+    const c = r.counts || {};
+    return `<tr><td>${esc((r.as_of || "").slice(0, 10))}</td><td>${esc(r.status || "")}</td>`
+      + `<td>${r.duration_sec ? Math.round(r.duration_sec / 60) + "分" : "—"}</td>`
+      + `<td>${num(c.sources_ok)} / ${num(c.sources_failed)}</td><td>${pct(c.sources_ok, (c.sources_ok || 0) + (c.sources_failed || 0))}</td>`
+      + `<td>${num(c.fetched)}</td><td>${num(c.new)}</td>`
+      + `<td>${num(c.final)} / ${num(c.hold)} / ${num(c.error)}</td><td>${num(c.translated)}</td></tr>`;
+  }).join("");
+  const table = hist.length ? `<h2>実行の一覧（新しい順）</h2><div class="tscroll"><table class="rt"><thead><tr><th>日付</th><th>状態</th><th>所要</th><th>収集 成功/失敗</th><th>成功率</th><th>取得</th><th>新規</th><th>評価 確定/保留/エラー</th><th>翻訳数</th></tr></thead><tbody>${rows}</tbody></table></div>` : "";
+  const srows = ss.map(s => `<tr><td>${esc(s.source)}</td><td>${s.calls}</td><td>${pct(s.calls - s.ok_calls, s.calls)}</td><td>${s.fetched}</td><td>${s.new}</td><td>${s.duplicates}</td><td>${s.invalid}</td><td>${Math.round(s.seconds)}</td></tr>`).join("");
+  const stable = ss.length ? `<h2>ソース別（基準ラン ${(d.run && d.run.as_of) || ""}）</h2><div class="tscroll"><table class="rt"><thead><tr><th>ソース</th><th>呼び出し</th><th>失敗率</th><th>取得</th><th>新規</th><th>重複</th><th>無効</th><th>秒</th></tr></thead><tbody>${srows}</tbody></table></div>` : "";
+  $("#rbody").innerHTML = chart + table + stable;
+}
+
+(async () => {
+  try {
+    const res = await fetch("data.json", {cache: "no-cache"});
+    render(await res.json());
+  } catch (e) {
+    $("#rbody").innerHTML = `<p class="hint">data.json を読み込めませんでした。</p>`;
+  }
+})();

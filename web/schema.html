@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>データ形式の変更履歴 — TRL Explorer</title>
+<link rel="stylesheet" href="style.css">
+<script>try{var tt=localStorage.getItem("trl-theme");document.documentElement.dataset.theme=(tt==="light"||tt==="dark"||tt==="cb")?tt:(window.matchMedia&&matchMedia("(prefers-color-scheme: light)").matches?"light":"dark");}catch(e){document.documentElement.dataset.theme="dark";}</script>
+<style>
+.docwrap{max-width:880px;margin:0 auto}
+.doct{font-size:22px;margin:2px 0 8px}
+.doc{font-size:13.5px;line-height:1.85}
+.doc h2{font-size:17px;margin:26px 0 8px;padding-top:16px;border-top:1px solid var(--line)}
+.doc dt{font-weight:800;margin:14px 0 2px}
+.doc dd{margin:0 0 6px}
+.doc code{background:var(--field);border:1px solid var(--line);border-radius:4px;padding:0 4px;font-size:.92em}
+</style>
+</head>
+<body>
+<header class="topbar"><a class="brand" href="index.html"><span class="mark">T</span><span>TRL<span class="light"> Explorer</span></span></a><div class="meta">Research Intelligence</div></header>
+<main class="ws"><div class="docwrap">
+<p style="margin:0 0 12px"><a class="tg" href="index.html">← 一覧に戻る</a>　<a class="tg" href="glossary.html">用語集 →</a></p>
+<h1 class="doct">データ形式の変更履歴</h1>
+<div class="doc">
+<p>サイトが読む <code>data.json</code> の形式 (schema) の履歴です。現行は <code>schema_version = 3</code> です。キーの追加だけでは版を上げない方針で、Web が読むキーの契約は <code>web/schema.json</code> にあります。</p>
+<h2>2026-11-24</h2>
+<dl>
+<dt>digest / next_queue を追加</dt>
+<dd>最新ランの全評価（前回値つき）と、次回の選定順の候補 ID 列です。変化ダイジェストと次回キューの表示に使います。</dd>
+<dt>candidates[].history を追加</dt>
+<dd>long 評価が2件以上ある候補に、古い順の軽い点列（<code>evaluated_at / status / total / band / trl_level / gen_config / items / direction</code>）を持ちます。統計の基準日 (as-of) 再構成と評価の推移の材料です。</dd>
+<dt>run_history / source_stats を追加</dt>
+<dd>終了ランの要約（古い順、直近30件）と、基準ランのソース別収集量です。<code>source_stat</code> には後に <code>top_errors</code>（失敗理由の上位3件）も追加しました。</dd>
+<dt>related_financials[].source を追加</dt>
+<dd>関連財務根拠の出所（収集ソース）を同梱します。財務補間の適用状況の表示に使います。</dd>
+<dt>feed.xml の生成を開始</dt>
+<dd>最新ランの評価を Atom フィードとして書き出します（data.json の追加キーではありません）。</dd>
+</dl>
+<h2>2026-11-22</h2>
+<dl>
+<dt>translation_usage を追加</dt>
+<dd>翻訳の月次・累計の文字数（Azure / Google / DeepL）です。使用量のゲージとしきい値監視に使います。Web の契約 (schema.json) には載せない監視専用のキーです。</dd>
+</dl>
+</div>
+</div></main>
+</body>
+</html>

@@ -146,9 +146,11 @@ function renderIndex(cos) {
   const all = [...cos.values()].sort((a, b) => a.name.localeCompare(b.name, "ja"));
   const row = co => {
     const lat = latestLong(co);
+    const lastMat = co.watch && co.watch.materials && co.watch.materials.length
+      ? co.watch.materials.map(m => m.published || "").sort().slice(-1)[0] : "";
     const right = lat
       ? `最新評価: 総合 ${lat.ev.total != null ? lat.ev.total + "点" : "—"} / TRL ${lvl(lat.cand) != null ? lvl(lat.cand) : "未確定"}（${esc(String(lat.ev.evaluated_at || "").slice(0, 10))}）`
-      : co.watch ? `監視材料: 一次情報 ${co.watch.counts.primary}件 / ニュース ${co.watch.counts.news}件` : "未評価";
+      : co.watch ? `監視材料: 一次情報 ${co.watch.counts.primary}件 / ニュース ${co.watch.counts.news}件${lastMat ? ` / 最新 ${esc(lastMat)}` : ""}` : "未評価";
     return `<div class="crow"><span class="cn"><a href="company.html?e=${encodeURIComponent(co.id)}">${esc(co.name)}</a></span>`
       + `<span class="cm">${esc(metaLine(co))}</span>`
       + `<span class="cs">候補 ${co.links.length}件 / ${esc(right)}</span></div>`;

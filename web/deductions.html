@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>減点理由の集計 — TRL Explorer</title>
+<link rel="stylesheet" href="style.css">
+<script>try{var tt=localStorage.getItem("trl-theme");document.documentElement.dataset.theme=(tt==="light"||tt==="dark"||tt==="cb")?tt:(window.matchMedia&&matchMedia("(prefers-color-scheme: light)").matches?"light":"dark");}catch(e){document.documentElement.dataset.theme="dark";}</script>
+<style>
+table.rt{border-collapse:collapse;margin:8px 0 12px;font-size:12.5px;width:100%}
+table.rt th,table.rt td{border:1px solid var(--line);padding:5px 8px;text-align:left;vertical-align:top}
+table.rt th{background:var(--gs)}
+.tscroll{overflow-x:auto}
+</style>
+</head>
+<body>
+<header class="topbar"><a class="brand" href="index.html"><span class="mark">T</span><span>TRL<span class="light"> Explorer</span></span></a><div class="meta">Research Intelligence</div></header>
+<main class="ws"><div class="docwrap" style="max-width:880px;margin:0 auto">
+<p style="margin:0 0 12px"><a class="tg" href="index.html">← 一覧に戻る</a></p>
+<h1 class="ptitle">減点理由の集計</h1>
+<p class="pdesc">各候補の最新の long 評価について、項目ごとに「点が付かなかった (null)」「低スコア (40未満)」「不足として挙がった文面」を数えたものです。集計は表示側の数え直しで、評価そのものは変えません。不足の文面は評価が記録した文字列の完全一致で数えています。</p>
+<div id="dbody"><p class="hint">読み込み中…</p></div>
+</div></main>
+<footer class="ft"><span>TRL Explorer</span><span><a href="criteria.html">採点基準（評価規程と重み）</a></span><span><a href="audit.html">監査（要確認の処分）</a></span></footer>
+<script src="deductions.js"></script>
+</body>
+</html>

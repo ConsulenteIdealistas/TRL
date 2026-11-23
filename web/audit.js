@@ -319,7 +319,15 @@ function cardState(c) {
 }
 function applyView(list) {
   const f = viewState.filter;
+  const q = (viewState.q || "").toLowerCase();
   const out = list.filter(c => {
+    if (q) {
+      const blocks = shownBlocks(c.p, c.kind).blocks;
+      const hay = [c.p.title || "", c.p.title_ja || "",
+        ...(c.p.entities || []).map(e => e.name || ""),
+        ...blocks.flatMap(a => (a.entries || []).map(e => e.check || ""))].join(" ").toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
     if (f === "all") return true;
     const st = cardState(c);
     return f === "flag" ? st.flagOpen > 0 : f === "gray" ? st.grayOpen > 0 :
@@ -713,6 +721,7 @@ document.addEventListener("click", ev => {
 });
 
 document.addEventListener("input", ev => {
+  if (ev.target.id === "aq") { viewState.q = ev.target.value.trim(); render(); return; }
   const note = ev.target.closest("[data-dnote]");
   if (note) {
     const key = note.dataset.dnote;

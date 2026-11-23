@@ -678,8 +678,8 @@ function detail() {
   const waitAll = L ? [...new Set(Object.entries(L.items).filter(([k]) => !REF.includes(k)).flatMap(([, i]) => i.awaiting_info || []))] : [];
   const q = p.queue && p.queue.long;
   const total = L && L.total != null ? `${L.total} / 100(${esc(L.band || "")})` : "未確定";
-  $("#det").innerHTML = `<div class="dc"><header class="dh"><div class="top"><span class="${src(p.source)}">${srcName(p.source)}</span>${stB(p.display_status)}${isNewEval(p) ? `<span class="nw">新着</span>` : ""}<button type="button" class="pin ${pins.has(p.id) ? "on" : ""}" id="pint" aria-pressed="${pins.has(p.id) ? "true" : "false"}" title="注目ピン (この端末に保存)">${pins.has(p.id) ? "★" : "☆"}</button></div><h3>${esc(dispT(p))}</h3><div class="mi"><span>公開日 ${esc(p.published || "—")}</span>${L ? `<span>評価日 ${esc(jst(L.evaluated_at))}</span>` : ""}${p.eval_count ? `<span>評価 ${p.eval_count} 回目</span>` : ""}<span><a href="compare.html?ids=${encodeURIComponent(p.id)}">横並び比較</a></span>${LL && LL.llm_model ? `<span>評価モデル ${esc(LL.llm_model)}</span>` : ""}${genBadge(L) || genBadge(EV)}</div>${showGen && L && L.gen && !L.gen.current ? `<p class="note" style="margin-top:8px">${esc(GEN_NOTE)}</p>` : ""}</header>
-<section class="ds"><h4>研究概要</h4>${absHtml(dispA(p))}${LANG === "ja" && srcOf(p) ? `<p class="hint">日本語訳: ${esc(srcOf(p))}</p>` : ""}<div class="acts"><button class="btn sec" type="button" id="cpyo">原文をコピー</button>${(p.title_ja || p.abstract_ja) ? `<button class="btn sec" type="button" id="cpyj">日本語訳をコピー</button>` : ""}</div></section>
+  $("#det").innerHTML = `<div class="dc"><header class="dh"><div class="top"><span class="${src(p.source)}">${srcName(p.source)}</span>${stB(p.display_status)}${isNewEval(p) ? `<span class="nw">新着</span>` : ""}<button type="button" class="pin ${pins.has(p.id) ? "on" : ""}" id="pint" aria-pressed="${pins.has(p.id) ? "true" : "false"}" title="注目ピン (この端末に保存)">${pins.has(p.id) ? "★" : "☆"}</button></div><h3>${esc(dispT(p))}</h3><div class="mi"><span>公開日 ${esc(p.published || "—")}</span>${L ? `<span>評価日 ${esc(jst(L.evaluated_at))}</span>` : ""}${p.eval_count ? `<span>評価 ${p.eval_count} 回目</span>` : ""}<span><a href="compare.html?ids=${encodeURIComponent(p.id)}">横並び比較</a></span>${LL && LL.llm_model ? `<span>評価モデル ${esc(LL.llm_model)}</span>` : ""}${(() => { const es = (META.run && META.run.counts && META.run.counts.eval_elapsed_sec) || []; const hit = Array.isArray(es) ? es.find(x => x.candidate_id === p.id) : null; return hit ? `<span>評価所要 ${Math.round(hit.seconds)}秒（最新ラン）</span>` : ""; })()}${(p.related_news || []).length || (p.related_financials || []).length ? `<span>根拠プール: ニュース ${(p.related_news || []).length}件（一次情報 ${(p.related_news || []).filter(n => n.origin === "企業発表").length}件）/ 財務 ${(p.related_financials || []).length}件</span>` : ""}${genBadge(L) || genBadge(EV)}</div>${showGen && L && L.gen && !L.gen.current ? `<p class="note" style="margin-top:8px">${esc(GEN_NOTE)}</p>` : ""}</header>
+<section class="ds"><h4>研究概要</h4>${absHtml(dispA(p))}${LANG === "ja" && srcOf(p) ? `<p class="hint">日本語訳: ${esc(srcOf(p))}</p>` : ""}<div class="acts"><button class="btn sec" type="button" id="cpyo">原文をコピー</button>${(p.title_ja || p.abstract_ja) ? `<button class="btn sec" type="button" id="cpyj">日本語訳をコピー</button>` : ""}${p.abstract && p.abstract_ja ? `<button class="btn sec" type="button" id="absboth">原文と訳を並べる</button>` : ""}</div>${p.abstract && p.abstract_ja ? `<div id="absbothbox" hidden style="grid-template-columns:1fr 1fr;gap:12px"><div><p class="hint">原文</p><p>${esc(p.abstract)}</p></div><div><p class="hint">日本語訳</p><p>${esc(p.abstract_ja)}</p></div></div>` : ""}</section>
 <section class="ds"><h4>技術成熟度（TRL）</h4>${trl(lvl(p), 1)}${tr && tr.reason ? `<p>${esc(tr.reason)}</p>` : ""}${tr && tr.level == null && tr.missing_info.length ? `<p class="hint">不足: ${tr.missing_info.map(esc).join(" / ")}</p>` : ""}${tr && tr.awaiting_info && tr.awaiting_info.length ? `<p class="hint">結果待ち: ${tr.awaiting_info.map(esc).join(" / ")}</p>` : ""}<p class="hint">TRLは資料から根拠付きで判断できた場合のみ表示します。技術成熟度スコアからの換算はしません。</p>${L ? annexBlockHtml(L) : ""}${L ? barrierBlockHtml(L) : ""}</section>
 <section class="ds"><h4>技術評価</h4>${L ? G.technology.map(k => scoreRow(k, L.items[k])).join("") : `<p class="hint">未評価です。</p>`}</section>
 <section class="ds"><h4>事業評価</h4>${L && L.business_stage === "pre_stage" ? `<p class="note">この技術は前商業段階(TRL 3以下)のため、事業項目は「段階未達」として不足とは区別しています。点が付いている項目はそのまま表示します。</p>` : ""}${L ? G.business.map(k => scoreRow(k, L.items[k])).join("") : `<p class="hint">未評価です。</p>`}${L && !strong.length ? `<p class="note">関連企業が特定できていないため、企業固有の項目は算出されません。総合点は6項目すべてが揃うまで確定せず、重みの再配分もしません。</p>` : ""}</section>
@@ -836,7 +836,8 @@ function distBand() {
   if (!ns && !nt) { el.hidden = true; return; }
   el.innerHTML = `<span>総合点の分布（${ns}件）</span>${barsSvg(b.score, ["0", "10", "20", "30", "40", "50", "60", "70", "80", "90"], 170, 40)}`
     + `<span>TRLの分布（${nt}件）</span>${barsSvg(b.trl, ["1", "2", "3", "4", "5", "6", "7", "8", "9", "未"], 170, 40)}`
-    + scatterHtml() + nullDistHtml();
+    + scatterHtml() + nullDistHtml()
+    + `<span><a href="deductions.html">減点理由の集計ページ</a></span>`;
   el.hidden = false;
 }
 /* 変動の散布 (純粋関数): 再評価の (総合点の差, TRLの差) を座標にする。
@@ -1018,6 +1019,19 @@ function nextRuns(fromMs, n) {
 }
 const fmtRunAt = t => new Date(t).toLocaleString("ja-JP", {timeZone: "Asia/Tokyo", month: "numeric", day: "numeric", weekday: "short", hour: "2-digit", minute: "2-digit"});
 /* 前回見た後に新しい確定評価があれば知らせる帯 (開いたときの通知) */
+/* 初回ガイド: 見たことがなければ一度だけ出す。閉じたら端末に記録する */
+function tourBand() {
+  const el = $("#tour");
+  if (!el) return;
+  let seenTour = false;
+  try { seenTour = !!localStorage.getItem("trl-tour"); } catch (e) { seenTour = true; }
+  el.hidden = seenTour;
+  const btn = $("#tourclose");
+  if (btn) btn.addEventListener("click", () => {
+    el.hidden = true;
+    try { localStorage.setItem("trl-tour", "1"); } catch (e) { /* 保存できなくても閉じる */ }
+  });
+}
 function newNote() {
   const el = $("#newnote");
   if (!el) return;
@@ -1103,7 +1117,17 @@ function statsBand() {
   const genMs = Date.parse(META.generated_at || "");
   const obsDays = firstDay && !Number.isNaN(genMs) ? Math.max(1, Math.floor((genMs - Date.parse(firstDay)) / 86400000) + 1) : null;
   const miles = `<span class="tz">節目: 累計評価 ${totEvals}件 / 企業 ${nEnt}社${obsDays ? ` / 観測 ${obsDays}日目` : ""}</span>`;
-  el.innerHTML = `<span>確定評価の統計（${when}の母集団 ${COHORT.total ? COHORT.total.n : 0}件、箱は最小–Q1–中央値–Q3–最大）</span>` + miles
+  // 世代別の件数と総合点の中央値 (最新の long 評価の gen_config で分ける)
+  const byGen = {};
+  for (const p of P) {
+    if (p.display_status !== "final" || !p.long || typeof p.long.total !== "number") continue;
+    const g = (p.long.gen && p.long.gen.config) || "不明";
+    (byGen[g] = byGen[g] || []).push(p.long.total);
+  }
+  const genTxt = Object.entries(byGen).sort((a, b) => b[1].length - a[1].length)
+    .map(([g, vs]) => `${esc(g)}${g === (META.config && META.config.version) ? " (現行)" : ""}: ${vs.length}件・中央値 ${fmt1(statsOf(vs).median)}`).join(" / ");
+  const genHtml = genTxt ? `<span class="tz">世代別: ${genTxt}</span>` : "";
+  el.innerHTML = `<span>確定評価の統計（${when}の母集団 ${COHORT.total ? COHORT.total.n : 0}件、箱は最小–Q1–中央値–Q3–最大）</span>` + miles + genHtml
     + `<span class="srow"><button class="chip" id="asofbtn">母集団の基準日: ${COHORT.asOf || "最新（as_of）"}</button>`
     + (COHORT.asOf ? `<button class="chip" id="asofclear">最新に戻す</button>` : "") + `</span>`
     + calHtml()
@@ -1178,6 +1202,14 @@ function usageBand() {
     return `<span>${lab} <strong>${v.toLocaleString("ja-JP")}字</strong> / ${cap.toLocaleString("ja-JP")}字 (${pct}%)</span><span class="ubar"><span style="width:${pct}%"></span></span>`;
   };
   el.innerHTML = `<span>翻訳使用量（${esc(u.month || "")}）</span>` + caps.map(seg).join("");
+  // 訳の出所別の候補数 (translation_src の直読み。言語の内訳として添える)
+  const bySrc = {};
+  for (const p of P) {
+    const s = p.translation_src && p.translation_src.title;
+    if (s) bySrc[s] = (bySrc[s] || 0) + 1;
+  }
+  const parts = Object.entries(bySrc).sort((a, b) => b[1] - a[1]).map(([s, n]) => `${esc(s)} ${n}件`).join(" / ");
+  if (parts) el.innerHTML += `<span>タイトルの訳の出所（候補数）</span><span class="tz">${parts}</span>`;
   el.hidden = false;
 }
 function alertBand() {
@@ -1374,7 +1406,7 @@ async function load() {
     + (cv ? ` · 規程 ${cv}` : "");
   $("#fl").value = LANG;
   buildCohort();
-  facetChips(); warn(d); stats(); tierBand(); barrierBand(); auditBadge(); digestBand(); nqBand(); distBand(); moveBand(); nearBand(); usageBand(); alertBand(); runBand(); statsBand(); pinBand(); searchHistBand(); recentBand(); newNote(); buildBandSettings(); applyBandPrefs(); applyZoom(); render();
+  facetChips(); warn(d); stats(); tierBand(); barrierBand(); auditBadge(); digestBand(); nqBand(); distBand(); moveBand(); nearBand(); usageBand(); alertBand(); runBand(); statsBand(); pinBand(); searchHistBand(); recentBand(); tourBand(); newNote(); buildBandSettings(); applyBandPrefs(); applyZoom(); render();
 }
 $("#sf").addEventListener("submit", e => { e.preventDefault(); saveSearch($("#q").value); render(); });
 /* 検索履歴 (この端末のみ、直近8件)。チップを押すとその検索を再実行する */
@@ -1480,6 +1512,21 @@ function toggleHelp() {
     h.hidden = false;
   } else h.hidden = true;
 }
+/* キー操作の練習: 指定のキーを順に押してもらうだけの小さな練習 */
+const PRAC = ["j", "k", "f", "/", "n"];
+let pracIdx = -1;
+function pracMsg() {
+  const m = $("#pracmsg");
+  if (!m) return;
+  if (pracIdx < 0) { m.hidden = true; return; }
+  m.hidden = false;
+  m.textContent = pracIdx < PRAC.length
+    ? `練習中: 「${PRAC[pracIdx]}」キーを押してください (${pracIdx + 1}/${PRAC.length})`
+    : "練習完了です。Esc で閉じて、一覧で試してみてください。";
+}
+document.addEventListener("click", e => {
+  if (e.target.closest("#pracbtn")) { pracIdx = 0; pracMsg(); }
+});
 $("#palq").addEventListener("input", () => { palIdx = 0; palRender(); });
 $("#palq").addEventListener("keydown", e => {
   if (e.isComposing) return;  // IME 変換中の Enter は確定に使う
@@ -1496,7 +1543,11 @@ $("#khbtn").addEventListener("click", toggleHelp);
 document.addEventListener("keydown", e => {
   // コマンドパレット (Ctrl+K / Cmd+K) は入力中でも開閉できる
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); $("#pal").hidden ? openPal() : closePal(); return; }
-  if (e.key === "Escape") { closePal(); $("#khelp").hidden = true; return; }
+  if (e.key === "Escape") { closePal(); $("#khelp").hidden = true; pracIdx = -1; pracMsg(); return; }
+  if (pracIdx >= 0 && pracIdx < PRAC.length && !$("#khelp").hidden) {
+    if (e.key === PRAC[pracIdx]) { e.preventDefault(); pracIdx++; pracMsg(); }
+    return;
+  }
   if (!$("#pal").hidden || !$("#khelp").hidden) return;  // 画面が開いている間はそちらの操作を優先
   const tag = (document.activeElement || {}).tagName || "";
   if (/INPUT|TEXTAREA|SELECT/.test(tag) || e.isComposing || composing) return;  // 入力中と IME 変換中は邪魔しない
@@ -1832,6 +1883,11 @@ $("#det").addEventListener("click", e => {
     $("#msg").textContent = saved ? "この端末のブラウザに保存しました。" : "保存できませんでした(ブラウザの保存機能が無効の可能性があります)。";
   }
   if (e.target.closest("#pint")) { togglePin(sel); return; }
+  if (e.target.closest("#absboth")) {
+    const box = $("#absbothbox");
+    if (box) { box.hidden = !box.hidden; box.style.display = box.hidden ? "none" : "grid"; }
+    return;
+  }
   const co = e.target.closest("#cpyo"), cj = e.target.closest("#cpyj"), cs = e.target.closest("#cpys"), ce = e.target.closest("#cpye"), cm = e.target.closest("#cpym");
   const cb = e.target.closest("#cpyb"), ci = e.target.closest("#cardimg");
   if (cb || ci) {

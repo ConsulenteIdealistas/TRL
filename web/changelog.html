@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>サイトの更新ログ — TRL Explorer</title>
+<link rel="stylesheet" href="style.css">
+<script>try{var tt=localStorage.getItem("trl-theme");document.documentElement.dataset.theme=(tt==="light"||tt==="dark"||tt==="cb")?tt:(window.matchMedia&&matchMedia("(prefers-color-scheme: light)").matches?"light":"dark");}catch(e){document.documentElement.dataset.theme="dark";}</script>
+<style>
+.docwrap{max-width:880px;margin:0 auto}
+.doct{font-size:22px;margin:2px 0 8px}
+.doc{font-size:13.5px;line-height:1.85}
+.doc h2{font-size:17px;margin:26px 0 8px;padding-top:16px;border-top:1px solid var(--line)}
+.doc ul{margin:6px 0 6px 1.3em;padding:0}
+.doc li{margin:3px 0}
+</style>
+</head>
+<body>
+<header class="topbar"><a class="brand" href="index.html"><span class="mark">T</span><span>TRL<span class="light"> Explorer</span></span></a><div class="meta">Research Intelligence</div></header>
+<main class="ws"><div class="docwrap">
+<p style="margin:0 0 12px"><a class="tg" href="index.html">← 一覧に戻る</a>　<a class="tg" href="glossary.html">用語集 →</a></p>
+<h1 class="doct">サイトの更新ログ</h1>
+<div class="doc">
+<p>画面側の変更の記録です。評価や収集の仕様変更は<a href="criteria.html">採点基準</a>と<a href="schema.html">データ形式の変更履歴</a>にあります。表示の変更は、公開データの発行 (定期実行) のタイミングで反映されます。</p>
+<h2>2026-11-24</h2>
+<ul>
+<li>一覧: 前回比の表示と並び順、方向性の件数、総合点・評価日の絞り込み、保留理由の絞り込み、条件の保存と共有リンク、コンパクト表示、生成情報の常設、監査バッジ、CSV/JSON 書き出し、カードへの収集日を追加</li>
+<li>帯: 変化ダイジェスト、次回評価予定、直近の動き、あと1項目で確定、翻訳使用量のゲージ、実行失敗と鮮度の警告、分布と変動の散布図、項目別 null の分布、収集の成功率とソース別、財務根拠の出所、孤児候補の件数、次回実行の予定を追加</li>
+<li>統計: 確定評価の母集団について平均・中央値・標準偏差・Sn・Qn・四分位数を表示。基準日カレンダーで過去時点の母集団を再構成できるようにした。項目のレーダーチャート (母集団の中央値との比較) と同分野・同TRLとの比較、世代別の件数と中央値、節目の表示を追加</li>
+<li>ページ新設: 企業ページ (属性・最新の評価・関門・統合タイムライン・同分野の順位・市場×分野カバレッジ・書き出し)、実行履歴ページ、横並び比較ページ、用語集、減点理由の集計ページ</li>
+<li>詳細: 評価の推移グラフ、材料タイムライン、根拠プールの厚みと評価所要時間、原文と訳の並列表示、BibTeX 風の引用、サマリーカード画像の保存を追加</li>
+<li>検索: コマンド記法 (tier:/trl:/dir:/status:/model:/src:/item:/missing:)、除外検索、製品名の検索、検索履歴を追加</li>
+<li>監査ページ: チェック別の集計と処分待ち日数、検索、キー操作、コマンドパレットを追加</li>
+<li>キー操作 (j/k・Enter・f・/・s・n・d・l・;・a・?) とコマンドパレット (Ctrl/Cmd+K) を追加</li>
+<li>パーソナライズ: 注目ピンの現況まとめ、既読マークと未読の絞り込み、最近見た候補、帯の表示設定、色覚配慮テーマ、OS 連動の初期テーマ、文字サイズの切替、前回見た後の新着通知を追加</li>
+<li>出力: data.json のスナップショット保存、週次レポート (Markdown)、印刷用レイアウト、Atom フィード (feed.xml) を追加</li>
+</ul>
+<h2>2026-11-23</h2>
+<ul>
+<li>要旨の折りたたみで本文が重複する表示を修正</li>
+<li>新着バッジの基準を「前回のデータで最新だった評価時刻」より後の評価に変更</li>
+<li>治験が中止・撤回・中断になった候補を、次回評価の選定で前面に寄せるようにした (収集・選定側の変更)</li>
+</ul>
+</div>
+</div></main>
+</body>
+</html>

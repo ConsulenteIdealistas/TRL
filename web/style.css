@@ -191,6 +191,7 @@ a.brz.lk{text-decoration:none;display:inline-block;margin-left:4px}
 .nq{max-width:230px;overflow:hidden;text-overflow:ellipsis}
 .dgr{display:inline-flex;gap:6px;align-items:baseline;flex-wrap:wrap}
 .dgr a{color:var(--accent)}
+.colink{color:var(--accent)}
 /* 主ページ上部の関門の該当一覧 (.tierband と同じ枠の形)。関門ごとに
    グループ化し、企業チップが詳細へのリンクになる */
 #brband .brg{display:inline-flex;flex-wrap:wrap;align-items:center;gap:4px}

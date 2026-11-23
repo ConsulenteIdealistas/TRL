@@ -230,3 +230,9 @@ a.brz.lk{text-decoration:none;display:inline-block;margin-left:4px}
 /* フィルタ欄の中では .filters label{display:grid} の方が詳細度で勝ち、
    スイッチのチェックボックスと文言が縦に割れてしまうため、ここで勝たせる */
 .filters .sw{display:inline-flex}
+@media print{
+  .sb,.filters,.bandset,.ft,.palov,.acts,.pin,.clink,.topbar .meta{display:none!important}
+  body{background:#fff}
+  .card{break-inside:avoid;box-shadow:none}
+  a{color:inherit;text-decoration:none}
+}

@@ -200,7 +200,22 @@ function renderCompany(co, cos) {
     + rankHtml + tlHtml
     + (hits.length ? `<section class="ds"><h4>関門の該当</h4><ul class="pts">${hits.map(h => `<li><b>${esc(BRL[h.gate])}</b><span><a href="detail.html?id=${encodeURIComponent(h.cand.id)}">${esc(dispT(h.cand))}</a></span></li>`).join("")}</ul></section>` : "")
     + `<section class="ds"><h4>関連する候補（${links.length}件）</h4>${links.map(lrow).join("") || `<p class="hint">候補はありません。</p>`}</section>`
-    + (co.watch ? `<section class="ds"><h4>監視材料</h4><p class="hint">一次情報 ${co.watch.counts.primary}件 / ニュース ${co.watch.counts.news}件（Look・See の材料置き場から）。</p>${mats.map(m => `<div class="lrow"><div class="lt"><a href="${esc(safeUrl(m.url))}" target="_blank" rel="noopener noreferrer">${esc(LANG === "ja" && m.title_ja ? m.title_ja : m.title)}</a></div><div class="lm">${esc(m.source || "")}${m.published ? ` / ${esc(m.published)}` : ""}</div></div>`).join("")}</section>` : "");
+    + (co.watch ? `<section class="ds"><h4>監視材料</h4><p class="hint">一次情報 ${co.watch.counts.primary}件 / ニュース ${co.watch.counts.news}件（Look・See の材料置き場から）。</p>${mats.map(m => `<div class="lrow"><div class="lt"><a href="${esc(safeUrl(m.url))}" target="_blank" rel="noopener noreferrer">${esc(LANG === "ja" && m.title_ja ? m.title_ja : m.title)}</a></div><div class="lm">${esc(m.source || "")}${m.published ? ` / ${esc(m.published)}` : ""}</div></div>`).join("")}</section>` : "")
+    + `<section class="ds"><h4>この企業の書き出し</h4><div class="acts"><button class="btn sec" type="button" id="cojson">JSONで保存</button><button class="btn sec" type="button" id="cocsv">候補一覧をCSVで保存</button></div><p class="hint">この企業の属性と関連候補をそのまま書き出します（新しい集計はしません）。</p></section>`;
+  const dl = (blob, name) => {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob); a.download = name; a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  };
+  const mine = (DATA.candidates || []).filter(p => co.links.some(l => l.cand.id === p.id));
+  const cj = $("#cojson"), cc = $("#cocsv");
+  if (cj) cj.addEventListener("click", () => dl(new Blob([JSON.stringify({company: {id: co.id, name: co.name, market: co.market, sector: co.sector, stage: co.stage, ticker: co.ticker, tags: co.tags}, candidates: mine}, null, 1)], {type: "application/json"}), `trl-company-${co.id}.json`));
+  if (cc) cc.addEventListener("click", () => {
+    const head = ["id", "title", "status", "total", "trl", "evaluated_at", "url"];
+    const q = v => { const s = String(v ?? ""); return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
+    const rows = mine.map(p => [p.id, dispT(p), p.display_status, p.long && typeof p.long.total === "number" ? p.long.total : "", lvl(p) ?? "", (p.long && p.long.evaluated_at) || "", p.url || ""]);
+    dl(new Blob(["\ufeff" + [head.join(","), ...rows.map(r => r.map(q).join(","))].join("\r\n")], {type: "text/csv"}), `trl-company-${co.id}.csv`);
+  });
 }
 async function load() {
   let d;

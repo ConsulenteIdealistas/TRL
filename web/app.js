@@ -684,7 +684,7 @@ function detail() {
 <section class="ds"><h4>技術評価</h4>${L ? G.technology.map(k => scoreRow(k, L.items[k])).join("") : `<p class="hint">未評価です。</p>`}</section>
 <section class="ds"><h4>事業評価</h4>${L && L.business_stage === "pre_stage" ? `<p class="note">この技術は前商業段階(TRL 3以下)のため、事業項目は「段階未達」として不足とは区別しています。点が付いている項目はそのまま表示します。</p>` : ""}${L ? G.business.map(k => scoreRow(k, L.items[k])).join("") : `<p class="hint">未評価です。</p>`}${L && !strong.length ? `<p class="note">関連企業が特定できていないため、企業固有の項目は算出されません。総合点は6項目すべてが揃うまで確定せず、重みの再配分もしません。</p>` : ""}</section>
 ${L && REF.some(k => L.items[k]) ? `<section class="ds"><h4>参考項目</h4><p class="note">参考項目は採点して表示しますが、総合点・必須判定には含めません。根拠が無い場合は未算出となり、それを理由に保留にもなりません。</p>${REF.filter(k => L.items[k]).map(k => scoreRow(k, L.items[k])).join("")}</section>` : ""}
-<section class="ds"><h4>総合点（長期）</h4><p>${total}</p>${L && L.total_scope === "technology" ? `<p class="note">これは技術評価の総合点です。事業項目は段階未達のため対象外で、技術軸の項目だけで算出しています。</p>` : ""}${holdCauseTxt(L) ? `<p class="note">${esc(holdCauseTxt(L))}</p>` : ""}${L && L.total_orig != null && L.total != null && L.total_orig !== L.total ? `<p class="note">評価当時の総合点は ${L.total_orig}${L.band_orig ? `（${esc(L.band_orig)}）` : ""} でした。上の総合点は、重みの改訂に合わせて現行の物差しで計算し直した値です。</p>` : ""}${L ? `<div class="acts"><button class="btn sec" type="button" id="cpye">評価をコピー</button><button class="btn obsidian" type="button" id="cpym">Markdownでコピー</button></div>` : ""}</section>
+<section class="ds"><h4>総合点（長期）</h4><p>${total}</p>${L && L.total_scope === "technology" ? `<p class="note">これは技術評価の総合点です。事業項目は段階未達のため対象外で、技術軸の項目だけで算出しています。</p>` : ""}${holdCauseTxt(L) ? `<p class="note">${esc(holdCauseTxt(L))}</p>` : ""}${L && L.total_orig != null && L.total != null && L.total_orig !== L.total ? `<p class="note">評価当時の総合点は ${L.total_orig}${L.band_orig ? `（${esc(L.band_orig)}）` : ""} でした。上の総合点は、重みの改訂に合わせて現行の物差しで計算し直した値です。</p>` : ""}${L ? `<div class="acts"><button class="btn sec" type="button" id="cpye">評価をコピー</button><button class="btn obsidian" type="button" id="cpym">Markdownでコピー</button><button class="btn sec" type="button" id="cpyb">BibTeX風にコピー</button><button class="btn sec" type="button" id="cardimg">カード画像を保存</button></div>` : ""}</section>
 ${auditSectionHtml(p)}
 ${EV ? `<section class="ds"><h4>イベント評価（短期）</h4>${genBadge(EV) ? `<p style="margin-bottom:8px">${genBadge(EV)}</p>` : ""}${Object.keys(EV.items).map(k => scoreRow(k, EV.items[k])).join("")}<p>総合点 ${EV.total != null ? EV.total + " / 100(" + esc(EV.band || "") + ")" : "未確定（保留）"}</p></section>` : ""}
 ${L && L.prev ? `<section class="ds"><h4>前回評価との比較</h4>${prevCmp(L, lvl(p))}</section>` : ""}
@@ -1454,6 +1454,8 @@ const ACTIONS = [
   {label: "現在の条件に名前を付けて保存", keys: "", run: () => $("#fpsave").click()},
   {label: "現在の絞り込みを CSV で書き出す", keys: "", run: () => exportData("csv")},
   {label: "現在の絞り込みを JSON で書き出す", keys: "", run: () => exportData("json")},
+  {label: "data.json のスナップショットを保存", keys: "", run: () => saveSnapshot()},
+  {label: "週次レポート (Markdown) を保存", keys: "", run: () => saveWeekly()},
   {label: "企業ページへ移動", keys: "", run: () => { location.href = "company.html"; }},
   {label: "採点基準ページへ移動", keys: "", run: () => { location.href = "criteria.html"; }},
   {label: "監査ページへ移動", keys: "", run: () => { location.href = "audit.html"; }},
@@ -1738,6 +1740,68 @@ function exportData(fmt) {
 }
 $("#expcsv").addEventListener("click", () => exportData("csv"));
 $("#expjson").addEventListener("click", () => exportData("json"));
+function downloadBlob(blob, name) {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = name; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+/* data.json のスナップショット保存 (今見ているデータそのもの) */
+function saveSnapshot() {
+  const day = (META.generated_at || "").slice(0, 10) || "unknown";
+  downloadBlob(new Blob([JSON.stringify(META)], {type: "application/json"}), `trl-data-${day}.json`);
+}
+/* 週次レポート (Markdown)。最新ランの digest と直近7日の評価件数から
+   決定的に組む (新しい集計は履歴の件数だけ) */
+function weeklyMd() {
+  const lines = ["# TRL Explorer 週次レポート", "", `生成: ${META.generated_at || ""}`, ""];
+  const dg = META.digest || [];
+  const fin = dg.filter(x => x.status === "final").length, hold = dg.filter(x => x.status === "hold").length;
+  lines.push(`## 最新ランの評価 (${dg.length}件)`, "", `確定 ${fin}件 / 保留 ${hold}件`, "");
+  for (const x of dg) {
+    const p = P.find(y => y.id === x.candidate_id);
+    const nm = p ? candName(p) : x.candidate_id;
+    const pv = x.prev ? ` (前回 総合 ${x.prev.total ?? "—"} / TRL ${x.prev.trl_level ?? "未確定"})` : " (初回)";
+    lines.push(`- ${nm}: ${SL[x.status] || x.status} 総合 ${x.total ?? "—"} / TRL ${x.trl_level ?? "未確定"}${pv}`);
+  }
+  const genMs = Date.parse(META.generated_at || "");
+  let n7 = 0;
+  for (const p of P) for (const pt of evalPoints(p)) {
+    const t = Date.parse(pt.evaluated_at || "");
+    if (!Number.isNaN(t) && !Number.isNaN(genMs) && t <= genMs && genMs - t <= 7 * 86400000) n7++;
+  }
+  lines.push("", "## 直近7日", "", `評価 ${n7}件`, "", `出典: TRL Explorer (data.json ${META.generated_at || ""})`);
+  return lines.join("\n");
+}
+function saveWeekly() { downloadBlob(new Blob([weeklyMd()], {type: "text/markdown"}), "trl-weekly.md"); }
+/* 引用の BibTeX 風形式 */
+function bibtexOf(p) {
+  const year = (p.published || "").slice(0, 4) || "n.d.";
+  const key = (p.id || "trl").replace(/[^a-zA-Z0-9]/g, "");
+  return `@misc{${key},\n  title = {${p.title}},\n  year = {${year}},\n  howpublished = {${p.url || ""}},\n  note = {TRL Explorer: ${detailUrl(p)}}\n}`;
+}
+/* サマリーカード画像 (1200x630)。値は候補の直読みを描くだけ */
+function saveCardImage(p) {
+  const cv = document.createElement("canvas");
+  cv.width = 1200; cv.height = 630;
+  const g = cv.getContext("2d");
+  if (!g) return;
+  g.fillStyle = "#0c171d"; g.fillRect(0, 0, 1200, 630);
+  g.fillStyle = "#4a6cf7"; g.fillRect(0, 0, 1200, 10);
+  const cut = (s, n) => s.length > n ? s.slice(0, n) + "…" : s;
+  g.fillStyle = "#e3eef3"; g.font = "700 44px sans-serif";
+  g.fillText(cut(candName(p), 34), 64, 130);
+  g.font = "28px sans-serif"; g.fillStyle = "#a5bac6";
+  g.fillText(cut(dispT(p), 58), 64, 190);
+  const L = p.long;
+  g.font = "700 120px sans-serif"; g.fillStyle = "#e3eef3";
+  g.fillText(L && L.total != null ? String(L.total) : "—", 64, 370);
+  g.font = "30px sans-serif"; g.fillStyle = "#a5bac6";
+  g.fillText(`総合点 / TRL ${lvl(p) ?? "未確定"}${L && L.band ? " / " + L.band : ""}`, 64, 430);
+  g.fillText(`${SL[p.display_status] || p.display_status} ・ 評価 ${L && L.evaluated_at ? L.evaluated_at.slice(0, 10) : "—"}`, 64, 490);
+  g.font = "24px sans-serif";
+  g.fillText("TRL Explorer", 64, 575);
+  cv.toBlob(b => { if (b) downloadBlob(b, `trl-card-${p.id}.png`); }, "image/png");
+}
 $("#list").addEventListener("click", e => {
   const pb = e.target.closest("[data-pin]");
   if (pb) { togglePin(pb.dataset.pin); return; }
@@ -1769,6 +1833,14 @@ $("#det").addEventListener("click", e => {
   }
   if (e.target.closest("#pint")) { togglePin(sel); return; }
   const co = e.target.closest("#cpyo"), cj = e.target.closest("#cpyj"), cs = e.target.closest("#cpys"), ce = e.target.closest("#cpye"), cm = e.target.closest("#cpym");
+  const cb = e.target.closest("#cpyb"), ci = e.target.closest("#cardimg");
+  if (cb || ci) {
+    const p = P.find(x => x.id === sel);
+    if (!p) return;
+    if (cb) copyBuilt(() => bibtexOf(p), cb);
+    else saveCardImage(p);
+    return;
+  }
   if (co || cj || cs || ce || cm) {
     const p = P.find(x => x.id === sel);
     if (!p) return;

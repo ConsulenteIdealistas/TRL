@@ -2075,6 +2075,11 @@ $("#det").addEventListener("click", e => {
 });
 /* BAN の操作 (追加・スイッチ・取り消し) */
 {
+  const banbox = $("#banbox");
+  if (banbox) {
+    try { if (localStorage.getItem("trl-banfold") === "1") banbox.open = false; } catch (e) { /* 保存不可なら開いたまま */ }
+    banbox.addEventListener("toggle", () => { try { localStorage.setItem("trl-banfold", banbox.open ? "0" : "1"); } catch (e) { /* 保存できなくても畳める */ } });
+  }
   const addBtn = $("#banadd"), typeSel = $("#bantype");
   if (addBtn) addBtn.addEventListener("click", () => {
     const t = $("#bantype").value;

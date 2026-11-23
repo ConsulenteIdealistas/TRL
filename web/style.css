@@ -237,6 +237,9 @@ a.brz.lk{text-decoration:none;display:inline-block;margin-left:4px}
   a{color:inherit;text-decoration:none}
 }
 .brow{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:3px 0}
+.tsel{min-height:42px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--field);color:var(--ink)}
+#banadd{background:#b3261e;border-color:#b3261e;color:#fff;font-weight:700}
+#banbox summary{cursor:pointer;font-weight:600}
 /* BAN中のチップ: 赤い斜線で「除外」を示す */
 .chips button{position:relative}
 .chips button.ban{border-color:#e5484d;color:#e5484d;opacity:.85}

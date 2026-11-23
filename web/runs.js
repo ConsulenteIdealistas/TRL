@@ -17,6 +17,24 @@ function rateGeom(hist, W = 560, H = 90) {
     y: Math.round((H - 6) - v * (H - 16)), rate: v}));
 }
 
+/* 定期実行の予定 (app.js と同じ定義の複製): 火〜金 06:30 JST */
+function nextRuns(fromMs, n) {
+  const out = [];
+  const JST = 9 * 3600000;
+  const d = new Date(fromMs + JST);
+  const base = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
+  for (let i = 0; out.length < n && i < 21; i++) {
+    const day = new Date(base + i * 86400000);
+    const wd = day.getUTCDay();
+    if (wd >= 2 && wd <= 5) {
+      const t = base + i * 86400000 + 6.5 * 3600000 - JST;
+      if (t > fromMs) out.push(t);
+    }
+  }
+  return out;
+}
+const fmtRunAt = t => new Date(t).toLocaleString("ja-JP", {timeZone: "Asia/Tokyo", month: "numeric", day: "numeric", weekday: "short", hour: "2-digit", minute: "2-digit"});
+
 function render(d) {
   const hist = d.run_history || [], ss = d.source_stats || [];
   if (!hist.length && !ss.length) { $("#rbody").innerHTML = `<p class="hint">実行履歴はまだ data.json に含まれていません（次の発行から載ります）。</p>`; return; }
@@ -33,7 +51,9 @@ function render(d) {
   const table = hist.length ? `<h2>実行の一覧（新しい順）</h2><div class="tscroll"><table class="rt"><thead><tr><th>日付</th><th>状態</th><th>所要</th><th>収集 成功/失敗</th><th>成功率</th><th>取得</th><th>新規</th><th>評価 確定/保留/エラー</th><th>翻訳数</th></tr></thead><tbody>${rows}</tbody></table></div>` : "";
   const srows = ss.map(s => `<tr><td>${esc(s.source)}${(s.top_errors || []).length ? `<br><span class="hint">${s.top_errors.map(e => `${esc(e.error)} ×${e.count}`).join(" / ")}</span>` : ""}</td><td>${s.calls}</td><td>${pct(s.calls - s.ok_calls, s.calls)}</td><td>${s.fetched}</td><td>${s.new}</td><td>${s.duplicates}</td><td>${s.invalid}</td><td>${Math.round(s.seconds)}</td></tr>`).join("");
   const stable = ss.length ? `<h2>ソース別（基準ラン ${(d.run && d.run.as_of) || ""}）</h2><div class="tscroll"><table class="rt"><thead><tr><th>ソース</th><th>呼び出し</th><th>失敗率</th><th>取得</th><th>新規</th><th>重複</th><th>無効</th><th>秒</th></tr></thead><tbody>${srows}</tbody></table></div>` : "";
-  $("#rbody").innerHTML = chart + table + stable;
+  const sched = nextRuns(Date.now(), 4);
+  const schedHtml = sched.length ? `<h2>次回の実行予定</h2><p>${sched.map(t => esc(fmtRunAt(t)) + " JST").join(" / ")}</p><p class="hint">定期実行は火〜金 06:30 JST（火曜のみ深掘り）。GitHub のスケジューラの都合で数時間遅れることがあります。</p>` : "";
+  $("#rbody").innerHTML = schedHtml + chart + table + stable;
 }
 
 (async () => {

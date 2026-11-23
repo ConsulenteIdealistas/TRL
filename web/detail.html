@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>詳細 — TRL Explorer</title>
 <link rel="stylesheet" href="style.css">
-<script>try{var tt=localStorage.getItem("trl-theme");document.documentElement.dataset.theme=(tt==="light"||tt==="dark")?tt:"dark";}catch(e){document.documentElement.dataset.theme="dark";}</script>
+<script>try{var tt=localStorage.getItem("trl-theme");document.documentElement.dataset.theme=(tt==="light"||tt==="dark"||tt==="cb")?tt:(window.matchMedia&&matchMedia("(prefers-color-scheme: light)").matches?"light":"dark");}catch(e){document.documentElement.dataset.theme="dark";}</script>
 <style>
 /* 競合比較 (同じタグの企業) 専用。共通クラスは style.css の流儀に合わせる */
 .pctl{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;margin:0 0 8px;font-size:12px;color:var(--sub)}

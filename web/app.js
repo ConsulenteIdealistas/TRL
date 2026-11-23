@@ -306,7 +306,7 @@ function filtered() {
     && (!stgSel.size || p.entities.some(e => stgSel.has(e.stage)))
     && (!tierSel.size || p.entities.some(e => tierSel.has(dtierOf(e))))
     && (!genSel.size || isCurGen(p))
-    && (!ownSel.size || (ownSel.has("new") && isNewEval(p)) || (ownSel.has("pin") && pins.has(p.id))));
+    && (!ownSel.size || (ownSel.has("new") && isNewEval(p)) || (ownSel.has("pin") && pins.has(p.id)) || (ownSel.has("unseen") && !seen.has(p.id))));
   const byStatus = (a, b) => (SO[a.display_status] - SO[b.display_status])
     || ((ok(lvl(b)) ? lvl(b) : -1) - (ok(lvl(a)) ? lvl(a) : -1))
     || String(b.published || "").localeCompare(String(a.published || ""));
@@ -425,7 +425,7 @@ function card(p) {
   const ents = p.entities.filter(e => e.strength === "strong").length;
   const facet = facetText(p);
   const diffTxt = prevDiffTxt(p);
-  return `<article class="card ${s ? "sel" : ""}" data-id="${esc(p.id)}"><div class="main"><div style="min-width:0"><div class="top"><span class="${src(p.source)}">${srcName(p.source)}</span><span class="date">${esc(p.published || "")}</span>${p.retrieved_at ? `<span class="date">収集 ${esc(String(p.retrieved_at).slice(0, 10))}</span>` : ""}${LANG === "ja" && srcOf(p) ? `<span class="date">訳: ${esc(srcOf(p))}</span>` : ""}${p.long && p.long.llm_model ? `<span class="date">評価: ${esc(p.long.llm_model)}</span>` : ""}${genBadge(p.long) || genBadge(p.event)}${isNewEval(p) ? `<span class="nw">新着</span>` : ""}</div><h3 class="title">${esc(dispT(p))}</h3><p class="abs">${esc(dispA(p))}</p><div class="tags">${(p.fields || []).slice(0, 4).map(t => `<span class="tag">${esc(t)}</span>`).join("")}</div><div class="mi"><span>技術成熟度 <strong>${fmtScore(sc(p, "technology_readiness"))}</strong></span><span>技術的優位性 <strong>${fmtScore(sc(p, "technological_advantage"))}</strong></span><span>関連企業 <strong>${ents ? ents + "社" : "未特定"}</strong></span>${facet ? `<span>国・分野 <strong>${esc(facet)}</strong></span>` : ""}${diffTxt ? `<span>前回比 <strong>${esc(diffTxt)}</strong></span>` : ""}${RANK.has(p.id) ? `<span>並び <strong>${esc(RANK.get(p.id))}</strong></span>` : ""}${evShort(p) ? `<span>イベント評価 <strong>${esc(evShort(p))}</strong></span>` : ""}</div>${barrierChipsHtml(p.long)}</div><div class="side">${stB(p.display_status)}${dirB(p)}${trl(lvl(p))}<button type="button" class="pin ${pins.has(p.id) ? "on" : ""}" data-pin="${esc(p.id)}" aria-pressed="${pins.has(p.id) ? "true" : "false"}" title="注目ピン (この端末に保存)">${pins.has(p.id) ? "★" : "☆"}</button></div></div><div class="foot"><span>${p.long && p.long.critical_missing.length ? `必須の不足 ${p.long.critical_missing.length}件` : p.display_status === "pending" ? (p.next_up ? "次回評価予定" : "評価待ち") : p.display_status === "rejected" ? "除外" + (p.screen_reason ? ": " + (SR[p.screen_reason] || p.screen_reason) : "") : ""}</span><span class="facts"><button type="button" class="clink" data-ccite="${esc(p.id)}">出典コピー</button><button type="button" class="clink" data-clink="${esc(p.id)}">リンクコピー</button><a class="tg" href="detail.html?id=${encodeURIComponent(p.id)}">詳細を見る →</a></span></div></article>`;
+  return `<article class="card ${s ? "sel" : ""}" data-id="${esc(p.id)}"><div class="main"><div style="min-width:0"><div class="top"><span class="${src(p.source)}">${srcName(p.source)}</span><span class="date">${esc(p.published || "")}</span>${p.retrieved_at ? `<span class="date">収集 ${esc(String(p.retrieved_at).slice(0, 10))}</span>` : ""}${LANG === "ja" && srcOf(p) ? `<span class="date">訳: ${esc(srcOf(p))}</span>` : ""}${p.long && p.long.llm_model ? `<span class="date">評価: ${esc(p.long.llm_model)}</span>` : ""}${genBadge(p.long) || genBadge(p.event)}${isNewEval(p) ? `<span class="nw">新着</span>` : ""}</div><h3 class="title">${esc(dispT(p))}</h3><p class="abs">${esc(dispA(p))}</p><div class="tags">${(p.fields || []).slice(0, 4).map(t => `<span class="tag">${esc(t)}</span>`).join("")}</div><div class="mi"><span>技術成熟度 <strong>${fmtScore(sc(p, "technology_readiness"))}</strong></span><span>技術的優位性 <strong>${fmtScore(sc(p, "technological_advantage"))}</strong></span><span>関連企業 <strong>${ents ? ents + "社" : "未特定"}</strong></span>${facet ? `<span>国・分野 <strong>${esc(facet)}</strong></span>` : ""}${diffTxt ? `<span>前回比 <strong>${esc(diffTxt)}</strong></span>` : ""}${RANK.has(p.id) ? `<span>並び <strong>${esc(RANK.get(p.id))}</strong></span>` : ""}${evShort(p) ? `<span>イベント評価 <strong>${esc(evShort(p))}</strong></span>` : ""}${seen.has(p.id) ? `<span>既読</span>` : ""}</div>${barrierChipsHtml(p.long)}</div><div class="side">${stB(p.display_status)}${dirB(p)}${trl(lvl(p))}<button type="button" class="pin ${pins.has(p.id) ? "on" : ""}" data-pin="${esc(p.id)}" aria-pressed="${pins.has(p.id) ? "true" : "false"}" title="注目ピン (この端末に保存)">${pins.has(p.id) ? "★" : "☆"}</button></div></div><div class="foot"><span>${p.long && p.long.critical_missing.length ? `必須の不足 ${p.long.critical_missing.length}件` : p.display_status === "pending" ? (p.next_up ? "次回評価予定" : "評価待ち") : p.display_status === "rejected" ? "除外" + (p.screen_reason ? ": " + (SR[p.screen_reason] || p.screen_reason) : "") : ""}</span><span class="facts"><button type="button" class="clink" data-ccite="${esc(p.id)}">出典コピー</button><button type="button" class="clink" data-clink="${esc(p.id)}">リンクコピー</button><a class="tg" href="detail.html?id=${encodeURIComponent(p.id)}">詳細を見る →</a></span></div></article>`;
 }
 function scoreRow(k, it) {
   const v = it && typeof it.score === "number" && isFinite(it.score) ? it.score : null;
@@ -467,8 +467,48 @@ function setNote(id, v) { try { localStorage.setItem("trl-note:" + id, v); retur
 // で別端末へ持ち運べるようにする
 let pins = new Set();
 try { pins = new Set(JSON.parse(localStorage.getItem("trl-pins") || "[]")); } catch (e) { /* 壊れた保存値は空として扱う */ }
+let seen = new Set();
+try { seen = new Set(JSON.parse(localStorage.getItem("trl-seen") || "[]")); } catch (e) { /* 壊れた保存値は空として扱う */ }
+let lastMarked = null;
+/* 詳細を開いた候補を既読にし、最近見た候補 (直近8件) を端末に記録する */
+function markSeen(id) {
+  if (!id || id === lastMarked) return;
+  lastMarked = id;
+  seen.add(id);
+  try {
+    localStorage.setItem("trl-seen", JSON.stringify([...seen].slice(-500)));
+    const rec = [id, ...JSON.parse(localStorage.getItem("trl-recent") || "[]").filter(x => x !== id)].slice(0, 8);
+    localStorage.setItem("trl-recent", JSON.stringify(rec));
+  } catch (e) { /* 保存不可でも表示は続ける */ }
+  recentBand();
+}
+function recentBand() {
+  const el = $("#recentband");
+  if (!el) return;
+  let rec = [];
+  try { rec = JSON.parse(localStorage.getItem("trl-recent") || "[]"); } catch (e) { /* 同上 */ }
+  const rows = rec.map(id => P.find(p => p.id === id)).filter(Boolean);
+  if (!rows.length) { el.hidden = true; return; }
+  el.innerHTML = `<span>最近見た候補</span>` + rows.map(p => `<a class="tz" href="detail.html?id=${encodeURIComponent(p.id)}">${esc(candName(p))}</a>`).join("");
+  el.hidden = false;
+  applyBandPrefs();
+}
 function savePins() { try { localStorage.setItem("trl-pins", JSON.stringify([...pins])); } catch (e) { /* 保存不可でも表示は続ける */ } }
 function togglePin(id) { if (!id) return; if (pins.has(id)) pins.delete(id); else pins.add(id); savePins(); render(); pinBand(); }
+/* 文字サイズ (表示の拡大率)。対応しないブラウザでは何も起きない */
+const ZOOMS = ["", "1.15", "1.3"];
+function applyZoom() {
+  let z = "";
+  try { z = localStorage.getItem("trl-zoom") || ""; } catch (e) { /* 保存不可なら標準 */ }
+  document.body.style.zoom = z;
+}
+function cycleZoom() {
+  let z = "";
+  try { z = localStorage.getItem("trl-zoom") || ""; } catch (e) { /* 同上 */ }
+  const next = ZOOMS[(ZOOMS.indexOf(z) + 1) % ZOOMS.length];
+  try { localStorage.setItem("trl-zoom", next); } catch (e) { /* 同上 */ }
+  document.body.style.zoom = next;
+}
 /* ピン候補の現況まとめ: 状態・総合点・前回比・評価日を1行ずつ。
    値は候補の直読みで、並びはピンした順 (保存値の順) を保つ */
 function pinBand() {
@@ -482,6 +522,7 @@ function pinBand() {
     return `<a class="tz" href="detail.html?id=${encodeURIComponent(p.id)}">${esc(candName(p))}: ${esc(SL[p.display_status] || p.display_status)}${p.long && typeof p.long.total === "number" ? ` 総合 ${p.long.total}` : ""}${mvTxt}${p.long && p.long.evaluated_at ? ` (${esc(p.long.evaluated_at.slice(0, 10))})` : ""}</a>`;
   }).join("");
   el.hidden = false;
+  applyBandPrefs();
 }
 function importPinsFromUrl() {
   // 共有リンクで届いた注目ピンを、この端末の保存分へ統合する (上書きはしない)
@@ -626,6 +667,7 @@ function mdNote(p) {
 function detail() {
   const p = P.find(x => x.id === sel);
   if (!p) { $("#det").innerHTML = `<div class="ph"><i>⌕</i><h3>論文が選択されていません</h3><p class="hint">検索条件を変更するか、一覧から論文を選択してください。</p></div>`; return; }
+  markSeen(p.id);
   const LL = p.long, G = META.config.item_groups;
   const REF = (META.config && META.config.reference_items) || [];  // 参考項目 (総合点・不足集計に含めない)
   const L = LL && LL.status !== "error" ? LL : null;  // error は評価結果ではないので点数欄には出さない
@@ -957,6 +999,70 @@ function rateGeom(hist, W = 260, H = 34) {
     x: rates.length <= 1 ? Math.round(W / 2) : Math.round(i / (rates.length - 1) * (W - 4) + 2),
     y: Math.round((H - 4) - v * (H - 10)), rate: v}));
 }
+/* 定期実行の予定 (純粋関数): 火〜金 06:30 JST。fromMs より後の実行時刻を
+   n 件返す (UTC ミリ秒)。cron の定義 (main.yaml) の写しで、表示専用 */
+function nextRuns(fromMs, n) {
+  const out = [];
+  const JST = 9 * 3600000;
+  const d = new Date(fromMs + JST);
+  const base = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
+  for (let i = 0; out.length < n && i < 14; i++) {
+    const day = new Date(base + i * 86400000);
+    const wd = day.getUTCDay();
+    if (wd >= 2 && wd <= 5) {
+      const t = base + i * 86400000 + 6.5 * 3600000 - JST;
+      if (t > fromMs) out.push(t);
+    }
+  }
+  return out;
+}
+const fmtRunAt = t => new Date(t).toLocaleString("ja-JP", {timeZone: "Asia/Tokyo", month: "numeric", day: "numeric", weekday: "short", hour: "2-digit", minute: "2-digit"});
+/* 前回見た後に新しい確定評価があれば知らせる帯 (開いたときの通知) */
+function newNote() {
+  const el = $("#newnote");
+  if (!el) return;
+  const gen = META.generated_at || "";
+  let last = "";
+  try { last = localStorage.getItem("trl-last-gen") || ""; } catch (e) { /* 保存不可なら通知なし */ }
+  const finals = (META.digest || []).filter(x => x.status === "final").length;
+  if (last && last !== gen && finals) {
+    el.innerHTML = `<span>前回見た後に、新しい確定評価が ${finals}件あります。</span><button class="tz" id="nnok" type="button">確認した</button>`;
+    el.hidden = false;
+    $("#nnok").addEventListener("click", () => {
+      try { localStorage.setItem("trl-last-gen", gen); } catch (e) { /* 同上 */ }
+      el.hidden = true;
+    });
+  } else {
+    try { localStorage.setItem("trl-last-gen", gen); } catch (e) { /* 同上 */ }
+  }
+}
+/* 帯の表示設定 (この端末のみ)。帯の描画後に適用し、OFF の帯は隠す */
+const BANDS = [["dgst", "変化ダイジェスト"], ["nqband", "次回評価予定"], ["moveband", "直近の動き"],
+  ["nearband", "あと1項目で確定"], ["usageband", "翻訳使用量"], ["distband", "分布と散布図"],
+  ["statband", "統計"], ["runband", "収集と実行"], ["pinband", "注目ピン"], ["shist", "検索履歴"],
+  ["recentband", "最近見た候補"]];
+let bandPrefs = {};
+try { bandPrefs = JSON.parse(localStorage.getItem("trl-bands") || "{}"); } catch (e) { /* 壊れた保存値は既定として扱う */ }
+const bandHasContent = new Set();
+function applyBandPrefs() {
+  for (const [id] of BANDS) {
+    const el = document.getElementById(id);
+    if (!el) continue;
+    if (!el.hidden && el.innerHTML) bandHasContent.add(id);
+    if (bandPrefs[id] === false) el.hidden = true;
+    else if (bandHasContent.has(id)) el.hidden = false;
+  }
+}
+function buildBandSettings() {
+  const el = $("#bandset");
+  if (!el) return;
+  el.innerHTML = BANDS.map(([id, label]) => `<label><input type="checkbox" data-band="${id}"${bandPrefs[id] === false ? "" : " checked"}> ${esc(label)}</label>`).join("");
+  el.querySelectorAll("[data-band]").forEach(cb => cb.addEventListener("change", () => {
+    bandPrefs[cb.dataset.band] = cb.checked;
+    try { localStorage.setItem("trl-bands", JSON.stringify(bandPrefs)); } catch (e) { /* 保存不可でも切替は効く */ }
+    applyBandPrefs();
+  }));
+}
 function runBand() {
   const el = $("#runband");
   if (!el) return;
@@ -980,7 +1086,8 @@ function runBand() {
     + (recent ? `<span>直近の実行</span>${recent}` : "")
     + (srcs ? `<span>ソース別（基準ラン）</span>${srcs}` : "")
     + (orphans ? `<span class="tz">辞書に無い候補（孤児） ${orphans}件</span>` : "")
-    + (finTxt ? `<span>財務根拠の出所（候補数）</span><span class="tz">${finTxt}</span>` : "");
+    + (finTxt ? `<span>財務根拠の出所（候補数）</span><span class="tz">${finTxt}</span>` : "")
+    + (() => { const nr = nextRuns(Date.now(), 1)[0]; return nr ? `<span>次回実行</span><span class="tz">${esc(fmtRunAt(nr))} JST（あと約 ${Math.max(1, Math.round((nr - Date.now()) / 3600000))}時間）</span>` : ""; })();
   el.hidden = false;
 }
 function statsBand() {
@@ -989,7 +1096,14 @@ function statsBand() {
   if (!COHORT) { el.hidden = true; return; }
   const row = (lab, st) => st ? `<span class="srow"><b>${esc(lab)}</b> ${boxSvg(st)}<span class="snum">n=${st.n} 平均 ${fmt1(st.mean)} / 中央値 ${fmt1(st.median)} / SD ${fmt1(st.sd)} / Sn ${fmt1(st.sn)} / Qn ${fmt1(st.qn)} / Q1 ${fmt1(st.q1)} / Q3 ${fmt1(st.q3)}</span></span>` : "";
   const when = COHORT.asOf ? `${COHORT.asOf} 時点` : "最新";
-  el.innerHTML = `<span>確定評価の統計（${when}の母集団 ${COHORT.total ? COHORT.total.n : 0}件、箱は最小–Q1–中央値–Q3–最大）</span>`
+  // 節目表示: 観測の累計 (評価回数の合計・企業数・観測日数) は候補の直読み
+  const totEvals = P.reduce((a, p) => a + (p.eval_count || 0), 0);
+  const nEnt = new Set(P.flatMap(p => (p.entities || []).map(e => e.entity_id))).size;
+  const firstDay = P.flatMap(p => (p.history || []).map(h => h.evaluated_at)).sort()[0];
+  const genMs = Date.parse(META.generated_at || "");
+  const obsDays = firstDay && !Number.isNaN(genMs) ? Math.max(1, Math.floor((genMs - Date.parse(firstDay)) / 86400000) + 1) : null;
+  const miles = `<span class="tz">節目: 累計評価 ${totEvals}件 / 企業 ${nEnt}社${obsDays ? ` / 観測 ${obsDays}日目` : ""}</span>`;
+  el.innerHTML = `<span>確定評価の統計（${when}の母集団 ${COHORT.total ? COHORT.total.n : 0}件、箱は最小–Q1–中央値–Q3–最大）</span>` + miles
     + `<span class="srow"><button class="chip" id="asofbtn">母集団の基準日: ${COHORT.asOf || "最新（as_of）"}</button>`
     + (COHORT.asOf ? `<button class="chip" id="asofclear">最新に戻す</button>` : "") + `</span>`
     + calHtml()
@@ -1260,7 +1374,7 @@ async function load() {
     + (cv ? ` · 規程 ${cv}` : "");
   $("#fl").value = LANG;
   buildCohort();
-  facetChips(); warn(d); stats(); tierBand(); barrierBand(); auditBadge(); digestBand(); nqBand(); distBand(); moveBand(); nearBand(); usageBand(); alertBand(); runBand(); statsBand(); pinBand(); searchHistBand(); render();
+  facetChips(); warn(d); stats(); tierBand(); barrierBand(); auditBadge(); digestBand(); nqBand(); distBand(); moveBand(); nearBand(); usageBand(); alertBand(); runBand(); statsBand(); pinBand(); searchHistBand(); recentBand(); newNote(); buildBandSettings(); applyBandPrefs(); applyZoom(); render();
 }
 $("#sf").addEventListener("submit", e => { e.preventDefault(); saveSearch($("#q").value); render(); });
 /* 検索履歴 (この端末のみ、直近8件)。チップを押すとその検索を再実行する */
@@ -1282,6 +1396,7 @@ function searchHistBand() {
   el.innerHTML = `<span>最近の検索</span>` + h.map(x => `<button class="tz" data-q="${esc(x)}">${esc(x)}</button>`).join("");
   el.hidden = false;
   el.querySelectorAll("[data-q]").forEach(b => b.addEventListener("click", () => { $("#q").value = b.dataset.q; render(); }));
+  applyBandPrefs();
 }
 /* 母集団の基準日カレンダー: 日を選ぶと母集団をその日時点で再構成する */
 $("#statband").addEventListener("click", e => {
@@ -1333,7 +1448,8 @@ const ACTIONS = [
   {label: "世代表示を切り替える", keys: "d", run: () => flipCheck("#swgen")},
   {label: "言語を切り替える (日本語訳 / 原文)", keys: "l", run: () => flipSelect("#fl")},
   {label: "コンパクト表示を切り替える", keys: ";", run: () => flipCheck("#swcompact")},
-  {label: "テーマを切り替える (ダーク / ライト)", keys: "", run: () => flipSelect("#fth")},
+  {label: "テーマを切り替える (ダーク / ライト / 色覚配慮)", keys: "", run: () => flipSelect("#fth")},
+  {label: "文字サイズを切り替える (標準 / 大 / 特大)", keys: "", run: () => cycleZoom()},
   {label: "条件をリセットする", keys: "a", run: () => $("#rst").click()},
   {label: "現在の条件に名前を付けて保存", keys: "", run: () => $("#fpsave").click()},
   {label: "現在の絞り込みを CSV で書き出す", keys: "", run: () => exportData("csv")},
@@ -1511,7 +1627,7 @@ $("#fevc").addEventListener("click", e => {
   syncEvUI(); render();
 });
 $("#fl").addEventListener("change", () => { LANG = $("#fl").value; try { localStorage.setItem("trl-lang", LANG); } catch (e) { /* 保存できなくても切替は効く */ } render(); });
-const syncTh = () => { $("#fth").value = document.documentElement.dataset.theme === "light" ? "light" : "dark"; };
+const syncTh = () => { $("#fth").value = document.documentElement.dataset.theme || "dark"; };
 $("#fth").addEventListener("change", () => { document.documentElement.dataset.theme = $("#fth").value; try { localStorage.setItem("trl-theme", $("#fth").value); } catch (e) { /* 保存できなくても切替は効く */ } });
 syncTh();
 // 世代表示のスイッチ。状態は localStorage (trl-showgen) で詳細ページと共有する

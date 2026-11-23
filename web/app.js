@@ -1537,11 +1537,31 @@ const ACTIONS = [
   {label: "data.json のスナップショットを保存", keys: "", run: () => saveSnapshot()},
   {label: "週次レポート (Markdown) を保存", keys: "", run: () => saveWeekly()},
   {label: "企業ページへ移動", keys: "", run: () => { location.href = "company.html"; }},
-  {label: "採点基準ページへ移動", keys: "", run: () => { location.href = "criteria.html"; }},
-  {label: "監査ページへ移動", keys: "", run: () => { location.href = "audit.html"; }},
-  {label: "Look・See ページへ移動", keys: "", run: () => { location.href = "watch.html"; }},
+  {label: "採点基準ページへ移動", keys: "g c", seq: "c", run: () => { location.href = "criteria.html"; }},
+  {label: "監査ページへ移動", keys: "g a", seq: "a", run: () => { location.href = "audit.html"; }},
+  {label: "Look・See ページへ移動", keys: "g w", seq: "w", run: () => { location.href = "watch.html"; }},
+  {label: "観測ページへ移動", keys: "g o", seq: "o", run: () => { location.href = "observe.html"; }},
+  {label: "次回評価予定ページへ移動", keys: "g q", seq: "q", run: () => { location.href = "queue.html"; }},
+  {label: "実行履歴ページへ移動", keys: "g r", seq: "r", run: () => { location.href = "runs.html"; }},
+  {label: "項目別の不足ページへ移動", keys: "g d", seq: "d", run: () => { location.href = "deductions.html"; }},
+  {label: "用語集ページへ移動", keys: "g l", seq: "l", run: () => { location.href = "glossary.html"; }},
   {label: "キー操作の一覧を開く / 閉じる", keys: "?", run: () => toggleHelp()},
 ];
+/* ページ移動のキーシーケンス: g の後にホームポジション周辺のキーを押す
+   (割り当ては ACTIONS の seq が正本。入力中・変換中・修飾キー併用時は効かない) */
+let gAt = 0;
+document.addEventListener("keydown", e => {
+  if (e.metaKey || e.ctrlKey || e.altKey || e.isComposing) return;
+  const t = e.target;
+  if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT")) return;
+  if (gAt && Date.now() - gAt < 900) {
+    const a = ACTIONS.find(x => x.seq === e.key);
+    gAt = 0;
+    if (a) { e.preventDefault(); a.run(); }
+    return;
+  }
+  gAt = e.key === "g" ? Date.now() : 0;
+});
 let palIdx = 0, palList = [];
 function palRender() {
   const q = $("#palq").value.trim().toLowerCase();

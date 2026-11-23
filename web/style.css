@@ -66,6 +66,16 @@ h2{margin:0;font-size:19px;letter-spacing:-.4px}
 #ftc button[data-l="all"].on{background:#db2777;color:#fff;border-color:transparent}
 .rng{display:flex;align-items:center;gap:6px;font-weight:600}
 .rng input{width:64px;min-height:42px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--field);color:var(--ink);font-weight:400}
+.filters input[type="text"]{min-height:42px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--field);color:var(--ink)}
+.prow{display:flex;gap:6px;flex-wrap:wrap;align-items:center}.prow+.prow{margin-top:6px}.prow select,.prow input[type="text"]{flex:1;min-width:110px}
+.exps{display:inline-flex;gap:6px;flex-wrap:wrap}
+.rh{flex-wrap:wrap}
+/* コンパクト表示: 端末に保存される表示密度の好み。一覧の密度だけを変え、
+   情報の出し分けはしない (同じ項目を小さい字と狭い余白で出す) */
+body.compact .list{gap:8px}
+body.compact .card{padding:10px 12px}
+body.compact .abs{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+body.compact .mi{gap:3px 10px}
 .rh{margin:24px 0 12px}.rh p{margin:2px 0 0;color:var(--muted);font-size:12px}
 .pill{display:inline-grid;min-width:26px;height:26px;margin-left:5px;padding:0 7px;place-items:center;border-radius:9px;color:var(--gd);background:var(--gs);font-size:12px;vertical-align:2px}
 .demo{padding:5px 9px;border:1px solid var(--gs);border-radius:8px;color:var(--gd);background:var(--gs);font-size:11px;font-weight:800}

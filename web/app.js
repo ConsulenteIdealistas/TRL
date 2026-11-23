@@ -199,6 +199,42 @@ const genSel = new Set();  // 評価の世代の選択状態 ("cur" = 現行世�
 // 世代で見る。世代の印が無い候補 (未評価など) は現行世代とはみなさない
 const genOf = p => (p.long && p.long.gen) || (p.event && p.event.gen) || null;
 const isCurGen = p => { const g = genOf(p); return !!(g && g.current); };
+const holdSel = new Set();  // 保留の理由 (long.hold_cause) の選択状態。空なら絞らない
+const moveSel = new Set();  // 前回比の選択状態 ("any" / "up" / "down")。空なら絞らない
+/* 前回評価との差分 (純粋関数)。TRL を主軸に方向を決め、TRL が同点の
+   ときだけ総合点の増減で決める。両方が逆向きに動いたものは "mixed" で、
+   「変動あり」にだけ含める (上昇でも下降でもないため) */
+const dTrlOf = p => { const pv = p.long && p.long.prev, ct = lvl(p); return pv && pv.trl_level != null && ct != null ? ct - pv.trl_level : 0; };
+const dTotOf = p => { const pv = p.long && p.long.prev; return pv && pv.total != null && p.long.total != null ? p.long.total - pv.total : 0; };
+function moveOf(p) {
+  if (!(p.long && p.long.prev)) return null;
+  const dt = dTrlOf(p), ds = dTotOf(p);
+  if (!dt && !ds) return null;
+  if ((dt > 0 && ds < 0) || (dt < 0 && ds > 0)) return "mixed";
+  return (dt > 0 || ds > 0) ? "up" : "down";
+}
+let evWin = null;           // 評価日の窓: null=絞らない / "latest"=最新の評価日と同日 / 7 / 30=最新の評価時刻から日数以内
+let evalMaxTs = null;       // データ内で最新の評価時刻 (load で確定する)
+const evalTs = p => { const t = (p.long && p.long.evaluated_at) || (p.event && p.event.evaluated_at) || null; const ms = t ? Date.parse(t) : NaN; return Number.isNaN(ms) ? null : ms; };
+/* 評価日の窓に入るか (純粋関数)。窓の基準は暦の今日ではなくデータ内の
+   最新の評価時刻で、データの鮮度が変わっても意味が変わらないようにする */
+function evalInWindow(ts, maxTs, win) {
+  if (win == null) return true;
+  if (ts == null || maxTs == null) return false;
+  if (win === "latest") return new Date(ts).toISOString().slice(0, 10) === new Date(maxTs).toISOString().slice(0, 10);
+  return ts >= maxTs - win * 86400000;
+}
+/* 総合点の範囲に入るか。範囲が指定されたら、総合点の無い候補 (未評価・
+   保留で未確定) は範囲の外として扱う (TRL の範囲指定と同じ考え方) */
+function scoreInRange(p) {
+  const a = $("#fsn").value, b = $("#fsm").value;
+  if (a === "" && b === "") return true;
+  const t = p.long && typeof p.long.total === "number" ? p.long.total : null;
+  if (t == null) return false;
+  if (a !== "" && t < Number(a)) return false;
+  if (b !== "" && t > Number(b)) return false;
+  return true;
+}
 function inR(t) {
   if (!trlSel.size) return true;
   return ok(t) ? trlSel.has(t) : trlSel.has("u");
@@ -214,6 +250,10 @@ function filtered() {
     && (stSel.size ? stSel.has(p.display_status) : p.display_status !== "rejected")  // 除外はチップを明示的に押した時だけ混ざる
     && inR(lvl(p))
     && (!dirSel.size || dirSel.has(dirOf(p) || "none"))
+    && scoreInRange(p)
+    && evalInWindow(evalTs(p), evalMaxTs, evWin)
+    && (!holdSel.size || (p.display_status === "hold" && p.long && holdSel.has(p.long.hold_cause)))
+    && (!moveSel.size || (() => { const m = moveOf(p); return !!m && (moveSel.has("any") || moveSel.has(m)); })())
     && (!mkSel.size || p.entities.some(e => mkSel.has(e.market || "JP")))
     && (!scSel.size || p.entities.some(e => scSel.has(e.sector)))
     && (!tagSel.size || p.entities.some(e => (e.tags || []).some(t => tagSel.has(t))))
@@ -235,6 +275,7 @@ function filtered() {
     : o === "kind" ? ((kindOf(a) === "event") - (kindOf(b) === "event")) || byStatus(a, b)
     : o === "trl" ? (ok(lvl(b)) ? lvl(b) : -1) - (ok(lvl(a)) ? lvl(a) : -1)
     : o === "trl_asc" ? (ok(lvl(a)) ? lvl(a) : 99) - (ok(lvl(b)) ? lvl(b) : 99)
+    : o === "move" ? (Math.abs(dTrlOf(b)) - Math.abs(dTrlOf(a))) || (Math.abs(dTotOf(b)) - Math.abs(dTotOf(a))) || byStatus(a, b)
     : o === "date_asc" ? String(a.published || "9999").localeCompare(String(b.published || "9999"))
     : o === "title" ? a.title.localeCompare(b.title, "ja") : String(b.published || "").localeCompare(String(a.published || "")));
   return r;
@@ -253,6 +294,13 @@ function facetChips() {
   fill("fgc", tagSel, new Set(base.flatMap(p => p.entities.flatMap(e => e.tags || []))), TAGO, {...CL, ...TL});
   fill("fstc", stgSel, new Set(base.flatMap(p => p.entities.map(e => e.stage).filter(Boolean))), STGO, STG);
   fill("ftierc", tierSel, new Set(base.flatMap(p => p.entities.map(dtierOf))), ["core", "conditional", "look", "see"], DTL);
+  // 方向性のチップには母数 (除外を除く掲載分) での件数を併記する。
+  // 数える対象は絞り込み前の母集団で、チップの選択状態には依存しない
+  const dlabels = {positive: DL.positive, negative: DL.negative, mixed: DL.mixed, none: "未判定"};
+  document.querySelectorAll("#fdc button").forEach(b => {
+    const v = b.dataset.v;
+    b.textContent = `${dlabels[v] || v} (${base.filter(p => (dirOf(p) || "none") === v).length})`;
+  });
   syncTagN();
 }
 function sc(p, k) { const it = p.long && p.long.items[k]; return it ? it.score : null; }
@@ -307,7 +355,7 @@ function card(p) {
   const ents = p.entities.filter(e => e.strength === "strong").length;
   const facet = facetText(p);
   const diffTxt = prevDiffTxt(p);
-  return `<article class="card ${s ? "sel" : ""}" data-id="${esc(p.id)}"><div class="main"><div style="min-width:0"><div class="top"><span class="${src(p.source)}">${srcName(p.source)}</span><span class="date">${esc(p.published || "")}</span>${LANG === "ja" && srcOf(p) ? `<span class="date">訳: ${esc(srcOf(p))}</span>` : ""}${p.long && p.long.llm_model ? `<span class="date">評価: ${esc(p.long.llm_model)}</span>` : ""}${genBadge(p.long) || genBadge(p.event)}${isNewEval(p) ? `<span class="nw">新着</span>` : ""}</div><h3 class="title">${esc(dispT(p))}</h3><p class="abs">${esc(dispA(p))}</p><div class="tags">${(p.fields || []).slice(0, 4).map(t => `<span class="tag">${esc(t)}</span>`).join("")}</div><div class="mi"><span>技術成熟度 <strong>${fmtScore(sc(p, "technology_readiness"))}</strong></span><span>技術的優位性 <strong>${fmtScore(sc(p, "technological_advantage"))}</strong></span><span>関連企業 <strong>${ents ? ents + "社" : "未特定"}</strong></span>${facet ? `<span>国・分野 <strong>${esc(facet)}</strong></span>` : ""}${diffTxt ? `<span>前回比 <strong>${esc(diffTxt)}</strong></span>` : ""}${evShort(p) ? `<span>イベント評価 <strong>${esc(evShort(p))}</strong></span>` : ""}</div>${barrierChipsHtml(p.long)}</div><div class="side">${stB(p.display_status)}${dirB(p)}${trl(lvl(p))}<button type="button" class="pin ${pins.has(p.id) ? "on" : ""}" data-pin="${esc(p.id)}" aria-pressed="${pins.has(p.id) ? "true" : "false"}" title="注目ピン (この端末に保存)">${pins.has(p.id) ? "★" : "☆"}</button></div></div><div class="foot"><span>${p.long && p.long.critical_missing.length ? `必須の不足 ${p.long.critical_missing.length}件` : p.display_status === "pending" ? (p.next_up ? "次回評価予定" : "評価待ち") : p.display_status === "rejected" ? "除外" + (p.screen_reason ? ": " + (SR[p.screen_reason] || p.screen_reason) : "") : ""}</span><span class="facts"><button type="button" class="clink" data-ccite="${esc(p.id)}">出典コピー</button><button type="button" class="clink" data-clink="${esc(p.id)}">リンクコピー</button><a class="tg" href="detail.html?id=${encodeURIComponent(p.id)}">詳細を見る →</a></span></div></article>`;
+  return `<article class="card ${s ? "sel" : ""}" data-id="${esc(p.id)}"><div class="main"><div style="min-width:0"><div class="top"><span class="${src(p.source)}">${srcName(p.source)}</span><span class="date">${esc(p.published || "")}</span>${p.retrieved_at ? `<span class="date">収集 ${esc(String(p.retrieved_at).slice(0, 10))}</span>` : ""}${LANG === "ja" && srcOf(p) ? `<span class="date">訳: ${esc(srcOf(p))}</span>` : ""}${p.long && p.long.llm_model ? `<span class="date">評価: ${esc(p.long.llm_model)}</span>` : ""}${genBadge(p.long) || genBadge(p.event)}${isNewEval(p) ? `<span class="nw">新着</span>` : ""}</div><h3 class="title">${esc(dispT(p))}</h3><p class="abs">${esc(dispA(p))}</p><div class="tags">${(p.fields || []).slice(0, 4).map(t => `<span class="tag">${esc(t)}</span>`).join("")}</div><div class="mi"><span>技術成熟度 <strong>${fmtScore(sc(p, "technology_readiness"))}</strong></span><span>技術的優位性 <strong>${fmtScore(sc(p, "technological_advantage"))}</strong></span><span>関連企業 <strong>${ents ? ents + "社" : "未特定"}</strong></span>${facet ? `<span>国・分野 <strong>${esc(facet)}</strong></span>` : ""}${diffTxt ? `<span>前回比 <strong>${esc(diffTxt)}</strong></span>` : ""}${evShort(p) ? `<span>イベント評価 <strong>${esc(evShort(p))}</strong></span>` : ""}</div>${barrierChipsHtml(p.long)}</div><div class="side">${stB(p.display_status)}${dirB(p)}${trl(lvl(p))}<button type="button" class="pin ${pins.has(p.id) ? "on" : ""}" data-pin="${esc(p.id)}" aria-pressed="${pins.has(p.id) ? "true" : "false"}" title="注目ピン (この端末に保存)">${pins.has(p.id) ? "★" : "☆"}</button></div></div><div class="foot"><span>${p.long && p.long.critical_missing.length ? `必須の不足 ${p.long.critical_missing.length}件` : p.display_status === "pending" ? (p.next_up ? "次回評価予定" : "評価待ち") : p.display_status === "rejected" ? "除外" + (p.screen_reason ? ": " + (SR[p.screen_reason] || p.screen_reason) : "") : ""}</span><span class="facts"><button type="button" class="clink" data-ccite="${esc(p.id)}">出典コピー</button><button type="button" class="clink" data-clink="${esc(p.id)}">リンクコピー</button><a class="tg" href="detail.html?id=${encodeURIComponent(p.id)}">詳細を見る →</a></span></div></article>`;
 }
 function scoreRow(k, it) {
   const v = it && typeof it.score === "number" && isFinite(it.score) ? it.score : null;
@@ -550,6 +598,33 @@ function stats() {
   set("#c6", P.filter(p => lvl(p) != null).length);
   set("#c7", n(["rejected"]));
 }
+/* 監査の未処分件数 (純粋関数)。監査ページ・詳細パネルと同じ畳み方
+   (系統ごとの最新バッチ × 未処分) で要確認 (グレーは含めない) を数える。
+   処分の判定は詳細パネルと同じ decOf (端末内の処分を優先し、無ければ
+   監査ブロック同梱の DB 側の有効な処分) を使うため、ページ間で数が揃う */
+function auditOpenFlags(cands) {
+  let n = 0;
+  for (const p of cands || []) for (const blocks of [p.audit, p.audit_event]) {
+    if (!blocks) continue;
+    const lat = new Set(latestAuditBlocks(blocks));
+    for (const a of blocks) {
+      if (!lat.has(a)) continue;
+      for (const e of a.entries || []) {
+        const d = decOf(a, e);
+        if (e.verdict !== "gray" && !(d && d.disposition)) n++;
+      }
+    }
+  }
+  return n;
+}
+function auditBadge() {
+  // ナビの並びは他ページと同形に保つ (test_web が文字列で固定している) ため、
+  // id は足さず href で引く
+  const el = document.querySelector('.pagelinks a[href="audit.html"]');
+  if (!el) return;
+  const n = auditOpenFlags(P);
+  el.textContent = n ? `監査（要確認 ${n}件）` : "監査";
+}
 function tierBand() {
   // 企業の層 (導出 tier) の分布と警告 (W-3)。数字は export (summary.tiers)
   // の直読みで、表示側で閾値や丸めは作らない。警告は D-3 どおり出すだけ。
@@ -661,11 +736,19 @@ async function load() {
   }
   if (d.schema_version !== 3) { showError("data.json の形式(schema_version)がこの画面に対応していません。"); return; }
   META = d; P = d.candidates;
+  const prm = new URLSearchParams(location.search);  // ピン取り込みが URL を消す前に控える
   importPinsFromUrl();
+  importFiltersFromUrl(prm);
   resolveNewBase();
-  $("#gen").textContent = "更新 " + jst(d.generated_at);
+  evalMaxTs = null;
+  for (const p of P) { const t = evalTs(p); if (t != null && (evalMaxTs == null || t > evalMaxTs)) evalMaxTs = t; }
+  // 生成情報は常設で出す (いつの・どの実行の・どの規程のデータか)
+  const cv = d.config && d.config.version;
+  $("#gen").textContent = "更新 " + jst(d.generated_at)
+    + (d.run ? ` · run ${d.run.id} · ${d.run.status}` : "")
+    + (cv ? ` · 規程 ${cv}` : "");
   $("#fl").value = LANG;
-  facetChips(); warn(d); stats(); tierBand(); barrierBand(); render();
+  facetChips(); warn(d); stats(); tierBand(); barrierBand(); auditBadge(); render();
 }
 $("#sf").addEventListener("submit", e => { e.preventDefault(); render(); });
 document.addEventListener("keydown", e => {
@@ -753,7 +836,7 @@ function bindChips(id, set, after) {
   });
 }
 const syncTagN = () => { $("#fgn").textContent = tagSel.size ? `（${tagSel.size}件選択中）` : ""; };
-const CHIPG = [["fsc", stSel], ["fdc", dirSel], ["fmc", mkSel], ["fcc", scSel], ["fstc", stgSel], ["ftierc", tierSel], ["fgenc", genSel], ["fown", ownSel]];
+const CHIPG = [["fsc", stSel], ["fdc", dirSel], ["fmc", mkSel], ["fcc", scSel], ["fstc", stgSel], ["ftierc", tierSel], ["fgenc", genSel], ["fown", ownSel], ["fhcc", holdSel], ["fmvc", moveSel]];
 CHIPG.forEach(([id, set]) => bindChips(id, set));
 bindChips("fgc", tagSel, syncTagN);
 const syncTrlUI = () => document.querySelectorAll("#ftc button").forEach(b => {
@@ -785,6 +868,18 @@ const applyRange = () => {  // n〜m を入れたら、その範囲のレベル�
   syncTrlUI(); render();
 };
 ["#ftn", "#ftm"].forEach(s => $(s).addEventListener("change", applyRange));
+["#fsn", "#fsm"].forEach(s => $(s).addEventListener("change", render));
+// 評価日の窓は単一選択 (押したものだけが残り、同じものをもう一度押すと解除)
+const syncEvUI = () => document.querySelectorAll("#fevc button").forEach(b => {
+  const on = evWin != null && String(evWin) === b.dataset.v;
+  b.classList.toggle("on", on); b.setAttribute("aria-pressed", on ? "true" : "false");
+});
+$("#fevc").addEventListener("click", e => {
+  const b = e.target.closest("button"); if (!b) return;
+  const v = b.dataset.v === "latest" ? "latest" : Number(b.dataset.v);
+  evWin = evWin === v ? null : v;
+  syncEvUI(); render();
+});
 $("#fl").addEventListener("change", () => { LANG = $("#fl").value; try { localStorage.setItem("trl-lang", LANG); } catch (e) { /* 保存できなくても切替は効く */ } render(); });
 const syncTh = () => { $("#fth").value = document.documentElement.dataset.theme === "light" ? "light" : "dark"; };
 $("#fth").addEventListener("change", () => { document.documentElement.dataset.theme = $("#fth").value; try { localStorage.setItem("trl-theme", $("#fth").value); } catch (e) { /* 保存できなくても切替は効く */ } });
@@ -796,7 +891,107 @@ function applyViewSwitches() {
 }
 $("#swgen").addEventListener("change", () => { showGen = $("#swgen").checked; try { localStorage.setItem("trl-showgen", showGen ? "1" : "0"); } catch (e) { /* 保存できなくても切替は効く */ } render(); });
 applyViewSwitches();
-$("#rs").addEventListener("click", () => { $("#q").value = ""; [...CHIPG, ["fgc", tagSel]].forEach(([id, set]) => { set.clear(); syncChips(id, set); }); syncTagN(); trlSel.clear(); $("#ftn").value = ""; $("#ftm").value = ""; syncTrlUI(); $("#fo").value = "status"; sel = P[0] ? P[0].id : null; render(); });
+// 表示密度 (コンパクト表示) のスイッチ。状態は localStorage (trl-density)。
+// CSS だけで効くため再描画はしない
+let compact = false;
+try { compact = localStorage.getItem("trl-density") === "compact"; } catch (e) { /* 保存不可なら既定のまま */ }
+function applyDensity() {
+  document.body.classList.toggle("compact", compact);
+  const sw = $("#swcompact"); if (sw) sw.checked = compact;
+}
+$("#swcompact").addEventListener("change", () => { compact = $("#swcompact").checked; try { localStorage.setItem("trl-density", compact ? "compact" : "normal"); } catch (e) { /* 保存できなくても切替は効く */ } applyDensity(); });
+applyDensity();
+$("#rs").addEventListener("click", () => { $("#q").value = ""; [...CHIPG, ["fgc", tagSel]].forEach(([id, set]) => { set.clear(); syncChips(id, set); }); syncTagN(); trlSel.clear(); $("#ftn").value = ""; $("#ftm").value = ""; syncTrlUI(); $("#fsn").value = ""; $("#fsm").value = ""; evWin = null; syncEvUI(); $("#fo").value = "status"; sel = P[0] ? P[0].id : null; render(); });
+
+/* 条件 (絞り込み一式) の保存と共有。端末には名前付きで保存し
+   (localStorage trl-presets)、リンクでは URL パラメータに載せて持ち運べる。
+   対象は絞り込みと並び順だけで、表示の好み (言語・テーマ・世代表示・
+   密度) は端末ごとの設定として含めない */
+function captureFilterState() {
+  return {q: $("#q").value, sort: $("#fo").value,
+    st: [...stSel], trl: [...trlSel], dir: [...dirSel], mk: [...mkSel], sc: [...scSel],
+    tag: [...tagSel], stg: [...stgSel], tier: [...tierSel], gen: [...genSel], own: [...ownSel],
+    hold: [...holdSel], move: [...moveSel], slo: $("#fsn").value, shi: $("#fsm").value,
+    ev: evWin == null ? "" : String(evWin)};
+}
+function restoreFilterState(s) {
+  if (!s || typeof s !== "object") return;
+  const put = (set, arr) => { set.clear(); if (Array.isArray(arr)) for (const v of arr) set.add(v); };
+  put(stSel, s.st); put(dirSel, s.dir); put(mkSel, s.mk); put(scSel, s.sc);
+  put(tagSel, s.tag); put(stgSel, s.stg); put(tierSel, s.tier); put(genSel, s.gen);
+  put(ownSel, s.own); put(holdSel, s.hold); put(moveSel, s.move);
+  trlSel.clear(); if (Array.isArray(s.trl)) for (const v of s.trl) trlSel.add(v === "u" ? "u" : Number(v));
+  $("#q").value = typeof s.q === "string" ? s.q : "";
+  if (typeof s.sort === "string" && [...$("#fo").options].some(o => o.value === s.sort)) $("#fo").value = s.sort;
+  $("#fsn").value = typeof s.slo === "string" ? s.slo : "";
+  $("#fsm").value = typeof s.shi === "string" ? s.shi : "";
+  evWin = s.ev === "latest" ? "latest" : (s.ev === "7" ? 7 : (s.ev === "30" ? 30 : null));
+  [...CHIPG, ["fgc", tagSel]].forEach(([id, set]) => syncChips(id, set));
+  syncTagN(); syncTrlUI(); syncEvUI();
+}
+const PRESET_KEY = "trl-presets";
+function loadPresets() { try { const o = JSON.parse(localStorage.getItem(PRESET_KEY) || "{}"); return o && typeof o === "object" && !Array.isArray(o) ? o : {}; } catch (e) { return {}; } }
+function savePresets(o) { try { localStorage.setItem(PRESET_KEY, JSON.stringify(o)); } catch (e) { /* 保存不可でも操作は続ける */ } }
+function syncPresetSel() {
+  const names = Object.keys(loadPresets()).sort((a, b) => a.localeCompare(b, "ja"));
+  $("#fpsel").innerHTML = names.length ? names.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join("") : `<option value="">（保存した条件なし）</option>`;
+}
+function flashBtn(btn, msg) { const o = btn.textContent; btn.textContent = msg; setTimeout(() => { btn.textContent = o; }, 1600); }
+$("#fpsave").addEventListener("click", e => {
+  const name = $("#fpname").value.trim();
+  if (!name) { flashBtn(e.currentTarget, "条件名を入れてください"); return; }
+  const all = loadPresets(); all[name] = captureFilterState(); savePresets(all);
+  syncPresetSel(); $("#fpsel").value = name; $("#fpname").value = "";
+  flashBtn(e.currentTarget, "保存しました");
+});
+$("#fpapply").addEventListener("click", () => { const name = $("#fpsel").value; const all = loadPresets(); if (name && all[name]) { restoreFilterState(all[name]); render(); } });
+$("#fpdel").addEventListener("click", () => { const name = $("#fpsel").value; if (!name) return; const all = loadPresets(); delete all[name]; savePresets(all); syncPresetSel(); });
+syncPresetSel();
+function filterLinkUrl() {
+  const s = captureFilterState();
+  const u = new URL(location.origin + location.pathname);
+  const setP = (k, v) => { if (v) u.searchParams.set(k, v); };
+  setP("q", s.q); if (s.sort !== "status") setP("sort", s.sort);
+  for (const k of ["st", "trl", "dir", "mk", "sc", "tag", "stg", "tier", "gen", "own", "hold", "move"]) setP("f_" + k, s[k].join(","));
+  setP("f_slo", s.slo); setP("f_shi", s.shi); setP("f_ev", s.ev);
+  return u.toString();
+}
+$("#fplink").addEventListener("click", e => copyText(filterLinkUrl(), e.currentTarget));
+function importFiltersFromUrl(prm) {
+  if (!prm || ![...prm.keys()].some(k => k === "q" || k.startsWith("f_"))) return;
+  const csv = k => { const v = prm.get("f_" + k); return v ? v.split(",").filter(Boolean) : []; };
+  restoreFilterState({q: prm.get("q") || "", sort: prm.get("sort") || "status",
+    st: csv("st"), trl: csv("trl"), dir: csv("dir"), mk: csv("mk"), sc: csv("sc"),
+    tag: csv("tag"), stg: csv("stg"), tier: csv("tier"), gen: csv("gen"), own: csv("own"), hold: csv("hold"), move: csv("move"),
+    slo: prm.get("f_slo") || "", shi: prm.get("f_shi") || "", ev: prm.get("f_ev") || ""});
+}
+/* 現在の絞り込み結果の書き出し。ブラウザ内だけで完結し、値は data.json の
+   直読み、並びは画面の表示順そのまま (画面側で並べ替えや換算はしない) */
+function exportData(fmt) {
+  const rows = filtered().map(p => ({
+    id: p.id, title: dispT(p), title_orig: p.title,
+    companies: p.entities.filter(e => e.strength === "strong").map(e => e.name).join(" / "),
+    source: p.source, published: p.published || "", status: p.display_status,
+    total: p.long && typeof p.long.total === "number" ? p.long.total : null,
+    trl: lvl(p), direction: dirOf(p) || "",
+    evaluated_at: (p.long && p.long.evaluated_at) || (p.event && p.event.evaluated_at) || "",
+    url: p.url}));
+  let blob, name;
+  if (fmt === "json") {
+    blob = new Blob([JSON.stringify(rows, null, 1)], {type: "application/json"});
+    name = "trl-results.json";
+  } else {
+    const head = ["id", "title", "companies", "source", "published", "status", "total", "trl", "direction", "evaluated_at", "url"];
+    const q = v => { const s = String(v ?? ""); return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
+    blob = new Blob(["\ufeff" + [head.join(","), ...rows.map(r => head.map(k => q(r[k])).join(","))].join("\r\n")], {type: "text/csv"});
+    name = "trl-results.csv";
+  }
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = name; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+$("#expcsv").addEventListener("click", () => exportData("csv"));
+$("#expjson").addEventListener("click", () => exportData("json"));
 $("#list").addEventListener("click", e => {
   const pb = e.target.closest("[data-pin]");
   if (pb) { togglePin(pb.dataset.pin); return; }

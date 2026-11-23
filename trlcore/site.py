@@ -239,6 +239,11 @@ def _prev_for_site(ev):
         # 「世代が異なる」注記を出すために使う (版の正本は _gen_config)
         "gen_config": _gen_config(extra, ev),
         "trl_level": trl.get("level"),
+        # 材料の方向性の値だけ (理由文は持たない)。前回比で反転を検出する
+        # ために使う。本体の direction は {direction, reason} の dict
+        "direction": ((extra.get("direction") or {}).get("direction")
+                      if isinstance(extra.get("direction"), dict) else None)
+                     if ev["status"] != "error" else None,
         "items": {k: (v.get("score") if isinstance(v, dict)
                       and isinstance(v.get("score"), (int, float))
                       and not isinstance(v.get("score"), bool) else None)
@@ -256,7 +261,46 @@ def _light_point(ev):
         return None
     return {"evaluated_at": s["evaluated_at"], "status": s["status"], "total": s["total"],
             "band": s["band"], "trl_level": s["trl_level"], "gen_config": s["gen_config"],
-            "items": s["items"]}
+            "items": s["items"], "direction": s["direction"]}
+
+
+_RUN_HISTORY_COUNTS = ("sources_ok", "sources_failed", "fetched", "new", "screened",
+                       "selected", "final", "hold", "error", "translated")
+
+
+def _run_history_for_site(store, limit=30):
+    """実行履歴 (収集成功率などの推移の観測用)。終了したランを古い順に
+    最大 limit 件。counts は推移で意味を持つキーだけに絞る (全キーは
+    最新ラン分が data.json の run に既にある)。"""
+    rows = store.conn.execute(
+        "SELECT * FROM runs WHERE finished_at IS NOT NULL"
+        " ORDER BY started_at DESC LIMIT ?", (limit,)).fetchall()
+    out = []
+    for r in reversed(rows):
+        counts = json.loads(r["counts_json"] or "{}")
+        out.append({"id": r["run_id"], "as_of": r["as_of"], "status": r["status"],
+                    "started_at": r["started_at"], "finished_at": r["finished_at"],
+                    "duration_sec": r["duration_sec"],
+                    "counts": {k: counts[k] for k in _RUN_HISTORY_COUNTS if k in counts}})
+    return out
+
+
+def _source_stats_for_site(store, run_id):
+    """基準ランのソース別収集量 (run_sources の集計、取得量の多い順)。
+    失敗率は表示側が ok_calls / calls から出す。ここは生の集計だけを持つ"""
+    agg = {}
+    for r in store.run_sources(run_id):
+        a = agg.setdefault(r["source"], {"source": r["source"], "calls": 0, "ok_calls": 0,
+                                         "fetched": 0, "new": 0, "duplicates": 0,
+                                         "invalid": 0, "seconds": 0.0})
+        a["calls"] += 1
+        a["ok_calls"] += 1 if r["ok"] else 0
+        a["fetched"] += r["fetched"] or 0
+        a["new"] += r["new"] or 0
+        a["duplicates"] += r["duplicates"] or 0
+        a["invalid"] += r["invalid"] or 0
+        a["seconds"] += r["seconds"] or 0.0
+    return sorted(agg.values(), key=lambda a: -a["fetched"])
 
 
 def _digest_for_site(store, run_id):
@@ -611,6 +655,10 @@ def build_site_data(store, cfg, now=None):
         # キューの選定順。どちらも追加キーで、schema_version は上げない
         "digest": _digest_for_site(store, run["run_id"]) if run else [],
         "next_queue": next_queue,
+        # 実行履歴とソース別収集量 (推移と失敗率の観測用)。追加キーで
+        # schema_version は上げない
+        "run_history": _run_history_for_site(store),
+        "source_stats": _source_stats_for_site(store, run["run_id"]) if run else [],
         "translation_usage": translation_usage,
         "summary": summary,
         "config": {"version": cfg["config_version"], "hash": cfg["config_hash"],

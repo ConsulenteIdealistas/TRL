@@ -869,7 +869,7 @@ class ExportTests(StoreFixture):
         self.assertEqual(len(cand2["history"]), 2)
         self.assertEqual(cand2["history"][-1]["total"], 70.0)
         self.assertEqual(set(cand2["history"][0]),
-                         {"evaluated_at", "status", "total", "band", "trl_level", "gen_config", "items"})
+                         {"evaluated_at", "status", "total", "band", "trl_level", "gen_config", "items", "direction"})
         # 項目点は as-of 母集団の再構成用に直読みで載る
         self.assertEqual(cand2["history"][0]["items"]["monetization"], 65)
 
@@ -899,6 +899,20 @@ class ExportTests(StoreFixture):
         self.assertEqual(d0["total"], 70.0)
         self.assertIsNotNone(d0["prev"])
         self.assertNotEqual(d0["prev"]["total"], 70.0)
+
+    def test_run_history_and_source_stats_exported(self):
+        # 実行履歴 (推移の観測用) は終了ランを古い順に持ち、counts は
+        # 推移で意味を持つキーだけ。ソース別収集量は基準ランの集計
+        data = self.build(Mock(make_llm_fn(long_scores={k: 65 for k in LONG_KEYS})))
+        self.assertGreaterEqual(len(data["run_history"]), 1)
+        last = data["run_history"][-1]
+        self.assertEqual(last["id"], data["run"]["id"])
+        self.assertIn("sources_ok", last["counts"])
+        self.assertIsInstance(data["source_stats"], list)
+        for s in data["source_stats"]:
+            self.assertEqual(set(s), {"source", "calls", "ok_calls", "fetched",
+                                      "new", "duplicates", "invalid", "seconds"})
+            self.assertLessEqual(s["ok_calls"], s["calls"])
 
     def test_contract_matches_web_schema(self):
         base = make_llm_fn(long_scores={"monetization": None})

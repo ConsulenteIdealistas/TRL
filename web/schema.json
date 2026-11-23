@@ -7,6 +7,8 @@
     "run",
     "digest",
     "next_queue",
+    "run_history",
+    "source_stats",
     "config",
     "candidates",
     "summary",
@@ -30,7 +32,27 @@
     "band",
     "trl_level",
     "gen_config",
-    "items"
+    "items",
+    "direction"
+  ],
+  "run_history_entry": [
+    "id",
+    "as_of",
+    "status",
+    "started_at",
+    "finished_at",
+    "duration_sec",
+    "counts"
+  ],
+  "source_stat": [
+    "source",
+    "calls",
+    "ok_calls",
+    "fetched",
+    "new",
+    "duplicates",
+    "invalid",
+    "seconds"
   ],
   "audit_catalog": [
     "rules_version",

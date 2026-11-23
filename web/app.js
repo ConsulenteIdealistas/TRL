@@ -259,6 +259,7 @@ function filtered() {
     && (!moveSel.size || (() => { const m = moveOf(p); return !!m && (moveSel.has("any") || moveSel.has(m)); })())
     && (!histSel.size || (() => { const f = histFacts(p); return (histSel.has("first") && f.first)
       || (histSel.has("moved") && f.moved) || (histSel.has("band") && f.bandCross)
+      || (histSel.has("dirflip") && f.dirFlip)
       || (histSel.has("stale") && p.display_status === "final" && p.long && p.long.evaluated_at && evalMaxTs && evalMaxTs - Date.parse(p.long.evaluated_at) > 30 * 864e5); })())
     && (!mkSel.size || p.entities.some(e => mkSel.has(e.market || "JP")))
     && (!scSel.size || p.entities.some(e => scSel.has(e.sector)))
@@ -670,6 +671,7 @@ function histFacts(p) {
   return {
     n: h.length, first: h.length === 1, dTrl, dTot,
     bandCross: !!(cur && prv && cur.band && prv.band && cur.band !== prv.band),
+    dirFlip: !!(cur && prv && cur.direction && prv.direction && cur.direction !== prv.direction),
     moved: dTrl !== null ? dTrl !== 0 : (dTot !== null ? dTot !== 0 : false),
     latestAt: cur ? cur.evaluated_at : null,
   };
@@ -866,6 +868,32 @@ function boxGeom(st, W = 170) { const X = v => Math.round((v / 100 * (W - 4) + 2
 function boxSvg(st) {
   const b = boxGeom(st);
   return `<svg viewBox="0 0 170 18" width="170" height="18" role="img"><line x1="${b.min}" y1="9" x2="${b.max}" y2="9" stroke="var(--muted)"/><rect x="${b.q1}" y="4" width="${Math.max(1, b.q3 - b.q1)}" height="10" fill="var(--accent)" opacity="0.35" stroke="var(--accent)"/><line x1="${b.med}" y1="3" x2="${b.med}" y2="15" stroke="var(--accent)" stroke-width="2"/></svg>`;
+}
+/* 収集成功率の推移の幾何 (純粋関数): run_history の sources_ok /
+   (sources_ok + sources_failed) を古い順に点列化する */
+function rateGeom(hist, W = 260, H = 34) {
+  const rates = (hist || []).map(r => {
+    const c = r.counts || {}, ok = c.sources_ok, ng = c.sources_failed;
+    return (typeof ok === "number" && typeof ng === "number" && ok + ng > 0) ? ok / (ok + ng) : null;
+  }).filter(v => v !== null);
+  return rates.map((v, i) => ({
+    x: rates.length <= 1 ? Math.round(W / 2) : Math.round(i / (rates.length - 1) * (W - 4) + 2),
+    y: Math.round((H - 4) - v * (H - 10)), rate: v}));
+}
+function runBand() {
+  const el = $("#runband");
+  if (!el) return;
+  const hist = META.run_history || [], ss = META.source_stats || [];
+  if (!hist.length && !ss.length) { el.hidden = true; return; }
+  const pts = rateGeom(hist);
+  const line = pts.length > 1 ? `<svg viewBox="0 0 260 34" width="260" height="34" role="img"><polyline points="${pts.map(p => p.x + "," + p.y).join(" ")}" fill="none" stroke="var(--accent)"/>${pts.map(p => `<circle cx="${p.x}" cy="${p.y}" r="2" fill="var(--accent)"/>`).join("")}</svg>` : "";
+  const lastRate = pts.length ? Math.round(pts[pts.length - 1].rate * 100) : null;
+  const recent = hist.slice(-5).reverse().map(r => `<span class="tz">${esc((r.as_of || "").slice(0, 10))} ${esc(r.status || "")} 確定 ${r.counts && r.counts.final != null ? r.counts.final : "—"}/保留 ${r.counts && r.counts.hold != null ? r.counts.hold : "—"}${r.duration_sec ? ` ・${Math.round(r.duration_sec / 60)}分` : ""}</span>`).join("");
+  const srcs = ss.slice(0, 8).map(s => `<span class="tz">${esc(s.source)}: 取得 ${s.fetched}・新規 ${s.new}・失敗率 ${s.calls ? Math.round((s.calls - s.ok_calls) / s.calls * 100) : 0}%</span>`).join("");
+  el.innerHTML = `<span>収集の成功率${lastRate !== null ? `（最新 ${lastRate}%）` : ""}</span>${line}`
+    + (recent ? `<span>直近の実行</span>${recent}` : "")
+    + (srcs ? `<span>ソース別（基準ラン）</span>${srcs}` : "");
+  el.hidden = false;
 }
 function statsBand() {
   const el = $("#statband");
@@ -1144,7 +1172,7 @@ async function load() {
     + (cv ? ` · 規程 ${cv}` : "");
   $("#fl").value = LANG;
   buildCohort();
-  facetChips(); warn(d); stats(); tierBand(); barrierBand(); auditBadge(); digestBand(); nqBand(); distBand(); moveBand(); nearBand(); usageBand(); alertBand(); statsBand(); render();
+  facetChips(); warn(d); stats(); tierBand(); barrierBand(); auditBadge(); digestBand(); nqBand(); distBand(); moveBand(); nearBand(); usageBand(); alertBand(); runBand(); statsBand(); render();
 }
 $("#sf").addEventListener("submit", e => { e.preventDefault(); render(); });
 /* 母集団の基準日カレンダー: 日を選ぶと母集団をその日時点で再構成する */

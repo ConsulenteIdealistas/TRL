@@ -21,6 +21,18 @@ const dtier = c => c.derived_tier || (c.tier === "reference" ? "see" : "look");
 
 let companies = [];
 const state = {q: "", tier: "", markets: new Set(), sectors: new Set(), tags: new Set(), sort: "latest"};
+/* チップのBAN (長押し/右クリックで除外)。主ページと同じ考え方で端末に保存する */
+const wBans = {markets: new Set(), sectors: new Set(), tags: new Set(), tier: ""};
+try {
+  const o = JSON.parse(localStorage.getItem("trl-watch-bans") || "{}");
+  for (const v of o.markets || []) wBans.markets.add(v);
+  for (const v of o.sectors || []) wBans.sectors.add(v);
+  for (const v of o.tags || []) wBans.tags.add(v);
+  if (o.tier === "look" || o.tier === "see") wBans.tier = o.tier;
+} catch (e) { /* 壊れた保存は無視 */ }
+function saveWBans() {
+  try { localStorage.setItem("trl-watch-bans", JSON.stringify({markets: [...wBans.markets], sectors: [...wBans.sectors], tags: [...wBans.tags], tier: wBans.tier})); } catch (e) { /* 保存できなくても動く */ }
+}
 
 // 表示言語は主ページ・詳細ページと共通 (localStorage の trl-lang)。
 // 既定は日本語訳 (訳がある場合) で、スイッチで原文表示に切り替える。
@@ -127,9 +139,13 @@ function filtered() {
   const q = state.q.trim().toLowerCase();
   let rows = companies.filter(c =>
     (!state.tier || dtier(c) === state.tier) &&
+    (!wBans.tier || dtier(c) !== wBans.tier) &&
     (!state.markets.size || state.markets.has(c.market)) &&
+    !wBans.markets.has(c.market) &&
     (!state.sectors.size || state.sectors.has(c.sector)) &&
+    !wBans.sectors.has(c.sector) &&
     (!state.tags.size || (c.tags || []).some(t => state.tags.has(t))) &&
+    !(c.tags || []).some(t => wBans.tags.has(t)) &&
     (!q || haystack(c).includes(q)));
   if (state.sort === "latest") rows.sort((a, b) => (b.latest || "") > (a.latest || "") ? 1 : (b.latest || "") < (a.latest || "") ? -1 : a.name.localeCompare(b.name, "ja"));
   else if (state.sort === "oldest") rows.sort((a, b) => (a.latest || "9999") > (b.latest || "9999") ? 1 : (a.latest || "9999") < (b.latest || "9999") ? -1 : a.name.localeCompare(b.name, "ja"));
@@ -153,9 +169,19 @@ function render() {
   }));
 }
 
-function chips(el, items, isOn, onToggle) {
-  el.innerHTML = items.map(([v, label]) => `<button type="button" class="dchip" data-v="${esc(v)}" aria-pressed="${isOn(v)}">${esc(label)}</button>`).join(" ");
-  el.querySelectorAll("[data-v]").forEach(b => b.addEventListener("click", () => onToggle(b.dataset.v)));
+function chips(el, items, isOn, onToggle, isBan, onBan) {
+  el.innerHTML = items.map(([v, label]) => `<button type="button" class="dchip${isBan && isBan(v) ? " ban" : ""}" data-v="${esc(v)}" aria-pressed="${isOn(v)}">${esc(label)}</button>`).join(" ");
+  el.querySelectorAll("[data-v]").forEach(b => {
+    b.addEventListener("click", () => { if (el.dataset.lp === "1") { el.dataset.lp = ""; return; } onToggle(b.dataset.v); });
+    if (!onBan) return;
+    let timer = null;
+    b.addEventListener("pointerdown", () => { timer = setTimeout(() => { el.dataset.lp = "1"; onBan(b.dataset.v); }, 450); });
+    const cancel = () => { if (timer) { clearTimeout(timer); timer = null; } };
+    b.addEventListener("pointerup", cancel);
+    b.addEventListener("pointerleave", cancel);
+    b.addEventListener("pointercancel", cancel);
+    b.addEventListener("contextmenu", e => { e.preventDefault(); onBan(b.dataset.v); });
+  });
 }
 
 async function init() {
@@ -166,16 +192,22 @@ async function init() {
   companies.forEach(c => { c._hay = haystack(c); });
   chips($("#tiers"), [["", "すべて"], ["look", "Look"], ["see", "See"]],
     v => state.tier === v,
-    v => { state.tier = v; initChipsOnly(); render(); });
+    v => { state.tier = v; initChipsOnly(); render(); },
+    v => !!v && wBans.tier === v,
+    v => { if (!v) return; wBans.tier = wBans.tier === v ? "" : v; saveWBans(); initChipsOnly(); render(); });
   const mkts = [...new Set(companies.map(c => c.market).filter(Boolean))]
     .sort((a, b) => companies.filter(c => c.market === b).length - companies.filter(c => c.market === a).length);
   chips($("#markets"), mkts.map(m => [m, ML[m] || m]),
     v => state.markets.has(v),
-    v => { state.markets.has(v) ? state.markets.delete(v) : state.markets.add(v); initChipsOnly(); render(); });
+    v => { state.markets.has(v) ? state.markets.delete(v) : state.markets.add(v); initChipsOnly(); render(); },
+    v => wBans.markets.has(v),
+    v => { wBans.markets.has(v) ? wBans.markets.delete(v) : wBans.markets.add(v); saveWBans(); initChipsOnly(); render(); });
   const secs = [...new Set(companies.map(c => c.sector).filter(Boolean))];
   chips($("#sectors"), secs.map(s => [s, CL[s] || s]),
     v => state.sectors.has(v),
-    v => { state.sectors.has(v) ? state.sectors.delete(v) : state.sectors.add(v); initChipsOnly(); render(); });
+    v => { state.sectors.has(v) ? state.sectors.delete(v) : state.sectors.add(v); initChipsOnly(); render(); },
+    v => wBans.sectors.has(v),
+    v => { wBans.sectors.has(v) ? wBans.sectors.delete(v) : wBans.sectors.add(v); saveWBans(); initChipsOnly(); render(); });
   // タグは数が多いのでセクターごとに折り畳んで出す。同じタグが複数セクターに
   // 現れる場合は同じ選択を共有し、チップの押下状態は全グループで同期する
   const tagOrder = Object.keys(TL);
@@ -190,13 +222,15 @@ async function init() {
     const box = document.querySelector(`#tags .taggroup[data-sector="${s}"] .wrow`);
     chips(box, ts.map(t => [t, tagLabel(t)]),
       v => state.tags.has(v),
-      v => { state.tags.has(v) ? state.tags.delete(v) : state.tags.add(v); initChipsOnly(); render(); });
+      v => { state.tags.has(v) ? state.tags.delete(v) : state.tags.add(v); initChipsOnly(); render(); },
+      v => wBans.tags.has(v),
+      v => { wBans.tags.has(v) ? wBans.tags.delete(v) : wBans.tags.add(v); saveWBans(); initChipsOnly(); render(); });
   });
   function initChipsOnly() {
-    document.querySelectorAll("#tiers .dchip").forEach(b => b.setAttribute("aria-pressed", String(state.tier === b.dataset.v)));
-    document.querySelectorAll("#markets .dchip").forEach(b => b.setAttribute("aria-pressed", String(state.markets.has(b.dataset.v))));
-    document.querySelectorAll("#sectors .dchip").forEach(b => b.setAttribute("aria-pressed", String(state.sectors.has(b.dataset.v))));
-    document.querySelectorAll("#tags .dchip").forEach(b => b.setAttribute("aria-pressed", String(state.tags.has(b.dataset.v))));
+    document.querySelectorAll("#tiers .dchip").forEach(b => { b.setAttribute("aria-pressed", String(state.tier === b.dataset.v)); b.classList.toggle("ban", !!b.dataset.v && wBans.tier === b.dataset.v); });
+    document.querySelectorAll("#markets .dchip").forEach(b => { b.setAttribute("aria-pressed", String(state.markets.has(b.dataset.v))); b.classList.toggle("ban", wBans.markets.has(b.dataset.v)); });
+    document.querySelectorAll("#sectors .dchip").forEach(b => { b.setAttribute("aria-pressed", String(state.sectors.has(b.dataset.v))); b.classList.toggle("ban", wBans.sectors.has(b.dataset.v)); });
+    document.querySelectorAll("#tags .dchip").forEach(b => { b.setAttribute("aria-pressed", String(state.tags.has(b.dataset.v))); b.classList.toggle("ban", wBans.tags.has(b.dataset.v)); });
     document.querySelectorAll("#tags .taggroup").forEach(g => {
       const n = [...g.querySelectorAll(".dchip")].filter(b => state.tags.has(b.dataset.v)).length;
       g.querySelector(".selcnt").textContent = n ? ` ・${n}件選択中` : "";

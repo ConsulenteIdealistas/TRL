@@ -184,3 +184,6 @@ a.brz.lk{text-decoration:none;display:inline-block;margin-left:4px}
 #brband .brg b{color:var(--ink,inherit)}
 .sw{display:inline-flex;align-items:center;gap:7px;min-height:42px;color:var(--sub);font-size:12px;font-weight:600;cursor:pointer}
 .sw input{width:18px;height:18px;accent-color:var(--accent)}
+/* フィルタ欄の中では .filters label{display:grid} の方が詳細度で勝ち、
+   スイッチのチェックボックスと文言が縦に割れてしまうため、ここで勝たせる */
+.filters .sw{display:inline-flex}

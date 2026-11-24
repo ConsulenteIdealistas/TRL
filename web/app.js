@@ -514,7 +514,6 @@ function recentBand() {
   if (!rows.length) { el.hidden = true; return; }
   el.innerHTML = `<span>最近見た候補</span>` + rows.map(p => `<a class="tz" href="detail.html?id=${encodeURIComponent(p.id)}">${esc(candName(p))}</a>`).join("");
   el.hidden = false;
-  applyBandPrefs();
 }
 function savePins() { try { localStorage.setItem("trl-pins", JSON.stringify([...pins])); } catch (e) { /* 保存不可でも表示は続ける */ } }
 function togglePin(id) { if (!id) return; if (pins.has(id)) pins.delete(id); else pins.add(id); savePins(); render(); pinBand(); }
@@ -649,7 +648,6 @@ function pinBand() {
     return `<a class="tz" href="detail.html?id=${encodeURIComponent(p.id)}">${esc(candName(p))}: ${esc(SL[p.display_status] || p.display_status)}${p.long && typeof p.long.total === "number" ? ` 総合 ${p.long.total}` : ""}${mvTxt}${p.long && p.long.evaluated_at ? ` (${esc(p.long.evaluated_at.slice(0, 10))})` : ""}</a>`;
   }).join("");
   el.hidden = false;
-  applyBandPrefs();
 }
 function importPinsFromUrl() {
   // 共有リンクで届いた注目ピンを、この端末の保存分へ統合する (上書きはしない)
@@ -1210,30 +1208,28 @@ function newNote() {
     try { localStorage.setItem("trl-last-gen", gen); } catch (e) { /* 同上 */ }
   }
 }
-/* 帯の表示設定 (この端末のみ)。帯の描画後に適用し、OFF の帯は隠す */
-const BANDS = [["dgst", "変化ダイジェスト"], ["pinband", "注目ピン"], ["cmpband", "比較バスケット"], ["laterband", "あとで読む"], ["shist", "検索履歴"],
-  ["recentband", "最近見た候補"]];
-let bandPrefs = {};
-try { bandPrefs = JSON.parse(localStorage.getItem("trl-bands") || "{}"); } catch (e) { /* 壊れた保存値は既定として扱う */ }
-const bandHasContent = new Set();
-function applyBandPrefs() {
-  for (const [id] of BANDS) {
-    const el = document.getElementById(id);
-    if (!el) continue;
-    if (!el.hidden && el.innerHTML) bandHasContent.add(id);
-    if (bandPrefs[id] === false) el.hidden = true;
-    else if (bandHasContent.has(id)) el.hidden = false;
-  }
+/* 帯の折りたたみ (この端末のみ)。帯を完全に見えなくする表示設定は廃止した
+   (消した帯の存在を忘れてしまうため)。代わりに全ての帯を見出しごと
+   折りたたんで状態を保存する。折りたたんでも見出しは残る */
+let bandFolds = {};
+try { bandFolds = JSON.parse(localStorage.getItem("trl-bandfolds") || "{}"); } catch (e) { /* 壊れた保存値は既定として扱う */ }
+try { localStorage.removeItem("trl-bands"); } catch (e) { /* 旧表示設定の保存値は掃除する */ }
+function saveBandFolds() { try { localStorage.setItem("trl-bandfolds", JSON.stringify(bandFolds)); } catch (e) { /* 保存不可でも切替は効く */ } }
+function setBandFold(id, folded) {
+  const w = document.querySelector(`.bandwrap[data-band="${id}"]`);
+  if (!w) return;
+  w.classList.toggle("folded", folded);
+  const btn = w.querySelector(".foldbtn");
+  if (btn) { btn.setAttribute("aria-expanded", folded ? "false" : "true"); const m = btn.querySelector(".fmark"); if (m) m.textContent = folded ? "▷" : "▽"; }
+  if (folded) bandFolds[id] = true; else delete bandFolds[id];
+  saveBandFolds();
 }
-function buildBandSettings() {
-  const el = $("#bandset");
-  if (!el) return;
-  el.innerHTML = BANDS.map(([id, label]) => `<label><input type="checkbox" data-band="${id}"${bandPrefs[id] === false ? "" : " checked"}> ${esc(label)}</label>`).join("");
-  el.querySelectorAll("[data-band]").forEach(cb => cb.addEventListener("change", () => {
-    bandPrefs[cb.dataset.band] = cb.checked;
-    try { localStorage.setItem("trl-bands", JSON.stringify(bandPrefs)); } catch (e) { /* 保存不可でも切替は効く */ }
-    applyBandPrefs();
-  }));
+function setupBandFolds() {
+  document.querySelectorAll(".bandwrap").forEach(w => {
+    const id = w.dataset.band, btn = w.querySelector(".foldbtn");
+    if (btn) btn.addEventListener("click", () => setBandFold(id, !w.classList.contains("folded")));
+    if (bandFolds[id]) setBandFold(id, true);
+  });
 }
 function runBand() {
   const el = $("#runband");
@@ -1565,7 +1561,7 @@ async function load() {
     + (cv ? ` · 規程 ${cv}` : "");
   $("#fl").value = LANG;
   buildCohort();
-  facetChips(); warn(d); stats(); tierBand(); barrierBand(); auditBadge(); digestBand(); nqBand(); distBand(); moveBand(); nearBand(); usageBand(); alertBand(); runBand(); statsBand(); pinBand(); cmpBand(); laterBand(); searchHistBand(); recentBand(); tourBand(); buildBanUI(); newNote(); buildBandSettings(); applyBandPrefs(); applyZoom(); render();
+  facetChips(); warn(d); stats(); tierBand(); barrierBand(); auditBadge(); digestBand(); nqBand(); distBand(); moveBand(); nearBand(); usageBand(); alertBand(); runBand(); statsBand(); pinBand(); cmpBand(); laterBand(); searchHistBand(); recentBand(); tourBand(); buildBanUI(); newNote(); setupBandFolds(); applyZoom(); render();
 }
 $("#sf").addEventListener("submit", e => { e.preventDefault(); saveSearch($("#q").value); render(); });
 /* 検索履歴 (この端末のみ、直近8件)。チップを押すとその検索を再実行する */
@@ -1587,7 +1583,6 @@ function searchHistBand() {
   el.innerHTML = `<span>最近の検索</span>` + h.map(x => `<button class="tz" data-q="${esc(x)}">${esc(x)}</button>`).join("");
   el.hidden = false;
   el.querySelectorAll("[data-q]").forEach(b => b.addEventListener("click", () => { $("#q").value = b.dataset.q; render(); }));
-  applyBandPrefs();
 }
 /* 母集団の基準日カレンダー: 日を選ぶと母集団をその日時点で再構成する
    (統計帯は観測ページへ移設したため、一覧に #statband が無い場合は何もしない) */
@@ -1637,13 +1632,14 @@ const ACTIONS = [
   {label: "選択中の候補をピン留め / 解除", keys: "f", run: () => togglePin(sel)},
   {label: "選択中の候補の企業をBAN / 解除", keys: "b", run: () => banKeyOf(sel, "company")},
   {label: "選択中の候補の市場をBAN / 解除", keys: "B", run: () => banKeyOf(sel, "market")},
+  {label: "BANモード中の群を全BAN / 全解除", keys: "Cmd+X", run: () => { if (BANMODE.size) allBanToggle(); else toast("先にチップ群のBANチップを押して光らせてください"); }},
   {label: "選択中の候補を比較バスケットに追加 / 解除", keys: "c", run: () => toggleBasket(sel)},
   {label: "選択中の候補の原文を新しいタブで開く", keys: "e", run: () => { const p = P.find(x => x.id === sel); if (p && p.url) window.open(p.url, "_blank", "noopener"); else toast("候補が選ばれていません"); }},
   {label: "選択中の候補の根拠 (関連材料の先頭) を開く", keys: "E", run: () => { const p = P.find(x => x.id === sel); const n = p && (p.related_news || [])[0]; if (n && n.url) window.open(n.url, "_blank", "noopener"); else toast("関連材料がありません"); }},
   {label: "調査メモ欄へ移動", keys: "m", run: () => { const t = $("#note"); if (t) { t.scrollIntoView({block: "center"}); t.focus(); } else toast("候補を選んでください"); }},
   {label: "複数選択モードの入 / 切", keys: "v", run: () => toggleVMode()},
   {label: "選択中の候補をあとで読むに追加 / 解除", keys: "w", run: () => { if (sel) toggleLater(sel); else toast("候補が選ばれていません"); }},
-  {label: "あとで読むの帯へ移動", keys: "W", run: () => { const el = $("#laterband"); if (el && !el.hidden) el.scrollIntoView({block: "start"}); else toast("あとで読むは空です"); }},
+  {label: "あとで読むの帯へ移動", keys: "W", run: () => { const el = $("#laterband"); if (el && !el.hidden) { setBandFold("laterband", false); el.scrollIntoView({block: "start"}); } else toast("あとで読むは空です"); }},
   {label: "並び順を前へ切り替える", keys: ",", run: () => { const s = $("#fo"); s.selectedIndex = (s.selectedIndex + s.options.length - 1) % s.options.length; s.dispatchEvent(new Event("change")); }},
   {label: "並び順を次へ切り替える", keys: ".", run: () => { const s = $("#fo"); s.selectedIndex = (s.selectedIndex + 1) % s.options.length; s.dispatchEvent(new Event("change")); }},
   {label: "検索欄へ移動", keys: "/", run: () => $("#q").focus()},
@@ -1742,6 +1738,12 @@ $("#khbtn").addEventListener("click", toggleHelp);
 document.addEventListener("keydown", e => {
   // コマンドパレット (Ctrl+K / Cmd+K) は入力中でも開閉できる
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); $("#pal").hidden ? openPal() : closePal(); return; }
+  // 全BAN (Cmd+X / Ctrl+X): BANチップが光っている群だけを対象にし、入力中や画面が開いている間は本来の切り取りを邪魔しない
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "x" && BANMODE.size) {
+    const tagX = (document.activeElement || {}).tagName || "";
+    if (/INPUT|TEXTAREA|SELECT/.test(tagX) || e.isComposing || composing || !$("#pal").hidden || !$("#khelp").hidden) return;
+    e.preventDefault(); allBanToggle(); return;
+  }
   if (e.key === "Escape") { closePal(); $("#khelp").hidden = true; pracIdx = -1; pracMsg(); return; }
   if (pracIdx >= 0 && pracIdx < PRAC.length && !$("#khelp").hidden) {
     if (e.key === PRAC[pracIdx]) { e.preventDefault(); pracIdx++; pracMsg(); }
@@ -1951,6 +1953,46 @@ function syncBanBtn(id) {
 function toggleBanMode(id) {
   if (BANMODE.has(id)) BANMODE.delete(id); else { BANMODE.add(id); buzz(); }
   syncBanBtn(id);
+}
+/* 全BAN (Cmd+X / Ctrl+X、BANモード中の群だけが対象): 光っている群の値を
+   全部BANする。既に全部BANなら全部解除する (同じキーで行き来できる) */
+const BANGLABEL = {fsc: "状態", fdc: "方向性", ftc: "TRL", fmc: "市場", fcc: "分野", fgc: "タグ", fstc: "段階", ftierc: "層", fgenc: "世代", fown: "自分の表示", fhcc: "保留理由", fmvc: "動き", fhistc: "履歴", fevc: "評価日"};
+function allBanToggle() {
+  const banned = [], unbanned = [];
+  for (const id of BANMODE) {
+    if (id === "ftc") {
+      const targets = [1, 2, 3, 4, 5, 6, 7, 8, 9, "u"];
+      const all = targets.every(v => trlBan.has(v));
+      for (const v of targets) { if (all) trlBan.delete(v); else { trlBan.add(v); trlSel.delete(v); } }
+      if (!all) buzz();
+      syncTrlUI();
+      (all ? unbanned : banned).push(BANGLABEL[id]);
+    } else if (id === "fevc") {
+      const vals = [...document.querySelectorAll("#fevc button[data-v]")].map(b => b.dataset.v);
+      if (!vals.length) continue;
+      const all = vals.every(v => chipBans.fevc.has(v));
+      for (const v of vals) { if (all) chipBans.fevc.delete(v); else chipBans.fevc.add(v); }
+      if (evWin != null && chipBans.fevc.has(String(evWin))) evWin = null;
+      if (!all) buzz();
+      syncEvUI();
+      (all ? unbanned : banned).push(BANGLABEL[id]);
+    } else {
+      const set = (CHIPG.find(([g]) => g === id) || [])[1] || (id === "fgc" ? tagSel : null);
+      if (!set) continue;
+      const vals = [...document.querySelectorAll(`#${id} button[data-v]`)].map(b => b.dataset.v);
+      if (!vals.length) continue;
+      const all = vals.every(v => chipBans[id].has(v));
+      for (const v of vals) { if (all) chipBans[id].delete(v); else { chipBans[id].add(v); set.delete(v); } }
+      if (!all) buzz();
+      syncChips(id, set); if (id === "fgc") syncTagN();
+      (all ? unbanned : banned).push(BANGLABEL[id]);
+    }
+  }
+  saveChipBans(); render();
+  const parts = [];
+  if (banned.length) parts.push(`全BANしました: ${banned.join("・")}`);
+  if (unbanned.length) parts.push(`全BANを解除しました: ${unbanned.join("・")}`);
+  if (parts.length) toast(parts.join(" / "));
 }
 function bindChips(id, set, after) {
   const box = $("#" + id);

@@ -50,6 +50,8 @@
 <li>スマホでコマンド一覧・キー操作一覧が切れて読めない問題に対処した: 表示中は背面のページが動かないようにし、枠の高さを画面の見える範囲に合わせた。あわせてキー操作一覧に全コマンドを出すようにした（キーなしの操作は「コマンドパレット専用」として後ろに並ぶ）。コマンドとキー操作の違いはキー操作の説明書の冒頭にも書いた</li>
 <li>キー操作の説明書のキーボード図を直した: 割り当て済みなのに空席だった U（動いた候補）・Y（リンクコピー）・R（再評価予約）を入れ、Shift を足したときの働きを各キーに小さく書き足した。? は Shift+/ と同じキーなので、実物どおり / のキーの上に2段で表示した。K が二重に見えたコマンドパレットのキーは、役割の名前で大きく表示する形に変えた</li>
 <li>ページ移動のキーに g の後の i（メインページへ）を足した。あわせて、ブリーフィング・企業・比較のページでは g の後のキー移動自体が効かなくなっていたので、全ページで使えるようにした</li>
+<li>滑らかスクロールの動きを、氷の上を滑るような摩擦モデルに変えた（一覧ページ）: 刻みごとに区切って止まる動きから、残りの距離に比例した速度で近づき続ける動きになり、連続して回すとそのまま加速して滑る。止まり際も滑らかに減速する</li>
+<li>g の後のキーでのページ移動が、採点基準・用語集・スキーマ・更新履歴・詳細のページでも効くようにした（これらのページには移動の仕組み自体が入っていなかった）</li>
 </ul>
 <ul>
 <li>一覧: 前回比の表示と並び順、方向性の件数、総合点・評価日の絞り込み、保留理由の絞り込み、条件の保存と共有リンク、コンパクト表示、生成情報の常設、監査バッジ、CSV/JSON 書き出し、カードへの収集日を追加</li>
@@ -71,5 +73,21 @@
 </ul>
 </div>
 </div></main>
+
+<script>
+"use strict";
+/* ページ移動のキーシーケンス (全ページ共通) */
+{
+  const GKEYS = {i: "index.html", b: "brief.html", a: "audit.html", c: "criteria.html", w: "watch.html", o: "observe.html", q: "queue.html", r: "runs.html", d: "deductions.html", l: "glossary.html", k: "keys.html"};
+  let gAt = 0;
+  document.addEventListener("keydown", e => {
+    if (e.metaKey || e.ctrlKey || e.altKey || e.isComposing) return;
+    const t = e.target;
+    if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT")) return;
+    if (gAt && Date.now() - gAt < 900 && GKEYS[e.key]) { e.preventDefault(); location.href = GKEYS[e.key]; gAt = 0; return; }
+    gAt = e.key === "g" ? Date.now() : 0;
+  });
+}
+</script>
 </body>
 </html>

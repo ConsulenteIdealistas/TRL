@@ -1628,27 +1628,28 @@ if (statbandEl) statbandEl.addEventListener("click", e => {
     buildCohort(); statsBand(); detail();
   }
 });
-/* 滑らかスクロール: マウスホイールの刻みを smootherstep (6t^5-15t^4+10t^3、
-   始点と終点で速度が 0 になる補間) でつなぎ、滑らかにスクロールする。
-   ホイールの途中で次の入力が来たら、その時点の見かけ位置から組み直す。
+/* 滑らかスクロール: 氷の上を滑るような摩擦モデル。ホイールの刻みは
+   「目標位置」を積み上げるだけにし、実際の移動は毎フレーム
+   「残りの距離 × (1 - e^(-dt/τ))」で近づける指数減衰で決める。
+   速度が残距離に比例するので、刻みは連続につながり、止まり際は
+   限りなく滑らかに減速する。τ (時定数、ms) が摩擦の強さで、
+   大きいほど氷のように滑る。総移動量は刻みの合計と一致する。
    トラックパッドの細かいピクセル入力は素の動きが既に滑らかなので触らない。
    内側にスクロール領域がある場所 (パレット等) と、パレット/ヘルプ表示中は
-   触らない。S キーで入/切 (端末に保存) */
-const smootherstep = t => { t = Math.min(1, Math.max(0, t)); return t * t * t * (t * (t * 6 - 15) + 10); };
+   触らない。Shift+S キーで入/切 (端末に保存) */
+const SM_TAU = 90;
 let smoothOn = true;
 try { smoothOn = localStorage.getItem("trl-smooth") !== "0"; } catch (e) { /* 読めなければ入 */ }
-let smAnim = null;
-function smPos(now) {
-  if (!smAnim) return window.scrollY;
-  const t = (now - smAnim.start) / smAnim.dur;
-  if (t >= 1) return smAnim.to;
-  return smAnim.from + (smAnim.to - smAnim.from) * smootherstep(t);
-}
+let smAnim = null, smCur = 0, smLast = 0;
 function smTick(now) {
   if (!smAnim) return;
-  const t = (now - smAnim.start) / smAnim.dur;
-  if (t >= 1) { window.scrollTo(0, smAnim.to); smAnim = null; return; }
-  window.scrollTo(0, smAnim.from + (smAnim.to - smAnim.from) * smootherstep(t));
+  const dt = Math.min(50, Math.max(1, now - (smLast || now))); smLast = now;
+  const rem = smAnim.to - smCur;
+  if (Math.abs(rem) < 0.6) { window.scrollTo(0, smAnim.to); smAnim = null; return; }
+  let step = rem * (1 - Math.exp(-dt / SM_TAU));
+  step = Math.max(-240, Math.min(240, step));
+  smCur += step;
+  window.scrollTo(0, smCur);
   requestAnimationFrame(smTick);
 }
 document.addEventListener("wheel", e => {
@@ -1666,14 +1667,16 @@ document.addEventListener("wheel", e => {
   const d = e.deltaY * unit;
   if (e.deltaMode === 0 && Math.abs(d) < 40) return;  // トラックパッド等の細かい入力は素通し
   e.preventDefault();
-  const now = performance.now();
-  const from = smPos(now);
   const base = smAnim ? smAnim.to : window.scrollY;
   const maxY = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
   const to = Math.min(maxY, Math.max(0, base + d));
-  if (to === from) return;
-  smAnim = {from, to, start: now, dur: Math.min(320, Math.max(90, 90 + Math.abs(to - from) * 0.25))};
-  requestAnimationFrame(smTick);
+  if (!smAnim) {
+    if (to === window.scrollY) return;
+    smCur = window.scrollY;
+    smAnim = {to};
+    smLast = performance.now();
+    requestAnimationFrame(smTick);
+  } else smAnim.to = to;
 }, {passive: false});
 document.addEventListener("keydown", () => { smAnim = null; }, true);
 function toggleSmooth() {

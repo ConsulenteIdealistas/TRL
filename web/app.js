@@ -1208,29 +1208,10 @@ function newNote() {
     try { localStorage.setItem("trl-last-gen", gen); } catch (e) { /* 同上 */ }
   }
 }
-/* 帯の折りたたみ (この端末のみ)。帯を完全に見えなくする表示設定は廃止した
-   (消した帯の存在を忘れてしまうため)。代わりに全ての帯を見出しごと
-   折りたたんで状態を保存する。折りたたんでも見出しは残る */
-let bandFolds = {};
-try { bandFolds = JSON.parse(localStorage.getItem("trl-bandfolds") || "{}"); } catch (e) { /* 壊れた保存値は既定として扱う */ }
-try { localStorage.removeItem("trl-bands"); } catch (e) { /* 旧表示設定の保存値は掃除する */ }
-function saveBandFolds() { try { localStorage.setItem("trl-bandfolds", JSON.stringify(bandFolds)); } catch (e) { /* 保存不可でも切替は効く */ } }
-function setBandFold(id, folded) {
-  const w = document.querySelector(`.bandwrap[data-band="${id}"]`);
-  if (!w) return;
-  w.classList.toggle("folded", folded);
-  const btn = w.querySelector(".foldbtn");
-  if (btn) { btn.setAttribute("aria-expanded", folded ? "false" : "true"); const m = btn.querySelector(".fmark"); if (m) m.textContent = folded ? "▷" : "▽"; }
-  if (folded) bandFolds[id] = true; else delete bandFolds[id];
-  saveBandFolds();
-}
-function setupBandFolds() {
-  document.querySelectorAll(".bandwrap").forEach(w => {
-    const id = w.dataset.band, btn = w.querySelector(".foldbtn");
-    if (btn) btn.addEventListener("click", () => setBandFold(id, !w.classList.contains("folded")));
-    if (bandFolds[id]) setBandFold(id, true);
-  });
-}
+/* 帯は中身があるときだけ出す (各帯の描画関数が hidden を管理する)。
+   帯の表示設定と折りたたみは廃止した (折りたたみは実機で不具合が多く、
+   表示設定は消した帯を忘れるため)。旧保存値は掃除だけする */
+try { localStorage.removeItem("trl-bands"); localStorage.removeItem("trl-bandfolds"); } catch (e) { /* 掃除できなくても害はない */ }
 function runBand() {
   const el = $("#runband");
   if (!el) return;
@@ -1561,7 +1542,7 @@ async function load() {
     + (cv ? ` · 規程 ${cv}` : "");
   $("#fl").value = LANG;
   buildCohort();
-  facetChips(); warn(d); stats(); tierBand(); barrierBand(); auditBadge(); digestBand(); nqBand(); distBand(); moveBand(); nearBand(); usageBand(); alertBand(); runBand(); statsBand(); pinBand(); cmpBand(); laterBand(); searchHistBand(); recentBand(); tourBand(); buildBanUI(); newNote(); setupBandFolds(); applyZoom(); render();
+  facetChips(); warn(d); stats(); tierBand(); barrierBand(); auditBadge(); digestBand(); nqBand(); distBand(); moveBand(); nearBand(); usageBand(); alertBand(); runBand(); statsBand(); pinBand(); cmpBand(); laterBand(); searchHistBand(); recentBand(); tourBand(); buildBanUI(); newNote(); applyZoom(); render();
 }
 $("#sf").addEventListener("submit", e => { e.preventDefault(); saveSearch($("#q").value); render(); });
 /* 検索履歴 (この端末のみ、直近8件)。チップを押すとその検索を再実行する */
@@ -1639,7 +1620,7 @@ const ACTIONS = [
   {label: "調査メモ欄へ移動", keys: "m", run: () => { const t = $("#note"); if (t) { t.scrollIntoView({block: "center"}); t.focus(); } else toast("候補を選んでください"); }},
   {label: "複数選択モードの入 / 切", keys: "v", run: () => toggleVMode()},
   {label: "選択中の候補をあとで読むに追加 / 解除", keys: "w", run: () => { if (sel) toggleLater(sel); else toast("候補が選ばれていません"); }},
-  {label: "あとで読むの帯へ移動", keys: "W", run: () => { const el = $("#laterband"); if (el && !el.hidden) { setBandFold("laterband", false); el.scrollIntoView({block: "start"}); } else toast("あとで読むは空です"); }},
+  {label: "あとで読むの帯へ移動", keys: "W", run: () => { const el = $("#laterband"); if (el && !el.hidden) { el.scrollIntoView({block: "start"}); } else toast("あとで読むは空です"); }},
   {label: "並び順を前へ切り替える", keys: ",", run: () => { const s = $("#fo"); s.selectedIndex = (s.selectedIndex + s.options.length - 1) % s.options.length; s.dispatchEvent(new Event("change")); }},
   {label: "並び順を次へ切り替える", keys: ".", run: () => { const s = $("#fo"); s.selectedIndex = (s.selectedIndex + 1) % s.options.length; s.dispatchEvent(new Event("change")); }},
   {label: "検索欄へ移動", keys: "/", run: () => $("#q").focus()},

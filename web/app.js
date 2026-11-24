@@ -1786,6 +1786,9 @@ const ACTIONS = [
   {label: "現在の条件に名前を付けて保存", keys: "", run: () => $("#fpsave").click()},
   {label: "現在の絞り込みを CSV で書き出す", keys: "", run: () => exportData("csv")},
   {label: "現在の絞り込みを JSON で書き出す", keys: "", run: () => exportData("json")},
+  {label: "BANを書き出す (JSON)", keys: "", run: () => { const b = $("#banexp"); if (b) b.click(); }},
+  {label: "注目・新着の共有リンクをコピー", keys: "", run: () => { const b = $("#cpypins"); if (b) b.click(); }},
+  {label: "現在の絞り込みのリンクをコピー", keys: "", run: () => { const b = $("#fplink"); if (b) b.click(); }},
   {label: "data.json のスナップショットを保存", keys: "", run: () => saveSnapshot()},
   {label: "週次レポート (Markdown) を保存", keys: "", run: () => saveWeekly()},
   {label: "企業ページへ移動", keys: "", run: () => { location.href = "company.html"; }},
@@ -1824,16 +1827,29 @@ function palRender() {
   $("#pallist").innerHTML = palList.map((a, i) => `<button type="button" class="pal-i ${i === palIdx ? "on" : ""}" data-i="${i}"><span>${esc(a.label)}</span>${a.keys ? `<kbd>${esc(a.keys)}</kbd>` : ""}</button>`).join("")
     || `<p class="hint" style="padding:10px 14px">一致するコマンドがありません。</p>`;
 }
-function openPal() { $("#pal").hidden = false; $("#palq").value = ""; palIdx = 0; palRender(); $("#palq").focus(); }
-function closePal() { $("#pal").hidden = true; }
+/* パレット/ヘルプ表示中は背面のページをスクロールさせない (スマホで
+   キーボードを閉じたときにページが切れて見える問題の対処。枠の高さは
+   100dvh 基準に CSS 側で揃えてある) */
+function syncScrollLock() {
+  document.body.style.overflow = (!$("#pal").hidden || !$("#khelp").hidden) ? "hidden" : "";
+}
+function openPal() { $("#pal").hidden = false; $("#palq").value = ""; palIdx = 0; palRender(); syncScrollLock(); $("#palq").focus(); }
+function closePal() { $("#pal").hidden = true; syncScrollLock(); }
 function runPal() { const a = palList[palIdx]; if (!a) return; closePal(); a.run(); }
 function toggleHelp() {
   const h = $("#khelp");
   if (h.hidden) {
-    $("#khlist").innerHTML = ACTIONS.filter(a => a.keys).map(a => `<div class="kh-r" data-t="${esc((a.keys + " " + a.label).toLowerCase())}"><kbd>${esc(a.keys)}</kbd><span>${esc(a.label)}</span></div>`).join("");
+    // 一覧は全コマンドを出す: キーの付いたものを先に、キーなし
+    // (コマンドパレット専用) を後に分けて並べる。「コマンドにはあるのに
+    // キー操作には無い」という穴に見える状態をなくすため
+    const row = (a, keyless) => `<div class="kh-r${keyless ? " keyless" : ""}" data-t="${esc(((a.keys || "") + " " + a.label).toLowerCase())}"><kbd>${esc(a.keys || "なし")}</kbd><span>${esc(a.label)}</span></div>`;
+    $("#khlist").innerHTML = ACTIONS.filter(a => a.keys).map(a => row(a, false)).join("")
+      + `<div class="kh-div">キーなし（コマンドパレット専用）</div>`
+      + ACTIONS.filter(a => !a.keys).map(a => row(a, true)).join("");
     const hq = $("#helpq"); if (hq) hq.value = "";
     h.hidden = false;
   } else h.hidden = true;
+  syncScrollLock();
 }
 $("#helpq").addEventListener("input", e => {
   const q = e.target.value.trim().toLowerCase();
@@ -1864,7 +1880,7 @@ $("#palq").addEventListener("keydown", e => {
 });
 $("#pallist").addEventListener("pointerdown", e => { const b = e.target.closest("[data-i]"); if (b) { e.preventDefault(); palIdx = +b.dataset.i; runPal(); } });
 $("#pal").addEventListener("pointerdown", e => { if (e.target === $("#pal")) closePal(); });
-$("#khelp").addEventListener("pointerdown", e => { if (e.target === $("#khelp")) $("#khelp").hidden = true; });
+$("#khelp").addEventListener("pointerdown", e => { if (e.target === $("#khelp")) { $("#khelp").hidden = true; syncScrollLock(); } });
 $("#palbtn").addEventListener("click", openPal);
 $("#khbtn").addEventListener("click", toggleHelp);
 document.addEventListener("keydown", e => {
@@ -1878,7 +1894,7 @@ document.addEventListener("keydown", e => {
   }
   if (e.key === "Escape") {
     const hadOverlay = !$("#pal").hidden || !$("#khelp").hidden;
-    closePal(); $("#khelp").hidden = true; pracIdx = -1; pracMsg();
+    closePal(); $("#khelp").hidden = true; syncScrollLock(); pracIdx = -1; pracMsg();
     // 画面が開いていなければ、Esc で BANモードを全部抜ける
     if (!hadOverlay && BANMODE.size) { for (const id of [...BANMODE]) { BANMODE.delete(id); syncBanBtn(id); } toast("BANモードを抜けました"); }
     return;

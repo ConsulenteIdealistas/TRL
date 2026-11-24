@@ -619,11 +619,12 @@ function openAPal() {
   const ov = $("#apal");
   if (!ov) return;
   ov.hidden = false;
+  document.body.style.overflow = "hidden";
   $("#apalq").value = "";
   drawAPal("");
   $("#apalq").focus();
 }
-function closeAPal() { const ov = $("#apal"); if (ov) ov.hidden = true; }
+function closeAPal() { const ov = $("#apal"); if (ov) ov.hidden = true; document.body.style.overflow = ""; }
 function drawAPal(q, keepSel) {
   apalList = AACTS.filter(a => !q || a.label.toLowerCase().includes(q.toLowerCase()));
   if (!keepSel) apalSel = 0;

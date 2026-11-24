@@ -16,6 +16,9 @@
 .key{flex:1 1 0;min-width:38px;text-align:center;padding:8px 2px 6px;border:1.5px solid var(--line);border-radius:8px;background:var(--surface);color:var(--muted);font-size:13px;position:relative}
 .key b{display:block;font-size:14px;color:var(--text);font-weight:600}
 .key small{display:block;font-size:9.5px;line-height:1.25;color:var(--muted)}
+.key small.sh{font-size:8.5px;color:#e8a100;font-weight:700}
+.key b i{display:block;font-style:normal;line-height:1.1}
+.key b i.top{font-size:11px}
 .key.used{cursor:pointer;color:var(--text)}
 .key.used small{color:var(--text);opacity:.75}
 .key.w2{flex:1.8 1 0}.key.w3{flex:2.6 1 0}.key.wide{flex:5 1 0}
@@ -42,14 +45,14 @@ table.kt td:first-child{white-space:nowrap;width:110px}
 tr.hl td{background:color-mix(in srgb,var(--accent) 13%,transparent)}
 kbd{background:var(--surface-muted);border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:0 5px;font-size:12px}
 </style>
-</head>
+<link rel="icon" type="image/png" sizes="16x16" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAABtklEQVR4nM2STWsTURSG33PvnUkzSYqpqaFaLTULCw0opdBS/MSVgl248w8o+BNc+RdcdVtXLlyIgkKloO5ErPRLkYK2i6aZWtM0M2YyczP3HhfV7OvKs35eeHmfQ8yMo5w4Ev0vAWWtJYABAgD0+gXsW+gclZw9w6+X6fYUZV0AZI05xA/Rhm3v2nqE7SY+E8Irry6rruREU6kgrlbhKLKpAQGMFvOW6ZQlD4iMCwWGoVQs1WwjpKEi1jfp1iTyfQqEl3XrJwhTHiR32yU/sND6TtV5t4UTfccn2vscJVQqwoCfLZM1Zu5r+mhVH5OYHVGL37SynDOQXRskmDnjPLzpgcFxF19qqJRFjPDeGI2b+JLXfTDpohlFftjeCzwTU6fDOgEAArIO/2ghq8SGeSMg0fyFIAKARmtYxh8+7ty/mMXB/upKbX5hZ36hDkDcOE8ZR+1iLeTpc3lz0pMAxvvTaxf6r4/Kxy++TwxlPm1ETxZ1tVLo7U3r+vmSfTol7haoXBIjBNKc+nyQsMxT7jR5fwT9dUTGmE37fs28/WkbCgNFOntKjI3KSpHyPRI9swz6/57vNxXUyx5xfRgRAAAAAElFTkSuQmCC"><link rel="icon" type="image/png" sizes="32x32" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAAEyElEQVR4nO1WTWxUVRT+vvtepzOdzrS103GmBSrSUqCE/6Ck0Rhko0GIhCbGjZLIisRolJCo6MIEdeXKGBOiLkSRhXEB7IRUDSQCLQqkEChtodjaH/rz5qfv597jYn7aYWtIXHAXL+/dc+/5znfOd+59FBE8zKEeqvdHAP8LANsYA4DFTwqEZaMUDBQsKI0gUCG8wirzy1W2JtiWQuUCaq0LPsDidCVI0QeLVhkx1ww8gSfwa5lIcDUA8/NFdXlIjI99z3N5crETmyjhSZHHg94BoczLfJ8+ZyR7R84HnNG4n2b7ltluOdeLDa28d990daizf8nYNJY1wSoSLzJYHPID4Y9qZ9RMDprBCHWLagBdwDXITcnNFq7t+DGmBsfh5fWza1BVxYF7qA6x/y7f3MlEvJASu5RZSBkT8IFR7d0KnDC9lIp3hLZZUGFWl+l6mCeJ9VMcnTFNUaYauaTRCFTfLRrI+Aya4oU4aQKNcpVLlbjo6az47TabrWpKhXWhfoSAcmNMhibEVmp5CoP/iCVMxFTn0nIa7LJ3KUlkUiNtqWYrTC64RRmmtFNAQJj3Vf+YqbHQkWbvEMXI68+AkL4R9A5jxyq7sOGrW8HRYYFFGEhgoIFAVkWlq9n6+oYWT+ALXKFnvn05siZpf3/V+/xXl5707GuKDN/H5qVM1cnGVl4fhRYA7EjKn3d45rpdCG141vSNBFAUDRgw0NBgA56M4tKQT1/oabgQnzu+dHoOxMemde9tzUCjJs7d64o5274anS1M10GASIi71mMyqwpJ/2hDaPrVyNHNxIyH6fkreyMz+2t7umvhGzh+eziYOVg/80HDzhUyPuUf+mmG2sD14fqCRYpURLpOMq757JQ5fh7RaqxMqkLRqi3EqhgRgeMi40ct1FaxxgJdzazrZ7yBcff2uJtx5uHm47amNvA8BB4p5eIVedSEZEm9ujIsmTwAWygj5nIjV9QwLoFGxoUxEIEIQHiBZPODjmz62IEWMWhr5Cd7mo//kYE3D+1DQBKlW4sAFLl3q5yrR6QagJqQgQkZiDAOAIGGk0cmD1NqbteDk0vA3fq4SCarMs6pd1qb66sY+MjMwpkrybZCYSpcpbZ3qpoQAXvQ/M5CawsYGHFyNFICAFwfTnZpY+SHA8v3Hunvu5l794trx95bZ/J5Og60funQBUVCWQJYiqc/3WSVz0YCAnsOf1cjJjCkEt9HJgdtxBgUzox5F3MZyegnkjWHu5u737908szchwlrSSqGXFaEZy95oAVlQan9LzZx8UErAGDHkByS3/r0iY3WKx3p8FsvNEGbeI0FgoJtHbVv7063JKoB2dWV+u7w+tsjTrIhsrYtduSNNiFBggokgF1dScVFLVmQ1oQ/cFofdOF2cs/T9msLnVqxrPjuQmfEnTX+Hck1M7bSqkXlqGj7AoCnc5eDExfMMV9Mu9pBCZOhNeq5JrUMIECCAozK5D0z5YmVBztUOqGidQyxBL6Qc1kUYGHSaC2Qq/pkv+m5a/pFqoiwQthirc04JWojrhC1pW5r1ZYYYy3qsQqKhWuI5aIuPIsMjNZFBWE+EP9s8E1WcgphSshiRKF2g/VUykorKAWFBepY5POBulaQ4KM/u0cA/3n8C4Bqb/RgZEqHAAAAAElFTkSuQmCC"><link rel="icon" type="image/png" sizes="48x48" href="data:image/png;base64,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"></head>
 <body>
 <header class="topbar"><a class="brand" href="index.html"><span class="mark">T</span><span>TRL<span class="light"> Explorer</span></span></a><div class="meta">Research Intelligence</div></header>
 <main class="ws"><div class="docwrap">
 <p style="margin:0 0 12px"><a class="tg" href="index.html">← 一覧に戻る</a></p>
 <h1 class="doct">キー操作の説明書</h1>
 <div class="doc">
-<p>キーボードだけで一覧を読み進め、絞り込み、BANし、ページを渡り歩くための全操作です。色の付いたキーが使えるキーで、色は役割ごとに分かれています。キーを押す（タップする）と、そのキーの説明に印が付きます。右上に紫の丸があるキーは、<kbd>g</kbd> の後に押すページ移動（g シーケンス）でも使います。</p>
+<p>キーボードだけで一覧を読み進め、絞り込み、BANし、ページを渡り歩くための全操作です。色の付いたキーが使えるキーで、色は役割ごとに分かれています。キーを押す（タップする）と、そのキーの説明に印が付きます。右上に紫の丸があるキーは、<kbd>g</kbd> の後に押すページ移動（g シーケンス）でも使います。キーの下に橙色で書いた「Shift:」は、Shift を足したときの働きです。<kbd>?</kbd> は Shift+<kbd>/</kbd> のことで、図では <kbd>/</kbd> と同じキーに2段で入っています。</p>
 <div class="kb" id="kb">
 <div class="kbrow">
 <div class="key used c-sys" data-k="esc"><b>Esc</b><small>閉じる</small></div>
@@ -68,12 +71,12 @@ kbd{background:var(--surface-muted);border:1px solid var(--line);border-bottom-w
 </div>
 <div class="kbrow">
 <div class="key used c-nav" data-k="gseq"><b>Q</b><small>g の後: 予定</small><span class="dot"></span></div>
-<div class="key used c-act" data-k="w"><b>W</b><small>あとで読む</small><span class="dot"></span></div>
+<div class="key used c-act" data-k="w"><b>W</b><small>あとで読む</small><small class="sh">Shift: 帯へ移動</small><span class="dot"></span></div>
 <div class="key used c-act" data-k="e"><b>E</b><small>原文/根拠</small></div>
-<div class="key used c-nav" data-k="gseq"><b>R</b><small>g の後: 履歴</small><span class="dot"></span></div>
+<div class="key used c-act" data-k="r"><b>R</b><small>再評価予約</small><span class="dot"></span></div>
 <div class="key"><b>T</b><small></small></div>
-<div class="key"><b>Y</b><small></small></div>
-<div class="key"><b>U</b><small></small></div>
+<div class="key used c-act" data-k="y"><b>Y</b><small>リンクコピー</small></div>
+<div class="key used c-move" data-k="u"><b>U</b><small>動いた候補</small><small class="sh">Shift: 逆方向</small></div>
 <div class="key"><b>I</b><small></small></div>
 <div class="key used c-nav" data-k="gseq"><b>O</b><small>g の後: 観測</small><span class="dot"></span></div>
 <div class="key"><b>P</b><small></small></div>
@@ -82,13 +85,13 @@ kbd{background:var(--surface-muted);border:1px solid var(--line);border-bottom-w
 </div>
 <div class="kbrow">
 <div class="key used c-view" data-k="a"><b>A</b><small>条件リセット</small><span class="dot"></span></div>
-<div class="key used c-filter" data-k="s"><b>S</b><small>並び順 次へ</small></div>
+<div class="key used c-filter" data-k="s"><b>S</b><small>並び順 次へ</small><small class="sh">Shift: 滑らか</small></div>
 <div class="key used c-view" data-k="d"><b>D</b><small>世代表示</small><span class="dot"></span></div>
 <div class="key used c-act" data-k="f"><b>F</b><small>ピン留め</small></div>
 <div class="key used c-nav" data-k="g"><b>G</b><small>移動の開始</small></div>
 <div class="key"><b>H</b><small></small></div>
-<div class="key used c-move" data-k="j"><b>J</b><small>次の候補</small></div>
-<div class="key used c-move" data-k="k"><b>K</b><small>前の候補</small><span class="dot"></span></div>
+<div class="key used c-move" data-k="j"><b>J</b><small>次の候補</small><small class="sh">Shift: 10件</small></div>
+<div class="key used c-move" data-k="k"><b>K</b><small>前の候補</small><small class="sh">Shift: 10件</small><span class="dot"></span></div>
 <div class="key used c-view" data-k="l"><b>L</b><small>言語</small><span class="dot"></span></div>
 <div class="key used c-view" data-k="semi"><b>;</b><small>コンパクト</small></div>
 <div class="key"><b>'</b><small></small></div>
@@ -104,11 +107,10 @@ kbd{background:var(--surface-muted);border:1px solid var(--line);border-bottom-w
 <div class="key used c-act" data-k="m"><b>M</b><small>メモ欄へ</small></div>
 <div class="key used c-filter" data-k="comma"><b>,</b><small>並び順 前へ</small></div>
 <div class="key used c-filter" data-k="comma"><b>.</b><small>並び順 次へ</small></div>
-<div class="key used c-filter" data-k="slash"><b>/</b><small>検索欄へ</small></div>
-<div class="key used c-sys" data-k="help"><b>?</b><small>キー一覧</small></div>
+<div class="key used c-filter" data-k="slash"><b><i class="top">?</i><i>/</i></b><small>検索 / Shift:一覧</small></div>
 </div>
 <div class="kbrow">
-<div class="key used c-sys w3" data-k="palette"><b>Ctrl + K</b><small>コマンドパレット (Mac は Cmd+K)</small></div>
+<div class="key used c-sys w3" data-k="palette"><b>コマンドパレット</b><small>Ctrl+K (Mac は Cmd+K) で開く</small></div>
 <div class="key wide"><b>Space</b><small>（割り当てなし）</small></div>
 <div class="key used c-view w2" data-k="obs"><b>← →</b><small>観測: 項目を巡回</small></div>
 </div>
@@ -117,13 +119,16 @@ kbd{background:var(--surface-muted);border:1px solid var(--line);border-bottom-w
 <span class="l-move">移動・選択</span><span class="l-filter">絞り込み・検索</span><span class="l-act">候補への操作</span><span class="l-ban">BAN</span><span class="l-view">表示・観測</span><span class="l-nav">ページ移動 (g の後)</span><span class="l-sys">画面・その他</span>
 </div>
 
+<h2>コマンドとキー操作の違い</h2>
+<p>「コマンド」はこのサイトでできる操作の全体です。コマンドパレット（<kbd>Ctrl+K</kbd>）に全て入っていて、名前で検索してそのまま実行できます。「キー操作」は、そのうちキーボードのキーに割り当てたものの呼び方です。<kbd>?</kbd> のキー操作一覧には全コマンドが載っていて、キーの付いたものが先、キーなし（パレット専用）のものが後に並びます。キーなしの操作が「無い」のではなく、キーで呼べないだけです。</p>
+
 <h2>移動・選択</h2>
 <table class="kt">
 <tr id="k-j"><td><kbd>j</kbd> / <kbd>k</kbd></td><td>次の候補 / 前の候補へ移動します。一覧の並び順どおりに選択が移ります。</td></tr>
 <tr id="k-enter"><td><kbd>Enter</kbd></td><td>選択中の候補の詳細ページを開きます。複数選択モード中は、詳細でなく選択の切り替えになります。</td></tr>
 <tr id="k-k"><td><kbd>k</kbd></td><td>前の候補へ（<kbd>j</kbd> の逆）。<kbd>g</kbd> の後に押すとこの説明書を開きます。</td></tr>
 <tr><td><kbd>Shift+J</kbd> / <kbd>Shift+K</kbd></td><td>10件 次 / 前の候補へ移動します。</td></tr>
-<tr><td><kbd>u</kbd> / <kbd>Shift+U</kbd></td><td>前回から「動いた」候補（TRLか総合点が変わった・帯域を跨いだ・方向性が反転した）だけを 次 / 前へ巡回します。何件目かは通知に出ます。末尾まで行くと先頭に戻ります。</td></tr>
+<tr id="k-u"><td><kbd>u</kbd> / <kbd>Shift+U</kbd></td><td>前回から「動いた」候補（TRLか総合点が変わった・帯域を跨いだ・方向性が反転した）だけを 次 / 前へ巡回します。何件目かは通知に出ます。末尾まで行くと先頭に戻ります。</td></tr>
 </table>
 
 <h2>絞り込み・検索</h2>
@@ -144,8 +149,8 @@ kbd{background:var(--surface-muted);border:1px solid var(--line);border-bottom-w
 <tr id="k-e"><td><kbd>e</kbd> / <kbd>Shift+E</kbd></td><td><kbd>e</kbd> は原文を新しいタブで開き、<kbd>Shift+E</kbd> は根拠（関連材料の先頭）を開きます。</td></tr>
 <tr id="k-m"><td><kbd>m</kbd></td><td>詳細の調査メモ欄へ移動します。</td></tr>
 <tr id="k-n"><td><kbd>n</kbd></td><td>新着だけ表示の切り替え（絞り込みの節も参照）。</td></tr>
-<tr><td><kbd>r</kbd></td><td>選択中の候補の再評価を予約 / 解除します（監査ページの予約と同じ記録で、カードに青い「予約」バッジが付きます）。予約は反映用JSON経由でDBに届きます。解除はこの端末だけに効きます（DBの予約行は追記専用のため）。</td></tr>
-<tr><td><kbd>y</kbd></td><td>選択中の候補の詳細ページへのリンクをコピーします。</td></tr>
+<tr id="k-r"><td><kbd>r</kbd></td><td>選択中の候補の再評価を予約 / 解除します（監査ページの予約と同じ記録で、カードに青い「予約」バッジが付きます）。予約は反映用JSON経由でDBに届きます。解除はこの端末だけに効きます（DBの予約行は追記専用のため）。</td></tr>
+<tr id="k-y"><td><kbd>y</kbd></td><td>選択中の候補の詳細ページへのリンクをコピーします。</td></tr>
 </table>
 
 <h2>BAN（除外）</h2>
@@ -189,7 +194,7 @@ kbd{background:var(--surface-muted);border:1px solid var(--line);border-bottom-w
 <h2>画面・その他</h2>
 <table class="kt">
 <tr id="k-palette"><td><kbd>Ctrl+K</kbd>（Mac は <kbd>Cmd+K</kbd>）</td><td>コマンドパレットを開きます。全コマンドを名前で検索して実行できます。書き出しやページ移動もここからできます。</td></tr>
-<tr id="k-help"><td><kbd>?</kbd></td><td>キー操作の一覧（簡易版）を開きます。一覧の中は言葉で検索できます。「キー操作の練習」ボタンで、実際にキーを押す練習もできます。</td></tr>
+<tr id="k-help"><td><kbd>?</kbd></td><td>キー操作の一覧（簡易版）を開きます。一覧の中は言葉で検索できます。「キー操作の練習」ボタンで、実際にキーを押す練習もできます。? は Shift+<kbd>/</kbd> で、キーボードでは / と同じキーです（図でも同じキーに入っています）。</td></tr>
 <tr id="k-esc"><td><kbd>Esc</kbd></td><td>パレットやキー一覧を閉じます。何も開いていないときは、光っているBANモードを全部抜けます。</td></tr>
 <tr><td><kbd>Shift+S</kbd></td><td>滑らかスクロールの入 / 切を切り替えます（この端末に保存）。入のときは、マウスホイールの刻みを smootherstep 補間でつないで滑らかにスクロールします。トラックパッドの細かいスクロール、内側のスクロール領域、Ctrl+ホイール（ズーム）には触りません。</td></tr>
 </table>

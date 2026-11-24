@@ -140,6 +140,7 @@ textarea{width:100%;min-height:90px;resize:vertical;padding:10px;border:1px soli
 .st-pending{color:#607080;background:#edf1f4}
 .dir{padding:6px 9px;border-radius:7px;font-size:10px;font-weight:800}
 .nw{padding:4px 8px;border-radius:7px;font-size:10px;font-weight:800;color:#fff;background:#db2777}
+.rsv{padding:4px 8px;border-radius:7px;font-size:10px;font-weight:800;color:#fff;background:#2563eb}
 .pin{min-width:36px;min-height:36px;padding:4px 8px;border:1px solid var(--line);border-radius:8px;background:var(--field);color:var(--sub);font-size:15px;line-height:1;cursor:pointer}
 .pin.on{color:#d97706;border-color:#d97706}
 .facts{display:inline-flex;align-items:center;gap:2px}

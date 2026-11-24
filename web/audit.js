@@ -562,22 +562,43 @@ function renderSummary() {
     + (s.api ? `<p>API照合: ${esc(s.api)}</p>` : "")
     + (s.openCards ? `<p>処分待ちのカード ${s.openCards}件${s.days !== null ? `（最古の監査から ${s.days}日）` : ""}</p>` : "");
 }
-/* 監査ページのキー操作: j/k でカード移動、Enter で詳細へ */
+/* 監査ページのキー操作: j/k で項目 (エントリ) 移動、1/2/3 で処分
+   (問題あり/誤検知/様子見、その項目のチップを押すのと同じ)、r で再評価の
+   予約、Enter でその項目の候補の詳細へ。処分は再描画されるので、直後に
+   選択表示だけ付け直す */
 let ACUR = -1;
+function amark() {
+  const els = [...document.querySelectorAll("#list .eentry")];
+  if (!els.length) { ACUR = -1; return; }
+  ACUR = Math.min(els.length - 1, Math.max(0, ACUR));
+  els.forEach((c, i) => c.classList.toggle("sel", i === ACUR));
+  if (els[ACUR]) els[ACUR].scrollIntoView({block: "nearest"});
+}
 document.addEventListener("keydown", ev => {
   const t = ev.target;
   if ((t && typeof t.matches === "function" && t.matches("input, textarea, select")) || ev.isComposing) return;
   if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === "k") { ev.preventDefault(); openAPal(); return; }
-  const els = [...document.querySelectorAll("#list .acard")];
+  const els = [...document.querySelectorAll("#list .eentry")];
   if (!els.length) return;
   if (ev.key === "j" || ev.key === "k") {
     ACUR = Math.min(els.length - 1, Math.max(0, ACUR + (ev.key === "j" ? 1 : -1)));
-    els.forEach((c, i) => c.classList.toggle("sel", i === ACUR));
-    els[ACUR].scrollIntoView({block: "nearest"});
+    amark();
     ev.preventDefault();
   } else if (ev.key === "Enter" && ACUR >= 0 && els[ACUR]) {
-    const a = els[ACUR].querySelector("a.atitle");
+    const card = els[ACUR].closest(".acard");
+    const a = card && card.querySelector("a.atitle");
     if (a) location.href = a.href;
+  } else if ((ev.key === "1" || ev.key === "2" || ev.key === "3") && ACUR >= 0 && els[ACUR]) {
+    const disp = {1: "confirmed", 2: "false_positive", 3: "watch"}[ev.key];
+    const chip = els[ACUR].querySelector(`[data-disp="${disp}"]`);
+    if (chip) { chip.click(); amark(); }
+    ev.preventDefault();
+  } else if (ev.key === "r" && ACUR >= 0 && els[ACUR]) {
+    const card = els[ACUR].closest(".acard");
+    const btn = card && card.querySelector("[data-reeval]");
+    if (btn) { btn.click(); amark(); }
+    else { const msg = $("#copyMsg"); if (msg) msg.textContent = "再評価の予約は長期評価のカードだけです。"; }
+    ev.preventDefault();
   }
 });
 /* 監査ページのコマンドパレット (Ctrl/Cmd+K) */

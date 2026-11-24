@@ -448,7 +448,7 @@ function card(p) {
   const ents = p.entities.filter(e => e.strength === "strong").length;
   const facet = facetText(p);
   const diffTxt = prevDiffTxt(p);
-  return `<article class="card ${s ? "sel" : ""}${VMODE && VSEL.has(p.id) ? " vsel" : ""}" data-id="${esc(p.id)}"><div class="main"><div style="min-width:0"><div class="top"><span class="${src(p.source)}">${srcName(p.source)}</span><span class="date">${esc(p.published || "")}</span>${p.retrieved_at ? `<span class="date">収集 ${esc(String(p.retrieved_at).slice(0, 10))}</span>` : ""}${LANG === "ja" && srcOf(p) ? `<span class="date">訳: ${esc(srcOf(p))}</span>` : ""}${p.long && p.long.llm_model ? `<span class="date">評価: ${esc(p.long.llm_model)}</span>` : ""}${genBadge(p.long) || genBadge(p.event)}${isNewEval(p) ? `<span class="nw">新着</span>` : ""}</div><h3 class="title">${esc(dispT(p))}</h3><p class="abs">${esc(dispA(p))}</p><div class="tags">${(p.fields || []).slice(0, 4).map(t => `<span class="tag">${esc(t)}</span>`).join("")}</div><div class="mi"><span>技術成熟度 <strong>${fmtScore(sc(p, "technology_readiness"))}</strong></span><span>技術的優位性 <strong>${fmtScore(sc(p, "technological_advantage"))}</strong></span><span>関連企業 <strong>${ents ? ents + "社" : "未特定"}</strong></span>${facet ? `<span>国・分野 <strong>${esc(facet)}</strong></span>` : ""}${diffTxt ? `<span>前回比 <strong>${esc(diffTxt)}</strong></span>` : ""}${RANK.has(p.id) ? `<span>並び <strong>${esc(RANK.get(p.id))}</strong></span>` : ""}${evShort(p) ? `<span>イベント評価 <strong>${esc(evShort(p))}</strong></span>` : ""}${seen.has(p.id) ? `<span>既読</span>` : ""}</div>${barrierChipsHtml(p.long)}</div><div class="side">${stB(p.display_status)}${dirB(p)}${trl(lvl(p))}<button type="button" class="pin ${pins.has(p.id) ? "on" : ""}" data-pin="${esc(p.id)}" aria-pressed="${pins.has(p.id) ? "true" : "false"}" title="注目ピン (この端末に保存)">${pins.has(p.id) ? "★" : "☆"}</button></div></div><div class="foot"><span>${p.long && p.long.critical_missing.length ? `必須の不足 ${p.long.critical_missing.length}件` : p.display_status === "pending" ? (p.next_up ? "次回評価予定" : "評価待ち") : p.display_status === "rejected" ? "除外" + (p.screen_reason ? ": " + (SR[p.screen_reason] || p.screen_reason) : "") : ""}</span><span class="facts"><button type="button" class="clink" data-ccite="${esc(p.id)}">出典コピー</button><button type="button" class="clink" data-clink="${esc(p.id)}">リンクコピー</button><a class="tg" href="detail.html?id=${encodeURIComponent(p.id)}">詳細を見る →</a></span></div></article>`;
+  return `<article class="card ${s ? "sel" : ""}${VMODE && VSEL.has(p.id) ? " vsel" : ""}" data-id="${esc(p.id)}"><div class="main"><div style="min-width:0"><div class="top"><span class="${src(p.source)}">${srcName(p.source)}</span><span class="date">${esc(p.published || "")}</span>${p.retrieved_at ? `<span class="date">収集 ${esc(String(p.retrieved_at).slice(0, 10))}</span>` : ""}${LANG === "ja" && srcOf(p) ? `<span class="date">訳: ${esc(srcOf(p))}</span>` : ""}${p.long && p.long.llm_model ? `<span class="date">評価: ${esc(p.long.llm_model)}</span>` : ""}${genBadge(p.long) || genBadge(p.event)}${isNewEval(p) ? `<span class="nw">新着</span>` : ""}${bookedState(p) ? `<span class="rsv">予約</span>` : ""}</div><h3 class="title">${esc(dispT(p))}</h3><p class="abs">${esc(dispA(p))}</p><div class="tags">${(p.fields || []).slice(0, 4).map(t => `<span class="tag">${esc(t)}</span>`).join("")}</div><div class="mi"><span>技術成熟度 <strong>${fmtScore(sc(p, "technology_readiness"))}</strong></span><span>技術的優位性 <strong>${fmtScore(sc(p, "technological_advantage"))}</strong></span><span>関連企業 <strong>${ents ? ents + "社" : "未特定"}</strong></span>${facet ? `<span>国・分野 <strong>${esc(facet)}</strong></span>` : ""}${diffTxt ? `<span>前回比 <strong>${esc(diffTxt)}</strong></span>` : ""}${RANK.has(p.id) ? `<span>並び <strong>${esc(RANK.get(p.id))}</strong></span>` : ""}${evShort(p) ? `<span>イベント評価 <strong>${esc(evShort(p))}</strong></span>` : ""}${seen.has(p.id) ? `<span>既読</span>` : ""}</div>${barrierChipsHtml(p.long)}</div><div class="side">${stB(p.display_status)}${dirB(p)}${trl(lvl(p))}<button type="button" class="pin ${pins.has(p.id) ? "on" : ""}" data-pin="${esc(p.id)}" aria-pressed="${pins.has(p.id) ? "true" : "false"}" title="注目ピン (この端末に保存)">${pins.has(p.id) ? "★" : "☆"}</button></div></div><div class="foot"><span>${p.long && p.long.critical_missing.length ? `必須の不足 ${p.long.critical_missing.length}件` : p.display_status === "pending" ? (p.next_up ? "次回評価予定" : "評価待ち") : p.display_status === "rejected" ? "除外" + (p.screen_reason ? ": " + (SR[p.screen_reason] || p.screen_reason) : "") : ""}</span><span class="facts"><button type="button" class="clink" data-ccite="${esc(p.id)}">出典コピー</button><button type="button" class="clink" data-clink="${esc(p.id)}">リンクコピー</button><a class="tg" href="detail.html?id=${encodeURIComponent(p.id)}">詳細を見る →</a></span></div></article>`;
 }
 function scoreRow(k, it) {
   const v = it && typeof it.score === "number" && isFinite(it.score) ? it.score : null;
@@ -1628,9 +1628,114 @@ if (statbandEl) statbandEl.addEventListener("click", e => {
     buildCohort(); statsBand(); detail();
   }
 });
+/* 滑らかスクロール: マウスホイールの刻みを smootherstep (6t^5-15t^4+10t^3、
+   始点と終点で速度が 0 になる補間) でつなぎ、滑らかにスクロールする。
+   ホイールの途中で次の入力が来たら、その時点の見かけ位置から組み直す。
+   トラックパッドの細かいピクセル入力は素の動きが既に滑らかなので触らない。
+   内側にスクロール領域がある場所 (パレット等) と、パレット/ヘルプ表示中は
+   触らない。S キーで入/切 (端末に保存) */
+const smootherstep = t => { t = Math.min(1, Math.max(0, t)); return t * t * t * (t * (t * 6 - 15) + 10); };
+let smoothOn = true;
+try { smoothOn = localStorage.getItem("trl-smooth") !== "0"; } catch (e) { /* 読めなければ入 */ }
+let smAnim = null;
+function smPos(now) {
+  if (!smAnim) return window.scrollY;
+  const t = (now - smAnim.start) / smAnim.dur;
+  if (t >= 1) return smAnim.to;
+  return smAnim.from + (smAnim.to - smAnim.from) * smootherstep(t);
+}
+function smTick(now) {
+  if (!smAnim) return;
+  const t = (now - smAnim.start) / smAnim.dur;
+  if (t >= 1) { window.scrollTo(0, smAnim.to); smAnim = null; return; }
+  window.scrollTo(0, smAnim.from + (smAnim.to - smAnim.from) * smootherstep(t));
+  requestAnimationFrame(smTick);
+}
+document.addEventListener("wheel", e => {
+  if (!smoothOn || e.ctrlKey) return;  // ctrl+ホイールはブラウザズーム
+  if (!$("#pal").hidden || !$("#khelp").hidden) return;
+  let el = e.target;
+  while (el && el !== document.body) {
+    if (el instanceof Element) {
+      const st = getComputedStyle(el);
+      if ((st.overflowY === "auto" || st.overflowY === "scroll") && el.scrollHeight > el.clientHeight) return;
+    }
+    el = el.parentElement;
+  }
+  const unit = e.deltaMode === 1 ? 33 : e.deltaMode === 2 ? window.innerHeight : 1;
+  const d = e.deltaY * unit;
+  if (e.deltaMode === 0 && Math.abs(d) < 40) return;  // トラックパッド等の細かい入力は素通し
+  e.preventDefault();
+  const now = performance.now();
+  const from = smPos(now);
+  const base = smAnim ? smAnim.to : window.scrollY;
+  const maxY = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+  const to = Math.min(maxY, Math.max(0, base + d));
+  if (to === from) return;
+  smAnim = {from, to, start: now, dur: Math.min(320, Math.max(90, 90 + Math.abs(to - from) * 0.25))};
+  requestAnimationFrame(smTick);
+}, {passive: false});
+document.addEventListener("keydown", () => { smAnim = null; }, true);
+function toggleSmooth() {
+  smoothOn = !smoothOn;
+  smAnim = null;
+  try { localStorage.setItem("trl-smooth", smoothOn ? "1" : "0"); } catch (e) { /* 保存不可でも切り替えは効く */ }
+  toast(smoothOn ? "滑らかスクロール: 入" : "滑らかスクロール: 切");
+}
 /* キー操作とコマンドパレット。よく使う操作はホームポジション
    (j/k/f/d/s/l/;) に寄せ、残りはパレットから名前で呼べるようにする。
    ACTIONS が正本で、キー割り当て・パレット・ヘルプはすべてここから出る */
+/* 動いた候補だけを巡回する (u/U)。「動いた」= TRL か総合点が変わった・
+   帯域を跨いだ・方向性が反転した、のいずれか (histFacts の定義そのまま)。
+   n は新着トグルで使用済みのため、update の u に割り当てた */
+function jumpMoved(dir) {
+  const isMoved = p => { const f = histFacts(p); return f.moved || f.bandCross || f.dirFlip; };
+  const idx = [];
+  VIEW.forEach((p, i) => { if (isMoved(p)) idx.push(i); });
+  if (!idx.length) { toast("前回から動いた候補はありません"); return; }
+  const cur = VIEW.findIndex(p => p.id === sel);
+  let n = dir > 0 ? idx.find(i => i > cur) : [...idx].reverse().find(i => i < cur);
+  if (n === undefined) n = dir > 0 ? idx[0] : idx[idx.length - 1];
+  sel = VIEW[n].id;
+  document.querySelectorAll("#list .card.sel").forEach(el => el.classList.remove("sel"));
+  const el = document.querySelector(`#list .card[data-id="${window.CSS && CSS.escape ? CSS.escape(sel) : sel}"]`);
+  if (el) { el.classList.add("sel"); el.scrollIntoView({block: "nearest"}); }
+  detail();
+  toast(`動いた候補 ${idx.indexOf(n) + 1} / ${idx.length} 件目`);
+}
+/* 再評価の予約 (r キー): 監査ページと同じ端末内ストア (trl-review) に
+   同じ形で書くことで、反映用 JSON の書き出しにそのまま乗る。予約の解除は
+   DB へ伝わらない (監査ページと同じ非対称。あちらの mergeReeval の注記参照) */
+let reviewCache = null;
+function reviewStore() {
+  if (reviewCache) return reviewCache;
+  let base = {decisions: {}, reeval: {}, adjustments: {}};
+  try { const r = JSON.parse(localStorage.getItem("trl-review") || "null");
+    if (r && typeof r === "object") base = {decisions: r.decisions || {}, reeval: r.reeval || {}, adjustments: r.adjustments || {}};
+  } catch (e) { /* 読めなければ空から */ }
+  reviewCache = base;
+  return base;
+}
+function newReviewId() {
+  try { if (window.crypto && crypto.randomUUID) return crypto.randomUUID(); } catch (e) { /* 代替生成へ */ }
+  return "r-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 12);
+}
+function bookedState(p) {
+  const l = reviewStore().reeval[p.id];
+  if (l && l.origin !== "server") return !!l.on;
+  return !!p.reeval_booked;
+}
+function toggleReevalKey() {
+  const p = P.find(x => x.id === sel);
+  if (!p) { toast("候補が選択されていません"); return; }
+  const store = reviewStore();
+  let r = store.reeval[p.id];
+  if (!r) { r = {id: newReviewId(), candidate_id: p.id, on: bookedState(p)}; store.reeval[p.id] = r; }
+  r.on = !r.on;
+  try { localStorage.setItem("trl-review", JSON.stringify(store)); } catch (e) { /* 保存不可でも表示は続ける */ }
+  toast(r.on ? "再評価を予約しました" : "再評価の予約を解除しました（この端末だけに効きます）");
+  render();
+}
 function stepSel(dir) {
   if (!VIEW.length) return;
   let i = VIEW.findIndex(p => p.id === sel);
@@ -1648,8 +1753,15 @@ const flipCheck = id => { const c = $(id); c.checked = !c.checked; c.dispatchEve
 const ACTIONS = [
   {label: "次の候補へ移動", keys: "j", run: () => stepSel(1)},
   {label: "前の候補へ移動", keys: "k", run: () => stepSel(-1)},
+  {label: "10件次の候補へ移動", keys: "J", run: () => stepSel(10)},
+  {label: "10件前の候補へ移動", keys: "K", run: () => stepSel(-10)},
+  {label: "次の「動いた」候補へ移動", keys: "u", run: () => jumpMoved(1)},
+  {label: "前の「動いた」候補へ移動", keys: "U", run: () => jumpMoved(-1)},
   {label: "選択中の候補の詳細ページを開く", keys: "Enter", run: () => { if (VMODE) { toggleVSel(sel); return; } if (sel) location.href = "detail.html?id=" + encodeURIComponent(sel); }},
   {label: "選択中の候補をピン留め / 解除", keys: "f", run: () => togglePin(sel)},
+  {label: "選択中の候補の再評価を予約 / 解除", keys: "r", run: () => toggleReevalKey()},
+  {label: "選択中の候補のリンクをコピー", keys: "y", run: () => { const p = P.find(x => x.id === sel); if (p) { copyText(detailUrl(p)); toast("候補のリンクをコピーしました"); } else toast("候補が選択されていません"); }},
+  {label: "滑らかスクロールを切り替え", keys: "S", run: () => toggleSmooth()},
   {label: "選択中の候補の企業をBAN / 解除", keys: "b", run: () => banKeyOf(sel, "company")},
   {label: "選択中の候補の市場をBAN / 解除", keys: "B", run: () => banKeyOf(sel, "market")},
   {label: "最後に光らせた群を全BAN / 全解除", keys: "Cmd+X", run: () => { if (BANMODE.size) allBanToggle(); else toast("先にチップ群のBANチップを押して光らせてください"); }},

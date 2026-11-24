@@ -150,6 +150,43 @@ def validate_entities(data):
                         f"entities[{i}].products[{j}] alias is too short: {alias}"
                     )
 
+    # 交差衝突の禁止: 部分一致で照合される alias (英数字を含まないもの) が
+    # 他社の名前・alias・製品名・製品 alias の部分文字列になっていると、
+    # 他社の資料がこの企業に誤リンクされる (実例: Lhyfe の「ライフ」が
+    # 日本ライフライン・ビトロライフに一致した)。辞書自身を照合表として
+    # 機械的に弾く。自社内の部分文字列 (略称など) は対象外
+    targets = {}
+    subjects = []
+    for entity in entities:
+        eid = entity.get("id")
+        names = [entity.get("name", "")] + list(entity.get("aliases") or [])
+        pool = {_norm_text(x) for x in names if isinstance(x, str) and x}
+        for alias in names:
+            if isinstance(alias, str):
+                na = _norm_text(alias)
+                if na and not re.search(r"[a-z0-9]", na):
+                    subjects.append((eid, alias, na))
+        for product in entity.get("products") or []:
+            pnames = [product.get("name", "")] + list(product.get("aliases") or [])
+            pool |= {_norm_text(x) for x in pnames if isinstance(x, str) and x}
+            for alias in pnames:
+                if isinstance(alias, str):
+                    na = _norm_text(alias)
+                    if na and not re.search(r"[a-z0-9]", na):
+                        subjects.append((eid, alias, na))
+        targets[eid] = pool
+    for eid, alias, na in subjects:
+        for oeid, pool in targets.items():
+            if oeid == eid:
+                continue
+            for t in pool:
+                if na != t and na in t:
+                    raise ConfigError(
+                        f"entity alias cross-collision: {alias} ({eid}) is a "
+                        f"substring of {t} ({oeid}); substring-matched aliases "
+                        f"must not be part of another entity's name"
+                    )
+
     return True
 
 

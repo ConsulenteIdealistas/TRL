@@ -102,6 +102,35 @@ class AuditFix2Tests(unittest.TestCase):
         with self.assertRaises(T.ConfigError):
             T.validate_entities(bad)
 
+    def test_alias_cross_collision(self):
+        # カナ alias が他社の名前の部分文字列だと、その他社の資料が
+        # 部分一致で誤リンクされるため設定エラーにする (Lhyfe の「ライフ」
+        # が日本ライフラインに一致した実例)
+        bad = {"entities": [
+            {"id": "lhyfe_like", "name": "Lhyfe", "aliases": ["ライフ"]},
+            {"id": "japan_lifeline_like", "name": "Japan Lifeline",
+             "aliases": ["日本ライフライン"]},
+        ]}
+        with self.assertRaises(T.ConfigError):
+            T.validate_entities(bad)
+        # 自社内の部分文字列 (略称) はよい
+        ok_self = {"entities": [
+            {"id": "a_co", "name": "日本ライフライン", "aliases": ["ライフライン"]},
+        ]}
+        T.validate_entities(ok_self)
+        # 英数字 alias は単語境界で照合されるので部分文字列でもよい
+        ok_alnum = {"entities": [
+            {"id": "brain_like", "name": "BRAIN Biotech", "aliases": ["BRAIN"]},
+            {"id": "brainchip_like", "name": "BrainChip", "aliases": ["BrainChip"]},
+        ]}
+        T.validate_entities(ok_alnum)
+        # 衝突しないカナ alias はよい
+        ok_kana = {"entities": [
+            {"id": "kuros_like", "name": "Kuros", "aliases": ["キュロス"]},
+            {"id": "crossject_like", "name": "Crossject", "aliases": ["クロスジェクト"]},
+        ]}
+        T.validate_entities(ok_kana)
+
     def test_stage_validation(self):
         base = {"entities": [{"id": "x_co", "name": "X Corp", "stage": "demo"}]}
         T.validate_entities(base)

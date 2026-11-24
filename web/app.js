@@ -308,7 +308,7 @@ function filtered() {
     && !p.entities.some(e => chipBans.ftierc.has(dtierOf(e)))
     && !(chipBans.fgenc.size && isCurGen(p))
     && !(() => { const m = moveOf(p); return !!m && (chipBans.fmvc.has("any") || chipBans.fmvc.has(m)); })()
-    && ![...chipBans.fhistc].some(v => { const f = histFacts(p); return (v === "first" && f.first) || (v === "moved" && f.moved) || (v === "band" && f.bandCross) || (v === "dirflip" && f.dirFlip) || (v === "stale" && p.display_status === "final" && p.long && p.long.evaluated_at && evalMaxTs && evalMaxTs - Date.parse(p.long.evaluated_at) > 30 * 864e5); })
+    && ![...chipBans.fhistc].some(v => { const f = histFacts(p); return (v === "first" && f.first) || (v === "moved" && f.moved) || (v === "band" && f.bandCross) || (v === "dirflip" && f.dirFlip) || (v === "edge" && isEdge(p)) || (v === "stale" && p.display_status === "final" && p.long && p.long.evaluated_at && evalMaxTs && evalMaxTs - Date.parse(p.long.evaluated_at) > 30 * 864e5); })
     && !((chipBans.fown.has("new") && isNewEval(p)) || (chipBans.fown.has("pin") && pins.has(p.id)) || (chipBans.fown.has("seen") && seen.has(p.id)) || (chipBans.fown.has("unseen") && !seen.has(p.id)))
     && (stSel.size ? stSel.has(p.display_status) : p.display_status !== "rejected")  // 除外はチップを明示的に押した時だけ混ざる
     && inR(lvl(p))
@@ -321,6 +321,7 @@ function filtered() {
     && (!histSel.size || (() => { const f = histFacts(p); return (histSel.has("first") && f.first)
       || (histSel.has("moved") && f.moved) || (histSel.has("band") && f.bandCross)
       || (histSel.has("dirflip") && f.dirFlip)
+      || (histSel.has("edge") && isEdge(p))
       || (histSel.has("stale") && p.display_status === "final" && p.long && p.long.evaluated_at && evalMaxTs && evalMaxTs - Date.parse(p.long.evaluated_at) > 30 * 864e5); })())
     && (!mkSel.size || p.entities.some(e => mkSel.has(e.market || "JP")))
     && (!scSel.size || p.entities.some(e => scSel.has(e.sector)))
@@ -368,7 +369,7 @@ function facetChips() {
   const dlabels = {positive: DL.positive, negative: DL.negative, mixed: DL.mixed, none: "未判定"};
   document.querySelectorAll("#fdc button:not([data-banmode])").forEach(b => {
     const v = b.dataset.v;
-    b.textContent = `${dlabels[v] || v} (${base.filter(p => (dirOf(p) || "none") === v).length})`;
+    b.textContent = `${dlabels[v] || v} [${base.filter(p => (dirOf(p) || "none") === v).length}]`;
   });
   syncTagN();
 }
@@ -927,6 +928,14 @@ function histFacts(p) {
     latestAt: cur ? cur.evaluated_at : null,
   };
 }
+/* 帯の境界近傍か (総合点が境目 20/40/60/80 から ±5点以内。±5 は帯幅20の1/4) */
+function isEdge(p) {
+  const h = Array.isArray(p.history) ? p.history : [];
+  const cur = h.length ? h[h.length - 1] : null;
+  const t = cur && cur.total != null ? cur.total : (p.long && p.long.total != null ? p.long.total : null);
+  if (t == null) return false;
+  return [20, 40, 60, 80].some(b => Math.abs(t - b) <= 5);
+}
 /* その候補の評価時点の列 (週間集計用)。履歴が無い候補は最新の評価だけ */
 function evalPoints(p) {
   const h = Array.isArray(p.history) ? p.history : [];
@@ -1232,25 +1241,30 @@ function tourBand() {
 function newNote() {
   const el = $("#newnote");
   if (!el) return;
-  const gen = META.generated_at || "";
-  let last = "";
-  try { last = localStorage.getItem("trl-last-gen") || ""; } catch (e) { /* 保存不可なら通知なし */ }
-  const finals = (META.digest || []).filter(x => x.status === "final").length;
-  if (last && last !== gen && finals) {
-    el.innerHTML = `<span>前回見た後に、新しい確定評価が ${finals}件あります。</span><button class="tz" id="nnok" type="button">確認した</button>`;
-    el.hidden = false;
-    $("#nnok").addEventListener("click", () => {
-      try { localStorage.setItem("trl-last-gen", gen); } catch (e) { /* 同上 */ }
-      el.hidden = true;
-    });
-  } else {
-    try { localStorage.setItem("trl-last-gen", gen); } catch (e) { /* 同上 */ }
+  /* 通知の基準は data.json の生成時刻ではなく、確定評価そのものの評価時刻。
+     「前回 (確認した時点) より後に評価された確定」だけを数えるので、
+     材料が実際に更新されるまで再表示されない */
+  let wm = 0;
+  try { wm = Date.parse(localStorage.getItem("trl-note-wm") || "") || 0; } catch (e) { return; }
+  const finals = P.filter(p => p.display_status === "final" && p.long && p.long.evaluated_at && Date.parse(p.long.evaluated_at) > wm);
+  if (!wm) {
+    const maxTs = Math.max(0, ...P.map(p => (p.long && p.long.evaluated_at) ? Date.parse(p.long.evaluated_at) : 0));
+    try { localStorage.setItem("trl-note-wm", new Date(maxTs || Date.now()).toISOString()); } catch (e) { /* 保存できなくても害はない */ }
+    return;
   }
+  if (!finals.length) return;
+  el.innerHTML = `<span>前回見た後に、新しい確定評価が ${finals.length}件あります。</span><button class="tz" id="nnok" type="button">確認した</button>`;
+  el.hidden = false;
+  $("#nnok").addEventListener("click", () => {
+    const maxTs = Math.max(wm, ...finals.map(p => Date.parse(p.long.evaluated_at)));
+    try { localStorage.setItem("trl-note-wm", new Date(maxTs).toISOString()); } catch (e) { /* 同上 */ }
+    el.hidden = true;
+  });
 }
 /* 帯は中身があるときだけ出す (各帯の描画関数が hidden を管理する)。
    帯の表示設定と折りたたみは廃止した (折りたたみは実機で不具合が多く、
    表示設定は消した帯を忘れるため)。旧保存値は掃除だけする */
-try { localStorage.removeItem("trl-bands"); localStorage.removeItem("trl-bandfolds"); } catch (e) { /* 掃除できなくても害はない */ }
+try { localStorage.removeItem("trl-bands"); localStorage.removeItem("trl-bandfolds"); localStorage.removeItem("trl-last-gen"); } catch (e) { /* 掃除できなくても害はない */ }
 function runBand() {
   const el = $("#runband");
   if (!el) return;
@@ -1756,7 +1770,7 @@ const ACTIONS = [
   {label: "最後に光らせた群を全BAN / 全解除", keys: "Cmd+X", run: () => { if (BANMODE.size) allBanToggle(); else toast("先にチップ群のBANチップを押して光らせてください"); }},
   {label: "選択中の候補を比較バスケットに追加 / 解除", keys: "c", run: () => toggleBasket(sel)},
   {label: "選択中の候補の原文を新しいタブで開く", keys: "e", run: () => { const p = P.find(x => x.id === sel); if (p && p.url) window.open(p.url, "_blank", "noopener"); else toast("候補が選ばれていません"); }},
-  {label: "選択中の候補の根拠 (関連材料の先頭) を開く", keys: "E", run: () => { const p = P.find(x => x.id === sel); const n = p && (p.related_news || [])[0]; if (n && n.url) window.open(n.url, "_blank", "noopener"); else toast("関連材料がありません"); }},
+  {label: "選択中の候補の根拠 [関連材料の先頭] を開く", keys: "E", run: () => { const p = P.find(x => x.id === sel); const n = p && (p.related_news || [])[0]; if (n && n.url) window.open(n.url, "_blank", "noopener"); else toast("関連材料がありません"); }},
   {label: "調査メモ欄へ移動", keys: "m", run: () => { const t = $("#note"); if (t) { t.scrollIntoView({block: "center"}); t.focus(); } else toast("候補を選んでください"); }},
   {label: "複数選択モードの入 / 切", keys: "v", run: () => toggleVMode()},
   {label: "選択中の候補をあとで読むに追加 / 解除", keys: "w", run: () => { if (sel) toggleLater(sel); else toast("候補が選ばれていません"); }},
@@ -1767,19 +1781,22 @@ const ACTIONS = [
   {label: "並び順を次へ切り替える", keys: "s", run: () => { const s = $("#fo"); s.selectedIndex = (s.selectedIndex + 1) % s.options.length; s.dispatchEvent(new Event("change")); }},
   {label: "新着だけ表示を切り替える", keys: "n", run: () => { const b = document.querySelector('#fown [data-v="new"]'); if (b) b.click(); }},
   {label: "世代表示を切り替える", keys: "d", run: () => flipCheck("#swgen")},
-  {label: "言語を切り替える (日本語訳 / 原文)", keys: "l", run: () => flipSelect("#fl")},
+  {label: "言語を切り替える [日本語訳 / 原文]", keys: "l", run: () => flipSelect("#fl")},
   {label: "コンパクト表示を切り替える", keys: ";", run: () => flipCheck("#swcompact")},
-  {label: "テーマを切り替える (ダーク / ライト / 色覚配慮)", keys: "", run: () => flipSelect("#fth")},
-  {label: "文字サイズを切り替える (標準 / 大 / 特大)", keys: "", run: () => cycleZoom()},
+  {label: "テーマを切り替える [ダーク / ライト / 色覚配慮]", keys: "", run: () => flipSelect("#fth")},
+  {label: "テーマをダークにする", keys: "D", run: () => setTheme("dark")},
+  {label: "テーマをライトにする", keys: "L", run: () => setTheme("light")},
+  {label: "テーマを色覚配慮にする", keys: "C", run: () => setTheme("cb")},
+  {label: "文字サイズを切り替える [標準 / 大 / 特大]", keys: "", run: () => cycleZoom()},
   {label: "条件をリセットする", keys: "a", run: () => $("#rst").click()},
   {label: "現在の条件に名前を付けて保存", keys: "", run: () => $("#fpsave").click()},
   {label: "現在の絞り込みを CSV で書き出す", keys: "", run: () => exportData("csv")},
   {label: "現在の絞り込みを JSON で書き出す", keys: "", run: () => exportData("json")},
-  {label: "BANを書き出す (JSON)", keys: "", run: () => { const b = $("#banexp"); if (b) b.click(); }},
+  {label: "BANを書き出す [JSON]", keys: "", run: () => { const b = $("#banexp"); if (b) b.click(); }},
   {label: "注目・新着の共有リンクをコピー", keys: "", run: () => { const b = $("#cpypins"); if (b) b.click(); }},
   {label: "現在の絞り込みのリンクをコピー", keys: "", run: () => { const b = $("#fplink"); if (b) b.click(); }},
   {label: "data.json のスナップショットを保存", keys: "", run: () => saveSnapshot()},
-  {label: "週次レポート (Markdown) を保存", keys: "", run: () => saveWeekly()},
+  {label: "週次レポート [Markdown] を保存", keys: "", run: () => saveWeekly()},
   {label: "メインページへ移動", keys: "g i", seq: "i", run: () => { location.href = "index.html"; }},
   {label: "企業ページへ移動", keys: "", run: () => { location.href = "company.html"; }},
   {label: "採点基準ページへ移動", keys: "g c", seq: "c", run: () => { location.href = "criteria.html"; }},
@@ -2291,6 +2308,19 @@ $("#fevc").addEventListener("click", e => {
 }
 $("#fl").addEventListener("change", () => { LANG = $("#fl").value; try { localStorage.setItem("trl-lang", LANG); } catch (e) { /* 保存できなくても切替は効く */ } render(); });
 const syncTh = () => { $("#fth").value = document.documentElement.dataset.theme || "dark"; };
+/* テーマの直接指定 (ボタン・キー・パレットの共通処理)。保存と select の同期まで面倒を見る */
+function setTheme(mode) {
+  document.documentElement.dataset.theme = mode;
+  try { localStorage.setItem("trl-theme", mode); } catch (e) { /* 保存できなくても切替は効く */ }
+  const sel = $("#fth"); if (sel) sel.value = mode;
+  toast(`テーマ: ${{dark: "ダーク", light: "ライト", cb: "色覚配慮"}[mode] || mode}`);
+}
+const themeBtn = $("#themebtn");
+if (themeBtn) themeBtn.addEventListener("click", () => {
+  const order = ["dark", "light", "cb"];
+  const cur = document.documentElement.dataset.theme || "dark";
+  setTheme(order[(order.indexOf(cur) + 1) % order.length]);
+});
 $("#fth").addEventListener("change", () => { document.documentElement.dataset.theme = $("#fth").value; try { localStorage.setItem("trl-theme", $("#fth").value); } catch (e) { /* 保存できなくても切替は効く */ } });
 syncTh();
 // 世代表示のスイッチ。状態は localStorage (trl-showgen) で詳細ページと共有する

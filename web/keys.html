@@ -52,7 +52,7 @@ kbd{background:var(--surface-muted);border:1px solid var(--line);border-bottom-w
 <p style="margin:0 0 12px"><a class="tg" href="index.html">← 一覧に戻る</a></p>
 <h1 class="doct">キー操作の説明書</h1>
 <div class="doc">
-<p>キーボードだけで一覧を読み進め、絞り込み、BANし、ページを渡り歩くための全操作です。色の付いたキーが使えるキーで、色は役割ごとに分かれています。キーを押す（タップする）と、そのキーの説明に印が付きます。右上に紫の丸があるキーは、<kbd>g</kbd> の後に押すページ移動（g シーケンス）でも使います。キーの下に橙色で書いた「Shift:」は、Shift を足したときの働きです。<kbd>?</kbd> は Shift+<kbd>/</kbd> のことで、図では <kbd>/</kbd> と同じキーに2段で入っています。</p>
+<p>キーボードだけで一覧を読み進め、絞り込み、BANし、ページを渡り歩くための全操作です。色の付いたキーが使えるキーで、色は役割ごとに分かれています。キーを押す[タップする]と、そのキーの説明に印が付きます。右上に紫の丸があるキーは、<kbd>g</kbd> の後に押すページ移動[g シーケンス]でも使います。キーの下に橙色で書いた「Shift:」は、Shift を足したときの働きです。<kbd>?</kbd> は Shift+<kbd>/</kbd> のことで、図では <kbd>/</kbd> と同じキーに2段で入っています。</p>
 <div class="kb" id="kb">
 <div class="kbrow">
 <div class="key used c-sys" data-k="esc"><b>Esc</b><small>閉じる</small></div>
@@ -86,13 +86,13 @@ kbd{background:var(--surface-muted);border:1px solid var(--line);border-bottom-w
 <div class="kbrow">
 <div class="key used c-view" data-k="a"><b>A</b><small>条件リセット</small><span class="dot"></span></div>
 <div class="key used c-filter" data-k="s"><b>S</b><small>並び順 次へ</small><small class="sh">Shift: 滑らか</small></div>
-<div class="key used c-view" data-k="d"><b>D</b><small>世代表示</small><span class="dot"></span></div>
+<div class="key used c-view" data-k="d"><b>D</b><small>世代表示</small><small class="sh">Shift: ダーク</small><span class="dot"></span></div>
 <div class="key used c-act" data-k="f"><b>F</b><small>ピン留め</small></div>
 <div class="key used c-nav" data-k="g"><b>G</b><small>移動の開始</small></div>
 <div class="key"><b>H</b><small></small></div>
 <div class="key used c-move" data-k="j"><b>J</b><small>次の候補</small><small class="sh">Shift: 10件</small></div>
 <div class="key used c-move" data-k="k"><b>K</b><small>前の候補</small><small class="sh">Shift: 10件</small><span class="dot"></span></div>
-<div class="key used c-view" data-k="l"><b>L</b><small>言語</small><span class="dot"></span></div>
+<div class="key used c-view" data-k="l"><b>L</b><small>言語</small><small class="sh">Shift: ライト</small><span class="dot"></span></div>
 <div class="key used c-view" data-k="semi"><b>;</b><small>コンパクト</small></div>
 <div class="key"><b>'</b><small></small></div>
 <div class="key used c-move w2" data-k="enter"><b>Enter</b><small>詳細を開く</small></div>
@@ -100,7 +100,7 @@ kbd{background:var(--surface-muted);border:1px solid var(--line);border-bottom-w
 <div class="kbrow">
 <div class="key"><b>Z</b><small></small></div>
 <div class="key"><b>X</b><small></small></div>
-<div class="key used c-act" data-k="c"><b>C</b><small>比較バスケット</small><span class="dot"></span></div>
+<div class="key used c-act" data-k="c"><b>C</b><small>比較バスケット</small><small class="sh">Shift: 色覚配慮</small><span class="dot"></span></div>
 <div class="key used c-act" data-k="v"><b>V</b><small>複数選択</small></div>
 <div class="key used c-ban" data-k="b"><b>B</b><small>企業/市場BAN</small><span class="dot"></span></div>
 <div class="key used c-act" data-k="n"><b>N</b><small>新着だけ</small><small class="sh">Shift: 未読へ</small></div>
@@ -111,7 +111,7 @@ kbd{background:var(--surface-muted);border:1px solid var(--line);border-bottom-w
 </div>
 <div class="kbrow">
 <div class="key used c-sys w3" data-k="palette"><b>コマンドパレット</b><small>Ctrl+K (Mac は Cmd+K) で開く</small></div>
-<div class="key wide"><b>Space</b><small>（割り当てなし）</small></div>
+<div class="key wide"><b>Space</b><small>[割り当てなし]</small></div>
 <div class="key used c-view w2" data-k="obs"><b>← →</b><small>観測: 項目を巡回</small></div>
 </div>
 </div>
@@ -120,17 +120,17 @@ kbd{background:var(--surface-muted);border:1px solid var(--line);border-bottom-w
 </div>
 
 <h2>コマンドとキー操作の違い</h2>
-<p>「コマンド」はこのサイトでできる操作の全体です。コマンドパレット（<kbd>Ctrl+K</kbd>）に全て入っていて、名前で検索してそのまま実行できます。「キー操作」は、そのうちキーボードのキーに割り当てたものの呼び方です。<kbd>?</kbd> のキー操作一覧には全コマンドが載っていて、キーの付いたものが先、キーなし（パレット専用）のものが後に並びます。キーなしの操作が「無い」のではなく、キーで呼べないだけです。</p>
+<p>「コマンド」はこのサイトでできる操作の全体です。コマンドパレット[<kbd>Ctrl+K</kbd>]に全て入っていて、名前で検索してそのまま実行できます。「キー操作」は、そのうちキーボードのキーに割り当てたものの呼び方です。<kbd>?</kbd> のキー操作一覧には全コマンドが載っていて、キーの付いたものが先、キーなし[パレット専用]のものが後に並びます。キーなしの操作が「無い」のではなく、キーで呼べないだけです。</p>
 
 <h2>移動・選択</h2>
 <table class="kt">
 <tr id="k-j"><td><kbd>j</kbd> / <kbd>k</kbd></td><td>次の候補 / 前の候補へ移動します。一覧の並び順どおりに選択が移ります。</td></tr>
 <tr id="k-enter"><td><kbd>Enter</kbd></td><td>選択中の候補の詳細ページを開きます。複数選択モード中は、詳細でなく選択の切り替えになります。</td></tr>
-<tr id="k-k"><td><kbd>k</kbd></td><td>前の候補へ（<kbd>j</kbd> の逆）。<kbd>g</kbd> の後に押すとこの説明書を開きます。</td></tr>
+<tr id="k-k"><td><kbd>k</kbd></td><td>前の候補へ[<kbd>j</kbd> の逆]。<kbd>g</kbd> の後に押すとこの説明書を開きます。</td></tr>
 <tr><td><kbd>Shift+J</kbd> / <kbd>Shift+K</kbd></td><td>10件 次 / 前の候補へ移動します。</td></tr>
-<tr id="k-p"><td><kbd>p</kbd> / <kbd>Shift+P</kbd></td><td>選択中の候補と同じ企業（最初の strong リンク）の候補だけを 次 / 前へ巡回します。何件目かは通知に出ます。</td></tr>
-<tr id="k-unread"><td><kbd>Shift+N</kbd></td><td>未読の候補（詳細をまだ開いていない候補）だけを次へ巡回します。何件目かは通知に出ます。末尾まで行くと先頭に戻ります。</td></tr>
-<tr id="k-u"><td><kbd>u</kbd> / <kbd>Shift+U</kbd></td><td>前回から「動いた」候補（TRLか総合点が変わった・帯域を跨いだ・方向性が反転した）だけを 次 / 前へ巡回します。何件目かは通知に出ます。末尾まで行くと先頭に戻ります。</td></tr>
+<tr id="k-p"><td><kbd>p</kbd> / <kbd>Shift+P</kbd></td><td>選択中の候補と同じ企業[最初の strong リンク]の候補だけを 次 / 前へ巡回します。何件目かは通知に出ます。</td></tr>
+<tr id="k-unread"><td><kbd>Shift+N</kbd></td><td>未読の候補[詳細をまだ開いていない候補]だけを次へ巡回します。何件目かは通知に出ます。末尾まで行くと先頭に戻ります。</td></tr>
+<tr id="k-u"><td><kbd>u</kbd> / <kbd>Shift+U</kbd></td><td>前回から「動いた」候補[TRLか総合点が変わった・帯域を跨いだ・方向性が反転した]だけを 次 / 前へ巡回します。何件目かは通知に出ます。末尾まで行くと先頭に戻ります。</td></tr>
 </table>
 
 <h2>絞り込み・検索</h2>
@@ -138,42 +138,42 @@ kbd{background:var(--surface-muted);border:1px solid var(--line);border-bottom-w
 <tr id="k-d1"><td><kbd>1</kbd>〜<kbd>9</kbd> / <kbd>0</kbd></td><td>TRLチップを直接切り替えます。<kbd>0</kbd> は「未確定」。BAN中のTRLは切り替えできず、通知が出ます。</td></tr>
 <tr id="k-slash"><td><kbd>/</kbd></td><td>検索欄へ移動します。検索欄では <kbd>↑</kbd><kbd>↓</kbd> で候補を選び <kbd>Enter</kbd> で確定します。<code>src:</code> のような記法を打ち始めると、その演算子で使える値が補完候補に出ます。</td></tr>
 <tr id="k-s"><td><kbd>s</kbd></td><td>並び順を次へ切り替えます。</td></tr>
-<tr id="k-comma"><td><kbd>,</kbd> / <kbd>.</kbd></td><td>並び順を前へ / 次へ切り替えます（<kbd>s</kbd> は次へだけ）。</td></tr>
+<tr id="k-comma"><td><kbd>,</kbd> / <kbd>.</kbd></td><td>並び順を前へ / 次へ切り替えます[<kbd>s</kbd> は次へだけ]。</td></tr>
 <tr id="k-n2"><td><kbd>n</kbd></td><td>「新着だけ表示」を切り替えます。</td></tr>
 </table>
 
 <h2>候補への操作</h2>
 <table class="kt">
-<tr id="k-f"><td><kbd>f</kbd></td><td>選択中の候補をピン留め / 解除します（この端末に保存）。</td></tr>
-<tr id="k-c"><td><kbd>c</kbd></td><td>比較バスケットに追加 / 解除します（最大4件）。帯から横並び比較ページを開けます。</td></tr>
+<tr id="k-f"><td><kbd>f</kbd></td><td>選択中の候補をピン留め / 解除します[この端末に保存]。</td></tr>
+<tr id="k-c"><td><kbd>c</kbd></td><td>比較バスケットに追加 / 解除します[最大4件]。帯から横並び比較ページを開けます。</td></tr>
 <tr id="k-v"><td><kbd>v</kbd></td><td>複数選択モードの入 / 切。モード中はカードのクリックが選択の切り替えになり、画面下のバーから一括ピン・バスケット追加・企業BANができます。</td></tr>
 <tr id="k-w"><td><kbd>w</kbd> / <kbd>Shift+W</kbd></td><td>「あとで読む」に追加 / 解除。<kbd>Shift+W</kbd> は、あとで読むの帯へ移動します。</td></tr>
-<tr id="k-e"><td><kbd>e</kbd> / <kbd>Shift+E</kbd></td><td><kbd>e</kbd> は原文を新しいタブで開き、<kbd>Shift+E</kbd> は根拠（関連材料の先頭）を開きます。</td></tr>
+<tr id="k-e"><td><kbd>e</kbd> / <kbd>Shift+E</kbd></td><td><kbd>e</kbd> は原文を新しいタブで開き、<kbd>Shift+E</kbd> は根拠[関連材料の先頭]を開きます。</td></tr>
 <tr id="k-m"><td><kbd>m</kbd></td><td>詳細の調査メモ欄へ移動します。</td></tr>
-<tr id="k-n"><td><kbd>n</kbd></td><td>新着だけ表示の切り替え（絞り込みの節も参照）。</td></tr>
-<tr id="k-r"><td><kbd>r</kbd></td><td>選択中の候補の再評価を予約 / 解除します（監査ページの予約と同じ記録で、カードに青い「予約」バッジが付きます）。予約は反映用JSON経由でDBに届きます。解除はこの端末だけに効きます（DBの予約行は追記専用のため）。</td></tr>
+<tr id="k-n"><td><kbd>n</kbd></td><td>新着だけ表示の切り替え[絞り込みの節も参照]。</td></tr>
+<tr id="k-r"><td><kbd>r</kbd></td><td>選択中の候補の再評価を予約 / 解除します[監査ページの予約と同じ記録で、カードに青い「予約」バッジが付きます]。予約は反映用JSON経由でDBに届きます。解除はこの端末だけに効きます[DBの予約行は追記専用のため]。</td></tr>
 <tr id="k-y"><td><kbd>y</kbd></td><td>選択中の候補の詳細ページへのリンクをコピーします。</td></tr>
 </table>
 
-<h2>BAN（除外）</h2>
+<h2>BAN[除外]</h2>
 <table class="kt">
 <tr id="k-b"><td><kbd>b</kbd> / <kbd>Shift+B</kbd></td><td>選択中の候補の企業 / 市場をBAN切り替えします。BANした瞬間、スマホでは軽く振動します。</td></tr>
-<tr><td>チップの長押し / 右クリック</td><td>どの絞り込みチップでも、長押し（スマホ）または右クリック（PC）でその値をBANできます。もう一度で解除。BAN中のチップは通常のクリックでは操作できません（解除は長押し/右クリックだけ）。条件リセットでBANも全て解除されます。</td></tr>
-<tr><td>BANの復元</td><td>企業・市場をBANすると候補はその場で消えますが、復元の入口は3つあります: (1) BANした直後の通知にある「戻す」（キー操作のときだけ出ます）、(2) 一覧の上に出る「BAN中の企業・市場」の帯の×（いつでも押せます。「全部戻す」もあります）、(3) 詳細・出力のBANパネルのスイッチと×。詳細ページで付けた企業BANも、帯とパネルに出ます。</td></tr>
-<tr><td>BANチップ（モード）</td><td>各チップ群の末尾にある「BAN」と書かれたチップです。押すと赤く光り、その群がBANモードになります。光っている間は、チップのタップが選択でなくBANの切り替えになるので、スマホでも長押しなしで素早くBANできます。もう一度押すと通常モードに戻ります。モードは保存されず、開き直すと通常モードです。</td></tr>
-<tr><td>Cmd+X（全BAN）</td><td>BANチップが光っている群があるときだけ効きます。対象は最後に光らせた群だけです（複数光っていても同時に効かせないための仕組み）。その群の値を全部BANし、効いた群はモードを抜けます。既に全部BANなら全部解除します（同じキーで行き来できます）。入力欄にいる間は本来の切り取りが優先されます。</td></tr>
+<tr><td>チップの長押し / 右クリック</td><td>どの絞り込みチップでも、長押し[スマホ]または右クリック[PC]でその値をBANできます。もう一度で解除。BAN中のチップは通常のクリックでは操作できません[解除は長押し/右クリックだけ]。条件リセットでBANも全て解除されます。</td></tr>
+<tr><td>BANの復元</td><td>企業・市場をBANすると候補はその場で消えますが、復元の入口は3つあります: (1) BANした直後の通知にある「戻す」[キー操作のときだけ出ます]、(2) 一覧の上に出る「BAN中の企業・市場」の帯の×[いつでも押せます。「全部戻す」もあります]、(3) 詳細・出力のBANパネルのスイッチと×。詳細ページで付けた企業BANも、帯とパネルに出ます。</td></tr>
+<tr><td>BANチップ[モード]</td><td>各チップ群の末尾にある「BAN」と書かれたチップです。押すと赤く光り、その群がBANモードになります。光っている間は、チップのタップが選択でなくBANの切り替えになるので、スマホでも長押しなしで素早くBANできます。もう一度押すと通常モードに戻ります。モードは保存されず、開き直すと通常モードです。</td></tr>
+<tr><td>Cmd+X[全BAN]</td><td>BANチップが光っている群があるときだけ効きます。対象は最後に光らせた群だけです[複数光っていても同時に効かせないための仕組み]。その群の値を全部BANし、効いた群はモードを抜けます。既に全部BANなら全部解除します[同じキーで行き来できます]。入力欄にいる間は本来の切り取りが優先されます。</td></tr>
 <tr><td>BANパネル</td><td>企業・分野・出所は名前で指名してBANできます。BAN一式はJSONで書き出し/読み込みができ、条件と束ねた「プロファイル」としても保存できます。</td></tr>
 </table>
 
 <h2>表示</h2>
 <table class="kt">
-<tr id="k-d"><td><kbd>d</kbd></td><td>世代表示（旧世代の評価をどう扱うか）を切り替えます。</td></tr>
-<tr id="k-l"><td><kbd>l</kbd></td><td>表示言語（日本語訳 / 原文）を切り替えます。</td></tr>
+<tr id="k-d"><td><kbd>d</kbd></td><td>世代表示[旧世代の評価をどう扱うか]を切り替えます。</td></tr>
+<tr id="k-l"><td><kbd>l</kbd></td><td>表示言語[日本語訳 / 原文]を切り替えます。</td></tr>
 <tr id="k-semi"><td><kbd>;</kbd></td><td>コンパクト表示を切り替えます。</td></tr>
-<tr id="k-a"><td><kbd>a</kbd></td><td>条件をリセットします（BANも含めて全解除）。</td></tr>
+<tr id="k-a"><td><kbd>a</kbd></td><td>条件をリセットします[BANも含めて全解除]。</td></tr>
 </table>
 
-<h2>ページ移動（g シーケンス）</h2>
+<h2>ページ移動[g シーケンス]</h2>
 <table class="kt">
 <tr id="k-g"><td><kbd>g</kbd> の後に1キー</td><td><kbd>g</kbd> を押してから0.9秒以内に次のキーを押すと、そのページへ移動します。全ページ共通です。</td></tr>
 <tr id="k-gseq"><td><kbd>g</kbd> <kbd>i</kbd> / <kbd>a</kbd> / <kbd>c</kbd> / <kbd>w</kbd> / <kbd>o</kbd> / <kbd>b</kbd> / <kbd>q</kbd> / <kbd>r</kbd> / <kbd>d</kbd> / <kbd>l</kbd> / <kbd>k</kbd></td><td>メイン / 監査 / 採点基準 / Look・See / 観測 / ブリーフィング / 次回評価予定 / 実行履歴 / 項目別の不足 / 用語集 / この説明書、の順です。</td></tr>
@@ -181,39 +181,40 @@ kbd{background:var(--surface-muted);border:1px solid var(--line);border-bottom-w
 
 <h2>観測ページ専用</h2>
 <table class="kt">
-<tr id="k-obs"><td><kbd>[</kbd> / <kbd>]</kbd></td><td>基準日（as-of）を評価日の単位で前 / 次へ送ります。最後より先へ送ると「最新」に戻ります。</td></tr>
-<tr><td><kbd>←</kbd> / <kbd>→</kbd></td><td>統計（箱ひげ図）の項目ハイライトを巡回します。</td></tr>
+<tr id="k-obs"><td><kbd>[</kbd> / <kbd>]</kbd></td><td>基準日[as-of]を評価日の単位で前 / 次へ送ります。最後より先へ送ると「最新」に戻ります。</td></tr>
+<tr><td><kbd>←</kbd> / <kbd>→</kbd></td><td>統計[箱ひげ図]の項目ハイライトを巡回します。</td></tr>
 </table>
 
 <h2>詳細ページ専用</h2>
 <table class="kt">
-<tr><td><kbd>j</kbd> / <kbd>k</kbd></td><td>前後の候補の詳細へ移動します。並びは data.json の候補の並び順です（一覧の絞り込み・並び替えは持ち込みません）。</td></tr>
-<tr><td><kbd>f</kbd></td><td>この候補をピン留め / 解除します（一覧の注目と同じ保存先）。</td></tr>
-<tr><td><kbd>b</kbd></td><td>この候補の企業（最初の strong リンク）を BAN / 解除します（一覧の企業BANと同じ保存先）。</td></tr>
-<tr><td><kbd>r</kbd></td><td>この候補の再評価を予約 / 解除します（監査ページ・一覧と同じ記録）。</td></tr>
+<tr><td><kbd>j</kbd> / <kbd>k</kbd></td><td>前後の候補の詳細へ移動します。並びは data.json の候補の並び順です[一覧の絞り込み・並び替えは持ち込みません]。</td></tr>
+<tr><td><kbd>f</kbd></td><td>この候補をピン留め / 解除します[一覧の注目と同じ保存先]。</td></tr>
+<tr><td><kbd>b</kbd></td><td>この候補の企業[最初の strong リンク]を BAN / 解除します[一覧の企業BANと同じ保存先]。</td></tr>
+<tr><td><kbd>r</kbd></td><td>この候補の再評価を予約 / 解除します[監査ページ・一覧と同じ記録]。</td></tr>
 <tr><td><kbd>y</kbd></td><td>この詳細ページのリンクをコピーします。</td></tr>
 <tr><td><kbd>e</kbd></td><td>原文サイトを新しいタブで開きます。</td></tr>
 </table>
 
 <h2>監査ページ専用</h2>
 <table class="kt">
-<tr><td><kbd>?</kbd></td><td>監査ページのキー操作の一覧を開きます（一覧ページの ? と同じ流儀で、全コマンドが載ります）。</td></tr>
-<tr><td><kbd>j</kbd> / <kbd>k</kbd></td><td>監査の項目（エントリ）を 次 / 前へ移動します。候補ではなく項目単位です。</td></tr>
+<tr><td><kbd>?</kbd></td><td>監査ページのキー操作の一覧を開きます[一覧ページの ? と同じ流儀で、全コマンドが載ります]。</td></tr>
+<tr><td><kbd>j</kbd> / <kbd>k</kbd></td><td>監査の項目[エントリ]を 次 / 前へ移動します。候補ではなく項目単位です。</td></tr>
 <tr><td><kbd>1</kbd> / <kbd>2</kbd> / <kbd>3</kbd></td><td>選択中の項目に処分を付けます: <kbd>1</kbd>=問題あり、<kbd>2</kbd>=誤検知、<kbd>3</kbd>=様子見。その項目のチップを押すのと同じで、もう一度押すと取り消します。処分した項目が未処分リストから外れると、選択は次の項目に移ります。</td></tr>
-<tr><td><kbd>r</kbd></td><td>選択中の項目の候補について、再評価を予約 / 解除します（長期評価のカードだけ）。</td></tr>
+<tr><td><kbd>r</kbd></td><td>選択中の項目の候補について、再評価を予約 / 解除します[長期評価のカードだけ]。</td></tr>
 <tr><td><kbd>Enter</kbd></td><td>選択中の項目の候補の詳細ページを開きます。</td></tr>
 </table>
 
 <h2>画面・その他</h2>
 <table class="kt">
-<tr id="k-palette"><td><kbd>Ctrl+K</kbd>（Mac は <kbd>Cmd+K</kbd>）</td><td>コマンドパレットを開きます。全コマンドを名前で検索して実行できます。書き出しやページ移動もここからできます。</td></tr>
-<tr id="k-help"><td><kbd>?</kbd></td><td>キー操作の一覧（簡易版）を開きます。一覧の中は言葉で検索できます。「キー操作の練習」ボタンで、実際にキーを押す練習もできます。? は Shift+<kbd>/</kbd> で、キーボードでは / と同じキーです（図でも同じキーに入っています）。</td></tr>
+<tr><td><kbd>Shift+D</kbd> / <kbd>Shift+L</kbd> / <kbd>Shift+C</kbd></td><td>テーマを ダーク / ライト / 色覚配慮 に切り替えます [この端末に保存、全ページに効きます]。上の「テーマ」ボタンでも順に切り替わります。Ctrl+系にしなかったのは、Ctrl+L がブラウザのアドレスバーに取られてページに届かないためです。</td></tr>
+<tr id="k-palette"><td><kbd>Ctrl+K</kbd>[Mac は <kbd>Cmd+K</kbd>]</td><td>コマンドパレットを開きます。全コマンドを名前で検索して実行できます。書き出しやページ移動もここからできます。</td></tr>
+<tr id="k-help"><td><kbd>?</kbd></td><td>キー操作の一覧[簡易版]を開きます。一覧の中は言葉で検索できます。「キー操作の練習」ボタンで、実際にキーを押す練習もできます。? は Shift+<kbd>/</kbd> で、キーボードでは / と同じキーです[図でも同じキーに入っています]。</td></tr>
 <tr id="k-esc"><td><kbd>Esc</kbd></td><td>パレットやキー一覧を閉じます。何も開いていないときは、光っているBANモードを全部抜けます。</td></tr>
-<tr><td><kbd>Shift+S</kbd></td><td>滑らかスクロールの入 / 切を切り替えます（この端末に保存、全ページ共通）。入のときは、マウスホイールの刻みを、氷の上を滑るような摩擦モデル（残りの距離に比例した速度で近づく指数減衰）でつないで滑らかにスクロールします。指のノイズ補正として、刻みの大きさをそのホイールの標準ノッチに丸め、滑走中の単発の逆向きは保留し、微小な入力は貯めてから反映します。トラックパッドの細かいスクロール、内側のスクロール領域、Ctrl+ホイール（ズーム）には触りません。</td></tr>
+<tr><td><kbd>Shift+S</kbd></td><td>滑らかスクロールの入 / 切を切り替えます[この端末に保存、全ページ共通]。入のときは、マウスホイールの刻みを、氷の上を滑るような摩擦モデル[残りの距離に比例した速度で近づく指数減衰]でつないで滑らかにスクロールします。指のノイズ補正として、刻みの大きさをそのホイールの標準ノッチに丸め、滑走中の単発の逆向きは保留し、微小な入力は貯めてから反映します。トラックパッドの細かいスクロール、内側のスクロール領域、Ctrl+ホイール[ズーム]には触りません。</td></tr>
 </table>
 
 <h2>効かないとき</h2>
-<p>検索欄などの入力欄にフォーカスがある間と、日本語入力の変換中は、キー操作は効きません（入力を邪魔しないため）。入力欄から離れるには <kbd>Esc</kbd> を押すか、欄の外をタップしてください。この説明書は <kbd>g</kbd> の後に <kbd>k</kbd>、またはキー一覧（<kbd>?</kbd>）からのリンクでも開けます。</p>
+<p>検索欄などの入力欄にフォーカスがある間と、日本語入力の変換中は、キー操作は効きません[入力を邪魔しないため]。入力欄から離れるには <kbd>Esc</kbd> を押すか、欄の外をタップしてください。この説明書は <kbd>g</kbd> の後に <kbd>k</kbd>、またはキー一覧[<kbd>?</kbd>]からのリンクでも開けます。</p>
 </div>
 </div></main>
 <footer class="ft"><span>TRL Explorer</span><span><a href="index.html">一覧</a></span><span><a href="glossary.html">用語集</a></span></footer>

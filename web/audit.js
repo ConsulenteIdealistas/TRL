@@ -607,6 +607,10 @@ document.addEventListener("keydown", ev => {
     ev.preventDefault();
   }
 });
+function setATheme(mode) {
+  document.documentElement.dataset.theme = mode;
+  try { localStorage.setItem("trl-theme", mode); } catch (e) { /* 保存できなくても切替は効く */ }
+}
 /* 監査ページのキー操作一覧 (? またはボタン)。一覧ページと同じ流儀で、
    キー付きを先に、パレット専用 (AACTS) を後に並べる */
 const AKEYS = [
@@ -618,7 +622,7 @@ const AKEYS = [
   {keys: "r", label: "選択中の項目の候補の再評価を予約 / 解除"},
   {keys: "Enter", label: "選択中の項目の候補の詳細を開く"},
   {keys: "Ctrl+K", label: "コマンドパレットを開く"},
-  {keys: "g の後のキー", label: "ページ移動 (i=メイン、a=監査、c=採点基準、w=Look・See、o=観測、q=次回評価予定、r=実行履歴、d=項目別の不足、l=用語集、k=キー操作の説明書、b=ブリーフィング)"},
+  {keys: "g の後のキー", label: "ページ移動 [i=メイン、a=監査、c=採点基準、w=Look・See、o=観測、q=次回評価予定、r=実行履歴、d=項目別の不足、l=用語集、k=キー操作の説明書、b=ブリーフィング]"},
 ];
 function toggleAHelp() {
   const h = $("#ahelp");
@@ -649,6 +653,9 @@ const AACTS = [
   {label: "メインページへ移動", run() { location.href = "index.html"; }},
   {label: "企業一覧へ移動", run() { location.href = "company.html"; }},
   {label: "採点基準へ移動", run() { location.href = "criteria.html"; }},
+  {label: "テーマをダークにする", run() { setATheme("dark"); }},
+  {label: "テーマをライトにする", run() { setATheme("light"); }},
+  {label: "テーマを色覚配慮にする", run() { setATheme("cb"); }},
 ];
 let apalList = [], apalSel = 0;
 function openAPal() {

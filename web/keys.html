@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>キー操作の説明書 — TRL Explorer</title>
+<link rel="stylesheet" href="style.css">
+<script>try{var tt=localStorage.getItem("trl-theme");document.documentElement.dataset.theme=(tt==="light"||tt==="dark"||tt==="cb")?tt:(window.matchMedia&&matchMedia("(prefers-color-scheme: light)").matches?"light":"dark");}catch(e){document.documentElement.dataset.theme="dark";}</script>
+<style>
+.docwrap{max-width:880px;margin:0 auto}
+.doct{font-size:22px;margin:2px 0 8px}
+.doc{font-size:13.5px;line-height:1.85}
+.doc h2{font-size:17px;margin:26px 0 8px;padding-top:16px;border-top:1px solid var(--line)}
+.kb{margin:14px 0 6px;overflow-x:auto;padding-bottom:6px}
+.kbrow{display:flex;gap:5px;margin-bottom:5px;min-width:640px}
+.key{flex:1 1 0;min-width:38px;text-align:center;padding:8px 2px 6px;border:1.5px solid var(--line);border-radius:8px;background:var(--surface);color:var(--muted);font-size:13px;position:relative}
+.key b{display:block;font-size:14px;color:var(--text);font-weight:600}
+.key small{display:block;font-size:9.5px;line-height:1.25;color:var(--muted)}
+.key.used{cursor:pointer;color:var(--text)}
+.key.used small{color:var(--text);opacity:.75}
+.key.w2{flex:1.8 1 0}.key.w3{flex:2.6 1 0}.key.wide{flex:5 1 0}
+.c-move{background:rgba(64,132,255,.16);border-color:#4084ff}
+.c-filter{background:rgba(232,161,0,.15);border-color:#e8a100}
+.c-act{background:rgba(46,190,110,.15);border-color:#2ebe6e}
+.c-ban{background:rgba(230,60,50,.15);border-color:#e63c32}
+.c-view{background:rgba(0,190,200,.13);border-color:#00a8b2}
+.c-nav{background:rgba(170,100,255,.15);border-color:#aa64ff}
+.c-sys{background:var(--surface-muted);border-color:var(--muted)}
+.key .dot{position:absolute;top:3px;right:5px;width:7px;height:7px;border-radius:50%;background:#aa64ff}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;margin:6px 0 2px}
+.legend span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;border:1.5px solid}
+.legend .l-move::before{background:rgba(64,132,255,.16);border-color:#4084ff}
+.legend .l-filter::before{background:rgba(232,161,0,.15);border-color:#e8a100}
+.legend .l-act::before{background:rgba(46,190,110,.15);border-color:#2ebe6e}
+.legend .l-ban::before{background:rgba(230,60,50,.15);border-color:#e63c32}
+.legend .l-view::before{background:rgba(0,190,200,.13);border-color:#00a8b2}
+.legend .l-nav::before{background:rgba(170,100,255,.15);border-color:#aa64ff}
+.legend .l-sys::before{background:var(--surface-muted);border-color:var(--muted)}
+table.kt{border-collapse:collapse;width:100%;margin:8px 0 4px}
+table.kt td,table.kt th{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top;font-size:13px}
+table.kt td:first-child{white-space:nowrap;width:110px}
+tr.hl td{background:color-mix(in srgb,var(--accent) 13%,transparent)}
+kbd{background:var(--surface-muted);border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:0 5px;font-size:12px}
+</style>
+</head>
+<body>
+<header class="topbar"><a class="brand" href="index.html"><span class="mark">T</span><span>TRL<span class="light"> Explorer</span></span></a><div class="meta">Research Intelligence</div></header>
+<main class="ws"><div class="docwrap">
+<p style="margin:0 0 12px"><a class="tg" href="index.html">← 一覧に戻る</a></p>
+<h1 class="doct">キー操作の説明書</h1>
+<div class="doc">
+<p>キーボードだけで一覧を読み進め、絞り込み、BANし、ページを渡り歩くための全操作です。色の付いたキーが使えるキーで、色は役割ごとに分かれています。キーを押す（タップする）と、そのキーの説明に印が付きます。右上に紫の丸があるキーは、<kbd>g</kbd> の後に押すページ移動（g シーケンス）でも使います。</p>
+<div class="kb" id="kb">
+<div class="kbrow">
+<div class="key used c-sys" data-k="esc"><b>Esc</b><small>閉じる</small></div>
+<div class="key used c-filter" data-k="d1"><b>1</b><small>TRL 1</small></div>
+<div class="key used c-filter" data-k="d1"><b>2</b><small>TRL 2</small></div>
+<div class="key used c-filter" data-k="d1"><b>3</b><small>TRL 3</small></div>
+<div class="key used c-filter" data-k="d1"><b>4</b><small>TRL 4</small></div>
+<div class="key used c-filter" data-k="d1"><b>5</b><small>TRL 5</small></div>
+<div class="key used c-filter" data-k="d1"><b>6</b><small>TRL 6</small></div>
+<div class="key used c-filter" data-k="d1"><b>7</b><small>TRL 7</small></div>
+<div class="key used c-filter" data-k="d1"><b>8</b><small>TRL 8</small></div>
+<div class="key used c-filter" data-k="d1"><b>9</b><small>TRL 9</small></div>
+<div class="key used c-filter" data-k="d1"><b>0</b><small>未確定</small></div>
+<div class="key"><b>-</b><small></small></div>
+<div class="key"><b>=</b><small></small></div>
+</div>
+<div class="kbrow">
+<div class="key used c-nav" data-k="gseq"><b>Q</b><small>g の後: 予定</small><span class="dot"></span></div>
+<div class="key used c-act" data-k="w"><b>W</b><small>あとで読む</small><span class="dot"></span></div>
+<div class="key used c-act" data-k="e"><b>E</b><small>原文/根拠</small></div>
+<div class="key used c-nav" data-k="gseq"><b>R</b><small>g の後: 履歴</small><span class="dot"></span></div>
+<div class="key"><b>T</b><small></small></div>
+<div class="key"><b>Y</b><small></small></div>
+<div class="key"><b>U</b><small></small></div>
+<div class="key"><b>I</b><small></small></div>
+<div class="key used c-nav" data-k="gseq"><b>O</b><small>g の後: 観測</small><span class="dot"></span></div>
+<div class="key"><b>P</b><small></small></div>
+<div class="key used c-view" data-k="obs"><b>[</b><small>観測: 前の日</small></div>
+<div class="key used c-view" data-k="obs"><b>]</b><small>観測: 次の日</small></div>
+</div>
+<div class="kbrow">
+<div class="key used c-view" data-k="a"><b>A</b><small>条件リセット</small><span class="dot"></span></div>
+<div class="key used c-filter" data-k="s"><b>S</b><small>並び順 次へ</small></div>
+<div class="key used c-view" data-k="d"><b>D</b><small>世代表示</small><span class="dot"></span></div>
+<div class="key used c-act" data-k="f"><b>F</b><small>ピン留め</small></div>
+<div class="key used c-nav" data-k="g"><b>G</b><small>移動の開始</small></div>
+<div class="key"><b>H</b><small></small></div>
+<div class="key used c-move" data-k="j"><b>J</b><small>次の候補</small></div>
+<div class="key used c-move" data-k="k"><b>K</b><small>前の候補</small><span class="dot"></span></div>
+<div class="key used c-view" data-k="l"><b>L</b><small>言語</small><span class="dot"></span></div>
+<div class="key used c-view" data-k="semi"><b>;</b><small>コンパクト</small></div>
+<div class="key"><b>'</b><small></small></div>
+<div class="key used c-move w2" data-k="enter"><b>Enter</b><small>詳細を開く</small></div>
+</div>
+<div class="kbrow">
+<div class="key"><b>Z</b><small></small></div>
+<div class="key"><b>X</b><small></small></div>
+<div class="key used c-act" data-k="c"><b>C</b><small>比較バスケット</small><span class="dot"></span></div>
+<div class="key used c-act" data-k="v"><b>V</b><small>複数選択</small></div>
+<div class="key used c-ban" data-k="b"><b>B</b><small>企業/市場BAN</small><span class="dot"></span></div>
+<div class="key used c-act" data-k="n"><b>N</b><small>新着だけ</small></div>
+<div class="key used c-act" data-k="m"><b>M</b><small>メモ欄へ</small></div>
+<div class="key used c-filter" data-k="comma"><b>,</b><small>並び順 前へ</small></div>
+<div class="key used c-filter" data-k="comma"><b>.</b><small>並び順 次へ</small></div>
+<div class="key used c-filter" data-k="slash"><b>/</b><small>検索欄へ</small></div>
+<div class="key used c-sys" data-k="help"><b>?</b><small>キー一覧</small></div>
+</div>
+<div class="kbrow">
+<div class="key used c-sys w3" data-k="palette"><b>Ctrl + K</b><small>コマンドパレット (Mac は Cmd+K)</small></div>
+<div class="key wide"><b>Space</b><small>（割り当てなし）</small></div>
+<div class="key used c-view w2" data-k="obs"><b>← →</b><small>観測: 項目を巡回</small></div>
+</div>
+</div>
+<div class="legend">
+<span class="l-move">移動・選択</span><span class="l-filter">絞り込み・検索</span><span class="l-act">候補への操作</span><span class="l-ban">BAN</span><span class="l-view">表示・観測</span><span class="l-nav">ページ移動 (g の後)</span><span class="l-sys">画面・その他</span>
+</div>
+
+<h2>移動・選択</h2>
+<table class="kt">
+<tr id="k-j"><td><kbd>j</kbd> / <kbd>k</kbd></td><td>次の候補 / 前の候補へ移動します。一覧の並び順どおりに選択が移ります。</td></tr>
+<tr id="k-enter"><td><kbd>Enter</kbd></td><td>選択中の候補の詳細ページを開きます。複数選択モード中は、詳細でなく選択の切り替えになります。</td></tr>
+<tr id="k-k"><td><kbd>k</kbd></td><td>前の候補へ（<kbd>j</kbd> の逆）。<kbd>g</kbd> の後に押すとこの説明書を開きます。</td></tr>
+</table>
+
+<h2>絞り込み・検索</h2>
+<table class="kt">
+<tr id="k-d1"><td><kbd>1</kbd>〜<kbd>9</kbd> / <kbd>0</kbd></td><td>TRLチップを直接切り替えます。<kbd>0</kbd> は「未確定」。BAN中のTRLは切り替えできず、通知が出ます。</td></tr>
+<tr id="k-slash"><td><kbd>/</kbd></td><td>検索欄へ移動します。検索欄では <kbd>↑</kbd><kbd>↓</kbd> で候補を選び <kbd>Enter</kbd> で確定します。<code>src:</code> のような記法を打ち始めると、その演算子で使える値が補完候補に出ます。</td></tr>
+<tr id="k-s"><td><kbd>s</kbd></td><td>並び順を次へ切り替えます。</td></tr>
+<tr id="k-comma"><td><kbd>,</kbd> / <kbd>.</kbd></td><td>並び順を前へ / 次へ切り替えます（<kbd>s</kbd> は次へだけ）。</td></tr>
+<tr id="k-n2"><td><kbd>n</kbd></td><td>「新着だけ表示」を切り替えます。</td></tr>
+</table>
+
+<h2>候補への操作</h2>
+<table class="kt">
+<tr id="k-f"><td><kbd>f</kbd></td><td>選択中の候補をピン留め / 解除します（この端末に保存）。</td></tr>
+<tr id="k-c"><td><kbd>c</kbd></td><td>比較バスケットに追加 / 解除します（最大4件）。帯から横並び比較ページを開けます。</td></tr>
+<tr id="k-v"><td><kbd>v</kbd></td><td>複数選択モードの入 / 切。モード中はカードのクリックが選択の切り替えになり、画面下のバーから一括ピン・バスケット追加・企業BANができます。</td></tr>
+<tr id="k-w"><td><kbd>w</kbd> / <kbd>Shift+W</kbd></td><td>「あとで読む」に追加 / 解除。<kbd>Shift+W</kbd> は、あとで読むの帯へ移動します。</td></tr>
+<tr id="k-e"><td><kbd>e</kbd> / <kbd>Shift+E</kbd></td><td><kbd>e</kbd> は原文を新しいタブで開き、<kbd>Shift+E</kbd> は根拠（関連材料の先頭）を開きます。</td></tr>
+<tr id="k-m"><td><kbd>m</kbd></td><td>詳細の調査メモ欄へ移動します。</td></tr>
+<tr id="k-n"><td><kbd>n</kbd></td><td>新着だけ表示の切り替え（絞り込みの節も参照）。</td></tr>
+</table>
+
+<h2>BAN（除外）</h2>
+<table class="kt">
+<tr id="k-b"><td><kbd>b</kbd> / <kbd>Shift+B</kbd></td><td>選択中の候補の企業 / 市場をBAN切り替えします。BANした瞬間、スマホでは軽く振動します。</td></tr>
+<tr><td>チップの長押し / 右クリック</td><td>どの絞り込みチップでも、長押し（スマホ）または右クリック（PC）でその値をBANできます。もう一度で解除。BAN中のチップは通常のクリックでは操作できません（解除は長押し/右クリックだけ）。条件リセットでBANも全て解除されます。</td></tr>
+<tr><td>BANチップ（モード）</td><td>各チップ群の末尾にある「BAN」と書かれたチップです。押すと赤く光り、その群がBANモードになります。光っている間は、チップのタップが選択でなくBANの切り替えになるので、スマホでも長押しなしで素早くBANできます。もう一度押すと通常モードに戻ります。モードは保存されず、開き直すと通常モードです。</td></tr>
+<tr><td>BANパネル</td><td>企業・分野・出所は名前で指名してBANできます。BAN一式はJSONで書き出し/読み込みができ、条件と束ねた「プロファイル」としても保存できます。</td></tr>
+</table>
+
+<h2>表示</h2>
+<table class="kt">
+<tr id="k-d"><td><kbd>d</kbd></td><td>世代表示（旧世代の評価をどう扱うか）を切り替えます。</td></tr>
+<tr id="k-l"><td><kbd>l</kbd></td><td>表示言語（日本語訳 / 原文）を切り替えます。</td></tr>
+<tr id="k-semi"><td><kbd>;</kbd></td><td>コンパクト表示を切り替えます。</td></tr>
+<tr id="k-a"><td><kbd>a</kbd></td><td>条件をリセットします（BANも含めて全解除）。</td></tr>
+</table>
+
+<h2>ページ移動（g シーケンス）</h2>
+<table class="kt">
+<tr id="k-g"><td><kbd>g</kbd> の後に1キー</td><td><kbd>g</kbd> を押してから0.9秒以内に次のキーを押すと、そのページへ移動します。全ページ共通です。</td></tr>
+<tr id="k-gseq"><td><kbd>g</kbd> <kbd>a</kbd> / <kbd>c</kbd> / <kbd>w</kbd> / <kbd>o</kbd> / <kbd>b</kbd> / <kbd>q</kbd> / <kbd>r</kbd> / <kbd>d</kbd> / <kbd>l</kbd> / <kbd>k</kbd></td><td>監査 / 採点基準 / Look・See / 観測 / ブリーフィング / 次回評価予定 / 実行履歴 / 項目別の不足 / 用語集 / この説明書、の順です。</td></tr>
+</table>
+
+<h2>観測ページ専用</h2>
+<table class="kt">
+<tr id="k-obs"><td><kbd>[</kbd> / <kbd>]</kbd></td><td>基準日（as-of）を評価日の単位で前 / 次へ送ります。最後より先へ送ると「最新」に戻ります。</td></tr>
+<tr><td><kbd>←</kbd> / <kbd>→</kbd></td><td>統計（箱ひげ図）の項目ハイライトを巡回します。</td></tr>
+</table>
+
+<h2>画面・その他</h2>
+<table class="kt">
+<tr id="k-palette"><td><kbd>Ctrl+K</kbd>（Mac は <kbd>Cmd+K</kbd>）</td><td>コマンドパレットを開きます。全コマンドを名前で検索して実行できます。書き出しやページ移動もここからできます。</td></tr>
+<tr id="k-help"><td><kbd>?</kbd></td><td>キー操作の一覧（簡易版）を開きます。一覧の中は言葉で検索できます。「キー操作の練習」ボタンで、実際にキーを押す練習もできます。</td></tr>
+<tr id="k-esc"><td><kbd>Esc</kbd></td><td>パレットやキー一覧を閉じます。</td></tr>
+</table>
+
+<h2>効かないとき</h2>
+<p>検索欄などの入力欄にフォーカスがある間と、日本語入力の変換中は、キー操作は効きません（入力を邪魔しないため）。入力欄から離れるには <kbd>Esc</kbd> を押すか、欄の外をタップしてください。この説明書は <kbd>g</kbd> の後に <kbd>k</kbd>、またはキー一覧（<kbd>?</kbd>）からのリンクでも開けます。</p>
+</div>
+</div></main>
+<footer class="ft"><span>TRL Explorer</span><span><a href="index.html">一覧</a></span><span><a href="glossary.html">用語集</a></span></footer>
+<script>
+"use strict";
+document.querySelectorAll(".key.used").forEach(k => {
+  k.addEventListener("click", () => {
+    const row = document.getElementById("k-" + k.dataset.k);
+    document.querySelectorAll("tr.hl").forEach(r => r.classList.remove("hl"));
+    if (row) { row.classList.add("hl"); row.scrollIntoView({block: "center"}); }
+  });
+});
+/* ページ移動のキーシーケンス (全ページ共通) */
+{
+  const GKEYS = {b: "brief.html", a: "audit.html", c: "criteria.html", w: "watch.html", o: "observe.html", q: "queue.html", r: "runs.html", d: "deductions.html", l: "glossary.html", k: "keys.html"};
+  let gAt = 0;
+  document.addEventListener("keydown", e => {
+    if (e.metaKey || e.ctrlKey || e.altKey || e.isComposing) return;
+    const t = e.target;
+    if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT")) return;
+    if (gAt && Date.now() - gAt < 900 && GKEYS[e.key]) { e.preventDefault(); location.href = GKEYS[e.key]; gAt = 0; return; }
+    gAt = e.key === "g" ? Date.now() : 0;
+  });
+}
+</script>
+</body>
+</html>

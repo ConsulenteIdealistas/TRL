@@ -77,9 +77,10 @@ class ExportTests(StoreFixture):
         index = (web / "index.html").read_text(encoding="utf-8")
         self.assertIn('<nav class="pagelinks"><a href="criteria.html">採点基準</a>'
                       '<a href="audit.html">監査</a><a href="watch.html">Look・See</a>'
-                      '<a href="observe.html">観測</a><a href="queue.html">次回評価予定</a>'
+                      '<a href="observe.html">観測</a><a href="brief.html">ブリーフィング</a>'
+                      '<a href="queue.html">次回評価予定</a>'
                       '<a href="runs.html">実行履歴</a><a href="deductions.html">項目別の不足</a>'
-                      '<a href="glossary.html">用語集</a></nav>', index)
+                      '<a href="glossary.html">用語集</a><a href="keys.html">キー操作</a></nav>', index)
         self.assertIn('<a href="audit.html">監査（要確認の処分）</a>', index)
         # Look・See ページも同格に存在し、一覧から辿れる
         wpage = (web / "watch.html").read_text(encoding="utf-8")

@@ -389,7 +389,7 @@ load();
 /* ページ移動のキーシーケンス: g の後にホームポジション周辺のキー
    (a=監査 c=採点基準 w=Look・See o=観測 q=次回評価予定 r=実行履歴 d=項目別の不足 l=用語集) */
 {
-  const GKEYS = {b: "brief.html", a: "audit.html", c: "criteria.html", w: "watch.html", o: "observe.html", q: "queue.html", r: "runs.html", d: "deductions.html", l: "glossary.html"};
+  const GKEYS = {b: "brief.html", a: "audit.html", c: "criteria.html", w: "watch.html", o: "observe.html", q: "queue.html", r: "runs.html", d: "deductions.html", l: "glossary.html", k: "keys.html"};
   let gAt = 0;
   document.addEventListener("keydown", e => {
     if (e.metaKey || e.ctrlKey || e.altKey || e.isComposing) return;
@@ -414,4 +414,17 @@ document.addEventListener("keydown", e => {
   if (ASOF) { const b = ASOF.split("-").map(Number); CALM = {y: b[0], m: b[1] - 1}; }
   CALOPEN = false;
   buildCohort(); statsBand();
+});
+/* ←/→ で統計 (箱ひげ) の項目ハイライトを巡回する */
+let boxHl = -1;
+document.addEventListener("keydown", e => {
+  if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+  const t = e.target;
+  if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT")) return;
+  const rows = [...document.querySelectorAll("#statband .srow")];
+  if (!rows.length) return;
+  e.preventDefault();
+  boxHl = (((boxHl + (e.key === "ArrowRight" ? 1 : -1)) % rows.length) + rows.length) % rows.length;
+  rows.forEach((r, i) => r.classList.toggle("hl", i === boxHl));
+  rows[boxHl].scrollIntoView({block: "nearest"});
 });

@@ -170,10 +170,15 @@ function render() {
   }));
 }
 
+/* BANモード (群ごとの一時状態): 末尾の BAN チップが光っている間はタップがBAN切り替えになる */
+const wMode = {};
 function chips(el, items, isOn, onToggle, isBan, onBan) {
-  el.innerHTML = items.map(([v, label]) => `<button type="button" class="dchip${isBan && isBan(v) ? " ban" : ""}" data-v="${esc(v)}" aria-pressed="${isOn(v)}">${esc(label)}</button>`).join(" ");
+  el.innerHTML = items.map(([v, label]) => `<button type="button" class="dchip${isBan && isBan(v) ? " ban" : ""}" data-v="${esc(v)}" aria-pressed="${isOn(v)}">${esc(label)}</button>`).join(" ")
+    + (onBan ? ` <button type="button" class="dchip banmode${wMode[el.id] ? " on" : ""}" data-banmode="1" aria-pressed="${!!wMode[el.id]}" title="BANモード: 光っている間はタップがBANの切り替えになります">BAN</button>` : "");
+  const mb = el.querySelector("[data-banmode]");
+  if (mb) mb.addEventListener("click", () => { wMode[el.id] = !wMode[el.id]; if (wMode[el.id]) buzz(); mb.classList.toggle("on", !!wMode[el.id]); mb.setAttribute("aria-pressed", String(!!wMode[el.id])); });
   el.querySelectorAll("[data-v]").forEach(b => {
-    b.addEventListener("click", () => { if (el.dataset.lp === "1") { el.dataset.lp = ""; return; } if (b.classList.contains("ban")) return; onToggle(b.dataset.v); });
+    b.addEventListener("click", () => { if (el.dataset.lp === "1") { el.dataset.lp = ""; return; } if (wMode[el.id] && onBan) { onBan(b.dataset.v); return; } if (b.classList.contains("ban")) return; onToggle(b.dataset.v); });
     if (!onBan) return;
     let timer = null;
     b.addEventListener("pointerdown", () => { timer = setTimeout(() => { el.dataset.lp = "1"; onBan(b.dataset.v); }, 450); });
@@ -259,7 +264,7 @@ init();
 /* ページ移動のキーシーケンス: g の後にホームポジション周辺のキー
    (a=監査 c=採点基準 w=Look・See o=観測 q=次回評価予定 r=実行履歴 d=項目別の不足 l=用語集) */
 {
-  const GKEYS = {b: "brief.html", a: "audit.html", c: "criteria.html", w: "watch.html", o: "observe.html", q: "queue.html", r: "runs.html", d: "deductions.html", l: "glossary.html"};
+  const GKEYS = {b: "brief.html", a: "audit.html", c: "criteria.html", w: "watch.html", o: "observe.html", q: "queue.html", r: "runs.html", d: "deductions.html", l: "glossary.html", k: "keys.html"};
   let gAt = 0;
   document.addEventListener("keydown", e => {
     if (e.metaKey || e.ctrlKey || e.altKey || e.isComposing) return;

@@ -1791,6 +1791,7 @@ const ACTIONS = [
   {label: "現在の絞り込みのリンクをコピー", keys: "", run: () => { const b = $("#fplink"); if (b) b.click(); }},
   {label: "data.json のスナップショットを保存", keys: "", run: () => saveSnapshot()},
   {label: "週次レポート (Markdown) を保存", keys: "", run: () => saveWeekly()},
+  {label: "メインページへ移動", keys: "g i", seq: "i", run: () => { location.href = "index.html"; }},
   {label: "企業ページへ移動", keys: "", run: () => { location.href = "company.html"; }},
   {label: "採点基準ページへ移動", keys: "g c", seq: "c", run: () => { location.href = "criteria.html"; }},
   {label: "監査ページへ移動", keys: "g a", seq: "a", run: () => { location.href = "audit.html"; }},

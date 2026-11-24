@@ -611,6 +611,7 @@ const AACTS = [
   {label: "処分済みの表示を切り替え", run() { showDone = !showDone; saveVis(); render(); }},
   {label: "候補一覧へ移動", run() { location.href = "index.html"; }},
   {label: "実行履歴へ移動", run() { location.href = "runs.html"; }},
+  {label: "メインページへ移動", run() { location.href = "index.html"; }},
   {label: "企業一覧へ移動", run() { location.href = "company.html"; }},
   {label: "採点基準へ移動", run() { location.href = "criteria.html"; }},
 ];
@@ -849,7 +850,7 @@ $("#copyBtn").addEventListener("click", async () => {
 /* ページ移動のキーシーケンス: g の後にホームポジション周辺のキー
    (a=監査 c=採点基準 w=Look・See o=観測 q=次回評価予定 r=実行履歴 d=項目別の不足 l=用語集) */
 {
-  const GKEYS = {b: "brief.html", a: "audit.html", c: "criteria.html", w: "watch.html", o: "observe.html", q: "queue.html", r: "runs.html", d: "deductions.html", l: "glossary.html", k: "keys.html"};
+  const GKEYS = {i: "index.html", b: "brief.html", a: "audit.html", c: "criteria.html", w: "watch.html", o: "observe.html", q: "queue.html", r: "runs.html", d: "deductions.html", l: "glossary.html", k: "keys.html"};
   let gAt = 0;
   document.addEventListener("keydown", e => {
     if (e.metaKey || e.ctrlKey || e.altKey || e.isComposing) return;

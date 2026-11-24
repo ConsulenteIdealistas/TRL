@@ -237,3 +237,18 @@ async function load() {
   else renderIndex(cos);
 }
 load();
+
+/* ページ移動のキーシーケンス: g の後にホームポジション周辺のキー
+   (i=メイン b=ブリーフィング a=監査 c=採点基準 w=Look・See o=観測
+    q=次回評価予定 r=実行履歴 d=項目別の不足 l=用語集 k=キー操作の説明書) */
+{
+  const GKEYS = {i: "index.html", b: "brief.html", a: "audit.html", c: "criteria.html", w: "watch.html", o: "observe.html", q: "queue.html", r: "runs.html", d: "deductions.html", l: "glossary.html", k: "keys.html"};
+  let gAt = 0;
+  document.addEventListener("keydown", e => {
+    if (e.metaKey || e.ctrlKey || e.altKey || e.isComposing) return;
+    const t = e.target;
+    if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT")) return;
+    if (gAt && Date.now() - gAt < 900 && GKEYS[e.key]) { e.preventDefault(); location.href = GKEYS[e.key]; gAt = 0; return; }
+    gAt = e.key === "g" ? Date.now() : 0;
+  });
+}

@@ -77,7 +77,7 @@ kbd{background:var(--surface-muted);border:1px solid var(--line);border-bottom-w
 <div class="key"><b>T</b><small></small></div>
 <div class="key used c-act" data-k="y"><b>Y</b><small>リンクコピー</small></div>
 <div class="key used c-move" data-k="u"><b>U</b><small>動いた候補</small><small class="sh">Shift: 逆方向</small></div>
-<div class="key"><b>I</b><small></small></div>
+<div class="key used c-nav" data-k="gseq"><b>I</b><small>g の後: メイン</small><span class="dot"></span></div>
 <div class="key used c-nav" data-k="gseq"><b>O</b><small>g の後: 観測</small><span class="dot"></span></div>
 <div class="key"><b>P</b><small></small></div>
 <div class="key used c-view" data-k="obs"><b>[</b><small>観測: 前の日</small></div>
@@ -174,7 +174,7 @@ kbd{background:var(--surface-muted);border:1px solid var(--line);border-bottom-w
 <h2>ページ移動（g シーケンス）</h2>
 <table class="kt">
 <tr id="k-g"><td><kbd>g</kbd> の後に1キー</td><td><kbd>g</kbd> を押してから0.9秒以内に次のキーを押すと、そのページへ移動します。全ページ共通です。</td></tr>
-<tr id="k-gseq"><td><kbd>g</kbd> <kbd>a</kbd> / <kbd>c</kbd> / <kbd>w</kbd> / <kbd>o</kbd> / <kbd>b</kbd> / <kbd>q</kbd> / <kbd>r</kbd> / <kbd>d</kbd> / <kbd>l</kbd> / <kbd>k</kbd></td><td>監査 / 採点基準 / Look・See / 観測 / ブリーフィング / 次回評価予定 / 実行履歴 / 項目別の不足 / 用語集 / この説明書、の順です。</td></tr>
+<tr id="k-gseq"><td><kbd>g</kbd> <kbd>i</kbd> / <kbd>a</kbd> / <kbd>c</kbd> / <kbd>w</kbd> / <kbd>o</kbd> / <kbd>b</kbd> / <kbd>q</kbd> / <kbd>r</kbd> / <kbd>d</kbd> / <kbd>l</kbd> / <kbd>k</kbd></td><td>メイン / 監査 / 採点基準 / Look・See / 観測 / ブリーフィング / 次回評価予定 / 実行履歴 / 項目別の不足 / 用語集 / この説明書、の順です。</td></tr>
 </table>
 
 <h2>観測ページ専用</h2>
@@ -215,7 +215,7 @@ document.querySelectorAll(".key.used").forEach(k => {
 });
 /* ページ移動のキーシーケンス (全ページ共通) */
 {
-  const GKEYS = {b: "brief.html", a: "audit.html", c: "criteria.html", w: "watch.html", o: "observe.html", q: "queue.html", r: "runs.html", d: "deductions.html", l: "glossary.html", k: "keys.html"};
+  const GKEYS = {i: "index.html", b: "brief.html", a: "audit.html", c: "criteria.html", w: "watch.html", o: "observe.html", q: "queue.html", r: "runs.html", d: "deductions.html", l: "glossary.html", k: "keys.html"};
   let gAt = 0;
   document.addEventListener("keydown", e => {
     if (e.metaKey || e.ctrlKey || e.altKey || e.isComposing) return;

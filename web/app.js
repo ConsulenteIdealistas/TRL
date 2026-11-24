@@ -309,7 +309,7 @@ function filtered() {
     && !(chipBans.fgenc.size && isCurGen(p))
     && !(() => { const m = moveOf(p); return !!m && (chipBans.fmvc.has("any") || chipBans.fmvc.has(m)); })()
     && ![...chipBans.fhistc].some(v => { const f = histFacts(p); return (v === "first" && f.first) || (v === "moved" && f.moved) || (v === "band" && f.bandCross) || (v === "dirflip" && f.dirFlip) || (v === "stale" && p.display_status === "final" && p.long && p.long.evaluated_at && evalMaxTs && evalMaxTs - Date.parse(p.long.evaluated_at) > 30 * 864e5); })
-    && !((chipBans.fown.has("new") && isNewEval(p)) || (chipBans.fown.has("pin") && pins.has(p.id)) || (chipBans.fown.has("unseen") && !seen.has(p.id)))
+    && !((chipBans.fown.has("new") && isNewEval(p)) || (chipBans.fown.has("pin") && pins.has(p.id)) || (chipBans.fown.has("seen") && seen.has(p.id)) || (chipBans.fown.has("unseen") && !seen.has(p.id)))
     && (stSel.size ? stSel.has(p.display_status) : p.display_status !== "rejected")  // 除外はチップを明示的に押した時だけ混ざる
     && inR(lvl(p))
     && (!dirSel.size || dirSel.has(dirOf(p) || "none"))
@@ -328,7 +328,7 @@ function filtered() {
     && (!stgSel.size || p.entities.some(e => stgSel.has(e.stage)))
     && (!tierSel.size || p.entities.some(e => tierSel.has(dtierOf(e))))
     && (!genSel.size || isCurGen(p))
-    && (!ownSel.size || (ownSel.has("new") && isNewEval(p)) || (ownSel.has("pin") && pins.has(p.id)) || (ownSel.has("unseen") && !seen.has(p.id))));
+    && (!ownSel.size || (ownSel.has("new") && isNewEval(p)) || (ownSel.has("pin") && pins.has(p.id)) || (ownSel.has("seen") && seen.has(p.id)) || (ownSel.has("unseen") && !seen.has(p.id))));
   const byStatus = (a, b) => (SO[a.display_status] - SO[b.display_status])
     || ((ok(lvl(b)) ? lvl(b) : -1) - (ok(lvl(a)) ? lvl(a) : -1))
     || String(b.published || "").localeCompare(String(a.published || ""));
@@ -1628,113 +1628,9 @@ if (statbandEl) statbandEl.addEventListener("click", e => {
     buildCohort(); statsBand(); detail();
   }
 });
-/* 滑らかスクロール: 氷の上を滑るような摩擦モデル。ホイールの刻みは
-   「目標位置」を積み上げるだけにし、実際の移動は毎フレーム
-   「残りの距離 × (1 - e^(-dt/τ))」で近づける指数減衰で決める。
-   速度が残距離に比例するので、刻みは連続につながり、止まり際は
-   限りなく滑らかに減速する。τ (時定数、ms) が摩擦の強さで、
-   大きいほど氷のように滑る。総移動量は刻みの合計と一致する。
-   トラックパッドの細かいピクセル入力は素の動きが既に滑らかなので触らない。
-   内側にスクロール領域がある場所 (パレット等) と、パレット/ヘルプ表示中は
-   触らない。Shift+S キーで入/切 (端末に保存) */
-const SM_TAU = 170;
-let smoothOn = true;
-try { smoothOn = localStorage.getItem("trl-smooth") !== "0"; } catch (e) { /* 読めなければ入 */ }
-let smAnim = null, smCur = 0, smLast = 0;
-/* 人間の指のノイズ補正 (目標側を整える):
-   1. ノッチ正規化: 刻みの大きさの直近中央値を「そのホイールの標準ノッチ」
-      とし、入力をその整数倍に丸める。端数は捨てずに残りとして次へ繰り越す
-   3. 単発反転の保留: 進行方向と逆の刻みは 200ms 保留し、元の方向に戻れば
-      ノイズとして捨て、逆向きが続けば本物の方向転換としてまとめて反映する
-   5. 微小量の不感帯: 滑走中とその直後に届く小さな入力は即座に動かさず、
-      貯めて 40px を超えたらまとめて反映する (指の揺れ対策) */
-let smNotches = [], smResid = 0, smMicro = 0, smDir = 0, smRev = null, smGlideEnd = 0;
-function smApply(d, now) {
-  const maxY = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
-  const base = smAnim ? smAnim.to : window.scrollY;
-  const to = Math.min(maxY, Math.max(0, base + d));
-  if (!smAnim) {
-    if (to === window.scrollY) return;
-    smCur = window.scrollY;
-    smAnim = {to};
-    smLast = now;
-    requestAnimationFrame(smTick);
-  } else smAnim.to = to;
-  if (d) smDir = Math.sign(d);
-}
-function smTick(now) {
-  if (smRev && now - smRev.t > 200) { const d = smRev.d; smRev = null; smApply(d, now); }
-  if (!smAnim) { smGlideEnd = now; return; }
-  const dt = Math.min(50, Math.max(1, now - (smLast || now))); smLast = now;
-  const rem = smAnim.to - smCur;
-  if (Math.abs(rem) < 0.6) { window.scrollTo(0, smAnim.to); smAnim = null; smGlideEnd = now; return; }
-  let step = rem * (1 - Math.exp(-dt / SM_TAU));
-  step = Math.max(-240, Math.min(240, step));
-  smCur += step;
-  window.scrollTo(0, smCur);
-  requestAnimationFrame(smTick);
-}
-document.addEventListener("wheel", e => {
-  if (!smoothOn || e.ctrlKey) return;  // ctrl+ホイールはブラウザズーム
-  if (!$("#pal").hidden || !$("#khelp").hidden) return;
-  let el = e.target;
-  while (el && el !== document.body) {
-    if (el instanceof Element) {
-      const st = getComputedStyle(el);
-      if ((st.overflowY === "auto" || st.overflowY === "scroll") && el.scrollHeight > el.clientHeight) return;
-    }
-    el = el.parentElement;
-  }
-  const unit = e.deltaMode === 1 ? 33 : e.deltaMode === 2 ? window.innerHeight : 1;
-  const now = performance.now();
-  let d = e.deltaY * unit;
-  if (e.deltaMode === 0 && Math.abs(d) < 40) {
-    // 細かい入力: 滑走中とその直後 (500ms) だけ不感帯に貯める。それ以外
-    // (トラックパッド等) は今までどおり素通し
-    if (!smAnim && now - smGlideEnd > 500) return;
-    e.preventDefault();
-    smMicro += d;
-    if (Math.abs(smMicro) >= 40) { const m = smMicro; smMicro = 0; smApply(m, now); }
-    return;
-  }
-  e.preventDefault();
-  if (smMicro) { const m = smMicro; smMicro = 0; smApply(m, now); }
-  if (e.deltaMode !== 2) {
-    // ノッチ正規化 (ページ単位の入力は対象外)
-    smNotches.push(Math.abs(d));
-    if (smNotches.length > 9) smNotches.shift();
-    if (smNotches.length >= 3) {
-      const med = [...smNotches].sort((a, b) => a - b)[smNotches.length >> 1];
-      if (med > 0) {
-        const total = d + smResid;
-        const q = Math.sign(total) * med * Math.max(1, Math.round(Math.abs(total) / med));
-        smResid = total - q;
-        d = q;
-      }
-    }
-  }
-  // 単発反転の保留 (滑走中とその直後だけ。止まってから十分経った後の
-  // 反転は新しい意図として即座に反映する。保留の失効はタイマーでも担保)
-  if (smDir && Math.sign(d) !== smDir && (smAnim || now - smGlideEnd <= 500)) {
-    if (smRev && Math.sign(smRev.d) === Math.sign(d)) {
-      const held = smRev.d; smRev = null;
-      smApply(held + d, now);
-    } else {
-      smRev = {d, t: now};
-      setTimeout(() => { if (smRev && performance.now() - smRev.t > 200) { const hd = smRev.d; smRev = null; smApply(hd, performance.now()); } }, 220);
-    }
-    return;
-  }
-  if (smRev) smRev = null;  // 元の方向に戻った: 保留分はノイズとして捨てる
-  smApply(d, now);
-}, {passive: false});
-document.addEventListener("keydown", () => { smAnim = null; }, true);
-function toggleSmooth() {
-  smoothOn = !smoothOn;
-  smAnim = null;
-  try { localStorage.setItem("trl-smooth", smoothOn ? "1" : "0"); } catch (e) { /* 保存不可でも切り替えは効く */ }
-  toast(smoothOn ? "滑らかスクロール: 入" : "滑らかスクロール: 切");
-}
+/* 滑らかスクロールは全ページ共通の smooth.js が正本 (氷の摩擦モデル+
+   指のノイズ補正)。このページでは Shift+S の窓口だけを残す */
+function toggleSmooth() { if (window.trlSmooth) window.trlSmooth.toggle(); }
 /* キー操作とコマンドパレット。よく使う操作はホームポジション
    (j/k/f/d/s/l/;) に寄せ、残りはパレットから名前で呼べるようにする。
    ACTIONS が正本で、キー割り当て・パレット・ヘルプはすべてここから出る */

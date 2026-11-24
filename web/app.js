@@ -520,11 +520,17 @@ function togglePin(id) { if (!id) return; if (pins.has(id)) pins.delete(id); els
 /* BANした瞬間の軽い振動 (スマホのみ。対応しない環境では何もしない) */
 const buzz = () => { try { if (navigator.vibrate) navigator.vibrate(15); } catch (e) { /* 非対応は無視 */ } };
 /* 短い通知 (キー操作の結果を返すためだけの小さな帯) */
-function toast(msg) {
+function toast(msg, undoFn) {
   let el = $("#toast");
   if (!el) { el = document.createElement("div"); el.id = "toast"; el.className = "toast"; document.body.appendChild(el); }
   el.textContent = msg; el.hidden = false;
-  clearTimeout(toast._t); toast._t = setTimeout(() => { el.hidden = true; }, 2600);
+  if (undoFn) {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "tz"; b.textContent = "戻す";
+    b.addEventListener("click", () => { clearTimeout(toast._t); el.hidden = true; undoFn(); });
+    el.appendChild(b);
+  }
+  clearTimeout(toast._t); toast._t = setTimeout(() => { el.hidden = true; }, undoFn ? 6000 : 2600);
 }
 /* キー操作からのBAN: 選択中の候補の企業 (指名BAN) / 市場 (市場チップのBAN) を切り替える */
 function banKeyOf(id, kind) {
@@ -534,13 +540,13 @@ function banKeyOf(id, kind) {
   if (kind === "company") {
     if (!e) { toast("企業リンクが無い候補は企業BANできません"); return; }
     const i = BANS.findIndex(b => b.t === "company" && b.v === e.name);
-    if (i >= 0) { BANS.splice(i, 1); toast(`企業BANを解除: ${e.name}`); }
-    else { BANS.push({t: "company", v: e.name, on: true}); buzz(); toast(`企業をBAN: ${e.name}`); }
+    if (i >= 0) { const rm = BANS[i]; BANS.splice(i, 1); toast(`企業BANを解除: ${e.name}`, () => { BANS.splice(Math.min(i, BANS.length), 0, rm); saveBans(); buildBanUI(); render(); }); }
+    else { const nb = {t: "company", v: e.name, on: true}; BANS.push(nb); buzz(); toast(`企業をBAN: ${e.name}`, () => { const j = BANS.indexOf(nb); if (j >= 0) BANS.splice(j, 1); saveBans(); buildBanUI(); render(); }); }
     saveBans(); buildBanUI(); render();
   } else {
     if (!e || !e.market) { toast("市場が無い候補は市場BANできません"); return; }
-    if (chipBans.fmc.has(e.market)) { chipBans.fmc.delete(e.market); toast(`市場BANを解除: ${e.market}`); }
-    else { chipBans.fmc.add(e.market); buzz(); toast(`市場をBAN: ${e.market}`); }
+    if (chipBans.fmc.has(e.market)) { chipBans.fmc.delete(e.market); toast(`市場BANを解除: ${e.market}`, () => { chipBans.fmc.add(e.market); saveChipBans(); syncChips("fmc", mkSel); render(); }); }
+    else { chipBans.fmc.add(e.market); buzz(); toast(`市場をBAN: ${e.market}`, () => { chipBans.fmc.delete(e.market); saveChipBans(); syncChips("fmc", mkSel); render(); }); }
     saveChipBans(); syncChips("fmc", mkSel); render();
   }
 }
@@ -836,6 +842,7 @@ function render() {
   if (!r.some(p => p.id === sel)) sel = r[0] ? r[0].id : null;
   $("#list").innerHTML = r.map(card).join("");
   detail();
+  renderBanBand();
 }
 function stats() {
   const n = f => P.filter(p => f.includes(p.display_status)).length;
@@ -1176,6 +1183,38 @@ function buildBanUI() {
   if (bc) bc.textContent = BANS.some(b => b.on) ? `（現在 ${P.filter(banned).length}件を除外中）` : "";
   const dl = $("#banvals"), ty = $("#bantype");
   if (dl && ty) dl.innerHTML = banOptions(ty.value).map(v => `<option value="${esc(v)}">`).join("");
+  renderBanBand();
+}
+/* BAN帯: BAN中の企業・市場を一覧の上に常時出し、その場で戻せるようにする
+   (BANした瞬間に候補が消えて、復元の入口が遠い問題への対処) */
+function renderBanBand() {
+  const el = $("#banband");
+  if (!el) return;
+  const comps = BANS.filter(b => b.on && b.t === "company");
+  const mkts = [...chipBans.fmc];
+  if (!comps.length && !mkts.length) { el.hidden = true; el.innerHTML = ""; return; }
+  const n = P.filter(p => banned(p) || (p.entities || []).some(e => e.strength === "strong" && e.market && chipBans.fmc.has(e.market))).length;
+  el.innerHTML = `<span><strong>BAN中の企業・市場</strong>（${n}件を除外中）</span>`
+    + comps.map(b => `<button class="tz" type="button" data-unbanc="${esc(b.v)}">企業: ${esc(b.v)} ×</button>`).join("")
+    + mkts.map(m => `<button class="tz" type="button" data-unbanm="${esc(m)}">市場: ${esc(m)} ×</button>`).join("")
+    + `<button class="tz" type="button" id="unbanall">全部戻す</button>`;
+  el.hidden = false;
+  el.querySelectorAll("[data-unbanc]").forEach(b => b.addEventListener("click", () => {
+    const i = BANS.findIndex(x => x.t === "company" && x.v === b.dataset.unbanc);
+    if (i >= 0) BANS.splice(i, 1);
+    saveBans(); buildBanUI(); render();
+  }));
+  el.querySelectorAll("[data-unbanm]").forEach(b => b.addEventListener("click", () => {
+    chipBans.fmc.delete(b.dataset.unbanm);
+    saveChipBans(); syncChips("fmc", mkSel); buildBanUI(); render();
+  }));
+  const all = el.querySelector("#unbanall");
+  if (all) all.addEventListener("click", () => {
+    for (let i = BANS.length - 1; i >= 0; i--) if (BANS[i].t === "company" && BANS[i].on) BANS.splice(i, 1);
+    chipBans.fmc.clear();
+    saveBans(); saveChipBans(); syncChips("fmc", mkSel); buildBanUI(); render();
+    toast("企業・市場のBANを全部戻しました");
+  });
 }
 /* 初回ガイド: 見たことがなければ一度だけ出す。閉じたら端末に記録する */
 function tourBand() {

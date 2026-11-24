@@ -578,6 +578,12 @@ document.addEventListener("keydown", ev => {
   const t = ev.target;
   if ((t && typeof t.matches === "function" && t.matches("input, textarea, select")) || ev.isComposing) return;
   if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === "k") { ev.preventDefault(); openAPal(); return; }
+  const ah = $("#ahelp");
+  if (ah && !ah.hidden) {
+    if (ev.key === "Escape" || ev.key === "?") { toggleAHelp(); ev.preventDefault(); }
+    return;
+  }
+  if (ev.key === "?") { toggleAHelp(); ev.preventDefault(); return; }
   const els = [...document.querySelectorAll("#list .eentry")];
   if (!els.length) return;
   if (ev.key === "j" || ev.key === "k") {
@@ -601,6 +607,35 @@ document.addEventListener("keydown", ev => {
     ev.preventDefault();
   }
 });
+/* 監査ページのキー操作一覧 (? またはボタン)。一覧ページと同じ流儀で、
+   キー付きを先に、パレット専用 (AACTS) を後に並べる */
+const AKEYS = [
+  {keys: "j", label: "次の項目へ移動"},
+  {keys: "k", label: "前の項目へ移動"},
+  {keys: "1", label: "選択中の項目を「問題あり」に処分"},
+  {keys: "2", label: "選択中の項目を「誤検知」に処分"},
+  {keys: "3", label: "選択中の項目を「様子見」に処分"},
+  {keys: "r", label: "選択中の項目の候補の再評価を予約 / 解除"},
+  {keys: "Enter", label: "選択中の項目の候補の詳細を開く"},
+  {keys: "Ctrl+K", label: "コマンドパレットを開く"},
+  {keys: "g の後のキー", label: "ページ移動 (i=メイン、a=監査、c=採点基準、w=Look・See、o=観測、q=次回評価予定、r=実行履歴、d=項目別の不足、l=用語集、k=キー操作の説明書、b=ブリーフィング)"},
+];
+function toggleAHelp() {
+  const h = $("#ahelp");
+  if (!h) return;
+  if (h.hidden) {
+    const row = (keys, label, keyless) => `<div class="kh-r${keyless ? " keyless" : ""}" data-t="${esc(((keys || "") + " " + label).toLowerCase())}"><kbd>${esc(keys || "なし")}</kbd><span>${esc(label)}</span></div>`;
+    $("#akhlist").innerHTML = AKEYS.map(a => row(a.keys, a.label, false)).join("")
+      + `<div class="kh-div">キーなし（コマンドパレット専用）</div>`
+      + AACTS.map(a => row("", a.label, true)).join("");
+    const q = $("#ahelpq"); if (q) q.value = "";
+    h.hidden = false;
+    document.body.style.overflow = "hidden";
+  } else {
+    h.hidden = true;
+    document.body.style.overflow = $("#apal").hidden ? "" : "hidden";
+  }
+}
 /* 監査ページのコマンドパレット (Ctrl/Cmd+K) */
 const AACTS = [
   {label: "絞り込み: すべて", run() { viewState.filter = "all"; render(); }},
@@ -625,7 +660,7 @@ function openAPal() {
   drawAPal("");
   $("#apalq").focus();
 }
-function closeAPal() { const ov = $("#apal"); if (ov) ov.hidden = true; document.body.style.overflow = ""; }
+function closeAPal() { const ov = $("#apal"); if (ov) ov.hidden = true; const ah = $("#ahelp"); document.body.style.overflow = (ah && !ah.hidden) ? "hidden" : ""; }
 function drawAPal(q, keepSel) {
   apalList = AACTS.filter(a => !q || a.label.toLowerCase().includes(q.toLowerCase()));
   if (!keepSel) apalSel = 0;
@@ -634,6 +669,15 @@ function drawAPal(q, keepSel) {
     || `<p class="hint" style="padding:10px 14px">一致するコマンドがありません。</p>`;
 }
 document.addEventListener("DOMContentLoaded", () => {
+  const akh = $("#akhbtn"); if (akh) akh.addEventListener("click", toggleAHelp);
+  const ahq = $("#ahelpq");
+  if (ahq) ahq.addEventListener("keydown", e => { if (e.key === "Escape") { toggleAHelp(); e.preventDefault(); } });
+  if (ahq) ahq.addEventListener("input", () => {
+    const q = ahq.value.trim().toLowerCase();
+    document.querySelectorAll("#akhlist .kh-r").forEach(r => { r.style.display = !q || r.dataset.t.includes(q) ? "" : "none"; });
+  });
+  const ahov = $("#ahelp");
+  if (ahov) ahov.addEventListener("pointerdown", e => { if (e.target === ahov) toggleAHelp(); });
   const ov = $("#apal"), q = $("#apalq");
   if (!ov || !q) return;
   q.addEventListener("input", () => drawAPal(q.value.trim()));

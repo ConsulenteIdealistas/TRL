@@ -29,7 +29,7 @@
 <body>
 <header class="topbar"><a class="brand" href="index.html"><span class="mark">T</span><span>TRL<span class="light"> Explorer</span></span></a><div class="meta">Research Intelligence</div></header>
 <main class="ws">
-<p style="margin:0 0 12px"><a class="tg" href="index.html">← 一覧に戻る</a> <label class="sw" style="min-height:34px"><input type="checkbox" id="swgen"> 世代を表示</label> <button id="lt" class="btn quiet" type="button" style="float:right">日本語訳で表示</button></p>
+<p style="margin:0 0 12px"><a class="tg" href="index.html">← 一覧に戻る</a> <label class="sw" style="min-height:34px"><input type="checkbox" id="swgen"> 世代を表示</label> <button id="lt" class="btn quiet" type="button" style="float:right">日本語訳で表示</button> <span class="hint">キー: j/k 前後の候補 ・ f ピン ・ b 企業BAN ・ r 予約 ・ y リンク ・ e 原文</span></p>
 <section class="panel"><div id="det"><div class="ph"><i>⌕</i><h3>読み込み中…</h3></div></div></section>
 <footer class="ft"><span>TRL Explorer</span><span><a href="criteria.html">採点基準（評価規程と重み）</a></span><span><a href="audit.html">監査（要確認の処分）</a></span><span>技術成熟度と事業化評価は独立した評価軸です。スコアは評価尺度であり、株価上昇確率・成功確率・投資利益率ではありません。</span></footer>
 </main>
@@ -556,6 +556,98 @@ load();
     if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT")) return;
     if (gAt && Date.now() - gAt < 900 && GKEYS[e.key]) { e.preventDefault(); location.href = GKEYS[e.key]; gAt = 0; return; }
     gAt = e.key === "g" ? Date.now() : 0;
+  });
+}
+</script>
+
+<script>
+"use strict";
+/* 詳細ページのキー操作: 一覧と同じ手つきで読み進める。
+   j/k の並びは data.json の候補の並び順 (一覧の絞り込み・並び替えは持ち込まない)。
+   ピン・企業BAN・再評価予約は一覧と同じ端末内ストアに同じ形で書く */
+{
+  let detData = null;
+  const detToast = (msg) => {
+    let t = document.getElementById("dettoast");
+    if (!t) {
+      t = document.createElement("div");
+      t.id = "dettoast";
+      t.setAttribute("style", "position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--surface);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:9px 14px;font-size:13px;box-shadow:0 10px 30px rgba(0,0,0,.35);z-index:80");
+      document.body.appendChild(t);
+    }
+    t.textContent = msg;
+    t.style.display = "";
+    clearTimeout(t._h);
+    t._h = setTimeout(() => { t.style.display = "none"; }, 2600);
+  };
+  const detLoad = async () => {
+    if (!detData) {
+      const res = await fetch("data.json", {cache: "no-cache"});
+      detData = await res.json();
+    }
+    return detData;
+  };
+  const detCur = async () => {
+    const d = await detLoad();
+    const id = new URLSearchParams(location.search).get("id");
+    const list = d.candidates || [];
+    const i = list.findIndex(c => c.id === id);
+    return {list, i, p: i >= 0 ? list[i] : null};
+  };
+  const detCopy = async (text) => {
+    try { await navigator.clipboard.writeText(text); return true; } catch (e) { return false; }
+  };
+  document.addEventListener("keydown", async e => {
+    if (e.metaKey || e.ctrlKey || e.altKey || e.isComposing) return;
+    const t = e.target;
+    if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT")) return;
+    const k = e.key;
+    if (k !== "j" && k !== "k" && k !== "f" && k !== "b" && k !== "r" && k !== "y" && k !== "e") return;
+    const {list, i, p} = await detCur();
+    if (!p) return;
+    if (k === "j" || k === "k") {
+      const n = i + (k === "j" ? 1 : -1);
+      if (n < 0 || n >= list.length) { detToast(k === "j" ? "最後の候補です" : "最初の候補です"); return; }
+      location.href = "detail.html?id=" + encodeURIComponent(list[n].id);
+      return;
+    }
+    if (k === "e") { if (p.url) window.open(p.url, "_blank", "noopener"); return; }
+    if (k === "y") { detToast(await detCopy(location.href) ? "リンクをコピーしました" : "コピーできませんでした"); return; }
+    if (k === "f") {
+      let pins = [];
+      try { pins = JSON.parse(localStorage.getItem("trl-pins") || "[]"); } catch (err) { pins = []; }
+      const at = pins.indexOf(p.id);
+      if (at >= 0) pins.splice(at, 1); else pins.push(p.id);
+      try { localStorage.setItem("trl-pins", JSON.stringify(pins)); } catch (err) { /* 保存不可でも通知は出す */ }
+      detToast(at >= 0 ? "ピンを外しました" : "ピン留めしました（一覧の注目に出ます）");
+      return;
+    }
+    if (k === "b") {
+      const ent = (p.entities || []).find(x => x.strength === "strong");
+      if (!ent) { detToast("企業リンクが無い候補は企業BANできません"); return; }
+      let bans = [];
+      try { bans = JSON.parse(localStorage.getItem("trl-bans") || "[]"); } catch (err) { bans = []; }
+      const at = bans.findIndex(b => b.t === "company" && b.v === ent.name);
+      if (at >= 0) bans.splice(at, 1); else bans.push({t: "company", v: ent.name, on: true});
+      try { localStorage.setItem("trl-bans", JSON.stringify(bans)); } catch (err) { /* 同上 */ }
+      detToast(at >= 0 ? `企業BANを解除: ${ent.name}` : `企業をBAN: ${ent.name}（一覧では除外されます）`);
+      return;
+    }
+    if (k === "r") {
+      let store = {decisions: {}, reeval: {}, adjustments: {}};
+      try { const r0 = JSON.parse(localStorage.getItem("trl-review") || "null"); if (r0 && typeof r0 === "object") store = {decisions: r0.decisions || {}, reeval: r0.reeval || {}, adjustments: r0.adjustments || {}}; } catch (err) { /* 空から */ }
+      let rec = store.reeval[p.id];
+      if (!rec) {
+        let rid = "r-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 12);
+        try { if (window.crypto && crypto.randomUUID) rid = crypto.randomUUID(); } catch (err) { /* 代替IDのまま */ }
+        const local = store.reeval[p.id];
+        rec = {id: rid, candidate_id: p.id, on: local && local.origin !== "server" ? !!local.on : !!p.reeval_booked};
+        store.reeval[p.id] = rec;
+      }
+      rec.on = !rec.on;
+      try { localStorage.setItem("trl-review", JSON.stringify(store)); } catch (err) { /* 同上 */ }
+      detToast(rec.on ? "再評価を予約しました" : "再評価の予約を解除しました（この端末だけに効きます）");
+    }
   });
 }
 </script>

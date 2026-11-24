@@ -244,9 +244,9 @@ a.brz.lk{text-decoration:none;display:inline-block;margin-left:4px}
 .toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);background:var(--surface);border:1px solid var(--line);color:var(--ink);padding:8px 14px;border-radius:10px;font-size:13px;z-index:60;box-shadow:0 4px 18px rgba(0,0,0,.35)}
 /* BAN中のチップ: 赤い斜線で「除外」を示す */
 .chips button{position:relative}
-.chips button.ban{border-color:#e5484d;color:#e5484d;opacity:.85}
+.chips button.ban{border:1.3px solid #ff0000;color:#ff0000;box-shadow:0 0 12px rgba(255,0,0,.85)}
 .chips button,.dchip{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
-.chips button.ban::after{content:"";position:absolute;left:6%;right:6%;top:50%;height:2px;background:#e5484d;transform:rotate(-14deg);border-radius:2px}
+.chips button.ban::after{content:"";position:absolute;left:6%;right:6%;top:50%;height:2px;background:#ff0000;transform:rotate(-14deg);border-radius:2px;box-shadow:0 0 6px rgba(255,0,0,.85)}
 .chips button{-webkit-touch-callout:none}
 .card.vsel{outline:2px solid var(--accent);outline-offset:-2px}
 .vbar{position:fixed;left:50%;transform:translateX(-50%);bottom:14px;z-index:60;display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:8px 14px;box-shadow:0 6px 24px rgba(0,0,0,.35);font-size:13px}

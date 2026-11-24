@@ -16,8 +16,8 @@
 .dchip{padding:6px 11px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--sub);font-size:12px;font-weight:750;cursor:pointer}
 .dchip[aria-pressed="true"]{color:#fff;border-color:transparent;background:var(--accent,#4a6cf7)}
 .dchip{position:relative;-webkit-touch-callout:none}
-.dchip.ban{border-color:#e5484d;color:#e5484d;opacity:.85}
-.dchip.ban::after{content:"";position:absolute;left:6%;right:6%;top:50%;height:2px;background:#e5484d;transform:rotate(-14deg);border-radius:2px}
+.dchip.ban{border:1.3px solid #ff0000;color:#ff0000;box-shadow:0 0 12px rgba(255,0,0,.85)}
+.dchip.ban::after{content:"";position:absolute;left:6%;right:6%;top:50%;height:2px;background:#ff0000;transform:rotate(-14deg);border-radius:2px;box-shadow:0 0 6px rgba(255,0,0,.85)}
 .tin{flex:1;min-width:180px;padding:8px 11px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:inherit;font:inherit;font-size:13px}
 select.tsel{padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:inherit;font:inherit;font-size:13px}
 .taggroups{display:flex;flex-direction:column;gap:8px}

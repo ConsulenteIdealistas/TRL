@@ -74,6 +74,7 @@ select.tsel{padding:8px 10px;border:1px solid var(--line);border-radius:10px;bac
 <section class="stats" id="asum" aria-label="監査の集計"></section>
 <div class="copybar">
 <button class="btn pri" id="copyBtn" type="button">反映用 JSON をコピー</button>
+<button class="btn sec" id="akhbtn" type="button">キー操作 (?)</button>
 <span class="hint" id="copyMsg">まだ DB に反映されていない処分・予約・調整を review_inbox.json の形で書き出します（取り込みは段階B）。反映済みの状態は data.json 経由で全端末に表示されます。</span>
 </div>
 <div class="visrow" aria-label="表示の切り替え">
@@ -95,6 +96,7 @@ select.tsel{padding:8px 10px;border:1px solid var(--line);border-radius:10px;bac
 </div>
 <div id="list"><div class="empty">読み込み中…</div></div>
 </div>
+<div id="ahelp" class="palov" hidden><div class="palbox"><h3 class="palt">キー操作（監査ページ）</h3><div style="padding:0 14px 8px"><input id="ahelpq" type="search" placeholder="キーを検索 (例: 処分、予約)" aria-label="キー操作を検索" style="width:100%"></div><div id="akhlist"></div><p class="hint" style="padding:10px 14px">この一覧は監査ページの全コマンドです（キーの付いたものが先、キーなしは「コマンドパレット専用」として後に並びます）。パレットは Ctrl+K (Mac は Cmd+K)、Esc で閉じます。</p></div></div>
 <div id="apal" class="palov" hidden><div class="palbox"><input id="apalq" type="text" placeholder="コマンドを入力 (絞り込み、ページ移動…)" aria-label="監査ページのコマンドパレット"><div id="apallist"></div></div></div>
 </main>
 <footer class="ft"><span>TRL Explorer</span><span><a href="criteria.html">採点基準（評価規程と重み）</a></span><span><a href="audit.html">監査（要確認の処分）</a></span><span>技術成熟度と事業化評価は独立した評価軸です。スコアは評価尺度であり、株価上昇確率・成功確率・投資利益率ではありません。</span></footer>

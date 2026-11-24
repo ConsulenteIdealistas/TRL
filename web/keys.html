@@ -79,7 +79,7 @@ kbd{background:var(--surface-muted);border:1px solid var(--line);border-bottom-w
 <div class="key used c-move" data-k="u"><b>U</b><small>動いた候補</small><small class="sh">Shift: 逆方向</small></div>
 <div class="key used c-nav" data-k="gseq"><b>I</b><small>g の後: メイン</small><span class="dot"></span></div>
 <div class="key used c-nav" data-k="gseq"><b>O</b><small>g の後: 観測</small><span class="dot"></span></div>
-<div class="key"><b>P</b><small></small></div>
+<div class="key used c-move" data-k="p"><b>P</b><small>同社の候補</small><small class="sh">Shift: 前へ</small></div>
 <div class="key used c-view" data-k="obs"><b>[</b><small>観測: 前の日</small></div>
 <div class="key used c-view" data-k="obs"><b>]</b><small>観測: 次の日</small></div>
 </div>
@@ -103,7 +103,7 @@ kbd{background:var(--surface-muted);border:1px solid var(--line);border-bottom-w
 <div class="key used c-act" data-k="c"><b>C</b><small>比較バスケット</small><span class="dot"></span></div>
 <div class="key used c-act" data-k="v"><b>V</b><small>複数選択</small></div>
 <div class="key used c-ban" data-k="b"><b>B</b><small>企業/市場BAN</small><span class="dot"></span></div>
-<div class="key used c-act" data-k="n"><b>N</b><small>新着だけ</small></div>
+<div class="key used c-act" data-k="n"><b>N</b><small>新着だけ</small><small class="sh">Shift: 未読へ</small></div>
 <div class="key used c-act" data-k="m"><b>M</b><small>メモ欄へ</small></div>
 <div class="key used c-filter" data-k="comma"><b>,</b><small>並び順 前へ</small></div>
 <div class="key used c-filter" data-k="comma"><b>.</b><small>並び順 次へ</small></div>
@@ -128,6 +128,8 @@ kbd{background:var(--surface-muted);border:1px solid var(--line);border-bottom-w
 <tr id="k-enter"><td><kbd>Enter</kbd></td><td>選択中の候補の詳細ページを開きます。複数選択モード中は、詳細でなく選択の切り替えになります。</td></tr>
 <tr id="k-k"><td><kbd>k</kbd></td><td>前の候補へ（<kbd>j</kbd> の逆）。<kbd>g</kbd> の後に押すとこの説明書を開きます。</td></tr>
 <tr><td><kbd>Shift+J</kbd> / <kbd>Shift+K</kbd></td><td>10件 次 / 前の候補へ移動します。</td></tr>
+<tr id="k-p"><td><kbd>p</kbd> / <kbd>Shift+P</kbd></td><td>選択中の候補と同じ企業（最初の strong リンク）の候補だけを 次 / 前へ巡回します。何件目かは通知に出ます。</td></tr>
+<tr id="k-unread"><td><kbd>Shift+N</kbd></td><td>未読の候補（詳細をまだ開いていない候補）だけを次へ巡回します。何件目かは通知に出ます。末尾まで行くと先頭に戻ります。</td></tr>
 <tr id="k-u"><td><kbd>u</kbd> / <kbd>Shift+U</kbd></td><td>前回から「動いた」候補（TRLか総合点が変わった・帯域を跨いだ・方向性が反転した）だけを 次 / 前へ巡回します。何件目かは通知に出ます。末尾まで行くと先頭に戻ります。</td></tr>
 </table>
 
@@ -183,8 +185,19 @@ kbd{background:var(--surface-muted);border:1px solid var(--line);border-bottom-w
 <tr><td><kbd>←</kbd> / <kbd>→</kbd></td><td>統計（箱ひげ図）の項目ハイライトを巡回します。</td></tr>
 </table>
 
+<h2>詳細ページ専用</h2>
+<table class="kt">
+<tr><td><kbd>j</kbd> / <kbd>k</kbd></td><td>前後の候補の詳細へ移動します。並びは data.json の候補の並び順です（一覧の絞り込み・並び替えは持ち込みません）。</td></tr>
+<tr><td><kbd>f</kbd></td><td>この候補をピン留め / 解除します（一覧の注目と同じ保存先）。</td></tr>
+<tr><td><kbd>b</kbd></td><td>この候補の企業（最初の strong リンク）を BAN / 解除します（一覧の企業BANと同じ保存先）。</td></tr>
+<tr><td><kbd>r</kbd></td><td>この候補の再評価を予約 / 解除します（監査ページ・一覧と同じ記録）。</td></tr>
+<tr><td><kbd>y</kbd></td><td>この詳細ページのリンクをコピーします。</td></tr>
+<tr><td><kbd>e</kbd></td><td>原文サイトを新しいタブで開きます。</td></tr>
+</table>
+
 <h2>監査ページ専用</h2>
 <table class="kt">
+<tr><td><kbd>?</kbd></td><td>監査ページのキー操作の一覧を開きます（一覧ページの ? と同じ流儀で、全コマンドが載ります）。</td></tr>
 <tr><td><kbd>j</kbd> / <kbd>k</kbd></td><td>監査の項目（エントリ）を 次 / 前へ移動します。候補ではなく項目単位です。</td></tr>
 <tr><td><kbd>1</kbd> / <kbd>2</kbd> / <kbd>3</kbd></td><td>選択中の項目に処分を付けます: <kbd>1</kbd>=問題あり、<kbd>2</kbd>=誤検知、<kbd>3</kbd>=様子見。その項目のチップを押すのと同じで、もう一度押すと取り消します。処分した項目が未処分リストから外れると、選択は次の項目に移ります。</td></tr>
 <tr><td><kbd>r</kbd></td><td>選択中の項目の候補について、再評価を予約 / 解除します（長期評価のカードだけ）。</td></tr>
@@ -196,7 +209,7 @@ kbd{background:var(--surface-muted);border:1px solid var(--line);border-bottom-w
 <tr id="k-palette"><td><kbd>Ctrl+K</kbd>（Mac は <kbd>Cmd+K</kbd>）</td><td>コマンドパレットを開きます。全コマンドを名前で検索して実行できます。書き出しやページ移動もここからできます。</td></tr>
 <tr id="k-help"><td><kbd>?</kbd></td><td>キー操作の一覧（簡易版）を開きます。一覧の中は言葉で検索できます。「キー操作の練習」ボタンで、実際にキーを押す練習もできます。? は Shift+<kbd>/</kbd> で、キーボードでは / と同じキーです（図でも同じキーに入っています）。</td></tr>
 <tr id="k-esc"><td><kbd>Esc</kbd></td><td>パレットやキー一覧を閉じます。何も開いていないときは、光っているBANモードを全部抜けます。</td></tr>
-<tr><td><kbd>Shift+S</kbd></td><td>滑らかスクロールの入 / 切を切り替えます（この端末に保存）。入のときは、マウスホイールの刻みを、氷の上を滑るような摩擦モデル（残りの距離に比例した速度で近づく指数減衰）でつないで滑らかにスクロールします。トラックパッドの細かいスクロール、内側のスクロール領域、Ctrl+ホイール（ズーム）には触りません。</td></tr>
+<tr><td><kbd>Shift+S</kbd></td><td>滑らかスクロールの入 / 切を切り替えます（この端末に保存）。入のときは、マウスホイールの刻みを、氷の上を滑るような摩擦モデル（残りの距離に比例した速度で近づく指数減衰）でつないで滑らかにスクロールします。指のノイズ補正として、刻みの大きさをそのホイールの標準ノッチに丸め、滑走中の単発の逆向きは保留し、微小な入力は貯めてから反映します。トラックパッドの細かいスクロール、内側のスクロール領域、Ctrl+ホイール（ズーム）には触りません。</td></tr>
 </table>
 
 <h2>効かないとき</h2>

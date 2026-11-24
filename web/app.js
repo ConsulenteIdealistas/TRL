@@ -1637,15 +1637,37 @@ if (statbandEl) statbandEl.addEventListener("click", e => {
    トラックパッドの細かいピクセル入力は素の動きが既に滑らかなので触らない。
    内側にスクロール領域がある場所 (パレット等) と、パレット/ヘルプ表示中は
    触らない。Shift+S キーで入/切 (端末に保存) */
-const SM_TAU = 90;
+const SM_TAU = 170;
 let smoothOn = true;
 try { smoothOn = localStorage.getItem("trl-smooth") !== "0"; } catch (e) { /* 読めなければ入 */ }
 let smAnim = null, smCur = 0, smLast = 0;
+/* 人間の指のノイズ補正 (目標側を整える):
+   1. ノッチ正規化: 刻みの大きさの直近中央値を「そのホイールの標準ノッチ」
+      とし、入力をその整数倍に丸める。端数は捨てずに残りとして次へ繰り越す
+   3. 単発反転の保留: 進行方向と逆の刻みは 200ms 保留し、元の方向に戻れば
+      ノイズとして捨て、逆向きが続けば本物の方向転換としてまとめて反映する
+   5. 微小量の不感帯: 滑走中とその直後に届く小さな入力は即座に動かさず、
+      貯めて 40px を超えたらまとめて反映する (指の揺れ対策) */
+let smNotches = [], smResid = 0, smMicro = 0, smDir = 0, smRev = null, smGlideEnd = 0;
+function smApply(d, now) {
+  const maxY = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+  const base = smAnim ? smAnim.to : window.scrollY;
+  const to = Math.min(maxY, Math.max(0, base + d));
+  if (!smAnim) {
+    if (to === window.scrollY) return;
+    smCur = window.scrollY;
+    smAnim = {to};
+    smLast = now;
+    requestAnimationFrame(smTick);
+  } else smAnim.to = to;
+  if (d) smDir = Math.sign(d);
+}
 function smTick(now) {
-  if (!smAnim) return;
+  if (smRev && now - smRev.t > 200) { const d = smRev.d; smRev = null; smApply(d, now); }
+  if (!smAnim) { smGlideEnd = now; return; }
   const dt = Math.min(50, Math.max(1, now - (smLast || now))); smLast = now;
   const rem = smAnim.to - smCur;
-  if (Math.abs(rem) < 0.6) { window.scrollTo(0, smAnim.to); smAnim = null; return; }
+  if (Math.abs(rem) < 0.6) { window.scrollTo(0, smAnim.to); smAnim = null; smGlideEnd = now; return; }
   let step = rem * (1 - Math.exp(-dt / SM_TAU));
   step = Math.max(-240, Math.min(240, step));
   smCur += step;
@@ -1664,19 +1686,47 @@ document.addEventListener("wheel", e => {
     el = el.parentElement;
   }
   const unit = e.deltaMode === 1 ? 33 : e.deltaMode === 2 ? window.innerHeight : 1;
-  const d = e.deltaY * unit;
-  if (e.deltaMode === 0 && Math.abs(d) < 40) return;  // トラックパッド等の細かい入力は素通し
+  const now = performance.now();
+  let d = e.deltaY * unit;
+  if (e.deltaMode === 0 && Math.abs(d) < 40) {
+    // 細かい入力: 滑走中とその直後 (500ms) だけ不感帯に貯める。それ以外
+    // (トラックパッド等) は今までどおり素通し
+    if (!smAnim && now - smGlideEnd > 500) return;
+    e.preventDefault();
+    smMicro += d;
+    if (Math.abs(smMicro) >= 40) { const m = smMicro; smMicro = 0; smApply(m, now); }
+    return;
+  }
   e.preventDefault();
-  const base = smAnim ? smAnim.to : window.scrollY;
-  const maxY = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
-  const to = Math.min(maxY, Math.max(0, base + d));
-  if (!smAnim) {
-    if (to === window.scrollY) return;
-    smCur = window.scrollY;
-    smAnim = {to};
-    smLast = performance.now();
-    requestAnimationFrame(smTick);
-  } else smAnim.to = to;
+  if (smMicro) { const m = smMicro; smMicro = 0; smApply(m, now); }
+  if (e.deltaMode !== 2) {
+    // ノッチ正規化 (ページ単位の入力は対象外)
+    smNotches.push(Math.abs(d));
+    if (smNotches.length > 9) smNotches.shift();
+    if (smNotches.length >= 3) {
+      const med = [...smNotches].sort((a, b) => a - b)[smNotches.length >> 1];
+      if (med > 0) {
+        const total = d + smResid;
+        const q = Math.sign(total) * med * Math.max(1, Math.round(Math.abs(total) / med));
+        smResid = total - q;
+        d = q;
+      }
+    }
+  }
+  // 単発反転の保留 (滑走中とその直後だけ。止まってから十分経った後の
+  // 反転は新しい意図として即座に反映する。保留の失効はタイマーでも担保)
+  if (smDir && Math.sign(d) !== smDir && (smAnim || now - smGlideEnd <= 500)) {
+    if (smRev && Math.sign(smRev.d) === Math.sign(d)) {
+      const held = smRev.d; smRev = null;
+      smApply(held + d, now);
+    } else {
+      smRev = {d, t: now};
+      setTimeout(() => { if (smRev && performance.now() - smRev.t > 200) { const hd = smRev.d; smRev = null; smApply(hd, performance.now()); } }, 220);
+    }
+    return;
+  }
+  if (smRev) smRev = null;  // 元の方向に戻った: 保留分はノイズとして捨てる
+  smApply(d, now);
 }, {passive: false});
 document.addEventListener("keydown", () => { smAnim = null; }, true);
 function toggleSmooth() {
@@ -1705,6 +1755,43 @@ function jumpMoved(dir) {
   if (el) { el.classList.add("sel"); el.scrollIntoView({block: "nearest"}); }
   detail();
   toast(`動いた候補 ${idx.indexOf(n) + 1} / ${idx.length} 件目`);
+}
+/* 同じ企業の候補だけを巡回する (p / Shift+P)。企業は選択中の候補の
+   最初の strong リンク (企業BANの banKeyOf と同じ定義) で判定する */
+function peerEntity(p) {
+  return p ? (p.entities || []).find(x => x.strength === "strong") : null;
+}
+function jumpPeer(dir) {
+  const cur = P.find(x => x.id === sel);
+  const e = peerEntity(cur);
+  if (!cur || !e) { toast("企業リンクが無い候補です"); return; }
+  const idx = [];
+  VIEW.forEach((p, i) => { const pe = peerEntity(p); if (pe && pe.entity_id === e.entity_id) idx.push(i); });
+  if (idx.length < 2) { toast(`「${e.name}」の候補はこの絞り込みでは1件だけです`); return; }
+  const at = VIEW.findIndex(p => p.id === sel);
+  let n = dir > 0 ? idx.find(i => i > at) : [...idx].reverse().find(i => i < at);
+  if (n === undefined) n = dir > 0 ? idx[0] : idx[idx.length - 1];
+  sel = VIEW[n].id;
+  document.querySelectorAll("#list .card.sel").forEach(el => el.classList.remove("sel"));
+  const el = document.querySelector(`#list .card[data-id="${window.CSS && CSS.escape ? CSS.escape(sel) : sel}"]`);
+  if (el) { el.classList.add("sel"); el.scrollIntoView({block: "nearest"}); }
+  detail();
+  toast(`同「${e.name}」 ${idx.indexOf(n) + 1} / ${idx.length} 件目`);
+}
+/* 未読の候補だけを巡回する (Shift+N)。既読は trl-seen (詳細を開くと付く) */
+function jumpUnread() {
+  const idx = [];
+  VIEW.forEach((p, i) => { if (!seen.has(p.id)) idx.push(i); });
+  if (!idx.length) { toast("未読の候補はありません"); return; }
+  const at = VIEW.findIndex(p => p.id === sel);
+  let n = idx.find(i => i > at);
+  if (n === undefined) n = idx[0];
+  sel = VIEW[n].id;
+  document.querySelectorAll("#list .card.sel").forEach(el => el.classList.remove("sel"));
+  const el = document.querySelector(`#list .card[data-id="${window.CSS && CSS.escape ? CSS.escape(sel) : sel}"]`);
+  if (el) { el.classList.add("sel"); el.scrollIntoView({block: "nearest"}); }
+  detail();
+  toast(`未読 ${idx.indexOf(n) + 1} / ${idx.length} 件目`);
 }
 /* 再評価の予約 (r キー): 監査ページと同じ端末内ストア (trl-review) に
    同じ形で書くことで、反映用 JSON の書き出しにそのまま乗る。予約の解除は
@@ -1760,6 +1847,9 @@ const ACTIONS = [
   {label: "10件前の候補へ移動", keys: "K", run: () => stepSel(-10)},
   {label: "次の「動いた」候補へ移動", keys: "u", run: () => jumpMoved(1)},
   {label: "前の「動いた」候補へ移動", keys: "U", run: () => jumpMoved(-1)},
+  {label: "同じ企業の次の候補へ移動", keys: "p", run: () => jumpPeer(1)},
+  {label: "同じ企業の前の候補へ移動", keys: "P", run: () => jumpPeer(-1)},
+  {label: "次の未読候補へ移動", keys: "N", run: () => jumpUnread()},
   {label: "選択中の候補の詳細ページを開く", keys: "Enter", run: () => { if (VMODE) { toggleVSel(sel); return; } if (sel) location.href = "detail.html?id=" + encodeURIComponent(sel); }},
   {label: "選択中の候補をピン留め / 解除", keys: "f", run: () => togglePin(sel)},
   {label: "選択中の候補の再評価を予約 / 解除", keys: "r", run: () => toggleReevalKey()},

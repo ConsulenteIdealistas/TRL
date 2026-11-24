@@ -1632,7 +1632,7 @@ const ACTIONS = [
   {label: "選択中の候補をピン留め / 解除", keys: "f", run: () => togglePin(sel)},
   {label: "選択中の候補の企業をBAN / 解除", keys: "b", run: () => banKeyOf(sel, "company")},
   {label: "選択中の候補の市場をBAN / 解除", keys: "B", run: () => banKeyOf(sel, "market")},
-  {label: "BANモード中の群を全BAN / 全解除", keys: "Cmd+X", run: () => { if (BANMODE.size) allBanToggle(); else toast("先にチップ群のBANチップを押して光らせてください"); }},
+  {label: "最後に光らせた群を全BAN / 全解除", keys: "Cmd+X", run: () => { if (BANMODE.size) allBanToggle(); else toast("先にチップ群のBANチップを押して光らせてください"); }},
   {label: "選択中の候補を比較バスケットに追加 / 解除", keys: "c", run: () => toggleBasket(sel)},
   {label: "選択中の候補の原文を新しいタブで開く", keys: "e", run: () => { const p = P.find(x => x.id === sel); if (p && p.url) window.open(p.url, "_blank", "noopener"); else toast("候補が選ばれていません"); }},
   {label: "選択中の候補の根拠 (関連材料の先頭) を開く", keys: "E", run: () => { const p = P.find(x => x.id === sel); const n = p && (p.related_news || [])[0]; if (n && n.url) window.open(n.url, "_blank", "noopener"); else toast("関連材料がありません"); }},
@@ -1960,45 +1960,42 @@ function toggleBanMode(id) {
   if (BANMODE.has(id)) BANMODE.delete(id); else { BANMODE.add(id); buzz(); }
   syncBanBtn(id);
 }
-/* 全BAN (Cmd+X / Ctrl+X、BANモード中の群だけが対象): 光っている群の値を
-   全部BANする。既に全部BANなら全部解除する (同じキーで行き来できる) */
+/* 全BAN (Cmd+X / Ctrl+X): 対象は最後に光らせた群だけ (LIFO)。複数の群が
+   光っているときに全部へ同時に効くと事故になるため、1回で1群だけに効かせ、
+   効いた群はモードを抜ける (スタックを pop する形)。その群が既に全部BANなら
+   全解除になる (同じキーで行き来できる) */
 const BANGLABEL = {fsc: "状態", fdc: "方向性", ftc: "TRL", fmc: "市場", fcc: "分野", fgc: "タグ", fstc: "段階", ftierc: "層", fgenc: "世代", fown: "自分の表示", fhcc: "保留理由", fmvc: "動き", fhistc: "履歴", fevc: "評価日"};
 function allBanToggle() {
-  const banned = [], unbanned = [];
-  for (const id of BANMODE) {
-    if (id === "ftc") {
-      const targets = [1, 2, 3, 4, 5, 6, 7, 8, 9, "u"];
-      const all = targets.every(v => trlBan.has(v));
-      for (const v of targets) { if (all) trlBan.delete(v); else { trlBan.add(v); trlSel.delete(v); } }
-      if (!all) buzz();
-      syncTrlUI();
-      (all ? unbanned : banned).push(BANGLABEL[id]);
-    } else if (id === "fevc") {
-      const vals = [...document.querySelectorAll("#fevc button[data-v]")].map(b => b.dataset.v);
-      if (!vals.length) continue;
-      const all = vals.every(v => chipBans.fevc.has(v));
-      for (const v of vals) { if (all) chipBans.fevc.delete(v); else chipBans.fevc.add(v); }
-      if (evWin != null && chipBans.fevc.has(String(evWin))) evWin = null;
-      if (!all) buzz();
-      syncEvUI();
-      (all ? unbanned : banned).push(BANGLABEL[id]);
-    } else {
-      const set = (CHIPG.find(([g]) => g === id) || [])[1] || (id === "fgc" ? tagSel : null);
-      if (!set) continue;
-      const vals = [...document.querySelectorAll(`#${id} button[data-v]`)].map(b => b.dataset.v);
-      if (!vals.length) continue;
-      const all = vals.every(v => chipBans[id].has(v));
-      for (const v of vals) { if (all) chipBans[id].delete(v); else { chipBans[id].add(v); set.delete(v); } }
-      if (!all) buzz();
-      syncChips(id, set); if (id === "fgc") syncTagN();
-      (all ? unbanned : banned).push(BANGLABEL[id]);
-    }
+  const id = [...BANMODE].pop();  // 最後に光らせた群 (Set は挿入順を保つ)
+  if (!id) return;
+  let unbanned = false;
+  if (id === "ftc") {
+    const targets = [1, 2, 3, 4, 5, 6, 7, 8, 9, "u"];
+    unbanned = targets.every(v => trlBan.has(v));
+    for (const v of targets) { if (unbanned) trlBan.delete(v); else { trlBan.add(v); trlSel.delete(v); } }
+    if (!unbanned) buzz();
+    syncTrlUI();
+  } else if (id === "fevc") {
+    const vals = [...document.querySelectorAll("#fevc button[data-v]")].map(b => b.dataset.v);
+    unbanned = vals.length > 0 && vals.every(v => chipBans.fevc.has(v));
+    for (const v of vals) { if (unbanned) chipBans.fevc.delete(v); else chipBans.fevc.add(v); }
+    if (evWin != null && chipBans.fevc.has(String(evWin))) evWin = null;
+    if (!unbanned) buzz();
+    syncEvUI();
+  } else {
+    const set = (CHIPG.find(([g]) => g === id) || [])[1] || (id === "fgc" ? tagSel : null);
+    if (!set) return;
+    const vals = [...document.querySelectorAll(`#${id} button[data-v]`)].map(b => b.dataset.v);
+    if (!vals.length) return;
+    unbanned = vals.every(v => chipBans[id].has(v));
+    for (const v of vals) { if (unbanned) chipBans[id].delete(v); else { chipBans[id].add(v); set.delete(v); } }
+    if (!unbanned) buzz();
+    syncChips(id, set); if (id === "fgc") syncTagN();
   }
+  BANMODE.delete(id); syncBanBtn(id);  // 効いた群はモードを抜ける
   saveChipBans(); render();
-  const parts = [];
-  if (banned.length) parts.push(`全BANしました: ${banned.join("・")}`);
-  if (unbanned.length) parts.push(`全BANを解除しました: ${unbanned.join("・")}`);
-  if (parts.length) toast(parts.join(" / "));
+  const rest = BANMODE.size ? ` (光っている群があと${BANMODE.size}つ)` : "";
+  toast(unbanned ? `全BANを解除しました: ${BANGLABEL[id]}${rest}` : `全BANしました: ${BANGLABEL[id]}${rest}`);
 }
 function bindChips(id, set, after) {
   const box = $("#" + id);

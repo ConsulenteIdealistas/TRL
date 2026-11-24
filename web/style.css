@@ -256,3 +256,9 @@ a.brz.lk{text-decoration:none;display:inline-block;margin-left:4px}
 .srow.hl{background:color-mix(in srgb,var(--accent) 14%,transparent);border-radius:8px}
 .chips button.banmode,.dchip.banmode{border-style:dashed;color:#e0655f;font-weight:700}
 .chips button.banmode.on,.dchip.banmode.on{background:#b3261e;border-color:#ff6f66;border-style:solid;color:#fff;box-shadow:0 0 12px rgba(230,60,50,.8)}
+/* 書き出しとコマンドのボタンは地味な quiet をやめ、コピーボタンと同じ
+   「濃い色+白文字」で色分けする (書き出し=緑/青、コマンド=紫、キー操作=橙) */
+#expcsv{background:#00a968;color:#fff;border-color:transparent}
+#expjson{background:#2563eb;color:#fff;border-color:transparent}
+#palbtn{background:#7c3aed;color:#fff;border-color:transparent}
+#khbtn{background:#c2610a;color:#fff;border-color:transparent}

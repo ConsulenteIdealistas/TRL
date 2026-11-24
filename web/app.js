@@ -1744,7 +1744,13 @@ document.addEventListener("keydown", e => {
     if (/INPUT|TEXTAREA|SELECT/.test(tagX) || e.isComposing || composing || !$("#pal").hidden || !$("#khelp").hidden) return;
     e.preventDefault(); allBanToggle(); return;
   }
-  if (e.key === "Escape") { closePal(); $("#khelp").hidden = true; pracIdx = -1; pracMsg(); return; }
+  if (e.key === "Escape") {
+    const hadOverlay = !$("#pal").hidden || !$("#khelp").hidden;
+    closePal(); $("#khelp").hidden = true; pracIdx = -1; pracMsg();
+    // 画面が開いていなければ、Esc で BANモードを全部抜ける
+    if (!hadOverlay && BANMODE.size) { for (const id of [...BANMODE]) { BANMODE.delete(id); syncBanBtn(id); } toast("BANモードを抜けました"); }
+    return;
+  }
   if (pracIdx >= 0 && pracIdx < PRAC.length && !$("#khelp").hidden) {
     if (e.key === PRAC[pracIdx]) { e.preventDefault(); pracIdx++; pracMsg(); }
     return;

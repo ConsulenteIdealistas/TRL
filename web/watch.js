@@ -274,3 +274,9 @@ init();
     gAt = e.key === "g" ? Date.now() : 0;
   });
 }
+// Esc で BANモードを全部抜ける (一覧と同じ)
+document.addEventListener("keydown", e => {
+  if (e.key !== "Escape" || !Object.values(wMode).some(Boolean)) return;
+  for (const k of Object.keys(wMode)) wMode[k] = false;
+  document.querySelectorAll("[data-banmode]").forEach(b => { b.classList.remove("on"); b.setAttribute("aria-pressed", "false"); });
+});

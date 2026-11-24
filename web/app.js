@@ -1764,7 +1764,7 @@ const ACTIONS = [
   {label: "選択中の候補をピン留め / 解除", keys: "f", run: () => togglePin(sel)},
   {label: "選択中の候補の再評価を予約 / 解除", keys: "r", run: () => toggleReevalKey()},
   {label: "選択中の候補のリンクをコピー", keys: "y", run: () => { const p = P.find(x => x.id === sel); if (p) { copyText(detailUrl(p)); toast("候補のリンクをコピーしました"); } else toast("候補が選択されていません"); }},
-  {label: "滑らかスクロールを切り替え", keys: "S", run: () => toggleSmooth()},
+  {label: "滑らかスクロールを切り替え", keys: "S", state: () => { try { return localStorage.getItem("trl-smooth") === "0" ? "現在: 切" : "現在: 入"; } catch (e) { return ""; } }, run: () => toggleSmooth()},
   {label: "選択中の候補の企業をBAN / 解除", keys: "b", run: () => banKeyOf(sel, "company")},
   {label: "選択中の候補の市場をBAN / 解除", keys: "B", run: () => banKeyOf(sel, "market")},
   {label: "最後に光らせた群を全BAN / 全解除", keys: "Cmd+X", run: () => { if (BANMODE.size) allBanToggle(); else toast("先にチップ群のBANチップを押して光らせてください"); }},
@@ -1778,17 +1778,17 @@ const ACTIONS = [
   {label: "並び順を前へ切り替える", keys: ",", run: () => { const s = $("#fo"); s.selectedIndex = (s.selectedIndex + s.options.length - 1) % s.options.length; s.dispatchEvent(new Event("change")); }},
   {label: "並び順を次へ切り替える", keys: ".", run: () => { const s = $("#fo"); s.selectedIndex = (s.selectedIndex + 1) % s.options.length; s.dispatchEvent(new Event("change")); }},
   {label: "検索欄へ移動", keys: "/", run: () => $("#q").focus()},
-  {label: "並び順を次へ切り替える", keys: "s", run: () => { const s = $("#fo"); s.selectedIndex = (s.selectedIndex + 1) % s.options.length; s.dispatchEvent(new Event("change")); }},
-  {label: "新着だけ表示を切り替える", keys: "n", run: () => { const b = document.querySelector('#fown [data-v="new"]'); if (b) b.click(); }},
-  {label: "世代表示を切り替える", keys: "d", run: () => flipCheck("#swgen")},
-  {label: "言語を切り替える [日本語訳 / 原文]", keys: "l", run: () => flipSelect("#fl")},
-  {label: "コンパクト表示を切り替える", keys: ";", run: () => flipCheck("#swcompact")},
-  {label: "テーマを切り替える [ダーク / ライト / 色覚配慮]", keys: "", run: () => flipSelect("#fth")},
-  {label: "テーマをダークにする", keys: "D", run: () => setTheme("dark")},
-  {label: "テーマをライトにする", keys: "L", run: () => setTheme("light")},
-  {label: "テーマを色覚配慮にする", keys: "C", run: () => setTheme("cb")},
-  {label: "文字サイズを切り替える [標準 / 大 / 特大]", keys: "", run: () => cycleZoom()},
-  {label: "条件をリセットする", keys: "a", run: () => $("#rst").click()},
+  {label: "並び順を次へ切り替える", keys: "s", state: () => { const s = $("#fo"); return s && s.selectedOptions[0] ? `現在: ${s.selectedOptions[0].textContent}` : ""; }, run: () => { const s = $("#fo"); s.selectedIndex = (s.selectedIndex + 1) % s.options.length; s.dispatchEvent(new Event("change")); }},
+  {label: "新着だけ表示を切り替える", keys: "n", state: () => { const b = document.querySelector('#fown [data-v="new"]'); return b && b.getAttribute("aria-pressed") === "true" ? "現在: 選択中" : ""; }, run: () => { const b = document.querySelector('#fown [data-v="new"]'); if (b) b.click(); }},
+  {label: "世代表示を切り替える", keys: "d", state: () => showGen ? "現在: 表示" : "現在: 非表示", run: () => flipCheck("#swgen")},
+  {label: "言語を切り替える [日本語訳 / 原文]", keys: "l", state: () => { const s = $("#fl"); return s ? `現在: ${s.value === "orig" ? "原文" : "日本語訳"}` : ""; }, run: () => flipSelect("#fl")},
+  {label: "コンパクト表示を切り替える", keys: ";", state: () => compact ? "現在: コンパクト" : "現在: 標準", run: () => flipCheck("#swcompact")},
+  {label: "テーマを切り替える [ダーク / ライト / 色覚配慮]", keys: "", state: () => `現在: ${{dark: "ダーク", light: "ライト", cb: "色覚配慮"}[document.documentElement.dataset.theme || "dark"]}`, run: () => flipSelect("#fth")},
+  {label: "テーマをダークにする", keys: "D", state: () => document.documentElement.dataset.theme === "dark" ? "現在のテーマ" : "", run: () => setTheme("dark")},
+  {label: "テーマをライトにする", keys: "L", state: () => document.documentElement.dataset.theme === "light" ? "現在のテーマ" : "", run: () => setTheme("light")},
+  {label: "テーマを色覚配慮にする", keys: "C", state: () => document.documentElement.dataset.theme === "cb" ? "現在のテーマ" : "", run: () => setTheme("cb")},
+  {label: "文字サイズを切り替える [標準 / 大 / 特大]", keys: "", state: () => { let z = ""; try { z = localStorage.getItem("trl-zoom") || ""; } catch (e) { /* 読めなければ標準 */ } return `現在: ${["標準", "大", "特大"][ZOOMS.indexOf(z)] || "標準"}`; }, run: () => cycleZoom()},
+  {label: "条件をリセットする", keys: "a", run: () => $("#rs").click()},
   {label: "現在の条件に名前を付けて保存", keys: "", run: () => $("#fpsave").click()},
   {label: "現在の絞り込みを CSV で書き出す", keys: "", run: () => exportData("csv")},
   {label: "現在の絞り込みを JSON で書き出す", keys: "", run: () => exportData("json")},
@@ -1827,11 +1827,56 @@ document.addEventListener("keydown", e => {
   gAt = e.key === "g" ? Date.now() : 0;
 });
 let palIdx = 0, palList = [];
+/* パレット専用の動的コマンド (ACTIONS には入れない):
+   「候補を開く」= 入力した言葉に合う候補の詳細へ直接飛ぶ。
+   「チップ切り替え」= 全チップを [群: チップ名] として検索・実行できる。
+   どちらも検索語があるときだけ出す (空のパレットを埋めないため) */
+function openCmds(q) {
+  if (!q) return [];
+  const byId = new Map();
+  for (const p of P) {
+    if (byId.has(p.id)) continue;
+    const nm = (p.entities || []).find(e => e.strength === "strong" && e.name)?.name || p.title_ja || p.title;
+    if (nm) byId.set(p.id, {nm, p});
+  }
+  const counts = {};
+  for (const v of byId.values()) counts[v.nm] = (counts[v.nm] || 0) + 1;
+  const starts = [], incl = [];
+  for (const entry of byId) {
+    const lv = entry[1].nm.toLowerCase();
+    if (lv.startsWith(q)) starts.push(entry); else if (lv.includes(q)) incl.push(entry);
+  }
+  return starts.concat(incl).slice(0, 8).map(([id, v]) => {
+    let suffix = "";
+    if (counts[v.nm] > 1 && v.p.title) { const t = v.p.title; suffix = ` [${t.length > 42 ? t.slice(0, 42) + "…" : t}]`; }
+    return {label: `候補を開く: ${v.nm}${suffix}`, run: () => { location.href = `detail.html?id=${encodeURIComponent(id)}`; }};
+  });
+}
+function chipCmds(q) {
+  if (!q) return [];
+  const out = [];
+  document.querySelectorAll(".chips").forEach(g => {
+    const gl = BANGLABEL[g.id];
+    if (!gl) return;
+    g.querySelectorAll("button[data-v]").forEach(b => {
+      const label = `${gl}: ${b.textContent.trim()}`;
+      if (!label.toLowerCase().includes(q)) return;
+      out.push({label,
+        state: () => b.classList.contains("ban") ? "BAN中" : (b.getAttribute("aria-pressed") === "true" ? "選択中" : ""),
+        run: () => b.click()});
+    });
+  });
+  return out;
+}
 function palRender() {
   const q = $("#palq").value.trim().toLowerCase();
-  palList = ACTIONS.filter(a => !q || a.label.toLowerCase().includes(q));
+  palList = ACTIONS.filter(a => !q || a.label.toLowerCase().includes(q)).concat(openCmds(q), chipCmds(q));
   palIdx = Math.min(palIdx, Math.max(0, palList.length - 1));
-  $("#pallist").innerHTML = palList.map((a, i) => `<button type="button" class="pal-i ${i === palIdx ? "on" : ""}" data-i="${i}"><span>${esc(a.label)}</span>${a.keys ? `<kbd>${esc(a.keys)}</kbd>` : ""}</button>`).join("")
+  $("#pallist").innerHTML = palList.map((a, i) => {
+    let st = "";
+    try { st = a.state ? a.state() : ""; } catch (e) { st = ""; }
+    return `<button type="button" class="pal-i ${i === palIdx ? "on" : ""}" data-i="${i}"><span>${esc(a.label)}${st ? ` [${esc(st)}]` : ""}</span>${a.keys ? `<kbd>${esc(a.keys)}</kbd>` : ""}</button>`;
+  }).join("")
     || `<p class="hint" style="padding:10px 14px">一致するコマンドがありません。</p>`;
 }
 /* パレット/ヘルプ表示中は背面のページをスクロールさせない (スマホで
@@ -2340,7 +2385,7 @@ function applyDensity() {
 }
 $("#swcompact").addEventListener("change", () => { compact = $("#swcompact").checked; try { localStorage.setItem("trl-density", compact ? "compact" : "normal"); } catch (e) { /* 保存できなくても切替は効く */ } applyDensity(); });
 applyDensity();
-$("#rs").addEventListener("click", () => { $("#q").value = ""; for (const k of BANKEYS) chipBans[k].clear(); trlBan.clear(); saveChipBans(); BANMODE.clear(); [...BANKEYS, "ftc"].forEach(k => syncBanBtn(k)); [...CHIPG, ["fgc", tagSel]].forEach(([id, set]) => { set.clear(); syncChips(id, set); }); syncTagN(); trlSel.clear(); syncTrlUI(); $("#ftn").value = ""; $("#ftm").value = ""; syncTrlUI(); $("#fsn").value = ""; $("#fsm").value = ""; evWin = null; syncEvUI(); $("#fo").value = "status"; sel = P[0] ? P[0].id : null; render(); });
+$("#rs").addEventListener("click", () => { const snapF = captureFilterState(); const snapB = {}; for (const k of BANKEYS) snapB[k] = [...chipBans[k]]; const snapT = [...trlBan]; $("#q").value = ""; for (const k of BANKEYS) chipBans[k].clear(); trlBan.clear(); saveChipBans(); BANMODE.clear(); [...BANKEYS, "ftc"].forEach(k => syncBanBtn(k)); [...CHIPG, ["fgc", tagSel]].forEach(([id, set]) => { set.clear(); syncChips(id, set); }); syncTagN(); trlSel.clear(); syncTrlUI(); $("#ftn").value = ""; $("#ftm").value = ""; syncTrlUI(); $("#fsn").value = ""; $("#fsm").value = ""; evWin = null; syncEvUI(); $("#fo").value = "status"; sel = P[0] ? P[0].id : null; render(); toast("条件をリセットしました", () => { restoreFilterState(snapF); for (const k of BANKEYS) { chipBans[k].clear(); for (const v of snapB[k]) chipBans[k].add(v); } trlBan.clear(); for (const v of snapT) trlBan.add(v); saveChipBans(); [...BANKEYS, "ftc"].forEach(k => syncBanBtn(k)); syncTrlUI(); render(); }); });
 
 /* 条件 (絞り込み一式) の保存と共有。端末には名前付きで保存し
    (localStorage trl-presets)、リンクでは URL パラメータに載せて持ち運べる。

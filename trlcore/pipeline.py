@@ -287,9 +287,12 @@ def collect(store, cfg, run_id, as_of, sources, fetchers, counts, log, budget_ca
     # ホスト (news.google.com) で、レート制限時は応答遅延と 429 再試行が
     # 時間予算を食い潰す (2026-11-17 の深い日: 予算 1200 秒が gnews 217 件
     # 時点で尽き、trials 以降と補完群が全滅した)。gnews は窓がなく毎日
-    # 同じクエリを回すため深い日固有の価値が最も低い。gnews → prtimes の
-    # 相対順は従来どおり保つ (安定ソート)
-    jobs.sort(key=lambda j: 1 if j[0] == "gnews" else 2 if j[0] == "prtimes" else 0)
+    # 同じクエリを回すため深い日固有の価値が最も低い。
+    # Google News 系の中では prtimes を先に回す (2026-11-24 変更): prtimes
+    # は 49 件しかなく日本企業の一次情報寄りのソースだが、gnews の後ろ
+    # だと深い日に毎回全滅した (2026-11-24: gnews 342/500 で時切れし
+    # prtimes 49/49 が未実行)。切り捨ての末尾は gnews が引き受ける
+    jobs.sort(key=lambda j: 1 if j[0] == "prtimes" else 2 if j[0] == "gnews" else 0)
     # 後処理の間引き用に、既知アイテムの索引と invalid の記録を先読みする。
     # 取得のたびに同じ論文・ニュースへ企業リンクの照合 (辞書300社走査) を
     # 繰り返すのが後処理の主コストだったため、変わっていないものは触らない

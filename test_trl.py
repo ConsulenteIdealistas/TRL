@@ -1589,8 +1589,9 @@ class IntegrationTests(unittest.TestCase):
 
     def test_collect_gnews_queries_run_last(self):
         # Google News 系 (gnews / prtimes) は主収集の最後尾: レート制限で
-        # 遅くなっても他の発見系ソースを巻き込まない。相対順は従来どおり
-        # 非 Google 系 → gnews → prtimes
+        # 遅くなっても他の発見系ソースを巻き込まない。相対順は
+        # 非 Google 系 → prtimes → gnews (2026-11-24 変更: prtimes は
+        # 49 件しかなく、gnews の後ろだと深い日に毎回全滅したため先に回す)
         import copy
         store = Store(self.path)
         store.start_run("r1", "test", "hash", AS_OF.isoformat(), {})
@@ -1610,7 +1611,7 @@ class IntegrationTests(unittest.TestCase):
                 {"gnews": instant, "pubmed": instant, "prtimes": instant},
                 counts, lambda *_: None)
         order = [r["source"] for r in store.run_sources("r1")]
-        self.assertEqual(order, ["pubmed", "gnews", "gnews", "prtimes"])
+        self.assertEqual(order, ["pubmed", "prtimes", "gnews", "gnews"])
         store.close()
 
     def test_recalc_recomputes_totals_under_current_weights(self):

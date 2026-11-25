@@ -20,19 +20,23 @@ const DT = {look: "Look", see: "See"};
 const dtier = c => c.derived_tier || (c.tier === "reference" ? "see" : "look");
 
 let companies = [];
-const state = {q: "", tier: "", markets: new Set(), sectors: new Set(), tags: new Set(), sort: "latest"};
+/* 取引所の並び (チップと「取引所別」ソートで共用): 企業数の多い順、同数は名前順。
+   load 時に companies から作る */
+let EXC_ORD = [];
+const state = {q: "", tier: "", markets: new Set(), exchanges: new Set(), sectors: new Set(), tags: new Set(), sort: "latest"};
 /* チップのBAN (長押し/右クリックで除外)。主ページと同じ考え方で端末に保存する */
 const buzz = () => { try { if (navigator.vibrate) navigator.vibrate(15); } catch (e) { /* 非対応は無視 */ } };
-const wBans = {markets: new Set(), sectors: new Set(), tags: new Set(), tier: ""};
+const wBans = {markets: new Set(), exchanges: new Set(), sectors: new Set(), tags: new Set(), tier: ""};
 try {
   const o = JSON.parse(localStorage.getItem("trl-watch-bans") || "{}");
   for (const v of o.markets || []) wBans.markets.add(v);
+  for (const v of o.exchanges || []) wBans.exchanges.add(v);
   for (const v of o.sectors || []) wBans.sectors.add(v);
   for (const v of o.tags || []) wBans.tags.add(v);
   if (o.tier === "look" || o.tier === "see") wBans.tier = o.tier;
 } catch (e) { /* 壊れた保存は無視 */ }
 function saveWBans() {
-  try { localStorage.setItem("trl-watch-bans", JSON.stringify({markets: [...wBans.markets], sectors: [...wBans.sectors], tags: [...wBans.tags], tier: wBans.tier})); } catch (e) { /* 保存できなくても動く */ }
+  try { localStorage.setItem("trl-watch-bans", JSON.stringify({markets: [...wBans.markets], exchanges: [...wBans.exchanges], sectors: [...wBans.sectors], tags: [...wBans.tags], tier: wBans.tier})); } catch (e) { /* 保存できなくても動く */ }
 }
 
 // 表示言語は主ページ・詳細ページと共通 (localStorage の trl-lang)。
@@ -47,7 +51,7 @@ const absHtmlW = (main, label) => main.length <= ABS_N
   : `<p class="mabs">${label}${esc(main.slice(0, ABS_N))}…</p><details class="absfull"><summary>続きを表示</summary><p class="mabs">${esc(main.slice(ABS_N))}</p></details>`;
 
 function haystack(c) {
-  const parts = [c.name, c.ticker || "", ML[c.market] || "", CL[c.sector] || "",
+  const parts = [c.name, c.ticker || "", ML[c.market] || "", c.exchange || "", CL[c.sector] || "",
     ...(c.tags || []), ...(c.tags || []).map(tagLabel),
     ...(c.materials || []).flatMap(m => [m.title, m.title_ja || ""])];
   return parts.join(" ").toLowerCase();
@@ -100,7 +104,7 @@ function matHtml(c, m) {
 }
 
 function cardHtml(c) {
-  const meta = [ML[c.market] || c.market, CL[c.sector] || "", STG[c.stage] || "", c.ticker || ""].filter(Boolean).join("・");
+  const meta = [ML[c.market] || c.market, c.exchange || "", CL[c.sector] || "", STG[c.stage] || "", c.ticker || ""].filter(Boolean).join("・");
   const tags = (c.tags || []).length ? `<div class="wmeta">${c.tags.map(t => `<span class="chip">${esc(tagLabel(t))}</span>`).join(" ")}</div>` : "";
   const cnt = `一次情報 ${c.counts.primary}件・ニュース ${c.counts.news}件${c.latest ? `・最新 ${esc(c.latest)}` : ""}・未評価`;
   return `<section class="card wcard" data-id="${esc(c.id)}">
@@ -143,6 +147,8 @@ function filtered() {
     (!wBans.tier || dtier(c) !== wBans.tier) &&
     (!state.markets.size || state.markets.has(c.market)) &&
     !wBans.markets.has(c.market) &&
+    (!state.exchanges.size || state.exchanges.has(c.exchange)) &&
+    !wBans.exchanges.has(c.exchange) &&
     (!state.sectors.size || state.sectors.has(c.sector)) &&
     !wBans.sectors.has(c.sector) &&
     (!state.tags.size || (c.tags || []).some(t => state.tags.has(t))) &&
@@ -151,6 +157,7 @@ function filtered() {
   if (state.sort === "latest") rows.sort((a, b) => (b.latest || "") > (a.latest || "") ? 1 : (b.latest || "") < (a.latest || "") ? -1 : a.name.localeCompare(b.name, "ja"));
   else if (state.sort === "oldest") rows.sort((a, b) => (a.latest || "9999") > (b.latest || "9999") ? 1 : (a.latest || "9999") < (b.latest || "9999") ? -1 : a.name.localeCompare(b.name, "ja"));
   else if (state.sort === "count") rows.sort((a, b) => (b.counts.primary - a.counts.primary) || ((b.latest || "") > (a.latest || "") ? 1 : -1));
+  else if (state.sort === "exchange") { const ord = v => { const i = EXC_ORD.indexOf(v); return i < 0 ? EXC_ORD.length : i; }; rows.sort((a, b) => (ord(a.exchange) - ord(b.exchange)) || a.name.localeCompare(b.name, "ja")); }
   else rows.sort((a, b) => a.name.localeCompare(b.name, "ja"));
   return rows;
 }
@@ -208,6 +215,13 @@ async function init() {
     v => { state.markets.has(v) ? state.markets.delete(v) : state.markets.add(v); initChipsOnly(); render(); },
     v => wBans.markets.has(v),
     v => { if (wBans.markets.has(v)) wBans.markets.delete(v); else { wBans.markets.add(v); buzz(); state.markets.delete(v); } saveWBans(); initChipsOnly(); render(); });
+  EXC_ORD = [...new Set(companies.map(c => c.exchange).filter(Boolean))]
+    .sort((a, b) => companies.filter(c => c.exchange === b).length - companies.filter(c => c.exchange === a).length || (a < b ? -1 : 1));
+  chips($("#exchanges"), EXC_ORD.map(x => [x, x]),
+    v => state.exchanges.has(v),
+    v => { state.exchanges.has(v) ? state.exchanges.delete(v) : state.exchanges.add(v); initChipsOnly(); render(); },
+    v => wBans.exchanges.has(v),
+    v => { if (wBans.exchanges.has(v)) wBans.exchanges.delete(v); else { wBans.exchanges.add(v); buzz(); state.exchanges.delete(v); } saveWBans(); initChipsOnly(); render(); });
   const secs = [...new Set(companies.map(c => c.sector).filter(Boolean))];
   chips($("#sectors"), secs.map(s => [s, CL[s] || s]),
     v => state.sectors.has(v),
@@ -235,6 +249,7 @@ async function init() {
   function initChipsOnly() {
     document.querySelectorAll("#tiers .dchip").forEach(b => { b.setAttribute("aria-pressed", String(state.tier === b.dataset.v)); b.classList.toggle("ban", !!b.dataset.v && wBans.tier === b.dataset.v); });
     document.querySelectorAll("#markets .dchip").forEach(b => { b.setAttribute("aria-pressed", String(state.markets.has(b.dataset.v))); b.classList.toggle("ban", wBans.markets.has(b.dataset.v)); });
+    document.querySelectorAll("#exchanges .dchip").forEach(b => { b.setAttribute("aria-pressed", String(state.exchanges.has(b.dataset.v))); b.classList.toggle("ban", wBans.exchanges.has(b.dataset.v)); });
     document.querySelectorAll("#sectors .dchip").forEach(b => { b.setAttribute("aria-pressed", String(state.sectors.has(b.dataset.v))); b.classList.toggle("ban", wBans.sectors.has(b.dataset.v)); });
     document.querySelectorAll("#tags .dchip").forEach(b => { b.setAttribute("aria-pressed", String(state.tags.has(b.dataset.v))); b.classList.toggle("ban", wBans.tags.has(b.dataset.v)); });
     document.querySelectorAll("#tags .taggroup").forEach(g => {

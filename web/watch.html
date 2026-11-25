@@ -56,10 +56,11 @@ select.tsel{padding:8px 10px;border:1px solid var(--line);border-radius:10px;bac
   <div class="wrow"><span class="wlbl">層</span><span id="tiers"></span></div>
   <p class="wmeta">チップはタップで絞り込み、長押し（PCでは右クリック）でBAN（除外・赤い斜線）になります。各群の末尾にあるBANチップを押して赤く光っている間は、タップでもBANできます。BANは端末に保存されます。</p>
   <div class="wrow"><span class="wlbl">国・市場</span><span id="markets"></span></div>
+  <div class="wrow"><span class="wlbl">取引所</span><span id="exchanges"></span></div>
   <div class="wrow"><span class="wlbl">分野</span><span id="sectors"></span></div>
   <div class="wrow"><span class="wlbl">タグ</span><span class="wmeta" style="margin:0">セクターごとに折り畳んでいます（複数選択可）</span></div>
   <div id="tags" class="taggroups"></div>
-  <div class="wrow"><span class="wlbl">並び</span><select id="sort" class="tsel"><option value="latest">最新材料が新しい順</option><option value="oldest">最新材料が古い順</option><option value="count">一次情報が多い順</option><option value="name">社名順</option></select></div>
+  <div class="wrow"><span class="wlbl">並び</span><select id="sort" class="tsel"><option value="latest">最新材料が新しい順</option><option value="oldest">最新材料が古い順</option><option value="count">一次情報が多い順</option><option value="exchange">取引所別</option><option value="name">社名順</option></select></div>
   <div class="wrow"><span class="wlbl">言語</span><select id="fl" class="tsel"><option value="ja">日本語訳</option><option value="orig">原文</option></select></div>
 </div>
 <p class="wcount" id="cnt" role="status"></p>

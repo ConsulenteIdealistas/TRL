@@ -452,6 +452,7 @@ def _watch_companies(store, cfg, ent_derived=None, ent_reasons=None):
     for e in ents:
         by_id[e["id"]] = {"id": e["id"], "name": e["name"],
                           "market": e.get("market") or "JP",
+                          "exchange": e.get("exchange"),
                           "sector": e.get("sector"),
                           "tags": ([t for t in e["tags"] if isinstance(t, str)]
                                    if isinstance(e.get("tags"), list) else []),
@@ -498,6 +499,7 @@ def build_site_data(store, cfg, now=None):
     ent_names = {e["id"]: e["name"] for e in (cfg.get("entities") or {}).get("entities", [])}
     ent_tiers = {e["id"]: e.get("tier") or "core" for e in (cfg.get("entities") or {}).get("entities", [])}
     ent_markets = {e["id"]: e.get("market") or "JP" for e in (cfg.get("entities") or {}).get("entities", [])}
+    ent_exchanges = {e["id"]: e.get("exchange") for e in (cfg.get("entities") or {}).get("entities", [])}
     ent_sectors = {e["id"]: e.get("sector") for e in (cfg.get("entities") or {}).get("entities", [])}
     ent_tags = {e["id"]: ([t for t in e["tags"] if isinstance(t, str)] if isinstance(e.get("tags"), list) else [])
                 for e in (cfg.get("entities") or {}).get("entities", [])}
@@ -591,6 +593,7 @@ def build_site_data(store, cfg, now=None):
                              "derived_tier": ent_derived.get(e["entity_id"]),
                              "derived_reasons": ent_reasons.get(e["entity_id"], []),
                              "market": ent_markets.get(e["entity_id"], "JP"),
+                             "exchange": ent_exchanges.get(e["entity_id"]),
                              "sector": ent_sectors.get(e["entity_id"]),
                              "tags": ent_tags.get(e["entity_id"], []),
                              "stage": ent_stages.get(e["entity_id"])})

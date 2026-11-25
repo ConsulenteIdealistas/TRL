@@ -9,7 +9,7 @@
     "アストロスケールホールディングス"
    ],
    "ticker": "186A",
-   "exchange": "TSE",
+   "exchange": "TSE Growth",
    "sector": "space",
    "tags": [
     "debris_removal"
@@ -62,7 +62,7 @@
     "アイスペース"
    ],
    "ticker": "9348",
-   "exchange": "TSE",
+   "exchange": "TSE Growth",
    "sector": "space",
    "tags": [
     "space_transport",
@@ -119,7 +119,7 @@
     "シンスペクティブ"
    ],
    "ticker": "290A",
-   "exchange": "TSE",
+   "exchange": "TSE Growth",
    "sector": "space",
    "tags": [
     "earth_observation"
@@ -166,7 +166,7 @@
     "オンコリス"
    ],
    "ticker": "4588",
-   "exchange": "TSE",
+   "exchange": "TSE Growth",
    "sector": "bio",
    "tier": "watch",
    "watch": {
@@ -208,7 +208,7 @@
     "株式会社リプロセル"
    ],
    "ticker": "4978",
-   "exchange": "TSE",
+   "exchange": "TSE Growth",
    "sector": "bio",
    "tags": [
     "cell_therapy",
@@ -271,7 +271,7 @@
     "ペプチドリーム株式会社"
    ],
    "ticker": "4587",
-   "exchange": "TSE",
+   "exchange": "TSE Prime",
    "sector": "bio",
    "tier": "core",
    "watch": {
@@ -329,7 +329,7 @@
     "Institute for Q-shu Pioneers of Space"
    ],
    "ticker": "464A",
-   "exchange": "TSE",
+   "exchange": "TSE Growth",
    "sector": "space",
    "tags": [
     "earth_observation"
@@ -363,7 +363,7 @@
     "アクセルスペースホールディングス"
    ],
    "ticker": "402A",
-   "exchange": "TSE",
+   "exchange": "TSE Growth",
    "sector": "space",
    "tags": [
     "earth_observation"
@@ -412,7 +412,7 @@
     "サンバイオ"
    ],
    "ticker": "4592",
-   "exchange": "TSE",
+   "exchange": "TSE Growth",
    "sector": "bio",
    "tags": [
     "cell_therapy",
@@ -450,7 +450,7 @@
     "ヘリオス"
    ],
    "ticker": "4593",
-   "exchange": "TSE",
+   "exchange": "TSE Growth",
    "sector": "bio",
    "tags": [
     "cell_therapy",
@@ -486,7 +486,7 @@
     "ステラファーマ"
    ],
    "ticker": "4888",
-   "exchange": "TSE",
+   "exchange": "TSE Growth",
    "sector": "bio",
    "tier": "watch",
    "watch": {
@@ -520,7 +520,7 @@
     "クリングル"
    ],
    "ticker": "4884",
-   "exchange": "TSE",
+   "exchange": "TSE Growth",
    "sector": "bio",
    "tier": "watch",
    "watch": {
@@ -551,7 +551,7 @@
     "ステムリム"
    ],
    "ticker": "4599",
-   "exchange": "TSE",
+   "exchange": "TSE Growth",
    "sector": "bio",
    "tags": [
     "regenerative_medicine"
@@ -586,7 +586,7 @@
     "パークシャ"
    ],
    "ticker": "3993",
-   "exchange": "TSE",
+   "exchange": "TSE Prime",
    "sector": "ai",
    "tier": "core",
    "watch": {
@@ -623,7 +623,7 @@
     "フロンテオ"
    ],
    "ticker": "2158",
-   "exchange": "TSE",
+   "exchange": "TSE Growth",
    "sector": "ai",
    "tier": "core",
    "watch": {
@@ -654,7 +654,7 @@
     "エクサウィザーズ"
    ],
    "ticker": "4259",
-   "exchange": "TSE",
+   "exchange": "TSE Growth",
    "sector": "ai",
    "tier": "core",
    "watch": {
@@ -685,7 +685,7 @@
     "ヒーローズ"
    ],
    "ticker": "4382",
-   "exchange": "TSE",
+   "exchange": "TSE Standard",
    "sector": "ai",
    "tier": "core",
    "watch": {
@@ -715,7 +715,7 @@
     "サイバーダイン"
    ],
    "ticker": "7779",
-   "exchange": "TSE",
+   "exchange": "TSE Growth",
    "sector": "ai",
    "tier": "watch",
    "watch": {
@@ -751,7 +751,7 @@
     "レーザーテック"
    ],
    "ticker": "6920",
-   "exchange": "TSE",
+   "exchange": "TSE Prime",
    "sector": "semiconductor",
    "tags": [
     "semi_equipment"
@@ -785,7 +785,7 @@
     "ソシオネクスト"
    ],
    "ticker": "6526",
-   "exchange": "TSE",
+   "exchange": "TSE Prime",
    "sector": "semiconductor",
    "tags": [
     "semiconductor"
@@ -820,7 +820,7 @@
     "ザイン"
    ],
    "ticker": "6769",
-   "exchange": "TSE",
+   "exchange": "TSE Standard",
    "sector": "semiconductor",
    "tags": [
     "semiconductor"
@@ -853,7 +853,7 @@
     "トレックス"
    ],
    "ticker": "6616",
-   "exchange": "TSE",
+   "exchange": "TSE Prime",
    "sector": "semiconductor",
    "tags": [
     "semiconductor"
@@ -886,7 +886,7 @@
     "ハーモニックドライブ"
    ],
    "ticker": "6324",
-   "exchange": "TSE",
+   "exchange": "TSE Prime",
    "sector": "robotics",
    "tags": [
     "industrial_robotics"
@@ -914,7 +914,7 @@
     "ナブテスコ"
    ],
    "ticker": "6268",
-   "exchange": "TSE",
+   "exchange": "TSE Prime",
    "sector": "robotics",
    "tags": [
     "industrial_robotics"
@@ -941,7 +941,7 @@
     "CKD株式会社"
    ],
    "ticker": "6407",
-   "exchange": "TSE",
+   "exchange": "TSE Prime",
    "sector": "robotics",
    "tier": "core",
    "tags": [
@@ -969,7 +969,7 @@
     "山洋電気"
    ],
    "ticker": "6516",
-   "exchange": "TSE",
+   "exchange": "TSE Prime",
    "sector": "robotics",
    "tags": [
     "industrial_robotics"
@@ -998,7 +998,7 @@
     "IKO"
    ],
    "ticker": "6480",
-   "exchange": "TSE",
+   "exchange": "TSE Prime",
    "sector": "robotics",
    "tier": "core",
    "tags": [
@@ -1027,7 +1027,7 @@
     "平田機工"
    ],
    "ticker": "6258",
-   "exchange": "TSE",
+   "exchange": "TSE Prime",
    "sector": "robotics",
    "tier": "core",
    "tags": [
@@ -1057,7 +1057,7 @@
     "オプテックス"
    ],
    "ticker": "6914",
-   "exchange": "TSE",
+   "exchange": "TSE Prime",
    "sector": "robotics",
    "tags": [
     "industrial_robotics"
@@ -1085,7 +1085,7 @@
     "トーヨーカネツ"
    ],
    "ticker": "6369",
-   "exchange": "TSE",
+   "exchange": "TSE Prime",
    "sector": "robotics",
    "tags": [
     "warehouse_automation"
@@ -1113,7 +1113,7 @@
     "黒田精工"
    ],
    "ticker": "7726",
-   "exchange": "TSE",
+   "exchange": "TSE Standard",
    "sector": "robotics",
    "tags": [
     "industrial_robotics"
@@ -1140,7 +1140,7 @@
     "NACHI"
    ],
    "ticker": "6474",
-   "exchange": "TSE",
+   "exchange": "TSE Prime",
    "sector": "robotics",
    "tags": [
     "industrial_robotics"
@@ -1167,7 +1167,7 @@
     "ダイヘン"
    ],
    "ticker": "6622",
-   "exchange": "TSE",
+   "exchange": "TSE Prime",
    "sector": "robotics",
    "tags": [
     "industrial_robotics"
@@ -1195,7 +1195,7 @@
     "ツバキ"
    ],
    "ticker": "6371",
-   "exchange": "TSE",
+   "exchange": "TSE Prime",
    "sector": "robotics",
    "tier": "watch",
    "watch": {
@@ -1219,7 +1219,7 @@
     "マクセル"
    ],
    "ticker": "6810",
-   "exchange": "TSE",
+   "exchange": "TSE Prime",
    "sector": "energy",
    "tier": "watch",
    "watch": {
@@ -1247,7 +1247,7 @@
     "オハラ"
    ],
    "ticker": "5218",
-   "exchange": "TSE",
+   "exchange": "TSE Standard",
    "sector": "energy",
    "tier": "watch",
    "watch": {
@@ -1272,7 +1272,7 @@
     "サンテック"
    ],
    "ticker": "6777",
-   "exchange": "TSE",
+   "exchange": "TSE Standard",
    "sector": "semiconductor",
    "tier": "core",
    "tags": [
@@ -1301,7 +1301,7 @@
     "精工技研"
    ],
    "ticker": "6834",
-   "exchange": "TSE",
+   "exchange": "TSE Standard",
    "sector": "semiconductor",
    "tier": "core",
    "tags": [
@@ -1327,7 +1327,7 @@
     "朝日インテック"
    ],
    "ticker": "7747",
-   "exchange": "TSE",
+   "exchange": "TSE Prime",
    "sector": "bio",
    "tier": "core",
    "tags": [
@@ -1354,7 +1354,7 @@
     "日本ライフライン"
    ],
    "ticker": "7575",
-   "exchange": "TSE",
+   "exchange": "TSE Prime",
    "sector": "bio",
    "tier": "core",
    "tags": [
@@ -1381,7 +1381,7 @@
     "ジェイ・エム・エス"
    ],
    "ticker": "7702",
-   "exchange": "TSE",
+   "exchange": "TSE Standard",
    "sector": "bio",
    "tier": "watch",
    "tags": [
@@ -1409,7 +1409,7 @@
     "ミズホメディー"
    ],
    "ticker": "4595",
-   "exchange": "TSE",
+   "exchange": "TSE Standard",
    "sector": "bio",
    "tier": "watch",
    "tags": [
@@ -1435,7 +1435,7 @@
     "ACSL"
    ],
    "ticker": "6232",
-   "exchange": "TSE",
+   "exchange": "TSE Growth",
    "sector": "defense",
    "tags": [
     "autonomous_mobility"
@@ -1461,7 +1461,7 @@
     "TOWA"
    ],
    "ticker": "6315",
-   "exchange": "TSE",
+   "exchange": "TSE Prime",
    "sector": "semiconductor",
    "tags": [
     "semi_equipment"
@@ -1488,7 +1488,7 @@
     "キュオプス"
    ],
    "ticker": "4894",
-   "exchange": "TSE",
+   "exchange": "TSE Growth",
    "sector": "bio",
    "tags": [
     "regenerative_medicine"
@@ -1517,7 +1517,7 @@
     "テラドローン"
    ],
    "ticker": "278A",
-   "exchange": "TSE",
+   "exchange": "TSE Growth",
    "sector": "defense",
    "tags": [
     "autonomous_mobility"
@@ -1545,7 +1545,7 @@
     "ハートシード"
    ],
    "ticker": "219A",
-   "exchange": "TSE",
+   "exchange": "TSE Growth",
    "sector": "bio",
    "tags": [
     "regenerative_medicine"
@@ -1574,7 +1574,7 @@
     "メガチップス"
    ],
    "ticker": "6875",
-   "exchange": "TSE",
+   "exchange": "TSE Prime",
    "sector": "semiconductor",
    "tier": "watch",
    "watch": {
@@ -1599,7 +1599,7 @@
     "Liberaware"
    ],
    "ticker": "218A",
-   "exchange": "TSE",
+   "exchange": "TSE Growth",
    "sector": "defense",
    "tags": [
     "autonomous_mobility"

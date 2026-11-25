@@ -8,7 +8,7 @@
     "OHB System"
    ],
    "ticker": "OHB",
-   "exchange": "XETRA",
+   "exchange": "Xetra",
    "sector": "space",
    "tags": [
     "earth_observation"
@@ -35,7 +35,7 @@
     "エボテック"
    ],
    "ticker": "EVT",
-   "exchange": "XETRA",
+   "exchange": "Xetra",
    "sector": "bio",
    "tier": "core",
    "market": "DE",
@@ -58,7 +58,7 @@
     "AIXTRON"
    ],
    "ticker": "AIXA",
-   "exchange": "XETRA",
+   "exchange": "Xetra",
    "sector": "semiconductor",
    "tags": [
     "power_semi",
@@ -87,7 +87,7 @@
     "シルトロニック"
    ],
    "ticker": "WAF",
-   "exchange": "XETRA",
+   "exchange": "Xetra",
    "sector": "semiconductor",
    "tags": [
     "semiconductor"
@@ -113,7 +113,7 @@
     "フォルミコン"
    ],
    "ticker": "FYB",
-   "exchange": "XETRA",
+   "exchange": "Xetra",
    "sector": "bio",
    "tags": [
     "antibody"
@@ -140,7 +140,7 @@
     "ビオンテック"
    ],
    "ticker": "22UA",
-   "exchange": "XETRA",
+   "exchange": "Xetra",
    "sector": "bio",
    "tags": [
     "mrna"
@@ -168,7 +168,7 @@
     "ザルトリウス"
    ],
    "ticker": "SRT",
-   "exchange": "XETRA",
+   "exchange": "Xetra",
    "sector": "bio",
    "tier": "watch",
    "market": "DE",
@@ -193,7 +193,7 @@
     "ズース・マイクロテック"
    ],
    "ticker": "SMHN",
-   "exchange": "XETRA",
+   "exchange": "Xetra",
    "sector": "semiconductor",
    "tags": [
     "advanced_packaging"

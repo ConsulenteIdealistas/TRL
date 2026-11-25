@@ -182,6 +182,17 @@ const tagLabel = t => CL[t] || TL[t] || t;
 const primEnt = p => p.entities.find(e => e.strength === "strong") || p.entities[0] || null;
 const marketOf = p => { const e = primEnt(p); return e ? e.market || "JP" : null; };
 const sectorOf = p => { const e = primEnt(p); return e ? e.sector || null : null; };
+const exchangeOf = p => { const e = primEnt(p); return e ? e.exchange || null : null; };
+/* 取引所の並び (チップと「取引所別」ソートで共用): 掲載中 (除外を除く) の
+   企業数 の多い順、同数は名前順。辞書に37種あり固定表は持たない */
+let EXO = null;
+function excOrder() {
+  if (EXO) return EXO;
+  const cnt = {};
+  for (const p of P) { if (p.display_status === "rejected") continue; for (const e of p.entities || []) if (e.exchange) cnt[e.exchange] = (cnt[e.exchange] || 0) + 1; }
+  EXO = Object.keys(cnt).sort((a, b) => cnt[b] - cnt[a] || (a < b ? -1 : 1));
+  return EXO;
+}
 const ord = (v, list) => { const i = list.indexOf(v); return i < 0 ? list.length : i; };
 const dirOf = p => (p.long && p.long.status !== "error" && p.long.direction && p.long.direction.direction) || null;  // error 評価の方向性は出さない (詳細側の扱いと揃える)
 const dirB = p => { const d = dirOf(p); return d ? `<span class="dir dir-${esc(d)}">${DL[d]}</span>` : ""; };
@@ -194,7 +205,7 @@ function trl(t, d) {
     Array.from({length: 9}, (_, i) => `<span class="seg ${k && i < t ? "f" : ""}"></span>`).join("")}</div></div>`;
 }
 const trlSel = new Set();  // TRL絞り込みの選択状態: レベル1〜9と "u"(未確定) の集合。空なら絞らない
-const stSel = new Set(), dirSel = new Set(), mkSel = new Set(), scSel = new Set(), tagSel = new Set(), stgSel = new Set(), tierSel = new Set();  // 状態・方向性・国・分野・タグ・段階・企業の層の選択状態 (空なら絞らない)
+const stSel = new Set(), dirSel = new Set(), mkSel = new Set(), excSel = new Set(), scSel = new Set(), tagSel = new Set(), stgSel = new Set(), tierSel = new Set();  // 状態・方向性・国・取引所・分野・タグ・段階・企業の層の選択状態 (空なら絞らない)
 const ownSel = new Set();  // 自分の表示 (新着・注目) の選択状態。グループ内は OR で効く
 const genSel = new Set();  // 評価の世代の選択状態 ("cur" = 現行世代のみ。空なら絞らない)
 // 候補の世代は長期評価を主に見て、長期が無ければ短期 (event) 評価の
@@ -302,6 +313,7 @@ function filtered() {
     && !chipBans.fdc.has(dirOf(p) || "none")
     && !(p.display_status === "hold" && p.long && chipBans.fhcc.has(p.long.hold_cause))
     && !p.entities.some(e => chipBans.fmc.has(e.market || "JP"))
+    && !p.entities.some(e => chipBans.fexc.has(e.exchange))
     && !p.entities.some(e => chipBans.fcc.has(e.sector))
     && !p.entities.some(e => (e.tags || []).some(t => chipBans.fgc.has(t)))
     && !p.entities.some(e => chipBans.fstc.has(e.stage))
@@ -324,6 +336,7 @@ function filtered() {
       || (histSel.has("edge") && isEdge(p))
       || (histSel.has("stale") && p.display_status === "final" && p.long && p.long.evaluated_at && evalMaxTs && evalMaxTs - Date.parse(p.long.evaluated_at) > 30 * 864e5); })())
     && (!mkSel.size || p.entities.some(e => mkSel.has(e.market || "JP")))
+    && (!excSel.size || p.entities.some(e => excSel.has(e.exchange)))
     && (!scSel.size || p.entities.some(e => scSel.has(e.sector)))
     && (!tagSel.size || p.entities.some(e => (e.tags || []).some(t => tagSel.has(t))))
     && (!stgSel.size || p.entities.some(e => stgSel.has(e.stage)))
@@ -340,6 +353,7 @@ function filtered() {
     : (p.long || !p.event) ? "long" : "event";
   r.sort((a, b) => o === "status" ? byStatus(a, b)
     : o === "market" ? (ord(marketOf(a), MO) - ord(marketOf(b), MO)) || byStatus(a, b)
+    : o === "exchange" ? (ord(exchangeOf(a), excOrder()) - ord(exchangeOf(b), excOrder())) || byStatus(a, b)
     : o === "sector" ? (ord(sectorOf(a), CO) - ord(sectorOf(b), CO)) || byStatus(a, b)
     : o === "kind" ? ((kindOf(a) === "event") - (kindOf(b) === "event")) || byStatus(a, b)
     : o === "trl" ? (ok(lvl(b)) ? lvl(b) : -1) - (ok(lvl(a)) ? lvl(a) : -1)
@@ -360,6 +374,7 @@ function facetChips() {
   };
   const base = P.filter(p => p.display_status !== "rejected");  // 選択肢は通常の一覧 (除外を除く) にあるものだけ
   fill("fmc", mkSel, new Set(base.flatMap(p => p.entities.map(e => e.market || "JP"))), MO, ML);
+  fill("fexc", excSel, new Set(base.flatMap(p => p.entities.map(e => e.exchange).filter(Boolean))), excOrder(), {});
   fill("fcc", scSel, new Set(base.flatMap(p => p.entities.map(e => e.sector).filter(Boolean))), CO, CL);
   fill("fgc", tagSel, new Set(base.flatMap(p => p.entities.flatMap(e => e.tags || []))), TAGO, {...CL, ...TL});
   fill("fstc", stgSel, new Set(base.flatMap(p => p.entities.map(e => e.stage).filter(Boolean))), STGO, STG);
@@ -825,7 +840,7 @@ ${Array.isArray(p.history) && p.history.length >= 2 ? `<section class="ds"><h4>�
 <section class="ds"><h4>不足している観点</h4>${L && L.critical_missing.length ? `<p class="m" style="color:#a96500;font-weight:700">必須項目の不足: ${L.critical_missing.map(k => esc(label(k))).join("、")}</p>` : ""}${pts(missAll, 1)}${waitAll.length ? `<p class="hint">結果待ち（不足ではなく、治験の結果公表など時間の経過でしか解けないもの）:</p><ul class="pts">${waitAll.map(x => `<li><b>◷</b><span>${esc(x)}</span></li>`).join("")}</ul>` : ""}${q && q.next_sources.length ? `<p class="hint">次に確認する情報源: ${q.next_sources.map(esc).join(" / ")}</p>` : ""}${q && q.reeval_conditions.length ? `<p class="hint">再評価の条件: ${q.reeval_conditions.map(esc).join(" / ")}</p>` : ""}</section>
 ${p.display_status === "error" && LL && LL.errors.length ? `<section class="ds"><h4>処理上の注意</h4>${pts(LL.errors, 1)}</section>` : ""}
 ${p.display_status === "rejected" ? `<section class="ds"><h4>除外理由</h4><p>${esc(p.screen_reason ? (SR[p.screen_reason] || p.screen_reason) : "理由は記録されていません")}</p><p class="hint">除外は関連性スクリーニングの機械的な判定で、評価 (採点) は行われていません。</p></section>` : ""}
-${radarHtml(p)}${peerDiffHtml(p)}<section class="ds"><h4>関連企業</h4>${p.entities.map(e => `<span class="chip"><a class="colink" href="company.html?e=${encodeURIComponent(e.entity_id)}">${esc(e.name)}</a>${e.product_name ? "（" + esc(e.product_name) + "）" : ""}${e.market ? "・" + esc(ML[e.market] || e.market) : ""}${e.sector ? "・" + esc(CL[e.sector] || e.sector) : ""}${(e.tags || []).length ? "・" + e.tags.map(t => esc(tagLabel(t))).join("・") : ""}${e.stage ? "・" + esc(STG[e.stage] || e.stage) : ""} ${e.strength === "strong" ? "" : "・弱"}${dtText(e) ? "・" + esc(dtText(e)) : ""}</span>`).join("") || '<span class="hint">関連企業は未特定です。</span>'}</section>
+${radarHtml(p)}${peerDiffHtml(p)}<section class="ds"><h4>関連企業</h4>${p.entities.map(e => `<span class="chip"><a class="colink" href="company.html?e=${encodeURIComponent(e.entity_id)}">${esc(e.name)}</a>${e.product_name ? "（" + esc(e.product_name) + "）" : ""}${e.market ? "・" + esc(ML[e.market] || e.market) : ""}${e.exchange ? "・" + esc(e.exchange) : ""}${e.sector ? "・" + esc(CL[e.sector] || e.sector) : ""}${(e.tags || []).length ? "・" + e.tags.map(t => esc(tagLabel(t))).join("・") : ""}${e.stage ? "・" + esc(STG[e.stage] || e.stage) : ""} ${e.strength === "strong" ? "" : "・弱"}${dtText(e) ? "・" + esc(dtText(e)) : ""}</span>`).join("") || '<span class="hint">関連企業は未特定です。</span>'}</section>
 <section class="ds"><h4>調査メモ</h4><textarea id="note" aria-label="調査メモ" placeholder="仮説、確認したい点、次の調査などを記録...">${esc(p.id in noteDrafts ? noteDrafts[p.id] : getNote(p.id))}</textarea><div class="acts"><button class="btn sec" type="button" id="save">メモを保存</button><button class="btn sec" type="button" id="cpys">出典をコピー</button><a class="btn src" href="${esc(safeUrl(p.url))}" target="_blank" rel="noopener noreferrer">原文サイトを開く ↗</a></div><p id="msg" class="hint" aria-live="polite">メモはこの端末のブラウザにだけ保存されます。</p></section></div>`;
 }
 function render() {
@@ -1168,6 +1183,7 @@ function saveBans() { try { localStorage.setItem("trl-bans", JSON.stringify(BANS
 function banMatch(p, b) {
   if (b.t === "company") return (p.entities || []).some(e => e.strength === "strong" && e.name === b.v);
   if (b.t === "market") return (p.entities || []).some(e => e.strength === "strong" && e.market === b.v);
+  if (b.t === "exchange") return (p.entities || []).some(e => e.strength === "strong" && e.exchange === b.v);
   if (b.t === "sector") return (p.fields || []).includes(b.v);
   if (b.t === "source") return p.source === b.v;
   return false;
@@ -1186,7 +1202,7 @@ function banOptions(t) {
 function buildBanUI() {
   const list = $("#banlist");
   if (!list) return;
-  const TL = {company: "企業", market: "国・市場", sector: "分野", source: "出所"};
+  const TL = {company: "企業", market: "国・市場", exchange: "取引所", sector: "分野", source: "出所"};
   list.innerHTML = BANS.map((b, i) => `<div class="brow"><label class="sw"><input type="checkbox" data-ban="${i}" ${b.on ? "checked" : ""}><span>${esc(TL[b.t] || b.t)}: ${esc(b.v)}</span></label><button class="btn quiet" type="button" data-banx="${i}" aria-label="BANを取り消す">×</button></div>`).join("");
   const bc = $("#bancount");
   if (bc) bc.textContent = BANS.some(b => b.on) ? `（現在 ${P.filter(banned).length}件を除外中）` : "";
@@ -1201,11 +1217,13 @@ function renderBanBand() {
   if (!el) return;
   const comps = BANS.filter(b => b.on && b.t === "company");
   const mkts = [...chipBans.fmc];
-  if (!comps.length && !mkts.length) { el.hidden = true; el.innerHTML = ""; return; }
-  const n = P.filter(p => banned(p) || (p.entities || []).some(e => e.strength === "strong" && e.market && chipBans.fmc.has(e.market))).length;
-  el.innerHTML = `<span><strong>BAN中の企業・市場</strong>（${n}件を除外中）</span>`
+  const excs = [...chipBans.fexc];
+  if (!comps.length && !mkts.length && !excs.length) { el.hidden = true; el.innerHTML = ""; return; }
+  const n = P.filter(p => banned(p) || (p.entities || []).some(e => e.strength === "strong" && e.market && chipBans.fmc.has(e.market)) || (p.entities || []).some(e => e.exchange && chipBans.fexc.has(e.exchange))).length;
+  el.innerHTML = `<span><strong>BAN中の企業・市場・取引所</strong>（${n}件を除外中）</span>`
     + comps.map(b => `<button class="tz" type="button" data-unbanc="${esc(b.v)}">企業: ${esc(b.v)} ×</button>`).join("")
     + mkts.map(m => `<button class="tz" type="button" data-unbanm="${esc(m)}">市場: ${esc(m)} ×</button>`).join("")
+    + excs.map(m => `<button class="tz" type="button" data-unbanx="${esc(m)}">取引所: ${esc(m)} ×</button>`).join("")
     + `<button class="tz" type="button" id="unbanall">全部戻す</button>`;
   el.hidden = false;
   el.querySelectorAll("[data-unbanc]").forEach(b => b.addEventListener("click", () => {
@@ -1217,12 +1235,17 @@ function renderBanBand() {
     chipBans.fmc.delete(b.dataset.unbanm);
     saveChipBans(); syncChips("fmc", mkSel); buildBanUI(); render();
   }));
+  el.querySelectorAll("[data-unbanx]").forEach(b => b.addEventListener("click", () => {
+    chipBans.fexc.delete(b.dataset.unbanx);
+    saveChipBans(); syncChips("fexc", excSel); buildBanUI(); render();
+  }));
   const all = el.querySelector("#unbanall");
   if (all) all.addEventListener("click", () => {
     for (let i = BANS.length - 1; i >= 0; i--) if (BANS[i].t === "company" && BANS[i].on) BANS.splice(i, 1);
     chipBans.fmc.clear();
-    saveBans(); saveChipBans(); syncChips("fmc", mkSel); buildBanUI(); render();
-    toast("企業・市場のBANを全部戻しました");
+    chipBans.fexc.clear();
+    saveBans(); saveChipBans(); syncChips("fmc", mkSel); syncChips("fexc", excSel); buildBanUI(); render();
+    toast("企業・市場・取引所のBANを全部戻しました");
   });
 }
 /* 初回ガイド: 見たことがなければ一度だけ出す。閉じたら端末に記録する */
@@ -2081,7 +2104,7 @@ $("#fo").addEventListener("change", render);
 /* チップのBAN: 絞り込みチップを長押しすると、その値を除外 (BAN) する。
    選択 (含む) とは別に持ち、BAN中のチップには赤い斜線が入る。
    例: 保留をBANすると、保留以外 (と、もともと隠れている除外以外) が全部出る */
-const BANKEYS = ["fsc", "fdc", "fmc", "fcc", "fgc", "fstc", "ftierc", "fgenc", "fown", "fhcc", "fmvc", "fhistc", "fevc"];
+const BANKEYS = ["fsc", "fdc", "fmc", "fexc", "fcc", "fgc", "fstc", "ftierc", "fgenc", "fown", "fhcc", "fmvc", "fhistc", "fevc"];
 const chipBans = {};
 for (const k of BANKEYS) chipBans[k] = new Set();
 const trlBan = new Set();
@@ -2164,7 +2187,7 @@ function toggleBanMode(id) {
    光っているときに全部へ同時に効くと事故になるため、1回で1群だけに効かせ、
    効いた群はモードを抜ける (スタックを pop する形)。その群が既に全部BANなら
    全解除になる (同じキーで行き来できる) */
-const BANGLABEL = {fsc: "状態", fdc: "方向性", ftc: "TRL", fmc: "市場", fcc: "分野", fgc: "タグ", fstc: "段階", ftierc: "層", fgenc: "世代", fown: "自分の表示", fhcc: "保留理由", fmvc: "動き", fhistc: "履歴", fevc: "評価日"};
+const BANGLABEL = {fsc: "状態", fdc: "方向性", ftc: "TRL", fmc: "市場", fexc: "取引所", fcc: "分野", fgc: "タグ", fstc: "段階", ftierc: "層", fgenc: "世代", fown: "自分の表示", fhcc: "保留理由", fmvc: "動き", fhistc: "履歴", fevc: "評価日"};
 function allBanToggle() {
   const id = [...BANMODE].pop();  // 最後に光らせた群 (Set は挿入順を保つ)
   if (!id) return;
@@ -2232,7 +2255,7 @@ function bindChips(id, set, after) {
   });
 }
 const syncTagN = () => { $("#fgn").textContent = tagSel.size ? `（${tagSel.size}件選択中）` : ""; };
-const CHIPG = [["fsc", stSel], ["fdc", dirSel], ["fmc", mkSel], ["fcc", scSel], ["fstc", stgSel], ["ftierc", tierSel], ["fgenc", genSel], ["fown", ownSel], ["fhcc", holdSel], ["fmvc", moveSel], ["fhistc", histSel]];
+const CHIPG = [["fsc", stSel], ["fdc", dirSel], ["fmc", mkSel], ["fexc", excSel], ["fcc", scSel], ["fstc", stgSel], ["ftierc", tierSel], ["fgenc", genSel], ["fown", ownSel], ["fhcc", holdSel], ["fmvc", moveSel], ["fhistc", histSel]];
 CHIPG.forEach(([id, set]) => bindChips(id, set));
 bindChips("fgc", tagSel, syncTagN);
 /* 「判定済み」の近道が相手にするのは BANされていない 1〜9 だけ (BAN中のレベルは
@@ -2393,7 +2416,7 @@ $("#rs").addEventListener("click", () => { const snapF = captureFilterState(); c
    密度) は端末ごとの設定として含めない */
 function captureFilterState() {
   return {q: $("#q").value, sort: $("#fo").value,
-    st: [...stSel], trl: [...trlSel], dir: [...dirSel], mk: [...mkSel], sc: [...scSel],
+    st: [...stSel], trl: [...trlSel], dir: [...dirSel], mk: [...mkSel], exc: [...excSel], sc: [...scSel],
     tag: [...tagSel], stg: [...stgSel], tier: [...tierSel], gen: [...genSel], own: [...ownSel],
     hold: [...holdSel], move: [...moveSel], hist: [...histSel], slo: $("#fsn").value, shi: $("#fsm").value,
     ev: evWin == null ? "" : String(evWin)};
@@ -2401,7 +2424,7 @@ function captureFilterState() {
 function restoreFilterState(s) {
   if (!s || typeof s !== "object") return;
   const put = (set, arr) => { set.clear(); if (Array.isArray(arr)) for (const v of arr) set.add(v); };
-  put(stSel, s.st); put(dirSel, s.dir); put(mkSel, s.mk); put(scSel, s.sc);
+  put(stSel, s.st); put(dirSel, s.dir); put(mkSel, s.mk); put(excSel, s.exc); put(scSel, s.sc);
   put(tagSel, s.tag); put(stgSel, s.stg); put(tierSel, s.tier); put(genSel, s.gen);
   put(ownSel, s.own); put(holdSel, s.hold); put(moveSel, s.move); put(histSel, s.hist);
   trlSel.clear(); if (Array.isArray(s.trl)) for (const v of s.trl) trlSel.add(v === "u" ? "u" : Number(v));

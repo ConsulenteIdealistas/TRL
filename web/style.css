@@ -217,6 +217,7 @@ a.brz.lk{text-decoration:none;display:inline-block;margin-left:4px}
 /* 最近見た候補はリンクだと分かるよう、リンクの青で出す */
 #recentband a{color:var(--accent);font-weight:650}
 .srow{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center;width:100%}
+.boxbig{display:block;width:100%;max-width:640px;height:auto}
 .snum{color:var(--sub);font-size:12px}
 .calpop{width:100%;max-width:330px}
 .calhead{display:flex;justify-content:space-between;align-items:center;margin:6px 0}

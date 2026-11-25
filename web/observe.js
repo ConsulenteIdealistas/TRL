@@ -20,7 +20,39 @@ const candName = p => { const e = (p.entities || []).find(x => x.strength === "s
 const dispT = p => LANG === "ja" && p.title_ja ? p.title_ja : p.title;
 const meanOf = xs => xs.reduce((a, b) => a + b, 0) / xs.length;
 const fmt1 = v => v == null ? "—" : (Math.round(v * 10) / 10).toFixed(1);
-function boxGeom(st, W = 170) { const X = v => Math.round((v / 100 * (W - 4) + 2) * 10) / 10; return {min: X(st.min), q1: X(st.q1), med: X(st.median), q3: X(st.q3), max: X(st.max)}; }
+/* 観測ページの箱ひげ図 (大): 幅いっぱい・軸と目盛り・5つの数のラベル付き。
+   計算 (statsOf) は一覧側と同一で、ここは表示だけを大きくする。
+   目盛りは線形 0/25/50/75/100。対数表示は log(1+x) で伸ばし、目盛りは
+   元の値 (0/1/2/5/10/20/50/100) で読む。切替は端末に保存 (trl-scale)。
+   一覧側の boxSvg (170×18) とは別物で、大きくする変更はここだけに入れる */
+let SCALE = "lin";
+try { SCALE = localStorage.getItem("trl-scale") || "lin"; } catch (e) { /* 保存不可なら線形 */ }
+const BOX_W = 360, BOX_H = 80, BOX_PL = 28, BOX_PR = 352;
+function boxX(v) {
+  const t = SCALE === "log" ? Math.log1p(Math.max(0, v)) / Math.log1p(100) : Math.max(0, Math.min(100, v)) / 100;
+  return Math.round((BOX_PL + t * (BOX_PR - BOX_PL)) * 10) / 10;
+}
+function boxSvgBig(st) {
+  const ticks = SCALE === "log" ? [0, 1, 2, 5, 10, 20, 50, 100] : [0, 25, 50, 75, 100];
+  const x = {min: boxX(st.min), q1: boxX(st.q1), med: boxX(st.median), q3: boxX(st.q3), max: boxX(st.max)};
+  const guides = ticks.map(v => `<line x1="${boxX(v)}" y1="26" x2="${boxX(v)}" y2="58" stroke="var(--line)"/><text x="${boxX(v)}" y="72" font-size="10" text-anchor="middle" fill="var(--muted)">${v}</text>`).join("");
+  const num = (v, xx, y, anchor) => `<text x="${xx}" y="${y}" font-size="10" text-anchor="${anchor}" fill="var(--ink)">${fmt1(v)}</text>`;
+  /* 同じ行で重なるラベルは落とす (対数表示で中〜高域に値が集まると起きる)。
+     落とした値も下の数字の行に全てあるので、情報は欠けない */
+  const placed = [];
+  const put = (v, xx, y, anchor) => {
+    if (placed.some(p => p.y === y && Math.abs(p.x - xx) < 26)) return "";
+    placed.push({x: xx, y});
+    return num(v, xx, y, anchor);
+  };
+  return `<svg class="boxbig" viewBox="0 0 ${BOX_W} ${BOX_H}" role="img">${guides}`
+    + `<line x1="${x.min}" y1="42" x2="${x.max}" y2="42" stroke="var(--muted)"/>`
+    + `<rect x="${x.q1}" y="30" width="${Math.max(1, x.q3 - x.q1)}" height="24" fill="var(--accent)" opacity="0.35" stroke="var(--accent)"/>`
+    + `<line x1="${x.med}" y1="28" x2="${x.med}" y2="56" stroke="var(--accent)" stroke-width="2.5"/>`
+    + put(st.median, x.med, 10, "middle") + put(st.min, x.min, 10, "start") + put(st.max, x.max, 10, "end")
+    + put(st.q1, x.q1, 24, "middle") + put(st.q3, x.q3, 24, "middle")
+    + `</svg>`;
+}
 const SN_FINITE = {2: 0.743, 3: 1.851, 4: 0.954, 5: 1.351, 6: 0.993, 7: 1.198, 8: 1.005, 9: 1.131};
 const snCorr = n => SN_FINITE[n] !== undefined ? SN_FINITE[n] : (n % 2 === 1 ? n / (n - 0.9) : 1.0);
 const QN_FINITE = {2: 0.399356, 3: 0.99365, 4: 0.51321, 5: 0.84401, 6: 0.6122, 7: 0.85877, 8: 0.66993, 9: 0.87344, 10: 0.72014, 11: 0.88906, 12: 0.75743};
@@ -135,10 +167,6 @@ function statsOf(xs) {
   if (!v.length) return null;
   return {n: v.length, mean: meanOf(v), median: pct7(v, 0.5), sd: sdOf(v), sn: snOf(v), qn: qnOf(v),
     q1: pct7(v, 0.25), q3: pct7(v, 0.75), min: Math.min(...v), max: Math.max(...v)};
-}
-function boxSvg(st) {
-  const b = boxGeom(st);
-  return `<svg viewBox="0 0 170 18" width="170" height="18" role="img"><line x1="${b.min}" y1="9" x2="${b.max}" y2="9" stroke="var(--muted)"/><rect x="${b.q1}" y="4" width="${Math.max(1, b.q3 - b.q1)}" height="10" fill="var(--accent)" opacity="0.35" stroke="var(--accent)"/><line x1="${b.med}" y1="3" x2="${b.med}" y2="15" stroke="var(--accent)" stroke-width="2"/></svg>`;
 }
 function buildCohort() {
   const g = (META.config && META.config.item_groups) || {};
@@ -282,7 +310,7 @@ function statsBand() {
   const el = $("#statband");
   if (!el) return;
   if (!COHORT) { el.hidden = true; return; }
-  const row = (lab, st) => st ? `<span class="srow"><b>${esc(lab)}</b> ${boxSvg(st)}<span class="snum">n=${st.n} 平均 ${fmt1(st.mean)} / 中央値 ${fmt1(st.median)} / SD ${fmt1(st.sd)} / Sn ${fmt1(st.sn)} / Qn ${fmt1(st.qn)} / Q1 ${fmt1(st.q1)} / Q3 ${fmt1(st.q3)}</span></span>` : "";
+  const row = (lab, st) => st ? `<span class="srow"><b>${esc(lab)}</b> ${boxSvgBig(st)}<span class="snum">n=${st.n} 平均 ${fmt1(st.mean)} / 中央値 ${fmt1(st.median)} / SD ${fmt1(st.sd)} / Sn ${fmt1(st.sn)} / Qn ${fmt1(st.qn)} / Q1 ${fmt1(st.q1)} / Q3 ${fmt1(st.q3)} / 最小 ${fmt1(st.min)} / 最大 ${fmt1(st.max)} / IQR ${fmt1(st.q3 - st.q1)}</span></span>` : "";
   const when = COHORT.asOf ? `${COHORT.asOf} 時点` : "最新";
   // 節目表示: 観測の累計 (評価回数の合計・企業数・観測日数) は候補の直読み
   const totEvals = P.reduce((a, p) => a + (p.eval_count || 0), 0);
@@ -303,7 +331,8 @@ function statsBand() {
   const genHtml = genTxt ? `<span class="tz">世代別: ${genTxt}</span>` : "";
   el.innerHTML = `<span>確定評価の統計（${when}の母集団 ${COHORT.total ? COHORT.total.n : 0}件、箱は最小–Q1–中央値–Q3–最大）</span>` + miles + genHtml
     + `<span class="srow"><button class="chip" id="asofbtn">母集団の基準日: ${COHORT.asOf || "最新（as_of）"}</button>`
-    + (COHORT.asOf ? `<button class="chip" id="asofclear">最新に戻す</button>` : "") + `</span>`
+    + (COHORT.asOf ? `<button class="chip" id="asofclear">最新に戻す</button>` : "")
+    + `<button class="chip" id="scalebtn">目盛り: ${SCALE === "log" ? "対数" : "線形"}</button></span>`
     + calHtml()
     + (COHORT.total ? row("総合点", COHORT.total) + ITEM_KEYS.map(k => row(label(k), COHORT.items[k])).join("")
       : `<span class="snum">その日時点で確定した評価はまだありません。</span>`);
@@ -351,7 +380,11 @@ function nearBand() {
 /* 母集団の基準日カレンダー: 日を選ぶと母集団をその日時点で再構成する */
 $("#statband").addEventListener("click", e => {
   const mv = e.target.closest("[data-mv]"), day = e.target.closest("[data-d]");
-  if (e.target.id === "asofbtn") {
+  if (e.target.id === "scalebtn") {
+    SCALE = SCALE === "log" ? "lin" : "log";
+    try { localStorage.setItem("trl-scale", SCALE); } catch (err) { /* 保存不可でも表示は切り替える */ }
+    statsBand();
+  } else if (e.target.id === "asofbtn") {
     CALOPEN = !CALOPEN;
     if (CALM == null) {
       const days = [...evalDayCounts().keys()].sort();

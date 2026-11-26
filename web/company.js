@@ -2,7 +2,9 @@
 /* 企業ページ: data.json の候補と監視企業を企業単位に集約して表示する。
    帰属は候補の entities (候補側の企業リンク) と watch_companies
    (Look・See の監視企業) の和集合で、値はすべて data.json の直読み。
-   企業単位の新しい判定や点数は作らない。 */
+   企業単位の新しい判定や点数は作らない。
+   唯一の例外が末尾の Wikipedia 参考枠で、外部の三次情報を出典明示で
+   参考表示するだけに使う (評価・材料・集約には一切入れない)。 */
 const $ = s => document.querySelector(s);
 const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
 const safeUrl = u => /^https?:\/\//i.test(String(u || "")) ? String(u) : "#";
@@ -33,7 +35,7 @@ const lvl = p => (p.long && p.long.trl_level && p.long.trl_level.level) ?? null;
 function buildCompanies(cands, watchCos) {
   const map = new Map();
   const get = id => {
-    if (!map.has(id)) map.set(id, {id, name: "", market: null, sector: null, tags: [], stage: null,
+    if (!map.has(id)) map.set(id, {id, name: "", market: null, exchange: null, sector: null, tags: [], stage: null,
       tier: null, derived_tier: null, derived_reasons: [], ticker: null, links: [], watch: null});
     return map.get(id);
   };
@@ -42,6 +44,7 @@ function buildCompanies(cands, watchCos) {
     const c = get(e.entity_id);
     c.name = e.name || c.name;
     c.market = e.market || c.market;
+    c.exchange = e.exchange || c.exchange;
     c.sector = e.sector || c.sector;
     if ((e.tags || []).length) c.tags = e.tags;
     c.stage = e.stage || c.stage;
@@ -55,6 +58,7 @@ function buildCompanies(cands, watchCos) {
     const c = get(w.id);
     c.name = c.name || w.name || "";
     c.market = c.market || w.market;
+    c.exchange = c.exchange || w.exchange;
     c.sector = c.sector || w.sector;
     if (!c.tags.length) c.tags = w.tags || [];
     c.stage = c.stage || w.stage;
@@ -138,7 +142,7 @@ function coverageHtml(cos) {
   }).join("")}<td>${m.total}</td><td>${m.finals}</td></tr>`).join("");
   return `<section class="ds"><h4>市場×分野のカバレッジ（企業数）</h4><div class="tscroll"><table class="rt"><thead>${head}</thead><tbody>${body}</tbody></table></div><p class="hint">選定可能は、その企業の最新の評価が確定している企業の数です。色の濃さは企業数に比例します。</p></section>`;
 }
-const metaLine = co => [co.market ? ML[co.market] || co.market : "", co.sector ? CL[co.sector] || co.sector : "",
+const metaLine = co => [co.market ? ML[co.market] || co.market : "", co.exchange || "", co.sector ? CL[co.sector] || co.sector : "",
   co.stage ? STG[co.stage] || co.stage : "", dtText(co)].filter(Boolean).join("・");
 
 let DATA = null;
@@ -169,6 +173,63 @@ function renderIndex(cos) {
   $("#q").addEventListener("input", draw);
   draw();
 }
+/* Wikipedia 参考枠: 会社名 (法人格を落とした形) で検索し、記事名が
+   会社名と正規化一致 (どちらかの前方一致を含む) する記事だけを採る。
+   曖昧さ回避ページと要約の無い記事は使わない。版の順序は日本の企業は
+   日本語版から、それ以外は英語版から (実測: 12社すべて正しい記事に一致)。
+   結果は端末にキャッシュする (ヒット7日・ミス1日: 要約は安定しているが、
+   無かった記事が作られることはあるためミスは短めにする) */
+const WP_SUFFIX = /[,\s]*(Inc\.?|Corp\.?|Corporation|Ltd\.?|Limited|plc|AG|SE|KGaA|GmbH|S\.A\.|N\.V\.|B\.V\.|Oyj?|AB|ASA|A\/S|SpA|S\.p\.A\.|Holdings?|Group|株式会社|有限会社)\s*$/i;
+function wpCleanName(name) {
+  let n = String(name || "").replace(/^(株式会社|有限会社)\s*/, "").trim();
+  let prev = null;
+  while (prev !== n) { prev = n; n = n.replace(WP_SUFFIX, "").trim().replace(/,$/, "").trim(); }
+  return n;
+}
+const wpNorm = s => String(s || "").toLowerCase().replace(/[^0-9a-zぁ-んァ-ヶ一-龥]/g, "");
+async function wpLookup(co) {
+  const q = wpCleanName(co.name);
+  if (!q) return null;
+  const qn = wpNorm(q);
+  const eds = co.market === "JP" ? ["ja", "en"] : ["en", "ja"];
+  for (const lang of eds) {
+    try {
+      const sr = await (await fetch(`https://${lang}.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(q)}&srlimit=3&format=json&origin=*`)).json();
+      for (const h of (sr.query && sr.query.search) || []) {
+        const tn = wpNorm(h.title);
+        if (!(tn === qn || tn.startsWith(qn) || qn.startsWith(tn))) continue;
+        const sm = await (await fetch(`https://${lang}.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(h.title)}`)).json();
+        if (!sm || sm.type === "disambiguation" || !sm.extract) continue;
+        return {lang, title: sm.title || h.title, extract: sm.extract,
+          url: (sm.content_urls && sm.content_urls.desktop && sm.content_urls.desktop.page) || `https://${lang}.wikipedia.org/wiki/${encodeURIComponent(h.title)}`};
+      }
+    } catch (e) { /* 引けなければ次の版へ。最後まで引けなければ枠を出さない */ }
+  }
+  return null;
+}
+function wpCacheGet(id) {
+  try {
+    const o = JSON.parse(localStorage.getItem("trl-wp:" + id) || "null");
+    if (!o || !o.t) return undefined;
+    if (Date.now() - o.t > (o.hit ? 7 : 1) * 864e5) return undefined;
+    return o.hit;
+  } catch (e) { return undefined; }
+}
+function wpCacheSet(id, hit) {
+  try { localStorage.setItem("trl-wp:" + id, JSON.stringify({t: Date.now(), hit})); } catch (e) { /* 保存できなくても表示はする */ }
+}
+async function fillWpBox(co) {
+  const box = $("#wpbox");
+  if (!box) return;
+  let hit = wpCacheGet(co.id);
+  if (hit === undefined) { hit = await wpLookup(co); wpCacheSet(co.id, hit); }
+  if (!hit) return;
+  const ex = hit.extract.length > 280 ? hit.extract.slice(0, 280).replace(/\s+\S*$/, "") + "…" : hit.extract;
+  $("#wptext").textContent = ex;
+  $("#wpsrc").innerHTML = `出典: <a href="${esc(hit.url)}" target="_blank" rel="noopener">Wikipedia「${esc(hit.title)}」</a>（${hit.lang === "ja" ? "日本語版" : "英語版"}）・ <a href="https://creativecommons.org/licenses/by-sa/4.0/deed.ja" target="_blank" rel="noopener">CC BY-SA 4.0</a>。三次情報の参考表示で、評価には使っていません。`;
+  box.hidden = false;
+}
+
 function renderCompany(co, cos) {
   const lat = latestLong(co);
   const hits = barrierHitsOf(co);
@@ -199,11 +260,13 @@ function renderCompany(co, cos) {
   $("#root").innerHTML = `<h1 class="ptitle">${esc(co.name)}</h1>`
     + `<p class="kv">${esc(metaLine(co))}${co.ticker ? ` / ティッカー ${esc(co.ticker)}` : ""}${(co.tags || []).length ? `<br>タグ: ${co.tags.map(t => esc(tagLabel(t))).join("・")}` : ""}</p>`
     + (lat ? `<section class="ds"><h4>最新の評価</h4><p>${esc(SL[lat.cand.display_status] || lat.cand.display_status)} / 総合 ${lat.ev.total != null ? lat.ev.total + "点" : "—"} / TRL ${lvl(lat.cand) != null ? lvl(lat.cand) : "未確定"}（評価 ${esc(String(lat.ev.evaluated_at || "").slice(0, 10))}）</p><p><a class="tg" href="detail.html?id=${encodeURIComponent(lat.cand.id)}">この候補の詳細を見る →</a></p></section>` : `<section class="ds"><h4>最新の評価</h4><p class="hint">この企業の候補に long 評価はまだありません。</p></section>`)
+    + `<section class="ds" id="wpbox" hidden><h4>参考（Wikipedia）</h4><p id="wptext"></p><p class="hint" id="wpsrc"></p></section>`
     + rankHtml + tlHtml
     + (hits.length ? `<section class="ds"><h4>関門の該当</h4><ul class="pts">${hits.map(h => `<li><b>${esc(BRL[h.gate])}</b><span><a href="detail.html?id=${encodeURIComponent(h.cand.id)}">${esc(dispT(h.cand))}</a></span></li>`).join("")}</ul></section>` : "")
     + `<section class="ds"><h4>関連する候補（${links.length}件）</h4>${links.map(lrow).join("") || `<p class="hint">候補はありません。</p>`}</section>`
     + (co.watch ? `<section class="ds"><h4>監視材料</h4><p class="hint">一次情報 ${co.watch.counts.primary}件 / ニュース ${co.watch.counts.news}件（Look・See の材料置き場から）。</p>${mats.map(m => `<div class="lrow"><div class="lt"><a href="${esc(safeUrl(m.url))}" target="_blank" rel="noopener noreferrer">${esc(LANG === "ja" && m.title_ja ? m.title_ja : m.title)}</a></div><div class="lm">${esc(m.source || "")}${m.published ? ` / ${esc(m.published)}` : ""}</div></div>`).join("")}</section>` : "")
     + `<section class="ds"><h4>この企業の書き出し</h4><div class="acts"><button class="btn sec" type="button" id="cojson">JSONで保存</button><button class="btn sec" type="button" id="cocsv">候補一覧をCSVで保存</button></div><p class="hint">この企業の属性と関連候補をそのまま書き出します（新しい集計はしません）。</p></section>`;
+  fillWpBox(co);
   const dl = (blob, name) => {
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob); a.download = name; a.click();
@@ -211,7 +274,7 @@ function renderCompany(co, cos) {
   };
   const mine = (DATA.candidates || []).filter(p => co.links.some(l => l.cand.id === p.id));
   const cj = $("#cojson"), cc = $("#cocsv");
-  if (cj) cj.addEventListener("click", () => dl(new Blob([JSON.stringify({company: {id: co.id, name: co.name, market: co.market, sector: co.sector, stage: co.stage, ticker: co.ticker, tags: co.tags}, candidates: mine}, null, 1)], {type: "application/json"}), `trl-company-${co.id}.json`));
+  if (cj) cj.addEventListener("click", () => dl(new Blob([JSON.stringify({company: {id: co.id, name: co.name, market: co.market, exchange: co.exchange, sector: co.sector, stage: co.stage, ticker: co.ticker, tags: co.tags}, candidates: mine}, null, 1)], {type: "application/json"}), `trl-company-${co.id}.json`));
   if (cc) cc.addEventListener("click", () => {
     const head = ["id", "title", "status", "total", "trl", "evaluated_at", "url"];
     const q = v => { const s = String(v ?? ""); return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };

@@ -75,7 +75,7 @@ class ExportTests(StoreFixture):
         # 一覧は検索と統計の間の .pagelinks に短いリンク、詳細はフッター
         # のみ (ヘッダーは両ページともリンクなしで揃える)
         index = (web / "index.html").read_text(encoding="utf-8")
-        self.assertIn('<nav class="pagelinks"><a href="criteria.html">採点基準</a>'
+        self.assertIn('<nav class="pagelinks"><a href="manual.html">取扱説明書</a><a href="criteria.html">採点基準</a>'
                       '<a href="audit.html">監査</a><a href="watch.html">Look・See</a>'
                       '<a href="observe.html">観測</a><a href="brief.html">ブリーフィング</a>'
                       '<a href="queue.html">次回評価予定</a>'

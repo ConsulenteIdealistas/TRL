@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>取扱説明書 — TRL Explorer</title>
+<link rel="stylesheet" href="style.css">
+<script>try{var tt=localStorage.getItem("trl-theme");document.documentElement.dataset.theme=(tt==="light"||tt==="dark"||tt==="cb")?tt:(window.matchMedia&&matchMedia("(prefers-color-scheme: light)").matches?"light":"dark");}catch(e){document.documentElement.dataset.theme="dark";}</script>
+<style>
+.docwrap{max-width:880px;margin:0 auto}
+.doct{font-size:22px;margin:2px 0 8px}
+.doc{font-size:13.5px;line-height:1.85}
+.doc h2{font-size:17px;margin:26px 0 8px;padding-top:16px;border-top:1px solid var(--line)}
+.doc dt{font-weight:800;margin:14px 0 2px}
+.doc dd{margin:0 0 6px}
+.doc p{margin:6px 0}
+</style>
+<link rel="icon" type="image/png" sizes="16x16" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAIAAACQkWg2AAABtklEQVR4nM2STWsTURSG33PvnUkzSYqpqaFaLTULCw0opdBS/MSVgl248w8o+BNc+RdcdVtXLlyIgkKloO5ErPRLkYK2i6aZWtM0M2YyczP3HhfV7OvKs35eeHmfQ8yMo5w4Ev0vAWWtJYABAgD0+gXsW+gclZw9w6+X6fYUZV0AZI05xA/Rhm3v2nqE7SY+E8Irry6rruREU6kgrlbhKLKpAQGMFvOW6ZQlD4iMCwWGoVQs1WwjpKEi1jfp1iTyfQqEl3XrJwhTHiR32yU/sND6TtV5t4UTfccn2vscJVQqwoCfLZM1Zu5r+mhVH5OYHVGL37SynDOQXRskmDnjPLzpgcFxF19qqJRFjPDeGI2b+JLXfTDpohlFftjeCzwTU6fDOgEAArIO/2ghq8SGeSMg0fyFIAKARmtYxh8+7ty/mMXB/upKbX5hZ36hDkDcOE8ZR+1iLeTpc3lz0pMAxvvTaxf6r4/Kxy++TwxlPm1ETxZ1tVLo7U3r+vmSfTol7haoXBIjBNKc+nyQsMxT7jR5fwT9dUTGmE37fs28/WkbCgNFOntKjI3KSpHyPRI9swz6/57vNxXUyx5xfRgRAAAAAElFTkSuQmCC"><link rel="icon" type="image/png" sizes="32x32" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAAEyElEQVR4nO1WTWxUVRT+vvtepzOdzrS103GmBSrSUqCE/6Ck0Rhko0GIhCbGjZLIisRolJCo6MIEdeXKGBOiLkSRhXEB7IRUDSQCLQqkEChtodjaH/rz5qfv597jYn7aYWtIXHAXL+/dc+/5znfOd+59FBE8zKEeqvdHAP8LANsYA4DFTwqEZaMUDBQsKI0gUCG8wirzy1W2JtiWQuUCaq0LPsDidCVI0QeLVhkx1ww8gSfwa5lIcDUA8/NFdXlIjI99z3N5crETmyjhSZHHg94BoczLfJ8+ZyR7R84HnNG4n2b7ltluOdeLDa28d990daizf8nYNJY1wSoSLzJYHPID4Y9qZ9RMDprBCHWLagBdwDXITcnNFq7t+DGmBsfh5fWza1BVxYF7qA6x/y7f3MlEvJASu5RZSBkT8IFR7d0KnDC9lIp3hLZZUGFWl+l6mCeJ9VMcnTFNUaYauaTRCFTfLRrI+Aya4oU4aQKNcpVLlbjo6az47TabrWpKhXWhfoSAcmNMhibEVmp5CoP/iCVMxFTn0nIa7LJ3KUlkUiNtqWYrTC64RRmmtFNAQJj3Vf+YqbHQkWbvEMXI68+AkL4R9A5jxyq7sOGrW8HRYYFFGEhgoIFAVkWlq9n6+oYWT+ALXKFnvn05siZpf3/V+/xXl5707GuKDN/H5qVM1cnGVl4fhRYA7EjKn3d45rpdCG141vSNBFAUDRgw0NBgA56M4tKQT1/oabgQnzu+dHoOxMemde9tzUCjJs7d64o5274anS1M10GASIi71mMyqwpJ/2hDaPrVyNHNxIyH6fkreyMz+2t7umvhGzh+eziYOVg/80HDzhUyPuUf+mmG2sD14fqCRYpURLpOMq757JQ5fh7RaqxMqkLRqi3EqhgRgeMi40ct1FaxxgJdzazrZ7yBcff2uJtx5uHm47amNvA8BB4p5eIVedSEZEm9ujIsmTwAWygj5nIjV9QwLoFGxoUxEIEIQHiBZPODjmz62IEWMWhr5Cd7mo//kYE3D+1DQBKlW4sAFLl3q5yrR6QagJqQgQkZiDAOAIGGk0cmD1NqbteDk0vA3fq4SCarMs6pd1qb66sY+MjMwpkrybZCYSpcpbZ3qpoQAXvQ/M5CawsYGHFyNFICAFwfTnZpY+SHA8v3Hunvu5l794trx95bZ/J5Og60funQBUVCWQJYiqc/3WSVz0YCAnsOf1cjJjCkEt9HJgdtxBgUzox5F3MZyegnkjWHu5u737908szchwlrSSqGXFaEZy95oAVlQan9LzZx8UErAGDHkByS3/r0iY3WKx3p8FsvNEGbeI0FgoJtHbVv7063JKoB2dWV+u7w+tsjTrIhsrYtduSNNiFBggokgF1dScVFLVmQ1oQ/cFofdOF2cs/T9msLnVqxrPjuQmfEnTX+Hck1M7bSqkXlqGj7AoCnc5eDExfMMV9Mu9pBCZOhNeq5JrUMIECCAozK5D0z5YmVBztUOqGidQyxBL6Qc1kUYGHSaC2Qq/pkv+m5a/pFqoiwQthirc04JWojrhC1pW5r1ZYYYy3qsQqKhWuI5aIuPIsMjNZFBWE+EP9s8E1WcgphSshiRKF2g/VUykorKAWFBepY5POBulaQ4KM/u0cA/3n8C4Bqb/RgZEqHAAAAAElFTkSuQmCC"><link rel="icon" type="image/png" sizes="48x48" href="data:image/png;base64,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"></head>
+<body>
+<header class="topbar"><a class="brand" href="index.html"><span class="mark">T</span><span>TRL<span class="light"> Explorer</span></span></a><div class="meta">Research Intelligence</div></header>
+<main class="ws"><div class="docwrap">
+<p style="margin:0 0 12px"><a class="tg" href="index.html">← 一覧に戻る</a></p>
+<h1 class="doct">取扱説明書</h1>
+<div class="doc">
+<p>このサイトの基本設計と基本機能の説明です。採点の詳しい規則は<a href="criteria.html">採点基準</a>、言葉の定義は<a href="glossary.html">用語集</a>、キーボード操作の全量は<a href="keys.html">キー操作</a>にあります。</p>
+
+<h2>このサイトは何か</h2>
+<p>TRL Explorer は、世界の上場企業 500 社（27 市場）の技術成熟度（TRL）を、一次情報から観測するサイトです。目的は TRL の上昇・下降を観測することで、投資の助言や推奨ではありません。点が高いことと投資の妙味は、別の話として扱います。</p>
+<p>週 4 回（火〜金）の自動実行で材料を集めて評価し、結果をこのサイトで公開します。運用は無料枠の範囲で回しています。</p>
+
+<h2>基本設計</h2>
+<dl>
+<dt>一次情報が正本</dt>
+<dd>採点の材料は、開示・論文・治験登録などの一次情報です。ニュースは材料への手がかりで、点の根拠にはしません。三次情報（Wikipedia など）は採点に入れず、企業ページの「参考」枠にだけ、出典を明示して出します。</dd>
+<dt>LLM は評価と抽出だけ</dt>
+<dd>材料の読み取りと採点は LLM が行いますが、画面の集計・差分・履歴の表示は決定的な計算です。同じデータからは、いつ見ても同じ表示になります。</dd>
+<dt>点の付け方</dt>
+<dd>6 項目（技術成熟度 30 / 技術的優位性 15 / 収益化 20 / 市場成長性 15 / 財務持続性 10 / 堀の耐久性 10）を各 0〜100 で評価し、重み付きの合計が総合点です。総合点は 20 点ごとの帯域で見ます。詳しくは<a href="criteria.html">採点基準</a>。</dd>
+<dt>TRL は技術の成熟度だけ</dt>
+<dd>TRL 1〜9 は、項目「技術成熟度」の点だけから決まります。売上や商用の進み具合は事業側の項目（収益化など）で見て、TRL には混ぜません。</dd>
+<dt>null は「未確定」</dt>
+<dd>証拠が無い項目は 0 点ではなく null です。「証拠が無い」を「出来ていない」と読み替えないためで、その場合は材料の収集側を補強してから評価します（<a href="glossary.html">用語集</a>の null の項も参照）。</dd>
+<dt>層（ティア）</dt>
+<dd>企業は Core（評価の中核）/ Conditional（条件付きで評価対象）/ Look（監視）/ See（収集のみ）の 4 層に分かれます。Look・See の企業は評価せず、材料だけを貯めます。</dd>
+<dt>関門は観測の印</dt>
+<dd>Devil River / Valley of Death / Darwinian Sea は、段階と財務から機械的に出す観測用の印です。表示専用で、評価の入力には使いません。</dd>
+<dt>監査と処分</dt>
+<dd>評価は決定的なルールで自動監査されます。引っかかった評価は<a href="audit.html">監査</a>ページで人が処分し、処分は全端末に反映されます。</dd>
+<dt>設定は端末の中</dt>
+<dd>テーマ、絞り込み、BAN、ピン、メモ、既読などは、使う端末のブラウザ内にだけ保存され、サーバには送られません。例外は監査の処分と再評価予約で、データ経由で全端末に配られます。</dd>
+</dl>
+
+<h2>基本機能（ページの案内）</h2>
+<dl>
+<dt><a href="index.html">一覧</a></dt>
+<dd>候補を探す場所です。検索窓とチップで絞り込み、並び替えができます。チップの長押し（または右クリック）と BAN モードで「除外」もできます。候補を選ぶと詳細へ進みます。</dd>
+<dt>詳細</dt>
+<dd>候補 1 件の評価の内訳です。項目ごとの点と根拠、点が付かなかった理由、材料へのリンク、過去の評価の履歴、付記イベント（ARL / IRL / SRL）を見ます。再評価の予約やメモもここから。</dd>
+<dt>企業</dt>
+<dd>企業単位のまとめです。最新の評価、同分野での順位、評価のタイムライン、監視材料を見ます。参考（Wikipedia）枠がある企業もあります。</dd>
+<dt><a href="watch.html">Look・See</a></dt>
+<dd>評価対象ではない監視企業の材料置き場です。一次情報を前段に置き、外国語の材料には翻訳が付きます。市場・取引所・分野のチップで絞れます。</dd>
+<dt><a href="observe.html">観測</a></dt>
+<dd>全体の統計（中央値、箱ひげ図、分布）と直近の動きです。「統計の読み方」の説明つき。</dd>
+<dt><a href="brief.html">ブリーフィング</a></dt>
+<dd>直近の変化のまとめ読みです。</dd>
+<dt><a href="queue.html">次回評価予定</a></dt>
+<dd>次に評価される候補の順番（キュー）です。</dd>
+<dt><a href="runs.html">実行履歴</a></dt>
+<dd>自動実行の記録と、ソース別の収集量です。</dd>
+<dt><a href="audit.html">監査</a></dt>
+<dd>要確認になった評価を処分する場所です。</dd>
+<dt><a href="deductions.html">項目別の不足</a></dt>
+<dd>どの項目で点が付いていないか・低いかの集計です。材料の補強先の判断に使います。</dd>
+<dt>横並び比較</dt>
+<dd>候補を最大 4 件並べて、最新の評価の値をそのまま比べます（一覧で候補を選んで開きます）。</dd>
+<dt><a href="criteria.html">採点基準</a> / <a href="glossary.html">用語集</a> / <a href="keys.html">キー操作</a></dt>
+<dd>評価規程と重みの正本、言葉の定義、キーボード操作の全量です。</dd>
+<dt><a href="schema.html">データ形式</a> / <a href="changelog.html">サイトの更新ログ</a></dt>
+<dd>data.json の形式の変更履歴と、サイト自体の変更履歴です。</dd>
+</dl>
+
+<h2>最初に覚える操作</h2>
+<dl>
+<dt>絞り込みと BAN</dt>
+<dd>チップは「含める」、BAN は「除く」です。条件は自動で保存され、次に開いても残ります。</dd>
+<dt>キーボード</dt>
+<dd>j / k で移動、/ で検索、? でそのページのキーの一覧、g に続けて文字でページ移動。スマホではチップとボタンが主役です。全量は<a href="keys.html">キー操作</a>。</dd>
+<dt>テーマ</dt>
+<dd>ダーク / ライト / ユニバーサルの 3 つです。端末ごとに保存されます（Shift+D / Shift+L / Shift+C でも切り替え）。</dd>
+<dt>一覧への戻り方</dt>
+<dd>詳細から「← 一覧に戻る」で戻ると、見ていた候補の位置に戻ります。</dd>
+</dl>
+
+<h2>データの流れと更新</h2>
+<p>収集 → 評価 → 保存 → 発行のパイプラインです。定期実行は火〜金の朝（火曜は深い実行）で、サイトの発行はその結果を受けて行われます。</p>
+<p>画面の数字は data.json の直読みで、画面側で再計算や換算はしません。表示の差は、運用の差と対応します。翻訳は月ごとの文字数予算の中で行い、使用量はデータに同梱して公開しています。</p>
+</div>
+</div></main>
+<footer class="ft"><span>TRL Explorer</span><span><a href="criteria.html">採点基準（評価規程と重み）</a></span><span><a href="audit.html">監査（要確認の処分）</a></span></footer>
+<script src="smooth.js"></script>
+</body>
+</html>

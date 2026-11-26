@@ -1593,6 +1593,16 @@ function warn(d) {
   el.hidden = !w.length;
   el.textContent = w.join(" ");
 }
+/* 詳細から戻ったときの位置の印 (詳細ページが sessionStorage に残す)。
+   ここで一度だけ消費する。30分より古い印は、戻る操作とは見なさず捨てる */
+function takeReturnMark() {
+  try {
+    const m = JSON.parse(sessionStorage.getItem("trl-return") || "null");
+    sessionStorage.removeItem("trl-return");
+    if (m && typeof m.id === "string" && m.t && Date.now() - m.t <= 30 * 60 * 1000) return m.id;
+  } catch (e) { /* 読めなければ印なし */ }
+  return null;
+}
 async function load() {
   let d;
   try {
@@ -1608,6 +1618,8 @@ async function load() {
   const prm = new URLSearchParams(location.search);  // ピン取り込みが URL を消す前に控える
   importPinsFromUrl();
   importFiltersFromUrl(prm);
+  const retId = takeReturnMark();  // 詳細から戻ってきたら、見ていた候補を選択に戻す
+  if (retId && P.some(p => p.id === retId)) sel = retId;
   resolveNewBase();
   evalMaxTs = null;
   for (const p of P) { const t = evalTs(p); if (t != null && (evalMaxTs == null || t > evalMaxTs)) evalMaxTs = t; }
@@ -1619,6 +1631,9 @@ async function load() {
   $("#fl").value = LANG;
   buildCohort();
   facetChips(); warn(d); stats(); tierBand(); barrierBand(); auditBadge(); digestBand(); nqBand(); distBand(); moveBand(); nearBand(); usageBand(); alertBand(); runBand(); statsBand(); pinBand(); cmpBand(); laterBand(); searchHistBand(); recentBand(); tourBand(); buildBanUI(); newNote(); applyZoom(); render();
+  // 印の候補が絞り込み後も一覧に残っている (render が選択を保った) ときだけ、
+  // そのカードが見える位置まで寄せる。外れていたら先頭のままにしておく
+  if (retId && sel === retId) { const el = document.querySelector(`.card[data-id="${(window.CSS && CSS.escape) ? CSS.escape(retId) : retId}"]`); if (el) el.scrollIntoView({block: "center"}); }
 }
 $("#sf").addEventListener("submit", e => { e.preventDefault(); saveSearch($("#q").value); render(); });
 /* 検索履歴 (この端末のみ、直近8件)。チップを押すとその検索を再実行する */

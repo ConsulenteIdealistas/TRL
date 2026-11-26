@@ -385,6 +385,9 @@ function renderPeers(d, p) {
 
 async function load() {
   const id = new URLSearchParams(location.search).get("id");
+  // 一覧に戻ったとき元の位置へ戻れるよう、見ている候補を印として残す
+  // (一覧側が一度だけ消費する。sessionStorage なのでタブを閉じれば消える)
+  if (id) { try { sessionStorage.setItem("trl-return", JSON.stringify({id, t: Date.now()})); } catch (e) { /* 保存できなくても表示は続ける */ } }
   let d;
   try {
     const res = await fetch("data.json", {cache: "no-cache"});

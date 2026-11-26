@@ -655,7 +655,7 @@ const AACTS = [
   {label: "採点基準へ移動", run() { location.href = "criteria.html"; }},
   {label: "テーマをダークにする", run() { setATheme("dark"); }},
   {label: "テーマをライトにする", run() { setATheme("light"); }},
-  {label: "テーマを色覚配慮にする", run() { setATheme("cb"); }},
+  {label: "テーマをユニバーサルにする", run() { setATheme("cb"); }},
 ];
 let apalList = [], apalSel = 0;
 function openAPal() {

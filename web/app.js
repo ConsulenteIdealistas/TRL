@@ -1821,10 +1821,10 @@ const ACTIONS = [
   {label: "世代表示を切り替える", keys: "d", state: () => showGen ? "現在: 表示" : "現在: 非表示", run: () => flipCheck("#swgen")},
   {label: "言語を切り替える [日本語訳 / 原文]", keys: "l", state: () => { const s = $("#fl"); return s ? `現在: ${s.value === "orig" ? "原文" : "日本語訳"}` : ""; }, run: () => flipSelect("#fl")},
   {label: "コンパクト表示を切り替える", keys: ";", state: () => compact ? "現在: コンパクト" : "現在: 標準", run: () => flipCheck("#swcompact")},
-  {label: "テーマを切り替える [ダーク / ライト / 色覚配慮]", keys: "", state: () => `現在: ${{dark: "ダーク", light: "ライト", cb: "色覚配慮"}[document.documentElement.dataset.theme || "dark"]}`, run: () => flipSelect("#fth")},
+  {label: "テーマを切り替える [ダーク / ライト / ユニバーサル]", keys: "", state: () => `現在: ${{dark: "ダーク", light: "ライト", cb: "ユニバーサル"}[document.documentElement.dataset.theme || "dark"]}`, run: () => flipSelect("#fth")},
   {label: "テーマをダークにする", keys: "D", state: () => document.documentElement.dataset.theme === "dark" ? "現在のテーマ" : "", run: () => setTheme("dark")},
   {label: "テーマをライトにする", keys: "L", state: () => document.documentElement.dataset.theme === "light" ? "現在のテーマ" : "", run: () => setTheme("light")},
-  {label: "テーマを色覚配慮にする", keys: "C", state: () => document.documentElement.dataset.theme === "cb" ? "現在のテーマ" : "", run: () => setTheme("cb")},
+  {label: "テーマをユニバーサルにする", keys: "C", state: () => document.documentElement.dataset.theme === "cb" ? "現在のテーマ" : "", run: () => setTheme("cb")},
   {label: "文字サイズを切り替える [標準 / 大 / 特大]", keys: "", state: () => { let z = ""; try { z = localStorage.getItem("trl-zoom") || ""; } catch (e) { /* 読めなければ標準 */ } return `現在: ${["標準", "大", "特大"][ZOOMS.indexOf(z)] || "標準"}`; }, run: () => cycleZoom()},
   {label: "条件をリセットする", keys: "a", run: () => $("#rs").click()},
   {label: "現在の条件に名前を付けて保存", keys: "", run: () => $("#fpsave").click()},
@@ -2396,7 +2396,7 @@ function setTheme(mode) {
   document.documentElement.dataset.theme = mode;
   try { localStorage.setItem("trl-theme", mode); } catch (e) { /* 保存できなくても切替は効く */ }
   const sel = $("#fth"); if (sel) sel.value = mode;
-  toast(`テーマ: ${{dark: "ダーク", light: "ライト", cb: "色覚配慮"}[mode] || mode}`);
+  toast(`テーマ: ${{dark: "ダーク", light: "ライト", cb: "ユニバーサル"}[mode] || mode}`);
 }
 const themeBtn = $("#themebtn");
 if (themeBtn) themeBtn.addEventListener("click", () => {
